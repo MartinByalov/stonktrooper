@@ -2,7 +2,7 @@
 import { formatShareScore } from './shareCard';
 
 export function resultUrl(score: number): string {
-  const url = new URL('https://www.stonkrunner.lol/');
+  const url = new URL('https://stonktrooper.lol/');
   url.searchParams.set('score', String(Math.max(0, Math.min(Number.MAX_SAFE_INTEGER, Math.round(Number.isFinite(score) ? score : 0)))));
   return url.href;
 }

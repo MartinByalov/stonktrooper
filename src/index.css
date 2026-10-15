@@ -1,5 +1,14 @@
 @import "tailwindcss";
 
+button:not(:disabled),
+a[href] {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
 .coffee-link {
   display: inline-flex;
   align-items: center;

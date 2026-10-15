@@ -63,16 +63,17 @@ test('share card uses theme-specific backgrounds and preview/export use the same
   assert.match(component, /drawShareCard\(ctx, score, background\)/);
   assert.match(component, /canvas\.current\.toBlob\(/);
   assert.match(component, /\[score, theme\]/);
-  assert.match(component, /shareScoreImage\(file, score, websiteUrl, navigator\)/);
   assert.match(component, /const url = resultUrl\(score\)/);
   assert.match(component, /await copyText\(url, navigator, document, dialog.current \?\? document.body\);\s*setCopied\(true\)/);
   assert.doesNotMatch(component, /<span aria-live="polite">/);
   assert.match(component, /copied \? <Check[^]*?: <Share2/);
-  assert.doesNotMatch(component, /Share this score link:|Score link copied\. Ready to share\.|await navigator.share\(/);
+  assert.doesNotMatch(component, /Share this score link:|Score link copied\. Ready to share\.|await navigator.share\(|This browser cannot share images/);
   assert.match(component, /void shareSocial\(platform.name\)/);
+  assert.match(component, /window\.open\(destination\.href, '_blank', 'noopener,noreferrer'\)/);
+  assert.match(component, /Share score link to \$\{platform\.name\}/);
   assert.doesNotMatch(component, /Download PNG|link.download|createObjectURL|const download/);
   assert.doesNotMatch(component, /score-share-link|linkInput|<input/);
-  assert.match(component, /disabled=\{!file \|\| sharing\}/);
+  assert.match(component, /disabled=\{sharing\}/);
 });
 
 test('header actions and Liquidated buttons follow the requested order', () => {

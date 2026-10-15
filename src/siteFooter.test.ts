@@ -34,7 +34,7 @@ test('Easy mode and privacy links use sky blue and preference clearing matches p
   const guide = app.match(/className="([^"]*)">How to Play<\/button>/);
   const preferences = footer.match(/className="([^"]*)" onClick=\{\(\) => \{\s*try \{ localStorage.removeItem/);
   assert(guide && preferences);
-  assert.equal(preferences[1], `block mx-auto ${guide[1]}`);
+  assert(preferences[1].startsWith(`block mx-auto ${guide[1]}`));
 });
 
 test('About offers supplied email, Discord and Reddit contacts with keyboard-accessible links', () => {

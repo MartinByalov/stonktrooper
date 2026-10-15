@@ -3,7 +3,6 @@ import { useEffect, useRef, useState } from 'react';
 import { Check, Share2, X } from 'lucide-react';
 import { drawShareCard, formatShareScore, shareCardBackground, SHARE_CARD_WIDTH, SHARE_CARD_HEIGHT } from './shareCard';
 import { resultUrl, socialLinks } from './shareLinks';
-import { shareScoreImage } from './shareScore';
 import { SocialIcon } from './SocialIcon';
 import { copyText } from './copyText';
 
@@ -17,7 +16,6 @@ export function ShareDD({ score, theme, demo = false, onClose }: { score: number
   const [message, setMessage] = useState('');
   const [copied, setCopied] = useState(false);
   const url = resultUrl(score);
-  const websiteUrl = new URL(import.meta.env.BASE_URL, window.location.origin).href;
   useEffect(() => {
     setCopied(false);
   }, [score]);
@@ -66,18 +64,19 @@ export function ShareDD({ score, theme, demo = false, onClose }: { score: number
     } finally { setSharing(false); }
   };
   const shareSocial = async (platform: string) => {
-    if (!file || sharing) return;
+    const destination = socialLinks(score).find(item => item.name === platform);
+    if (!destination || sharing) return;
     setError('');
-    setMessage(`Choose ${platform} in the sharing menu to send the score image and website link.`);
+    setMessage('');
     setSharing(true);
     try {
-      if (!await shareScoreImage(file, score, websiteUrl, navigator)) {
-        setMessage('This browser cannot share images to social apps. Try a supported mobile browser. Nothing was downloaded.');
-      }
+      window.open(destination.href, '_blank', 'noopener,noreferrer');
+      await copyText(url, navigator, document, dialog.current ?? document.body);
+      setMessage(`${platform} opened with your score link. The link was also copied.`);
     } catch (cause) {
       setMessage('');
       if (!(cause instanceof DOMException && cause.name === 'AbortError')) {
-        setError('Unable to share the image to a social app. Nothing was downloaded.');
+        setError(`Unable to prepare the ${platform} share link.`);
       }
     } finally { setSharing(false); }
   };
@@ -95,7 +94,7 @@ export function ShareDD({ score, theme, demo = false, onClose }: { score: number
     }}>
       <div className="relative flex justify-center items-center min-h-10 mb-3 px-10">
         <h2 id="share-dd-title" className="text-xl font-black font-mono-term text-[var(--green)]">SCORE</h2>
-        <button ref={closeButton} type="button" aria-label="Close Share DD" title="Close" onClick={onClose} className="dialog-close absolute right-0 top-0 p-2 rounded border border-[var(--line)] hover:bg-[var(--alt)]"><X className="w-5 h-5" aria-hidden="true" /></button>
+        <button ref={closeButton} type="button" aria-label="Close Share DD" title="Close" onClick={onClose} className="dialog-close absolute right-0 top-0 p-2 rounded border border-[var(--line)] hover:bg-[var(--alt)] cursor-pointer"><X className="w-5 h-5" aria-hidden="true" /></button>
       </div>
       {demo && <p className="mb-3 text-center text-xs font-bold text-[var(--muted)]">DEMO — simulated score, not a game result</p>}
       <canvas ref={canvas} width={SHARE_CARD_WIDTH} height={SHARE_CARD_HEIGHT} role="img" aria-label={`Stonktrooper best score: ${formatShareScore(score)}`} className="block w-full h-auto rounded-lg" />
@@ -103,7 +102,7 @@ export function ShareDD({ score, theme, demo = false, onClose }: { score: number
         <button type="button" aria-label={copied ? 'Score link copied' : 'Copy score link'} title={copied ? 'Copied!' : 'Copy score link'} disabled={sharing} onClick={() => { void share(); }} className="flex items-center justify-center gap-2 rounded-lg bg-[#08795c] text-white p-3 font-bold disabled:opacity-40">
           {copied ? <Check className="w-5 h-5" aria-hidden="true" /> : <Share2 className="w-5 h-5" aria-hidden="true" />}
         </button>
-        {socialLinks(score).map(platform => <button key={platform.name} type="button" disabled={!file || sharing} onClick={() => { void shareSocial(platform.name); }} aria-label={`Share score image and website to ${platform.name} using the sharing menu`} title={`Share image — choose ${platform.name} in the sharing menu`} className="flex items-center justify-center rounded-lg border border-[var(--line)] bg-[var(--alt)] hover:brightness-125 p-3 disabled:opacity-40"><SocialIcon name={platform.name} /></button>)}
+        {socialLinks(score).map(platform => <button key={platform.name} type="button" disabled={sharing} onClick={() => { void shareSocial(platform.name); }} aria-label={`Share score link to ${platform.name}`} title={`Share score on ${platform.name}`} className="flex items-center justify-center rounded-lg border border-[var(--line)] bg-[var(--alt)] hover:brightness-125 p-3 disabled:opacity-40 cursor-pointer"><SocialIcon name={platform.name} /></button>)}
       </div>
       {message && <p role="status" className="mt-3 text-center text-sm text-[var(--green)]">{message}</p>}
       {error && <p role="status" className="mt-3 text-center text-sm text-[var(--red)]">{error}</p>}

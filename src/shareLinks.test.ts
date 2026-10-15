@@ -4,9 +4,9 @@ import { test } from 'node:test';
 import { resultUrl, sharedScore, socialLinks } from './shareLinks';
 
 test('score links round trip and normalize invalid scores', () => {
-  assert.equal(resultUrl(12345.6), 'https://www.stonkrunner.lol/?score=12346');
+  assert.equal(resultUrl(12345.6), 'https://stonktrooper.lol/?score=12346');
   assert.equal(sharedScore(new URL(resultUrl(12345.6)).search), 12346);
-  assert.equal(resultUrl(NaN), 'https://www.stonkrunner.lol/?score=0');
+  assert.equal(resultUrl(NaN), 'https://stonktrooper.lol/?score=0');
   assert.equal(sharedScore('?score=0'), 0);
   for (const search of ['', '?score=-1', '?score=NaN', '?score=1.5', '?score=<script>', '?score=9999999999999999']) {
     assert.equal(sharedScore(search), null);

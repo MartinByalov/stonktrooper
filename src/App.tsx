@@ -12,6 +12,7 @@ import { LiquidatedBackdrop } from './LiquidatedBackdrop';
 import { ShareDD } from './ShareDD';
 import { SiteFooter } from './SiteFooter';
 import type { SiteSection } from './SiteFooter';
+import { sharedScore } from './shareLinks';
 import { Volume2, VolumeX, Maximize, Minimize, Sun, Moon, Pause, Play, X } from 'lucide-react';
 
 export default function App() {
@@ -72,6 +73,14 @@ export default function App() {
   const [currentResult, setCurrentResult] = useState(0);
   const boxingActive = useRef(false);
   const bossEncounter = useRef<BossArena | null>(null);
+
+  useEffect(() => {
+    const score = sharedScore(window.location.search);
+    if (score === null) return;
+    setCurrentResult(score);
+    setState('over');
+    setShareDDOpen(true);
+  }, []);
 
   const handleStateChange = useCallback((nextState: GameState) => {
     if (boxingActive.current) return;

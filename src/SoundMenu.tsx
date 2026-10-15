@@ -24,7 +24,7 @@ export function SoundMenu({ onClose }: { onClose: () => void }) {
           else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
         }
       }}>
-        <div className="flex items-center justify-between mb-3"><h2 id="sounds-title" className="text-lg font-bold">Sound settings</h2><button type="button" onClick={onClose} className="px-3 py-1 border border-[var(--line)] rounded">Close</button></div>
+        <div className="flex items-center justify-between mb-3"><h2 id="sounds-title" className="text-lg font-bold">Sound settings</h2><button type="button" onClick={onClose} className="px-3 py-1 border border-[var(--line)] rounded cursor-pointer">Close</button></div>
         <p className="text-xs text-[var(--muted)] mb-4">Choose styles for music and game effects. Bull uses Moo and Bear uses Roar. Preview lasts 5 seconds.</p>
         {!sound.enabled && <p className="text-sm text-[var(--red)] mb-3">Sound is muted. Enable the speaker button to preview.</p>}
         {['Player', 'Enemies', 'Pickups', 'Music'].map(group => (
@@ -45,7 +45,7 @@ export function SoundMenu({ onClose }: { onClose: () => void }) {
                       <option value="organic">{id === 'music' ? 'Swing · Plucked groove' : 'Organic / Textured'}</option>
                       <option value="off">Off</option>
                     </select>
-                    <button type="button" disabled={!sound.enabled || settings[id] === 'off'} onClick={() => sound.preview(id)} aria-label={`Preview ${label}`} className="px-2 py-1 text-xs border border-[var(--line)] rounded disabled:opacity-40">▶</button>
+                    <button type="button" disabled={!sound.enabled || settings[id] === 'off'} onClick={() => sound.preview(id)} aria-label={`Preview ${label}`} className="px-2 py-1 text-xs border border-[var(--line)] rounded disabled:opacity-40 cursor-pointer">▶</button>
                   </div>
                 </div>
               ))}
