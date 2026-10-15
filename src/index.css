@@ -343,6 +343,32 @@ html[data-theme="dark"] .game-app .header-controls button svg {
   min-height: 0;
 }
 
+.share-dd-overlay {
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.share-dd-dialog {
+  min-width: 0;
+  box-sizing: border-box;
+  overscroll-behavior: contain;
+}
+
+.share-dd-canvas {
+  max-width: 100%;
+  height: auto;
+  object-fit: contain;
+}
+
+.share-dd-actions {
+  min-width: 0;
+}
+
+.share-dd-status {
+  overflow-wrap: anywhere;
+}
+
 @media (max-width: 767px) {
   .game-result {
     width: calc(100% - 16px);
@@ -596,4 +622,143 @@ kbd {
   padding: 2px 6px;
   background: var(--alt);
   color: var(--text);
+}
+
+/* Final mobile-landscape sizing overrides. These come after the generic
+   landscape rules so the guide cards remain readable instead of being
+   compressed into four clipped grid rows. */
+@media (max-width: 1024px) and (orientation: landscape) and (pointer: coarse) {
+  .game-overlay {
+    align-items: flex-start;
+    justify-content: flex-start;
+    overflow-x: hidden;
+    overflow-y: auto;
+    padding: max(6px, env(safe-area-inset-top)) max(6px, env(safe-area-inset-right)) max(6px, env(safe-area-inset-bottom)) max(6px, env(safe-area-inset-left));
+  }
+
+  .initial-guide {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: none;
+    height: auto;
+    max-height: none;
+    min-height: 0;
+    overflow: visible;
+    padding: clamp(6px, 1.4vw, 14px);
+  }
+
+  .initial-guide > div:first-child {
+    flex: 0 0 auto;
+  }
+
+  .how-to-layout {
+    display: flex;
+    flex: 0 0 auto;
+    flex-direction: row !important;
+    align-items: stretch;
+    min-height: 0;
+    overflow: visible;
+  }
+
+  .how-to-layout > .how-to-aside {
+    flex: 0 0 clamp(150px, 28vw, 230px);
+    width: clamp(150px, 28vw, 230px);
+    min-width: 0;
+    min-height: 0;
+    overflow: visible;
+  }
+
+  .how-to-layout > .how-to-aside > .how-to-hero {
+    flex: 0 0 clamp(72px, 24vh, 150px);
+    width: 100%;
+    height: clamp(72px, 24vh, 150px);
+    overflow: hidden;
+  }
+
+  .how-to-layout > .how-to-aside > .how-to-hero img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center 38%;
+  }
+
+  .how-to-layout > .how-to-aside > .how-to-controls {
+    flex: 0 0 auto;
+    min-height: 0;
+    overflow: visible;
+  }
+
+  .how-to-layout > .how-to-aside button {
+    min-height: clamp(26px, 7vh, 38px);
+    padding: clamp(4px, 1vh, 7px) clamp(5px, 1.5vw, 10px);
+    line-height: 1.05;
+  }
+
+  .how-to-layout > .mechanics-guide {
+    flex: 1 1 auto;
+    width: auto;
+    height: auto;
+    max-height: calc(100dvh - 64px);
+    min-width: 0;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    align-content: start;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-rows: none;
+    grid-auto-rows: max-content;
+  }
+
+  .how-to-layout > .mechanics-guide > div {
+    min-width: 0;
+    min-height: 92px;
+    height: auto;
+    overflow: visible;
+  }
+
+  .how-to-layout > .mechanics-guide > div > div {
+    min-height: 0;
+    overflow: visible;
+  }
+
+  .game-result-over {
+    max-height: none;
+    overflow: visible !important;
+  }
+
+  .game-result-over .game-result-content {
+    min-width: 0;
+  }
+
+  .share-dd-overlay {
+    align-items: flex-start;
+    justify-content: flex-start;
+    padding: max(6px, env(safe-area-inset-top)) max(6px, env(safe-area-inset-right)) max(6px, env(safe-area-inset-bottom)) max(6px, env(safe-area-inset-left));
+  }
+
+  .share-dd-dialog {
+    width: min(100%, 760px);
+    max-width: 760px;
+    max-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 12px);
+    margin: auto;
+    padding: clamp(8px, 1.4vw, 14px);
+  }
+
+  .share-dd-canvas {
+    width: auto;
+    max-width: 100%;
+    max-height: min(58dvh, 62vw);
+    margin-inline: auto;
+  }
+
+  .share-dd-actions {
+    gap: clamp(6px, 1.2vw, 12px);
+    margin-top: clamp(8px, 1.5vh, 14px);
+  }
+
+  .share-dd-actions button {
+    min-width: 42px;
+    min-height: 42px;
+  }
 }

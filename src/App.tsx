@@ -192,6 +192,10 @@ export default function App() {
       const portrait = window.matchMedia('(max-width: 767px) and (pointer: coarse)').matches && window.innerHeight > window.innerWidth;
       setPortraitPhone(portrait);
       if (!portrait && awaitingLandscape) {
+        // The initial request is made from the START tap. Retry after the
+        // physical rotation as some mobile browsers only expose the final
+        // landscape viewport after orientationchange.
+        void requestMobileLandscape();
         setAwaitingLandscape(false);
         if (state === 'menu' || state === 'over') {
           boxingActive.current = false;

@@ -76,6 +76,19 @@ test('share card uses theme-specific backgrounds and preview/export use the same
   assert.match(component, /disabled=\{sharing\}/);
 });
 
+test('score dialog keeps its image and actions usable on mobile landscape screens', () => {
+  const component = readFileSync(new URL('./ShareDD.tsx', import.meta.url), 'utf8');
+  const css = readFileSync(new URL('./index.css', import.meta.url), 'utf8');
+  assert.match(component, /className="share-dd-overlay fixed inset-0/);
+  assert.match(component, /className="share-dd-dialog w-full/);
+  assert.match(component, /className="share-dd-canvas block/);
+  assert.match(component, /className="share-dd-actions flex/);
+  assert.match(css, /\.share-dd-overlay \{[\s\S]*?overflow-y: auto;/);
+  assert.match(css, /\.share-dd-canvas \{[\s\S]*?max-width: 100%;[\s\S]*?height: auto;/);
+  assert.match(css, /\.share-dd-dialog \{[\s\S]*?max-height: calc\(100dvh/);
+  assert.match(css, /\.share-dd-canvas \{[\s\S]*?max-height: min\(58dvh, 62vw\);/);
+});
+
 test('header actions and Liquidated buttons follow the requested order', () => {
   const app = readFileSync(new URL('./App.tsx', import.meta.url), 'utf8');
   const header = app.slice(app.indexOf('title="Music styles"'), app.indexOf('</header>'));

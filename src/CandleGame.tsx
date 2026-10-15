@@ -74,6 +74,20 @@ const TAPE_HEIGHT = 44;
 const TIME_AXIS_HEIGHT = 12;
 const AX = 64;   // Price axis width on right
 const CW = 9;    // Candlestick width in pixels
+
+// Mobile screens render the fixed 1920 × 840 game canvas at a very small
+// physical size. Enlarge the whole canvas drawing slightly so the runner,
+// candles, Live Feed and Pips remain readable without changing game physics.
+const mobileCanvasZoom = (): number => {
+  if (typeof window === 'undefined' || !window.matchMedia('(max-width: 767px) and (pointer: coarse)').matches) return 1;
+  return window.innerWidth > window.innerHeight ? 1.08 : 1.12;
+};
+
+const zoomCanvasPoint = (client: AimPoint, rect: { left: number; top: number; width: number; height: number }, zoom: number): AimPoint => {
+  const x = (client.x - rect.left) / rect.width * W;
+  const y = (client.y - rect.top) / rect.height * H;
+  return { x: (x - W / 2) / zoom + W / 2, y: (y - H / 2) / zoom + H / 2 };
+};
 const CAP = 50;
 const LEN = 360; // Candlesticks per market cycle
 const HX = 250;  // Hero camera offset from left
@@ -2269,6 +2283,12 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     ctx.fillStyle = palette.bg;
     ctx.fillRect(0, 0, W, H);
 
+    const zoom = mobileCanvasZoom();
+    ctx.save();
+    ctx.translate(W / 2, H / 2);
+    ctx.scale(zoom, zoom);
+    ctx.translate(-W / 2, -H / 2);
+
     if (g.currentState === 'menu') {
       // Decorative only: the initial screen never advances physics or spawns.
       for (let i = 0; i < Math.min(g.C.length, Math.ceil((W - AX) / CW)); i++) {
@@ -2282,6 +2302,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
         ctx.fillRect(x + 1, c.top + shift, CW - 3, c.bot - c.top);
       }
       drawTopTickerTape(ctx);
+      ctx.restore();
       return;
     }
 
@@ -2565,6 +2586,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     }
     // Draw last so axis markers cannot cover the full-width feed.
     drawTopTickerTape(ctx);
+    ctx.restore();
   }, [drawHero, drawPickups, drawSwans, drawAnimals, drawTopTickerTape, theme, bossEncounter]);
 
   const pressJump = useCallback(() => {
@@ -2864,9 +2886,11 @@ export const CandleGame: React.FC<CandleGameProps> = ({
         onPointerMove={e => {
           const g = gameRef.current;
           const bounds = e.currentTarget.getBoundingClientRect();
-          const canvasY = ((e.clientY - bounds.top) / bounds.height) * H;
+          const zoom = mobileCanvasZoom();
+          const canvasPoint = zoomCanvasPoint({ x: e.clientX, y: e.clientY }, bounds, zoom);
+          const canvasY = canvasPoint.y;
           tickerHoverPausedRef.current = canvasY >= 0 && canvasY <= TAPE_HEIGHT;
-          aimRef.current = pointerToWorld({ x: e.clientX, y: e.clientY }, bounds, W, H, { x: g.cx, y: g.cy });
+          aimRef.current = pointerToWorld(canvasPoint, { left: 0, top: 0, width: W, height: H }, W, H, { x: g.cx, y: g.cy });
           aimRef.current.y = g.cy + plotViewY(aimRef.current.y - g.cy, g.invertedView && g.currentState !== 'boxing', TAPE_HEIGHT, H - TIME_AXIS_HEIGHT);
           if (bossEncounter.current) bossEncounter.current.aim = aimRef.current;
         }}
@@ -2875,7 +2899,9 @@ export const CandleGame: React.FC<CandleGameProps> = ({
           if (e.button !== 0) return;
           e.preventDefault(); e.currentTarget.focus();
           const g = gameRef.current;
-          aimRef.current = pointerToWorld({ x: e.clientX, y: e.clientY }, e.currentTarget.getBoundingClientRect(), W, H, { x: g.cx, y: g.cy });
+          const bounds = e.currentTarget.getBoundingClientRect();
+          const canvasPoint = zoomCanvasPoint({ x: e.clientX, y: e.clientY }, bounds, mobileCanvasZoom());
+          aimRef.current = pointerToWorld(canvasPoint, { left: 0, top: 0, width: W, height: H }, W, H, { x: g.cx, y: g.cy });
           aimRef.current.y = g.cy + plotViewY(aimRef.current.y - g.cy, g.invertedView && g.currentState !== 'boxing', TAPE_HEIGHT, H - TIME_AXIS_HEIGHT);
           if (g.currentState === 'boxing' && bossEncounter.current) {
             bossEncounter.current.aim = aimRef.current;

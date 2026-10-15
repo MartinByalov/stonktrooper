@@ -87,6 +87,15 @@ test('app renders the full site footer and keeps its links visible in landscape'
   assert.match(css, /\.game-app footer \{ flex: 0 0 auto; height: auto;/);
 });
 
+test('mobile landscape retries fullscreen after rotation and keeps guide/result content scrollable', () => {
+  const app = readFileSync(new URL('./App.tsx', import.meta.url), 'utf8');
+  const css = readFileSync(new URL('./index.css', import.meta.url), 'utf8');
+  assert.match(app, /if \(!portrait && awaitingLandscape\) \{\s*\/\/ The initial request is made from the START tap\.[\s\S]*?void requestMobileLandscape\(\);/);
+  assert.match(css, /@media \(max-width: 1024px\) and \(orientation: landscape\) and \(pointer: coarse\)/);
+  assert.match(css, /\.how-to-layout > \.mechanics-guide \{[\s\S]*?overflow-y: auto;[\s\S]*?grid-template-rows: none;/);
+  assert.match(css, /\.game-result-over \{[\s\S]*?overflow: visible !important;/);
+});
+
 test('About starts its first sentence with an inline theme-aware logo and preference button has extra top spacing', () => {
   const footer = readFileSync(new URL('./SiteFooter.tsx', import.meta.url), 'utf8');
   assert.match(footer, /theme: 'light' \| 'dark'/);

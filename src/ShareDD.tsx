@@ -80,8 +80,8 @@ export function ShareDD({ score, theme, demo = false, onClose }: { score: number
       }
     } finally { setSharing(false); }
   };
-  return <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4" onPointerDown={event => event.stopPropagation()}>
-    <div ref={dialog} role="dialog" aria-modal="true" aria-labelledby="share-dd-title" className="w-full max-w-3xl max-h-[90dvh] overflow-y-auto rounded-xl border border-[var(--line)] bg-[var(--panel)] p-4 shadow-2xl" onKeyDown={event => {
+  return <div className="share-dd-overlay fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4" onPointerDown={event => event.stopPropagation()}>
+    <div ref={dialog} role="dialog" aria-modal="true" aria-labelledby="share-dd-title" className="share-dd-dialog w-full max-w-3xl max-h-[90dvh] overflow-y-auto rounded-xl border border-[var(--line)] bg-[var(--panel)] p-4 shadow-2xl" onKeyDown={event => {
       event.stopPropagation();
       if (event.key === 'Escape') { onClose(); return; }
       if (event.key === 'Tab') {
@@ -97,15 +97,15 @@ export function ShareDD({ score, theme, demo = false, onClose }: { score: number
         <button ref={closeButton} type="button" aria-label="Close Share DD" title="Close" onClick={onClose} className="dialog-close absolute right-0 top-0 p-2 rounded border border-[var(--line)] hover:bg-[var(--alt)] cursor-pointer"><X className="w-5 h-5" aria-hidden="true" /></button>
       </div>
       {demo && <p className="mb-3 text-center text-xs font-bold text-[var(--muted)]">DEMO — simulated score, not a game result</p>}
-      <canvas ref={canvas} width={SHARE_CARD_WIDTH} height={SHARE_CARD_HEIGHT} role="img" aria-label={`Stonktrooper best score: ${formatShareScore(score)}`} className="block w-full h-auto rounded-lg" />
-      <div className="flex flex-wrap justify-center gap-3 mt-4">
+      <canvas ref={canvas} width={SHARE_CARD_WIDTH} height={SHARE_CARD_HEIGHT} role="img" aria-label={`Stonktrooper best score: ${formatShareScore(score)}`} className="share-dd-canvas block w-full h-auto rounded-lg" />
+      <div className="share-dd-actions flex flex-wrap justify-center gap-3 mt-4">
         <button type="button" aria-label={copied ? 'Score link copied' : 'Copy score link'} title={copied ? 'Copied!' : 'Copy score link'} disabled={sharing} onClick={() => { void share(); }} className="flex items-center justify-center gap-2 rounded-lg bg-[#08795c] text-white p-3 font-bold disabled:opacity-40">
           {copied ? <Check className="w-5 h-5" aria-hidden="true" /> : <Share2 className="w-5 h-5" aria-hidden="true" />}
         </button>
         {socialLinks(score).map(platform => <button key={platform.name} type="button" disabled={sharing} onClick={() => { void shareSocial(platform.name); }} aria-label={`Share score link to ${platform.name}`} title={`Share score on ${platform.name}`} className="flex items-center justify-center rounded-lg border border-[var(--line)] bg-[var(--alt)] hover:brightness-125 p-3 disabled:opacity-40 cursor-pointer"><SocialIcon name={platform.name} /></button>)}
       </div>
-      {message && <p role="status" className="mt-3 text-center text-sm text-[var(--green)]">{message}</p>}
-      {error && <p role="status" className="mt-3 text-center text-sm text-[var(--red)]">{error}</p>}
+      {message && <p role="status" className="share-dd-status mt-3 text-center text-sm text-[var(--green)]">{message}</p>}
+      {error && <p role="status" className="share-dd-status mt-3 text-center text-sm text-[var(--red)]">{error}</p>}
     </div>
   </div>;
 }
