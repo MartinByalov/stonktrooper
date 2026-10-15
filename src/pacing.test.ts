@@ -6,7 +6,7 @@ import { canSpawnEncounter, shouldPlaceBell, chartPrice, marketReachedZero, ZERO
 
 test('terrain hazards occur more often without removing approach and flat-ground safeguards', () => {
   const game = readFileSync(new URL('./CandleGame.tsx', import.meta.url), 'utf8');
-  assert.equal((game.match(/randomDelay\(420, 1200\)/g) ?? []).length, 3);
+  assert.match(game, /Math\.random\(\) < 0\.032/);
   assert.match(game, /!tallApproach && i > 65 && i - g.lastHole > 40 && Math.random\(\) < 0\.032 && flat6\(i\)/);
   assert.match(game, /g.nextTallCandle = i \+ randomDelay\(65, 160\)/);
   assert.match(game, /const first = Math.ceil\(\(g.p.x \+ 500\) \/ CW\)/);

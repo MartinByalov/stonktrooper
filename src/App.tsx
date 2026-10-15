@@ -425,7 +425,7 @@ export default function App() {
           <div role="dialog" aria-modal="true" aria-labelledby="paused-guide-title" className="w-full max-w-[1440px] max-h-[90vh] overflow-y-auto bg-[var(--panel)] border border-[var(--line)] rounded-xl p-4" onKeyDown={e => { e.stopPropagation(); if (e.key === 'Escape') setPausedGuideOpen(false); }}>
             <div className="relative flex items-center justify-center pb-2 border-b border-[var(--line)] mb-3 min-h-10 px-10">
               <h2 id="paused-guide-title" className="text-xl sm:text-2xl font-black font-mono-term tracking-tight text-[var(--green)] text-center">HOW TO PLAY</h2>
-              <button type="button" autoFocus title="Close How to Play" aria-label="Close How to Play and return to pause" onClick={() => setPausedGuideOpen(false)} className="absolute right-0 top-0 p-2 rounded border border-[var(--line)] text-[var(--text)] hover:bg-[var(--alt)] transition-colors cursor-pointer"><X className="w-5 h-5" aria-hidden="true" /></button>
+              <button type="button" autoFocus title="Close How to Play" aria-label="Close How to Play and return to pause" onClick={() => setPausedGuideOpen(false)} className="dialog-close absolute right-0 top-0 p-2 rounded border border-[var(--line)] text-[var(--text)] hover:bg-[var(--alt)] transition-colors cursor-pointer"><X className="w-5 h-5" aria-hidden="true" /></button>
             </div>
             <MechanicsGuide theme={theme} />
           </div>

@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { createBossArena, stepBossArena } from './boxingRules';
-import { randomDelay } from './randomTiming';
+import { candleSurpriseDelay } from './candleSurprise';
 
 test('kangaroo fight schedules safe candle surprises and retries unavailable terrain', () => {
   const arena = createBossArena();
@@ -16,7 +16,7 @@ test('kangaroo fight schedules safe candle surprises and retries unavailable ter
   arena.triggerCandleSurprise = () => { attempts++; return true; };
   stepBossArena(arena, 0, () => 0.5);
   assert.equal(attempts, 2);
-  assert.equal(arena.nextCandleSurprise, arena.frame + randomDelay(420, 1200, () => 0.5));
+  assert.equal(arena.nextCandleSurprise, arena.frame + candleSurpriseDelay(() => 0.5));
 });
 
 test('kangaroo fights spawn both hawks and swans', () => {

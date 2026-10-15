@@ -86,15 +86,8 @@ test('header actions and Liquidated buttons follow the requested order', () => {
   assert(actions.indexOf('>Share DD</button>') < actions.indexOf('onClick={handleReturnMenu}'));
 });
 
-test('header demo opens Share Score with a high score without changing the game result', () => {
+test('game-over score sharing opens with the final result', () => {
   const app = readFileSync(new URL('./App.tsx', import.meta.url), 'utf8');
-  const header = app.slice(app.indexOf('<header'), app.indexOf('</header>'));
-  assert.match(app, /const DEMO_SHARE_SCORE = Number\.MAX_SAFE_INTEGER/);
-  assert.match(header, /Test Share Score/);
-  assert.match(header, /if \(state === 'play'\) setState\('paused'\);\s*setDemoShareOpen\(true\)/);
-  assert.match(header, /disabled=\{state === 'boxing' \|\| linkedScore !== null \|\| shareDDOpen\}/);
-  assert.match(app, /\{demoShareOpen && <ShareDD score=\{DEMO_SHARE_SCORE\} theme=\{theme\} demo onClose=\{\(\) => setDemoShareOpen\(false\)\} \/>\}/);
+  assert.match(app, /state === 'over' && <button type="button" onClick=\{\(\) => setShareDDOpen\(true\)\}[^>]*>Share DD<\/button>/);
   assert.match(app, /\{shareDDOpen && state === 'over' && <ShareDD score=\{currentResult\}/);
-  const component = readFileSync(new URL('./ShareDD.tsx', import.meta.url), 'utf8');
-  assert.match(component, /DEMO — simulated score, not a game result/);
 });

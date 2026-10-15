@@ -24,6 +24,7 @@ test('Pages validates the project and deploys only the generated site', () => {
     assert(workflow.includes(command), command);
   }
   assert.match(workflow, /PAGES_BASE_PATH:.*steps\.pages\.outputs\.base_path/);
+  assert.match(workflow, /cp CNAME dist\/CNAME/);
   assert.match(workflow, /path: dist/);
   assert.match(read('../vite.config.ts'), /base: process\.env\.PAGES_BASE_PATH/);
   const manifest = JSON.parse(read('../package.json'));

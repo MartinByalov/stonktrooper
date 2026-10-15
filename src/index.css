@@ -68,6 +68,7 @@ html:not([data-theme="light"]) .coffee-cup {
   --green: #55d6ae;
   --red: #ef5350;
   --veil: rgba(12, 17, 27, 0.94);
+  --dialog-close-hover: #facc15;
   --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
@@ -82,6 +83,13 @@ html[data-theme="light"] {
   --green: #08795c;
   --red: #d32f2f;
   --veil: rgba(245, 248, 252, 0.94);
+  --dialog-close-hover: #0b1426;
+}
+
+.dialog-close:hover,
+.dialog-close:focus-visible {
+  color: var(--dialog-close-hover);
+  border-color: var(--dialog-close-hover);
 }
 
 body {

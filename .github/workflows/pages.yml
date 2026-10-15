@@ -33,6 +33,8 @@ jobs:
         run: npm run build
         env:
           PAGES_BASE_PATH: ${{ steps.pages.outputs.base_path }}/
+      - name: Preserve custom domain
+        run: cp CNAME dist/CNAME
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist

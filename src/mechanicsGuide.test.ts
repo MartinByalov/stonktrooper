@@ -15,12 +15,11 @@ test('Fedora guide preview mirrors horizontally without flipping other assets', 
   assert.match(preview, /if \(asset === 'fedora'\) ctx\.scale\(-1, 1\);\s*drawPickupAsset/);
 });
 
-test('Shoot guide shows theme-aware fedora above briefcase and explains its return and impact', () => {
+test('Shoot guide shows theme-aware fedora above briefcase and explains current hat behavior', () => {
   const guide = readFileSync(new URL('./MechanicsGuide.tsx', import.meta.url), 'utf8');
   const preview = readFileSync(new URL('./AssetPreview.tsx', import.meta.url), 'utf8');
   assert.match(guide, /asset: 'fedora', below: 'briefcase', title: 'Shoot/);
-  assert.match(guide, /Fedora for 3 boomerang throws within 10 seconds/);
-  assert.match(guide, /It follows the chart and returns; hits can defeat enemies or leave them wearing hats/);
+  assert.match(guide, /Collect and throw a hat at your enemies but beware, there is a 50% chance they might like your style/);
   assert.match(preview, /drawPickupAsset\(ctx, \{ type: asset, x: 0, y: 0, taken: false \}, 0, 0, 0, theme === 'dark'\)/);
   for (const darkMode of [false, true]) {
     const fills: string[] = [];
