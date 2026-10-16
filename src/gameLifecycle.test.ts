@@ -32,6 +32,23 @@ test('mobile canvas zoom enlarges the game and keeps pointer aiming inverse-mapp
   assert.match(game, /pointerToWorld\(canvasPoint, \{ left: 0, top: 0, width: W, height: H \}/);
 });
 
+test('canvas keeps mobile backing resolution bounded and avoids render storms during catch-up', () => {
+  const game = readFileSync(new URL('./CandleGame.tsx', import.meta.url), 'utf8');
+  assert.match(game, /const canvasPixelRatio = \(\): number =>/);
+  assert.match(game, /Math\.min\(dpr, 1\.5\)/);
+  assert.match(game, /canvas\.width = Math\.round\(W \* ratio\)/);
+  assert.match(game, /canvas\.height = Math\.round\(H \* ratio\)/);
+  assert.match(game, /ctx\.setTransform\(ratio, 0, 0, ratio, 0, 0\)/);
+  assert.match(game, /let simulationSteps = 0/);
+  assert.match(game, /simulationSteps\+\+/);
+  assert.match(game, /if \(simulationSteps < 4\) loopCallbacks\.current\.draw\(ctx\)/);
+});
+
+test('ticker item widths are measured once instead of every rendered frame', () => {
+  const game = readFileSync(new URL('./CandleGame.tsx', import.meta.url), 'utf8');
+  assert.match(game, /if \(item\.width === 0\) item\.width = ctx\.measureText\(message\)\.width \+ 48/);
+});
+
 test('collecting a tender activates hawk mode rather than adding a companion', () => {
   const source = readFileSync(new URL('./CandleGame.tsx', import.meta.url), 'utf8');
   const tender = source.slice(source.indexOf("} else if (d.type === 'tender')"), source.indexOf("} else if (d.type === 'banana')"));

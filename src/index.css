@@ -174,6 +174,57 @@ body {
   top: 5.238095238%;
 }
 
+.how-to-mode-button.is-selected {
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+}
+
+/* Keep the How to Play panel inside the available overlay height. The hero
+   and controls stay in the left column while the longer guide is the only
+   content allowed to scroll. */
+.initial-guide {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  max-height: calc(100% - 2px);
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.initial-guide > div:first-child {
+  flex: 0 0 auto;
+}
+
+.how-to-layout {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.how-to-layout > .how-to-aside {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.how-to-layout > .how-to-aside > .how-to-hero {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.how-to-layout > .how-to-aside > .how-to-hero img {
+  display: block;
+  max-height: 100%;
+  object-fit: cover;
+}
+
+.how-to-layout > .mechanics-guide {
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  align-content: start;
+}
+
 .game-arena:fullscreen {
   width: 100vw;
   height: 100dvh;
@@ -486,7 +537,7 @@ html[data-theme="dark"] .game-app .header-controls button svg {
   .game-app footer { flex: 0 0 auto; height: auto; padding-bottom: max(4px, env(safe-area-inset-bottom)); }
   .game-app .game-arena > .absolute.inset-0 { padding: clamp(4px, 1.5vh, 16px) max(4px, env(safe-area-inset-right)) clamp(4px, 1.5vh, 16px) max(4px, env(safe-area-inset-left)); }
 
-  .initial-guide { width: min(100%, 1640px); max-width: 100%; max-height: calc(100% - 8px); min-height: 0; overflow: auto; padding: clamp(6px, 1vw, 20px); box-sizing: border-box; }
+  .initial-guide { width: min(100%, 1640px); max-width: 100%; max-height: calc(100% - 8px); min-height: 0; overflow: hidden; padding: clamp(6px, 1vw, 20px); box-sizing: border-box; }
   .initial-guide > div:first-child { margin-bottom: clamp(4px, 0.6vw, 12px); padding-bottom: clamp(4px, 0.6vw, 12px); }
   .initial-guide h2 { font-size: clamp(15px, 1.6vw, 24px); }
   .how-to-layout { flex-direction: row !important; gap: clamp(6px, 0.8vw, 16px); min-width: 0; min-height: 0; }
@@ -494,7 +545,7 @@ html[data-theme="dark"] .game-app .header-controls button svg {
   .initial-guide aside > div:first-child { flex: 0 0 auto; width: 100%; min-width: 0; min-height: 0; overflow: hidden; }
   .initial-guide aside img { display: block; width: 100%; height: auto; object-fit: initial; }
   .initial-guide aside button { padding: clamp(5px, 0.6vw, 10px); font-size: clamp(10px, 0.75vw, 13px); }
-  .initial-guide .mechanics-guide { flex: 3 1 0; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: repeat(4, minmax(0, 1fr)); align-self: stretch; min-width: 0; min-height: 0; overflow: hidden; font-size: clamp(9px, 0.7vw, 12px); }
+  .initial-guide .mechanics-guide { flex: 3 1 0; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: none; grid-auto-rows: max-content; align-self: stretch; min-width: 0; min-height: 0; overflow-x: hidden; overflow-y: auto; align-content: start; font-size: clamp(9px, 0.7vw, 12px); }
   .initial-guide .mechanics-guide h3 { font-size: inherit; padding: clamp(2px, 0.25vw, 5px); }
   .initial-guide .mechanics-guide .w-\[88px\] { width: clamp(36px, 4vw, 88px); }
   .initial-guide .mechanics-guide .min-h-\[72px\] { min-height: 0; padding: 0; }
@@ -641,10 +692,10 @@ kbd {
     flex-direction: column;
     width: 100%;
     max-width: none;
-    height: auto;
-    max-height: none;
+    height: calc(100% - 2px);
+    max-height: calc(100% - 2px);
     min-height: 0;
-    overflow: visible;
+    overflow: hidden;
     padding: clamp(6px, 1.4vw, 14px);
   }
 
@@ -654,11 +705,11 @@ kbd {
 
   .how-to-layout {
     display: flex;
-    flex: 0 0 auto;
+    flex: 1 1 auto;
     flex-direction: row !important;
     align-items: stretch;
     min-height: 0;
-    overflow: visible;
+    overflow: hidden;
   }
 
   .how-to-layout > .how-to-aside {
@@ -666,13 +717,16 @@ kbd {
     width: clamp(150px, 28vw, 230px);
     min-width: 0;
     min-height: 0;
-    overflow: visible;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
   }
 
   .how-to-layout > .how-to-aside > .how-to-hero {
-    flex: 0 0 clamp(72px, 24vh, 150px);
+    flex: 1 1 auto;
     width: 100%;
-    height: clamp(72px, 24vh, 150px);
+    height: auto;
+    min-height: 0;
     overflow: hidden;
   }
 
@@ -686,7 +740,7 @@ kbd {
   .how-to-layout > .how-to-aside > .how-to-controls {
     flex: 0 0 auto;
     min-height: 0;
-    overflow: visible;
+    overflow: hidden;
   }
 
   .how-to-layout > .how-to-aside button {
@@ -698,8 +752,8 @@ kbd {
   .how-to-layout > .mechanics-guide {
     flex: 1 1 auto;
     width: auto;
-    height: auto;
-    max-height: calc(100dvh - 64px);
+    height: 100%;
+    max-height: none;
     min-width: 0;
     min-height: 0;
     overflow-x: hidden;

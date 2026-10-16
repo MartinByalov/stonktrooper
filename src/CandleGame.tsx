@@ -83,6 +83,17 @@ const mobileCanvasZoom = (): number => {
   return window.innerWidth > window.innerHeight ? 1.08 : 1.12;
 };
 
+// High-DPI canvases are disproportionately expensive on phones. Keep desktop
+// capture crisp, but cap the mobile backing store so the game spends its frame
+// budget on gameplay rather than filling millions of mostly invisible pixels.
+const canvasPixelRatio = (): number => {
+  if (typeof window === 'undefined') return 1;
+  const dpr = window.devicePixelRatio || 1;
+  return window.matchMedia('(max-width: 767px) and (pointer: coarse)').matches
+    ? Math.min(dpr, 1.5)
+    : Math.min(dpr, 2);
+};
+
 const zoomCanvasPoint = (client: AimPoint, rect: { left: number; top: number; width: number; height: number }, zoom: number): AimPoint => {
   const x = (client.x - rect.left) / rect.width * W;
   const y = (client.y - rect.top) / rect.height * H;
@@ -2219,7 +2230,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
       }
       const item = g.tickerQueue[itemIndex++];
       const message = `${item.news.source}: ${formatFeedHeadline(item.news.headline)}`.replace(/[\p{Extended_Pictographic}\uFE0F\u200D]/gu, '');
-      item.width = ctx.measureText(message).width + 48;
+      if (item.width === 0) item.width = ctx.measureText(message).width + 48;
       ctx.fillStyle = item.news.sentiment === 'bearish' ? (theme === 'light' ? '#b91c1c' : '#f87171') : item.news.sentiment === 'bullish' ? (theme === 'light' ? '#15803d' : '#4ade80') : (theme === 'light' ? '#0369a1' : '#38bdf8');
       writeCentered(message, tickerX);
       tickerX += item.width;
@@ -2837,6 +2848,11 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
+    const ratio = canvasPixelRatio();
+    canvas.width = Math.round(W * ratio);
+    canvas.height = Math.round(H * ratio);
+    ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+
     const renderLoop = (now: number) => {
       if (disposed) return;
       const g = gameRef.current;
@@ -2846,8 +2862,10 @@ export const CandleGame: React.FC<CandleGameProps> = ({
       const delta = g.previousTime ? Math.min((now - g.previousTime) / 1000, 0.1) : 0;
       g.previousTime = now;
       g.accumulator += delta;
+      let simulationSteps = 0;
 
       while (g.accumulator >= 1 / 60) {
+        simulationSteps++;
         // News animation is independent of gameplay and effect timers.
         if (!tickerHoverPausedRef.current && (g.currentState === 'play' || g.currentState === 'paused' || g.currentState === 'menu')) {
           g.tickerScrollX -= 2;
@@ -2865,7 +2883,10 @@ export const CandleGame: React.FC<CandleGameProps> = ({
         g.accumulator -= 1 / 60;
       }
 
-      loopCallbacks.current.draw(ctx);
+      // A backgrounded/throttled tab can deliver a large timestamp jump. The
+      // fixed-step simulation catches up, but rendering every catch-up RAF
+      // would make the next frame even more expensive on mobile.
+      if (simulationSteps < 4) loopCallbacks.current.draw(ctx);
       animationFrameId = requestAnimationFrame(renderLoop);
     };
 

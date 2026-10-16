@@ -367,7 +367,7 @@ export default function App() {
                           <button type="button" aria-pressed={selectedMode === 'easy'} onClick={() => setSelectedMode('easy')} className={`how-to-mode-button px-4 py-2 rounded-lg border-0 bg-[#38bdf8] text-white font-bold text-xs transition-all hover:brightness-105 ${selectedMode === 'easy' ? 'is-selected' : ''}`}>
                             {selectedMode === 'easy' ? 'THERE IS NO EASY MODE' : 'EASY MODE'}
                           </button>
-                          <button type="button" aria-pressed={selectedMode === 'hard'} onClick={() => setSelectedMode('hard')} className={`how-to-mode-button px-4 py-2 rounded-lg border-0 bg-[#ef5350] text-white hover:brightness-95 font-bold text-xs transition-colors ${selectedMode === 'hard' ? 'is-selected' : ''}`}>{selectedMode === 'hard' && <span aria-hidden="true">✓ </span>}HARD MODE</button>
+                          <button type="button" aria-pressed={selectedMode === 'hard'} onClick={() => setSelectedMode('hard')} className={`how-to-mode-button px-4 py-2 rounded-lg border-0 bg-[#ef5350] text-white hover:brightness-95 font-bold text-xs transition-colors ${selectedMode === 'hard' ? 'is-selected' : ''}`}>HARD MODE</button>
                         </div>
                         <button
                           type="button"

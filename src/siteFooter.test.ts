@@ -26,8 +26,12 @@ test('theme defaults to dark while preserving an explicitly saved light preferen
 
 test('Easy mode and privacy links use sky blue and preference clearing matches paused How to Play', () => {
   const app = readFileSync(new URL('./App.tsx', import.meta.url), 'utf8');
+  const css = readFileSync(new URL('./index.css', import.meta.url), 'utf8');
   const footer = readFileSync(new URL('./SiteFooter.tsx', import.meta.url), 'utf8');
   assert.match(app, /selectedMode === 'easy'[^\n]*bg-\[#38bdf8\]/);
+  assert.match(app, /selectedMode === 'hard'[^\n]*is-selected[^\n]*>HARD MODE<\/button>/);
+  assert.doesNotMatch(app, /selectedMode === 'hard'[^\n]*✓/);
+  assert.match(css, /\.how-to-mode-button\.is-selected\s*\{[\s\S]*text-decoration: underline;/);
   for (const label of ['GitHub Privacy Statement', 'Google Fonts privacy information']) {
     assert.match(footer, new RegExp(`<a className="underline text-\\[#38bdf8\\]"[^>]*>${label}</a>`));
   }
@@ -94,6 +98,17 @@ test('mobile landscape retries fullscreen after rotation and keeps guide/result 
   assert.match(css, /@media \(max-width: 1024px\) and \(orientation: landscape\) and \(pointer: coarse\)/);
   assert.match(css, /\.how-to-layout > \.mechanics-guide \{[\s\S]*?overflow-y: auto;[\s\S]*?grid-template-rows: none;/);
   assert.match(css, /\.game-result-over \{[\s\S]*?overflow: visible !important;/);
+});
+
+test('How to Play keeps the hero and controls inside the panel while descriptions scroll', () => {
+  const css = readFileSync(new URL('./index.css', import.meta.url), 'utf8');
+  assert.match(css, /\.initial-guide\s*\{[\s\S]*?max-height: calc\(100% - 2px\);[\s\S]*?overflow: hidden;/);
+  assert.match(css, /\.how-to-layout\s*\{[\s\S]*?flex: 1 1 auto;[\s\S]*?min-height: 0;[\s\S]*?overflow: hidden;/);
+  assert.match(css, /\.how-to-layout > \.how-to-aside\s*\{[\s\S]*?min-height: 0;[\s\S]*?overflow: hidden;/);
+  assert.match(css, /\.how-to-layout > \.mechanics-guide\s*\{[\s\S]*?overflow-y: auto;/);
+  assert.match(css, /\.initial-guide \.mechanics-guide \{[\s\S]*?grid-template-rows: none;[\s\S]*?overflow-y: auto;/);
+  assert.match(css, /\.how-to-layout > \.how-to-aside > \.how-to-hero\s*\{[\s\S]*?flex: 1 1 auto;[\s\S]*?min-height: 0;/);
+  assert.match(css, /\.how-to-layout > \.how-to-aside > \.how-to-controls\s*\{[\s\S]*?flex: 0 0 auto;/);
 });
 
 test('About starts its first sentence with an inline theme-aware logo and preference button has extra top spacing', () => {
