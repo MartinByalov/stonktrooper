@@ -80,7 +80,7 @@ test('mobile information dialogs fit between the Live Feed and visible footer', 
   assert.match(footer, /className="dialog-close site-info-close/);
   assert.match(css, /\.game-app \.fixed\.inset-0\.z-50\s*\{[\s\S]*?top: var\(--live-feed-bottom, 0px\);[\s\S]*?bottom: var\(--footer-inset-bottom, 0px\);/);
   assert.match(css, /\.site-info-dialog\s*\{\s*padding-inline: clamp\(32px, 4vw, 48px\);/);
-  assert.match(css, /\.game-app \.site-info-overlay\.fixed\.inset-0\.z-50 > \.site-info-dialog\s*\{\s*padding-inline: clamp\(22px, 6vw, 28px\);/);
+  assert.match(css, /\.game-app \.site-info-overlay\.fixed\.inset-0\.z-50 > \.site-info-dialog\s*\{[\s\S]*?padding-inline: clamp\(22px, 6vw, 28px\);/);
   assert.match(css, /html:not\(\[data-theme="light"\]\) \.site-info-overlay \.site-info-close:hover[\s\S]*?border-color: #fff;/);
   assert.match(css, /html:not\(\[data-theme="light"\]\) \.site-info-overlay \.site-info-close:hover svg[\s\S]*?color: #fff;/);
 });
@@ -108,6 +108,10 @@ test('portrait mobile separates the hero and controls from a fullscreen scrollab
   assert.match(css, /\.how-to-mode-selector\s*\{[\s\S]*?font-family: var\(--font-mono\);[\s\S]*?font-size: 0\.875rem;[\s\S]*?font-weight: 700;[\s\S]*?line-height: 1\.25;/);
   assert.match(css, /\.menu-action-button\s*\{[\s\S]*?height: 2\.75rem;[\s\S]*?min-height: 2\.75rem;[\s\S]*?padding-top: 0;[\s\S]*?padding-bottom: 0;/);
   assert.match(css, /\.mobile-how-to-panel > \.mechanics-guide\s*\{[\s\S]*?overflow-y: auto;/);
+  assert.match(css, /\.mobile-how-to-dialog\s*\{[\s\S]*?background: var\(--bg\);[\s\S]*?padding: 0;/);
+  assert.match(css, /\.mobile-how-to-panel\s*\{[\s\S]*?width: 100%;[\s\S]*?height: 100%;[\s\S]*?border-radius: 0;/);
+  assert.match(css, /\.game-app \.mobile-how-to-panel \.how-to-play-label\s*\{[\s\S]*?background: transparent !important;/);
+  assert.match(css, /\.mobile-how-to-panel > \.mechanics-guide > div > div > div:last-child > p\s*\{[\s\S]*?display: flex;[\s\S]*?flex: 1 1 auto;[\s\S]*?align-items: center;/);
   assert.match(css, /\.game-app \.site-footer\s*\{[\s\S]*?display: flex;[\s\S]*?flex-direction: column;[\s\S]*?align-items: center;/);
   assert.match(css, /\.game-app \.site-footer > nav,[\s\S]*?\.game-app \.site-footer > \.site-footer-copyright\s*\{[\s\S]*?align-self: center;[\s\S]*?text-align: center;/);
 });
@@ -203,6 +207,14 @@ test('app renders the full site footer and keeps its links visible in landscape'
 test('portrait menu keeps the Live Feed strip visible below the header', () => {
   const css = readFileSync(new URL('./index.css', import.meta.url), 'utf8');
   assert.match(css, /\.game-app \.game-overlay\.how-to-play-overlay\s*\{\s*inset: calc\(100% \* 48 \/ 840\) 0 0;/);
+});
+
+test('portrait site information fills the Live Feed-to-footer area and centers its content below the theme button', () => {
+  const css = readFileSync(new URL('./index.css', import.meta.url), 'utf8');
+  assert.match(css, /\.game-app \.fixed\.inset-0\.z-50\s*\{[\s\S]*?top: var\(--live-feed-bottom, 0px\);[\s\S]*?bottom: var\(--footer-inset-bottom, 0px\);/);
+  assert.match(css, /\.game-app \.site-info-overlay\.fixed\.inset-0\.z-50 > \.site-info-dialog\s*\{[\s\S]*?display: flex;[\s\S]*?flex-direction: column;[\s\S]*?justify-content: center;[\s\S]*?height: 100%;/);
+  assert.match(css, /\.game-app \.site-info-overlay\.fixed\.inset-0\.z-50 > \.site-info-dialog > \.site-info-close\s*\{[\s\S]*?position: absolute;[\s\S]*?top: max\(0px, env\(safe-area-inset-top\)\);[\s\S]*?right: max\(0px, env\(safe-area-inset-right\)\);/);
+  assert.match(css, /\.game-app \.site-info-overlay\.fixed\.inset-0\.z-50 > \.site-info-dialog > \.space-y-3\s*\{[\s\S]*?margin-inline: auto;/);
 });
 
 test('mobile landscape retries fullscreen after rotation and keeps guide/result content scrollable', () => {

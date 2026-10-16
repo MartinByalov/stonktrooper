@@ -1229,15 +1229,25 @@ kbd {
   }
 
   .mobile-how-to-dialog {
-    background: color-mix(in srgb, var(--bg) 78%, transparent);
-    padding: max(8px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
+    background: var(--bg);
+    padding: 0;
   }
 
   .mobile-how-to-panel {
     display: flex;
     flex-direction: column;
+    width: 100%;
+    height: 100%;
     min-height: 0;
+    max-width: none;
     max-height: 100%;
+    border: 0;
+    border-radius: 0;
+    padding: max(8px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
+  }
+
+  .game-app .mobile-how-to-panel .how-to-play-label {
+    background: transparent !important;
   }
 
   .mobile-how-to-panel > .mechanics-guide {
@@ -1249,6 +1259,18 @@ kbd {
     grid-template-rows: none;
     grid-auto-rows: minmax(min-content, auto);
     align-content: start;
+  }
+
+  .mobile-how-to-panel > .mechanics-guide > div > div > div:last-child {
+    justify-content: flex-start;
+  }
+
+  .mobile-how-to-panel > .mechanics-guide > div > div > div:last-child > p {
+    display: flex;
+    flex: 1 1 auto;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
   }
 
   .initial-guide {
@@ -1397,7 +1419,28 @@ kbd {
   }
 
   .game-app .site-info-overlay.fixed.inset-0.z-50 > .site-info-dialog {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    max-height: none;
+    border-radius: 0;
     padding-inline: clamp(22px, 6vw, 28px);
+  }
+
+  .game-app .site-info-overlay.fixed.inset-0.z-50 > .site-info-dialog > .site-info-close {
+    position: absolute;
+    top: max(0px, env(safe-area-inset-top));
+    right: max(0px, env(safe-area-inset-right));
+  }
+
+  .game-app .site-info-overlay.fixed.inset-0.z-50 > .site-info-dialog > .space-y-3 {
+    width: 100%;
+    max-width: 42rem;
+    margin-inline: auto;
   }
 
   .game-app .game-overlay:is(.pause-overlay, .game-over-overlay) {
