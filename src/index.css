@@ -198,6 +198,26 @@ body {
   top: calc(100% * 44 / 840);
 }
 
+@media (pointer: fine), (min-width: 1025px) {
+  .game-app .game-overlay {
+    top: calc(100% * 44 / 840);
+  }
+
+  .game-app .fixed.inset-0.z-50 {
+    top: var(--live-feed-bottom, 0px);
+    overflow-y: auto;
+  }
+
+  .game-app .fixed.inset-0.z-50 > [role="dialog"] {
+    max-height: 100%;
+  }
+
+  .game-app .paused-guide-overlay {
+    inset: 0;
+    padding: 1rem;
+  }
+}
+
 .how-to-mode-button.is-selected {
   text-decoration: underline;
   text-decoration-thickness: 2px;
@@ -378,6 +398,12 @@ html[data-theme="light"] .mobile-portrait-how-to-play {
   border-color: #000000 !important;
 }
 
+html[data-theme="light"] .paused-guide-dialog .how-to-play-label {
+  color: #000000 !important;
+  background: transparent !important;
+  border-color: transparent !important;
+}
+
 html[data-theme="dark"] .mobile-portrait-how-to-play {
   color: #000000 !important;
   background: #eaf0f5 !important;
@@ -461,8 +487,17 @@ html[data-theme="light"] .mechanics-guide .mechanics-guide-visuals {
   background: #eaf0f5 !important;
 }
 
+html[data-theme="light"] .game-result-over .liquidated-how-to-play,
 .game-result-over .liquidated-how-to-play {
+  border: 1px solid #ffffff;
+  color: #ffffff !important;
+  background: rgba(15, 23, 42, 0.85) !important;
   border-color: #ffffff !important;
+}
+
+html[data-theme="light"] .game-result-over .liquidated-how-to-play:hover,
+.game-result-over .liquidated-how-to-play:hover {
+  background: #1e293b !important;
 }
 
 .game-result-over .share-dd-open {
@@ -587,6 +622,16 @@ html[data-theme="light"] .share-dd-social-button {
   box-sizing: border-box;
   overflow-y: auto;
   overflow-x: hidden;
+}
+
+html[data-theme="dark"] .paused-guide-dialog .dialog-close:hover,
+html[data-theme="dark"] .game-app[data-state="paused"] .mobile-how-to-panel .dialog-close:hover {
+  border-color: #ffffff;
+}
+
+html[data-theme="light"] .paused-guide-dialog .dialog-close:hover,
+html[data-theme="light"] .game-app[data-state="paused"] .mobile-how-to-panel .dialog-close:hover {
+  border-color: #000000;
 }
 
 .paused-guide-dialog > .mechanics-guide {
@@ -1260,6 +1305,95 @@ kbd {
     grid-column: 1;
     grid-row: 1;
     justify-self: start;
+  }
+}
+
+/* Small mobile dialogs scale as a single element without internal scrolling. */
+@media (max-width: 1024px) and (pointer: coarse) {
+  .game-app .game-overlay,
+  .game-app .game-overlay.how-to-play-overlay {
+    top: var(--live-feed-height, calc(100% * 44 / 840));
+  }
+
+  .game-app .paused-guide-overlay {
+    inset: 0;
+    padding: 8px;
+  }
+
+  .game-app .fixed.inset-0.z-50 {
+    top: var(--live-feed-bottom, 0px);
+    box-sizing: border-box;
+    padding: max(8px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  .game-app .fixed.inset-0.z-50 > [role="dialog"]:not(.mobile-how-to-panel) {
+    box-sizing: border-box;
+    width: min(100%, 42rem, 150dvh);
+    max-width: 100%;
+    max-height: none;
+    flex-shrink: 0;
+    transform: scale(var(--mobile-dialog-scale, 1));
+    transform-origin: center;
+    min-width: 0;
+    min-height: 0;
+    margin: 0;
+    padding: clamp(8px, 2vmin, 16px);
+    overflow-x: hidden;
+    overflow-y: hidden;
+    overscroll-behavior: contain;
+    overflow-wrap: anywhere;
+  }
+
+  .game-app .game-overlay:is(.pause-overlay, .game-over-overlay) {
+    box-sizing: border-box;
+    align-items: center;
+    justify-content: center;
+    padding: max(8px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
+    overflow: hidden;
+  }
+
+  .game-app .game-overlay .game-result {
+    width: min(100%, 28rem, 110dvh);
+    max-width: 100%;
+    max-height: none;
+    min-height: 0;
+    flex: 0 0 auto;
+    transform: scale(var(--mobile-dialog-scale, 1));
+    transform-origin: center;
+    margin: 0;
+    padding: clamp(8px, 2vmin, 20px) !important;
+    overflow-x: hidden !important;
+    overflow-y: hidden !important;
+    overscroll-behavior: contain;
+  }
+
+  .game-app .game-result-over .game-result-content {
+    max-height: none;
+    overflow: visible;
+    padding-top: clamp(28px, 9dvh, 72px) !important;
+    padding-bottom: clamp(4px, 1dvh, 10px) !important;
+  }
+
+  .game-app .share-dd-canvas {
+    width: auto;
+    height: auto;
+    max-width: 100%;
+    max-height: min(52dvh, 65vw);
+    margin-inline: auto;
+    object-fit: contain;
+  }
+
+  .game-app .share-dd-actions {
+    gap: clamp(6px, 1.5vmin, 12px);
+    margin-top: clamp(8px, 2dvh, 16px);
+  }
+
+  .game-app .share-dd-actions button {
+    min-width: 44px;
+    min-height: 44px;
   }
 }
 

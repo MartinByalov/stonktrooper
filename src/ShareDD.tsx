@@ -6,7 +6,7 @@ import { resultUrl, socialLinks } from './shareLinks';
 import { SocialIcon } from './SocialIcon';
 import { copyText } from './copyText';
 
-export function ShareDD({ score, theme, demo = false, onClose }: { score: number; theme: 'light' | 'dark'; demo?: boolean; onClose: () => void }) {
+export function ShareDD({ score, theme, scoreTheme = theme, demo = false, onClose }: { score: number; theme: 'light' | 'dark'; scoreTheme?: 'light' | 'dark'; demo?: boolean; onClose: () => void }) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const dialog = useRef<HTMLDivElement>(null);
   const closeButton = useRef<HTMLButtonElement>(null);
@@ -38,7 +38,7 @@ export function ShareDD({ score, theme, demo = false, onClose }: { score: number
       if (cancelled) return;
       const ctx = canvas.current?.getContext('2d');
       if (!ctx || !canvas.current) { setError('Unable to generate the share image.'); return; }
-      drawShareCard(ctx, score, background);
+      drawShareCard(ctx, score, background, scoreTheme);
       canvas.current.toBlob(blob => {
         if (cancelled) return;
         if (blob) setFile(new File([blob], 'stonktrooper-dd.png', { type: 'image/png' }));
@@ -49,7 +49,7 @@ export function ShareDD({ score, theme, demo = false, onClose }: { score: number
     background.onerror = () => { if (!cancelled) setError('Unable to load the share image background.'); };
     background.src = shareCardBackground(theme, import.meta.env.BASE_URL);
     return () => { cancelled = true; };
-  }, [score, theme]);
+  }, [score, theme, scoreTheme]);
   const share = async () => {
     if (sharing) return;
     setError('');

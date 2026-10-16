@@ -1,4 +1,5 @@
 // Browser game module for CandleGame.
+import { drawPigeonStain } from './pigeonStain';
 import { briefcaseColors, drawCharacterHat, drawPickupAsset, drawSwanAsset, drawApeAsset, drawApeHead, drawHumanHead, drawFallingCharacter, APE_SCALE } from './assetRenderer';
 import React, { useEffect, useLayoutEffect, useRef, useCallback } from 'react';
 import { briefcaseArmPose } from './characterPose';
@@ -78,7 +79,7 @@ const CW = 9;    // Candlestick width in pixels
 // Mobile screens render the fixed 1920 × 840 game canvas at a very small
 // physical size. Dynamically enlarge the drawing so the runner, candles,
 // Live Feed and Pips remain readable without changing game physics.
-const mobileCanvasZoom = (): number => {
+export const mobileCanvasZoom = (): number => {
   if (typeof window === 'undefined' || !window.matchMedia('(max-width: 1024px) and (pointer: coarse)').matches) return 1;
   const shortSide = Math.min(window.innerWidth, window.innerHeight);
   const orientationBoost = window.innerWidth > window.innerHeight ? 0.16 : 0.12;
@@ -158,6 +159,23 @@ export const CandleGame: React.FC<CandleGameProps> = ({
   onHawkActivated
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const feedLayout = useRef({ mobile: false, fontSize: 11 });
+  const feedTextCache = useRef(new WeakMap<MarketNews, { message: string; font: string; width: number }>());
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const refresh = () => {
+      const mobile = window.matchMedia('(max-width: 1024px) and (pointer: coarse)').matches;
+      const bounds = canvas.getBoundingClientRect();
+      const scale = Math.max(0.01, Math.min(bounds.width / W, bounds.height / H) * mobileCanvasZoom());
+      feedLayout.current = { mobile, fontSize: mobile ? Math.min(32, Math.max(11, 14 / scale)) : 11 };
+    };
+    const observer = new ResizeObserver(refresh);
+    observer.observe(canvas);
+    window.addEventListener('resize', refresh);
+    refresh();
+    return () => { observer.disconnect(); window.removeEventListener('resize', refresh); };
+  }, []);
   const tickerHoverPausedRef = useRef(false);
   const aimRef = useRef<AimPoint | null>(null);
   const bossTrack = useRef<{ candles: Candle[]; length: number } | null>(null);
@@ -771,7 +789,11 @@ export const CandleGame: React.FC<CandleGameProps> = ({
       && (g.difficultyActive || (g.globalFrame - g.lastEncounterFrame >= 420 && g.animals.filter(a => !a.dead && !a.dying).length + g.swans.filter(s => !s.dead && !s.dying).length < 2));
     const markSpawn = () => { g.lastEncounterFrame = g.globalFrame; };
     for (const drop of g.pigeonDrops) {
-      const headY = g.p.y - Math.cos(g.printerTimer > 0 ? g.printerRotation : 0) * 56;
+      const hats = weaponHatCount(g.fedoraTimer, g.fedoraWindup, !!g.flyingFedora);
+      const headHeight = g.hawkTimer > 0 && g.p.rocketTimer <= 0
+        ? (hats > 0 ? 62 + (hats - 1) * 10 : 53)
+        : hats > 0 ? (g.apeTimer > 0 ? 57 : 65) + (hats - 1) * 11 : 57;
+      const headY = g.p.y - Math.cos(g.printerTimer > 0 ? g.printerRotation : 0) * headHeight;
       if (stepPigeonDrop(drop, g.p.x, headY)) {
         drop.life = 0; g.hatSoiled = true;
         sound.playPigeonSplat();
@@ -1702,7 +1724,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
 
     if (g.hawkTimer > 0 && g.p.rocketTimer <= 0) {
       drawDumpster(ctx, g.apes.length, g.p.ph, weaponHatCount(g.fedoraTimer, g.fedoraWindup, !!g.flyingFedora), theme === 'dark',
-        g.p.carry > 0 && g.p.shieldKind === 'diamond', g.hawkBags, g.globalFrame);
+        g.p.carry > 0 && g.p.shieldKind === 'diamond', g.hawkBags, g.globalFrame, g.hatSoiled);
       ctx.restore(); return;
     }
 
@@ -2015,29 +2037,6 @@ export const CandleGame: React.FC<CandleGameProps> = ({
       ctx.fillStyle = '#fb923c'; ctx.beginPath(); ctx.arc(-4, -2, 4, 0, Math.PI * 2); ctx.fill();
     }
     ctx.restore();
-    if (g.hatSoiled) {
-      // Make the hat hit read as a deliberate splat instead of a tiny dot.
-      // The outline keeps it visible against both the dark and light hat.
-      ctx.fillStyle = theme === 'dark' ? '#ffffff' : '#000000';
-      ctx.strokeStyle = theme === 'dark' ? 'rgba(0,0,0,0.55)' : 'rgba(255,255,255,0.55)';
-      ctx.lineWidth = 1.1;
-      if (g.apeTimer > 0) {
-        // Monkey mode uses a captain cap: in day mode the stain lands on the
-        // white crown, while at night it reads on the dark forward visor.
-        const stainX = theme === 'dark' ? 13 : 3;
-        const stainY = theme === 'dark' ? -47 : -57;
-        ctx.beginPath(); ctx.ellipse(stainX, stainY, 6.5, 2.8, -0.18, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-        ctx.beginPath(); ctx.ellipse(stainX + 2, stainY + 3.5, 2.8, 5.2, -0.3, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-        ctx.beginPath(); ctx.arc(stainX - 6, stainY + 1, 1.9, 0, Math.PI * 2); ctx.fill();
-        ctx.beginPath(); ctx.arc(stainX + 6, stainY + 1, 1.5, 0, Math.PI * 2); ctx.fill();
-      } else {
-        ctx.beginPath(); ctx.ellipse(0, -56, 7, 3.2, -0.2, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-        ctx.beginPath(); ctx.ellipse(3, -52.5, 3.2, 6, -0.3, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-        ctx.beginPath(); ctx.arc(-6, -55, 2.1, 0, Math.PI * 2); ctx.fill();
-        ctx.beginPath(); ctx.arc(7, -55, 1.7, 0, Math.PI * 2); ctx.fill();
-        ctx.beginPath(); ctx.arc(0, -48, 1.5, 0, Math.PI * 2); ctx.fill();
-      }
-    }
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(-3, -35, 8, 2);
 
@@ -2047,6 +2046,13 @@ export const CandleGame: React.FC<CandleGameProps> = ({
       // Replace the monkey's captain cap with the weapon fedora at head level.
       ctx.save(); ctx.translate(3, (g.apeTimer > 0 ? -42 : -50) - i * 11); ctx.scale(0.8, 0.8);
       drawCharacterHat(ctx, false, false, theme === 'dark'); ctx.restore();
+    }
+
+    if (g.hatSoiled) {
+      const hats = weaponHatCount(g.fedoraTimer, g.fedoraWindup, !!g.flyingFedora);
+      const captain = g.apeTimer > 0 && hats === 0;
+      const stainY = hats > 0 ? (g.apeTimer > 0 ? -57 : -65) - (hats - 1) * 11 : -57;
+      drawPigeonStain(ctx, captain ? 6 : 3, stainY, !captain && theme === 'light');
     }
 
     // --- CASE A: DIAMOND HANDS — HOLDING DIAMOND PROUDLY OVERHEAD WITH RAISED ARMS ---
@@ -2244,6 +2250,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
   const drawTopTickerTape = useCallback((ctx: CanvasRenderingContext2D) => {
     const g = gameRef.current;
     const tapeH = TAPE_HEIGHT;
+    const { mobile, fontSize: feedFontSize } = feedLayout.current;
 
     ctx.save();
     ctx.textBaseline = 'alphabetic';
@@ -2272,11 +2279,11 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     ctx.clip();
 
 
-    ctx.font = 'bold 11px monospace';
+    ctx.font = `bold ${feedFontSize}px monospace`;
     if (g.currentState === 'boxing' || g.printerTimer > 0) {
       ctx.textAlign = 'center';
       ctx.fillStyle = theme === 'light' ? '#08795c' : '#55d6ae';
-      ctx.font = 'bold 13px monospace';
+      ctx.font = `bold ${mobile ? feedFontSize : 13}px monospace`;
       if (g.currentState === 'boxing') {
         ctx.fillStyle = '#ffd230';
         writeCentered('Jeromé', (W) / 2);
@@ -2302,8 +2309,14 @@ export const CandleGame: React.FC<CandleGameProps> = ({
         g.tickerQueue.push({ news: getTickerNews(g.tickerQueue.at(-1)?.news.headline), width: 0 });
       }
       const item = g.tickerQueue[itemIndex++];
-      const message = `${item.news.source}: ${formatFeedHeadline(item.news.headline)}`.replace(/[\p{Extended_Pictographic}\uFE0F\u200D]/gu, '');
-      if (item.width === 0) item.width = ctx.measureText(message).width + 48;
+      let cached = feedTextCache.current.get(item.news);
+      if (!cached || cached.font !== ctx.font) {
+        const message = cached?.message ?? `${item.news.source}: ${formatFeedHeadline(item.news.headline)}`.replace(/[\p{Extended_Pictographic}\uFE0F\u200D]/gu, '');
+        cached = { message, font: ctx.font, width: ctx.measureText(message).width + 48 };
+        feedTextCache.current.set(item.news, cached);
+      }
+      const message = cached.message;
+      item.width = cached.width;
       ctx.fillStyle = item.news.sentiment === 'bearish' ? (theme === 'light' ? '#b91c1c' : '#f87171') : item.news.sentiment === 'bullish' ? (theme === 'light' ? '#15803d' : '#4ade80') : (theme === 'light' ? '#0369a1' : '#38bdf8');
       writeCentered(message, tickerX);
       tickerX += item.width;
@@ -2628,7 +2641,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
         ctx.fillStyle = '#ef4444'; ctx.font = 'bold 25px sans-serif';
         ctx.fillText('♥'.repeat(encounter.player.lives) + '♡'.repeat(3 - encounter.player.lives), 14, TAPE_HEIGHT + 20);
       } else {
-        const label = 'SCORE: ';
+        const label = 'PIPS: ';
         const value = totalScoreVal.toLocaleString();
         const text = `${label}${value}`;
         const padding = 14;
@@ -2644,9 +2657,9 @@ export const CandleGame: React.FC<CandleGameProps> = ({
         const metrics = ctx.measureText(text);
         const x = padding + metrics.actualBoundingBoxLeft;
         const y = TAPE_HEIGHT + padding + metrics.actualBoundingBoxAscent;
-        ctx.fillStyle = '#08795c';
+        ctx.fillStyle = theme === 'light' ? '#08795c' : '#54d3ac';
         ctx.fillText(label, x, y);
-        ctx.fillStyle = '#55d6ae';
+        ctx.fillStyle = theme === 'light' ? '#08795c' : '#54d3ac';
         ctx.fillText(value, x + ctx.measureText(label).width, y);
         ctx.restore();
       }

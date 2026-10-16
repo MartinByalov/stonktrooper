@@ -1,10 +1,11 @@
 import { MechanicsGuide } from './MechanicsGuide';
+import { useMobileDialogFit } from './useMobileDialogFit';
 import { MenuHero } from './MenuHero';
 import { BoxingGame } from './BoxingGame';
 import type { BossArena } from './boxingRules';
 import { useState, useEffect, useCallback, useRef, type MouseEvent as ReactMouseEvent, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { GameState } from './types';
-import { CandleGame } from './CandleGame';
+import { CandleGame, mobileCanvasZoom } from './CandleGame';
 import { AssetPreview } from './AssetPreview';
 import { sound } from './audio';
 import { SoundMenu } from './SoundMenu';
@@ -31,6 +32,31 @@ export default function App() {
   const [shareDDOpen, setShareDDOpen] = useState(false);
   const [siteSection, setSiteSection] = useState<SiteSection | null>(null);
   const appRef = useRef<HTMLDivElement>(null);
+  useMobileDialogFit(appRef);
+  useEffect(() => {
+    const app = appRef.current;
+    const arena = app?.querySelector('.game-arena');
+    if (!app || !arena) return;
+    const updateFeedBoundary = () => {
+      const canvas = app.querySelector('.game-stage > canvas');
+      if (!canvas) return;
+      const rect = canvas.getBoundingClientRect();
+      const feedHeight = rect.height * 44 / 840 * mobileCanvasZoom();
+      app.style.setProperty('--live-feed-bottom', `${rect.top + feedHeight}px`);
+      app.style.setProperty('--live-feed-height', `${feedHeight}px`);
+    };
+    const observer = new ResizeObserver(updateFeedBoundary);
+    observer.observe(arena);
+    observer.observe(app);
+    window.addEventListener('resize', updateFeedBoundary);
+    window.addEventListener('scroll', updateFeedBoundary, true);
+    updateFeedBoundary();
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', updateFeedBoundary);
+      window.removeEventListener('scroll', updateFeedBoundary, true);
+    };
+  }, []);
   const previousMobilePortrait = useRef<boolean | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [fullscreenError, setFullscreenError] = useState('');
@@ -89,7 +115,7 @@ export default function App() {
     setState(nextState);
   }, []);
 
-  const [stats, setStats] = useState({
+  const stats = useRef({
     totalScore: 0,
     score: 0,
     coins: 0,
@@ -163,8 +189,8 @@ export default function App() {
     };
   }, []);
 
-  const handleScoreUpdate = useCallback((newStats: typeof stats) => {
-    setStats(newStats);
+  const handleScoreUpdate = useCallback((newStats: typeof stats.current) => {
+    stats.current = newStats;
   }, []);
 
   const handleGameOver = useCallback((_cause: string, finalScore: number) => {
@@ -451,7 +477,7 @@ export default function App() {
                   {state === 'over' && <><LiquidatedBackdrop day={theme === 'light'} /><div className="absolute inset-0 bg-slate-950/15 pointer-events-none" aria-hidden="true" /></>}
                   <div className={`relative z-10 ${state === 'over' ? 'game-result-content pt-28 pb-4' : ''}`}>
 
-                    {state === 'paused' && <h2 className="font-black tracking-tight mb-2 font-mono-term text-3xl sm:text-4xl text-[#08795c]">Margin Call</h2>}
+                    {state === 'paused' && <h2 className="font-black tracking-tight mb-2 font-mono-term text-3xl sm:text-4xl" style={{ color: theme === 'dark' ? '#54d3ac' : '#08795c' }}>Margin Call</h2>}
 
 
                     {/* Score summary on game over */}
@@ -460,7 +486,7 @@ export default function App() {
                         <h2 className="font-black text-lg sm:text-xl text-red-400 mb-2">LIQUIDATED</h2>
                         <div>
                           <span className="text-xl sm:text-2xl font-bold text-[var(--text)] block">All-time High</span>
-                          <strong className={`text-3xl sm:text-4xl block mt-2 ${theme === 'light' ? 'text-[#08795c]' : 'text-[#55d6ae]'}`}>{Math.round(currentResult).toLocaleString('en-US', { maximumFractionDigits: 0 })}</strong>
+                          <strong className="text-3xl sm:text-4xl block mt-2" style={{ color: theme === 'dark' ? '#54d3ac' : '#08795c' }}>{Math.round(currentResult).toLocaleString('en-US', { maximumFractionDigits: 0 })}</strong>
                         </div>
                       </div>
                     )}
@@ -507,7 +533,7 @@ export default function App() {
             </div>
           )}
         </section>
-        {shareDDOpen && state === 'over' && <ShareDD score={currentResult} onClose={() => setShareDDOpen(false)} theme={'dark'} />}
+        {shareDDOpen && state === 'over' && <ShareDD score={currentResult} onClose={() => setShareDDOpen(false)} theme={'dark'} scoreTheme={theme} />}
 
         {mobileGuideOpen && <div className="mobile-how-to-dialog fixed inset-0 z-50 flex items-center justify-center p-3" onPointerDown={e => e.stopPropagation()}>
           <div role="dialog" aria-modal="true" aria-labelledby="mobile-guide-title" className="mobile-how-to-panel w-full h-full overflow-hidden bg-[var(--panel)] border border-[var(--line)] rounded-xl p-3">

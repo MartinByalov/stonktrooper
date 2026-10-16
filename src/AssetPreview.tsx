@@ -95,8 +95,7 @@ export function AssetPreview({ asset, compact = false, theme = 'light' }: { asse
       ctx.fillRect(-4, 2, 8, 10);
     } else {
       ctx.scale(2.4, 2.4);
-      // Mirror only the guide's Fedora around its vertical centreline.
-      if (asset === 'fedora') ctx.scale(-1, 1);
+      // Use the same orientation and theme-aware pickup renderer as the chart.
       drawPickupAsset(ctx, { type: asset, x: 0, y: 0, taken: false }, 0, 0, 0, theme === 'dark');
     }
     ctx.restore();

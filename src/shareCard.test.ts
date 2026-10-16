@@ -23,10 +23,12 @@ test('share card draws the provided background and centers the score inside the 
   assert(labels.every(label => label.x === 912 && label.y >= 528 && label.y <= 760));
   assert.equal(labels[0].y, 580);
   assert.equal(labels[1].y, 650);
-  assert.equal(labels[0].font, 'bold 28px Georgia, serif');
-  assert.equal(labels[1].maxWidth, 390);
-  assert.equal(labels[1].font, 'bold 86px sans-serif');
-  assert.equal(labels[1].fillStyle, '#08795c');
+  assert.equal(labels[0].font, '700 28px "Space Grotesk", sans-serif');
+  assert.equal(labels[1].maxWidth, undefined);
+  assert.equal(labels[1].font, '700 86px "Space Grotesk", sans-serif');
+  assert.equal(labels[1].fillStyle, '#54d3ac');
+  drawShareCard(ctx, 12345.6, background, 'dark');
+  assert.equal(labels[3].fillStyle, '#54d3ac');
   assert.equal(saves, restores);
   assert.equal(formatShareScore(NaN), '0');
 });
@@ -37,7 +39,7 @@ test('long scores fit inside a clipped case, and extreme scores remain readable'
   let clipCount = 0;
   const state = { font: '' };
   const ctx = new Proxy(state, {
-    get: (target, key) => key === 'measureText' ? (text: string) => ({ width: text.length * parseFloat(target.font.slice(5)) * 0.6 })
+    get: (target, key) => key === 'measureText' ? (text: string) => ({ width: text.length * parseFloat(target.font.slice(4)) * 0.6 })
       : key === 'fillText' ? (text: string, _x: number, _y: number, maxWidth?: number) => { labels.push({ text, font: target.font, maxWidth }); }
       : key === 'rect' ? (x: number, y: number, width: number, height: number) => { clips.push({ x, y, width, height }); }
       : key === 'clip' ? () => { clipCount++; }
@@ -47,26 +49,26 @@ test('long scores fit inside a clipped case, and extreme scores remain readable'
   const background = {} as HTMLImageElement;
   drawShareCard(ctx, 123456789, background);
   assert.equal(labels[1].text, '123,456,789');
-  assert(parseFloat(labels[1].font.slice(5)) < 86);
-  assert(labels[1].text.length * parseFloat(labels[1].font.slice(5)) * 0.6 <= 390);
+  assert(parseFloat(labels[1].font.slice(4)) < 86);
+  assert(labels[1].text.length * parseFloat(labels[1].font.slice(4)) * 0.6 <= 390);
 
   drawShareCard(ctx, Number.MAX_SAFE_INTEGER, background);
   assert.equal(labels[3].text, '9,007,199,254,740,991');
   drawShareCard(ctx, 1e100, background);
   assert.equal(labels[5].text, '1.000e+100');
-  assert(parseFloat(labels[5].font.slice(5)) >= 32);
-  assert(clips.every(({ x, y, width, height }) => x >= 675 && x + width <= 1150 && y >= 528 && y + height <= 760));
-  assert.equal(clipCount, 3);
-  assert(labels.filter(label => label.maxWidth === 390).length === 3);
+  assert(parseFloat(labels[5].font.slice(4)) >= 32);
+  assert.equal(clips.length, 0);
+  assert.equal(clipCount, 0);
+  assert(labels.every(label => label.maxWidth === undefined));
 });
 
 test('share card uses theme-specific backgrounds and preview/export use the same canvas', () => {
   assert.equal(shareCardBackground('light', '/stonks/'), '/stonks/images/score-back.png');
   assert.equal(shareCardBackground('dark', '/stonks/'), '/stonks/images/score-back-inverted.png');
   const component = readFileSync(new URL('./ShareDD.tsx', import.meta.url), 'utf8');
-  assert.match(component, /drawShareCard\(ctx, score, background\)/);
+  assert.match(component, /drawShareCard\(ctx, score, background, scoreTheme\)/);
   assert.match(component, /canvas\.current\.toBlob\(/);
-  assert.match(component, /\[score, theme\]/);
+  assert.match(component, /\[score, theme, scoreTheme\]/);
   assert.match(component, /const url = resultUrl\(score\)/);
   assert.match(component, /await copyText\(url, navigator, document, dialog.current \?\? document.body\);\s*setCopied\(true\)/);
   assert.doesNotMatch(component, /<span aria-live="polite">/);

@@ -1,8 +1,9 @@
 // Browser game module for dumpsterRenderer.
 import { drawHumanHead, drawApeHead, drawCharacterHat, drawPickupAsset } from './assetRenderer';
+import { drawPigeonStain } from './pigeonStain';
 
 // Feet at origin; passengers are drawn before the near wall to hide their bodies.
-export function drawDumpster(ctx: CanvasRenderingContext2D, monkeys: number, phase: number, fedoraHats = 0, darkMode = false, diamondShield = false, bags = 0, frame = 0): void {
+export function drawDumpster(ctx: CanvasRenderingContext2D, monkeys: number, phase: number, fedoraHats = 0, darkMode = false, diamondShield = false, bags = 0, frame = 0, hatSoiled = false): void {
   ctx.save();
   const rear = -8 - monkeys * 22;
   if (diamondShield) {
@@ -30,6 +31,9 @@ export function drawDumpster(ctx: CanvasRenderingContext2D, monkeys: number, pha
         ctx.save(); ctx.translate(-2, -5 - hat * 10); ctx.scale(0.65, 0.65);
         drawCharacterHat(ctx, false, false, darkMode);
         ctx.restore();
+      }
+      if (hatSoiled) {
+        drawPigeonStain(ctx, fedoraHats > 0 ? -2 : 1, fedoraHats > 0 ? -17 - (fedoraHats - 1) * 10 : -8, fedoraHats > 0 && !darkMode);
       }
     }
     ctx.restore();

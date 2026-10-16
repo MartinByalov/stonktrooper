@@ -10,9 +10,15 @@ test('guide descriptions preserve explicit newlines', () => {
   assert.match(guide, /<p className="m-0 whitespace-pre-line">/);
 });
 
-test('Fedora guide preview mirrors horizontally without flipping other assets', () => {
+test('Fedora guide preview uses the chart pickup orientation', () => {
   const preview = readFileSync(new URL('./AssetPreview.tsx', import.meta.url), 'utf8');
-  assert.match(preview, /if \(asset === 'fedora'\) ctx\.scale\(-1, 1\);\s*drawPickupAsset/);
+  assert.doesNotMatch(preview, /if \(asset === 'fedora'\) ctx\.scale\(-1, 1\)/);
+});
+
+test('guide titles occupy a separate top row above descriptions', () => {
+  const guide = readFileSync(new URL('./MechanicsGuide.tsx', import.meta.url), 'utf8');
+  assert.match(guide, /<h3 className="[^"]*shrink-0 min-h-\[3em\]"/);
+  assert.doesNotMatch(guide, /flex-col items-center justify-center text-center/);
 });
 
 test('Shoot guide shows theme-aware fedora above briefcase and explains current hat behavior', () => {
