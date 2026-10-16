@@ -47,3 +47,23 @@ test('Hawk bags hang from near wall hooks and scale with the collected count', (
   assert.match(game, /g\.hawkTimer = 600;\s*g\.hawkBags = 0;/);
   assert.match(game, /if \(g\.hawkTimer === 0\) \{\s*g\.hawkBags = 0;/);
 });
+
+test('Hawk throws one carried bag toward aim and removes it from the dumpster', () => {
+  const game = readFileSync(new URL('./CandleGame.tsx', import.meta.url), 'utf8');
+  assert.match(game, /if \(g\.hawkTimer > 0\) \{\s*if \(g\.p\.carry <= 0 \|\| g\.p\.shieldKind !== 'bag' \|\| g\.hawkBags <= 0\) return;/);
+  assert.match(game, /g\.cases\.push\(\{ x, y, vx: velocity\.x, vy: velocity\.y, life: 70, angle: 0, kind: 'bag' \}\);/);
+  assert.match(game, /g\.hawkBags--;/);
+  assert.match(game, /g\.p\.carry = 0;\s*g\.p\.shieldKind = undefined;/);
+  assert.match(game, /g\.bagThrowAnimTimer = 16;/);
+  assert.match(game, /if \(bCase\.kind === 'bag'\)/);
+});
+
+test('Hawk throws one carried bag toward aim and removes it from the dumpster', () => {
+  const game = readFileSync(new URL('./CandleGame.tsx', import.meta.url), 'utf8');
+  assert.match(game, /if \(g\.hawkTimer > 0\) \{\s*if \(g\.p\.carry <= 0 \|\| g\.p\.shieldKind !== 'bag' \|\| g\.hawkBags <= 0\) return;/);
+  assert.match(game, /g\.cases\.push\(\{ x, y, vx: velocity\.x, vy: velocity\.y, life: 70, angle: 0, kind: 'bag' \}\);/);
+  assert.match(game, /g\.hawkBags--;/);
+  assert.match(game, /g\.p\.carry = 0;\s*g\.p\.shieldKind = undefined;/);
+  assert.match(game, /g\.bagThrowAnimTimer = 16;/);
+  assert.match(game, /if \(bCase\.kind === 'bag'\)/);
+});

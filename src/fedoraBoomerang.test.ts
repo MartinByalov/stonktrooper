@@ -59,7 +59,7 @@ test('fedora pickup rotates in the opposite direction without changing the flyin
   assert.match(game, /drawSpinningFedora\(ctx, g\.flyingFedora\.angle, theme === 'dark'\)/);
 });
 
-test('3D rotation moves ribbon and shading but keeps full brim width at quarter turns', () => {
+test('3D rotation moves ribbon and shading while keeping the compact brim visible at quarter turns', () => {
   const draw = (angle: number) => {
     const paths: { color: string; points: number[][] }[] = [];
     let color = '', points: number[][] = [];
@@ -76,13 +76,21 @@ test('3D rotation moves ribbon and shading but keeps full brim width at quarter 
     return { width: Math.max(...xs) - Math.min(...xs), paths };
   };
   const front = draw(0), side = draw(-Math.PI / 2), back = draw(Math.PI / 2);
-  assert(front.width > 35 && side.width > 25 && back.width > 25);
+  assert(front.width > 30 && side.width > 22 && back.width > 22);
   assert.notDeepEqual(front.paths, side.paths);
   assert.notDeepEqual(side.paths, back.paths);
   assert(side.paths.filter(path => path.color === '#ffffff').length > back.paths.filter(path => path.color === '#ffffff').length);
 });
 
-test('spinning fedora has a shallow, level crown beneath its tilt at every rotation', () => {
+test('spinning fedora uses a deeper 3D brim than its crown', () => {
+  const renderer = readFileSync(new URL('./fedoraRenderer.ts', import.meta.url), 'utf8');
+  assert.match(renderer, /ring\(i, 18\.5, 14\.5, 4\)/);
+  assert.match(renderer, /ring\(i \+ 1, 10\.3, 9\.2, 3\)/);
+  assert.match(renderer, /const outer = ring\(i \+ 0\.5, 18\.5, 14\.5, 4\)/);
+  assert.match(renderer, /\* 0\.48/);
+});
+
+test('spinning fedora has a level, visibly deep crown beneath its tilt at every rotation', () => {
   for (const darkMode of [false, true]) for (const angle of [0, -Math.PI / 2, Math.PI / 2]) {
     const paths: { color: string; points: number[][] }[] = [];
     let color = '', points: number[][] = [];
@@ -98,9 +106,9 @@ test('spinning fedora has a shallow, level crown beneath its tilt at every rotat
     assert(top);
     top.points.forEach(([x, y], i) => {
       const a = i * Math.PI * 2 / 32;
-      const depth = -Math.cos(a) * 8 * Math.sin(angle) + Math.sin(a) * 5.5 * Math.cos(angle);
+      const depth = -Math.cos(a) * 8.5 * Math.sin(angle) + Math.sin(a) * 7.2 * Math.cos(angle);
       const untiltedY = -x * Math.sin(-0.12) + y * Math.cos(-0.12);
-      assert(Math.abs(untiltedY - depth * 0.34 + 10) < 1e-9);
+      assert(Math.abs(untiltedY - depth * 0.48 + 8) < 1e-9);
     });
   }
 });
@@ -147,7 +155,7 @@ test('Hawk clown wears collected fedora as a visual effect without dressing the 
   }
   const game = readFileSync(new URL('./CandleGame.tsx', import.meta.url), 'utf8');
   assert.match(game, /if \(g\.hawkTimer > 0 && g\.p\.rocketTimer <= 0\) \{\s*drawDumpster\(ctx, g\.apes\.length, g\.p\.ph, weaponHatCount\(g\.fedoraTimer, g\.fedoraWindup, !!g\.flyingFedora\), theme === 'dark',/);
-  assert.match(game, /if \(g\.currentState !== 'play' \|\| g\.falling \|\| g\.hawkTimer > 0 [^\n]*\) return;/);
+  assert.match(game, /if \(g\.currentState !== 'play' \|\| g\.falling \|\| g\.caseCooldown > 0 [^\n]*\) return;/);
 });
 
 test('white and black spinning fedoras each use the opposite solid band color', () => {
@@ -164,16 +172,17 @@ test('white and black spinning fedoras each use the opposite solid band color', 
   }
 });
 
-test('throwing arm stays low while running and swings sideways from behind to forward', () => {
+test('throwing arm takes the fedora from the head, lowers it to the belly and throws forward', () => {
   const idle = fedoraArmPose(0);
   const start = fedoraArmPose(FEDORA_WINDUP);
   const middle = fedoraArmPose(FEDORA_WINDUP / 2);
   const release = fedoraArmPose(1);
   assert(idle.handY > -31 && idle.elbowY > -31);
-  assert(start.handX < idle.handX);
-  assert(middle.handX > start.handX && middle.handX < release.handX);
+  assert(start.handY < -40 && start.elbowY < -31);
+  assert(middle.handY > start.handY && middle.handY < -12);
+  assert(middle.elbowY > start.elbowY);
   assert(release.handX > 25);
-  assert([start, middle, release].every(pose => pose.handY > -31 && pose.elbowY > -31));
+  assert(release.handY > -20 && release.elbowY > -25);
 });
 
 test('weapon fedora leaves the head during windup and flight and returns when caught', () => {

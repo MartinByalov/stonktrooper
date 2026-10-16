@@ -47,15 +47,25 @@ export function separateFedoraMount(enemy: Animal): Animal {
   return rider;
 }
 
-// A low, sideways skipping-stone motion rather than an overhead throw.
+// Take the fedora from the head, lower it to the belly, then throw it forward.
 export function fedoraArmPose(windup: number): { elbowX: number; elbowY: number; handX: number; handY: number } {
   if (windup <= 0) return { elbowX: -4, elbowY: -23, handX: -9, handY: -12 };
   const progress = 1 - windup / FEDORA_WINDUP;
+  if (progress < 0.35) {
+    const grab = progress / 0.35;
+    return {
+      elbowX: 4 - 4 * grab,
+      elbowY: -40 + 20 * grab,
+      handX: 5 - 9 * grab,
+      handY: -48 + 28 * grab,
+    };
+  }
+  const throwProgress = (progress - 0.35) / 0.65;
   return {
-    elbowX: -10 + 28 * progress,
-    elbowY: -22 - 4 * Math.sin(progress * Math.PI),
-    handX: -17 + 50 * progress,
-    handY: -14 - 11 * Math.sin(progress * Math.PI),
+    elbowX: -4 + 16 * throwProgress,
+    elbowY: -20 + 2 * throwProgress,
+    handX: -4 + 42 * throwProgress,
+    handY: -20 + 8 * throwProgress,
   };
 }
 

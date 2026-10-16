@@ -19,6 +19,12 @@ test('footer describes the free project and header opens About before the theme 
   assert.doesNotMatch(app, /<Info/);
 });
 
+test('Margin Call uses the fixed dark green game color', () => {
+  const app = readFileSync(new URL('./App.tsx', import.meta.url), 'utf8');
+  assert.match(app, /Margin Call<\/h2>/);
+  assert.match(app, /text-\[#08795c\]/);
+});
+
 test('theme defaults to dark while preserving an explicitly saved light preference', () => {
   const app = readFileSync(new URL('./App.tsx', import.meta.url), 'utf8');
   assert.match(app, /return localStorage\.getItem\('cr_theme'\) === 'light' \? 'light' : 'dark';\s*\} catch \{\s*return 'dark';/);
@@ -129,6 +135,7 @@ test('night mode uses a navy header/footer and black popup panels', () => {
   assert.match(css, /html\[data-theme="dark"\] \.game-app \.header-controls button\s*\{[\s\S]*?color: #fff;[\s\S]*?border-color: #fff;/);
   assert.match(css, /html\[data-theme="dark"\] \.game-app \.header-controls button svg\s*\{\s*color: #fff;/);
   assert.match(css, /html\[data-theme="dark"\] \.game-result:not\(\.game-result-over\) \.how-to-play-action\s*\{[\s\S]*?color: #000000 !important;[\s\S]*?background: #ffffff !important;[\s\S]*?border-color: #ffffff !important;/);
+  assert.match(css, /html\[data-theme="dark"\] \.game-result-over \.liquidated-how-to-play\s*\{\s*border-color: #ffffff !important;/);
 });
 
 test('Live Feed and footer use the requested day/night colors', () => {
@@ -142,8 +149,14 @@ test('How to Play description cards use the requested day/night backgrounds', ()
   const css = readFileSync(new URL('./index.css', import.meta.url), 'utf8');
   assert.match(css, /html\[data-theme="dark"\] \.mechanics-guide > div\s*\{\s*background: #131c29 !important;/);
   assert.match(css, /html\[data-theme="dark"\] \.mechanics-guide \.mechanics-guide-visuals\s*\{\s*background: #131c29 !important;/);
-  assert.match(css, /html\[data-theme="light"\] \.mechanics-guide > div\s*\{\s*background: #eaf0f5 !important;/);
-  assert.match(css, /html\[data-theme="light"\] \.mechanics-guide \.mechanics-guide-visuals\s*\{\s*background: #eaf0f5 !important;/);
+  assert.match(css, /html\[data-theme="light"\] \.mechanics-guide > div\s*\{\s*background: #ffffff !important;/);
+  assert.match(css, /html\[data-theme="light"\] \.mechanics-guide \.mechanics-guide-visuals\s*\{\s*background: #ffffff !important;/);
+});
+
+test('How to Play dialog headers do not render the extra separator line', () => {
+  const app = readFileSync(new URL('./App.tsx', import.meta.url), 'utf8');
+  assert.match(app, /className="relative flex items-center justify-center pb-2 mb-3 min-h-10 px-10"/);
+  assert.doesNotMatch(app, /className="relative flex items-center justify-center pb-2 border-b border-\[var\(--line\)\] mb-3 min-h-10 px-10"/);
 });
 
 test('desktop and mobile menu controls share one fixed size', () => {
@@ -214,7 +227,8 @@ test('mobile footer uses the requested portrait and landscape arrangements', () 
   assert.match(css, /\.game-app \.site-footer > nav\s*\{[\s\S]*?grid-column: 2;[\s\S]*?grid-row: 1;[\s\S]*?justify-self: end;[\s\S]*?flex-wrap: nowrap;/);
   assert.match(css, /\.game-app \.site-footer > \.site-footer-copyright\s*\{[\s\S]*?grid-column: 1;[\s\S]*?grid-row: 1;[\s\S]*?justify-self: start;/);
   assert.match(css, /@media \(max-width: 1024px\) and \(orientation: portrait\) and \(pointer: coarse\) \{[\s\S]*?\.game-app \.site-footer\s*\{[\s\S]*?display: flex;[\s\S]*?flex-direction: column;[\s\S]*?align-items: center;[\s\S]*?justify-content: center;/);
-  assert.match(css, /\.game-app \.site-footer > \.site-footer-copyright\s*\{[\s\S]*?order: 1;/);
+  assert.match(css, /\.game-app \.site-footer > \.site-footer-copyright\s*\{[\s\S]*?order: 2;/);
+  assert.match(css, /\.game-app \.site-footer > nav\s*\{[\s\S]*?order: 1;/);
   assert.match(css, /\.game-app \.site-footer > nav,[\s\S]*?\.game-app \.site-footer > \.site-footer-copyright\s*\{[\s\S]*?width: auto;[\s\S]*?align-self: center;[\s\S]*?text-align: center;/);
 });
 
@@ -243,7 +257,8 @@ test('mobile landscape retries fullscreen after rotation and keeps guide/result 
   assert.match(css, /\.game-over-overlay\s*\{[\s\S]*?align-items: center;[\s\S]*?justify-content: center;/);
   assert.match(css, /\.game-result-over\s*\{[\s\S]*?max-height: calc\(100% - env\(safe-area-inset-top\)/);
   assert.match(css, /\.game-result-over \.game-result-content\s*\{[\s\S]*?overflow-y: auto;/);
-  assert.doesNotMatch(css, /\.game-result-over\s*\{[\s\S]*?max-height: none;[\s\S]*?overflow: visible !important;/);
+  assert.match(css, /@media \(max-width: 1024px\) and \(pointer: coarse\)\s*\{[\s\S]*?\.game-app:fullscreen footer \{ display: none; \}/);
+  assert.match(css, /@media \(max-width: 1024px\) and \(orientation: landscape\) and \(pointer: coarse\)[\s\S]*?\.game-over-overlay\s*\{[\s\S]*?overflow-y: auto;/);
 });
 
 test('How to Play keeps the hero and controls inside the panel while descriptions scroll', () => {

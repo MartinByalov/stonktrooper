@@ -69,13 +69,13 @@ test('bull and bear sit low on the whale with short bent legs', () => {
   }
 });
 
-test('direct bird collisions kill even when diamond protection is active', () => {
+test('direct bird collisions use the diamond shield before killing the player', () => {
   const game = readFileSync(new URL('./CandleGame.tsx', import.meta.url), 'utf8');
   const collisionStart = game.indexOf('for (const s of g.swans) {', game.indexOf('// Collisions with Living Enemies'));
   const collisionEnd = game.indexOf('for (const a of g.animals) {', collisionStart);
   assert(collisionStart >= 0 && collisionEnd > collisionStart);
   const birdCollision = game.slice(collisionStart, collisionEnd);
-  assert.match(birdCollision, /if \(!s\.dead && !s\.dying && Math\.abs\(s\.x - g\.p\.x\) < 18[^]*?die\('Black Swan collision:/);
-  assert.doesNotMatch(birdCollision, /absorbEnemyHit|shieldPassed|g\.p\.carry|g\.p\.shieldKind/);
+  assert.match(birdCollision, /if \(!s\.dead && !s\.dying && lethalBirdContact\(s, g\.p\)\)/);
+  assert.match(birdCollision, /absorbEnemyHit\(g\.p, s\)/);
   assert.match(game.slice(collisionEnd), /absorbEnemyHit\(g\.p, a\)/);
 });

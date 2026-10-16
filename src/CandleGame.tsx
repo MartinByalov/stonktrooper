@@ -81,9 +81,14 @@ const CW = 9;    // Candlestick width in pixels
 const mobileCanvasZoom = (): number => {
   if (typeof window === 'undefined' || !window.matchMedia('(max-width: 1024px) and (pointer: coarse)').matches) return 1;
   const shortSide = Math.min(window.innerWidth, window.innerHeight);
-  const orientationBoost = window.innerWidth > window.innerHeight ? 0.1 : 0.11;
-  const sizeBoost = Math.min(0.12, 48 / Math.max(240, shortSide));
-  return Math.min(1.24, orientationBoost + 1 + sizeBoost);
+  const orientationBoost = window.innerWidth > window.innerHeight ? 0.16 : 0.12;
+  const sizeBoost = Math.min(0.14, 56 / Math.max(240, shortSide));
+  return Math.min(1.34, orientationBoost + 1 + sizeBoost);
+};
+
+const mobileHeroRenderOffset = (): number => {
+  if (typeof window === 'undefined' || !window.matchMedia('(max-width: 1024px) and (pointer: coarse)').matches) return 0;
+  return window.innerWidth > window.innerHeight ? 34 : 24;
 };
 
 // High-DPI canvases are disproportionately expensive on phones. Keep desktop
@@ -197,6 +202,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     fedoraTimer: 0,
     fedoraCount: 0,
     fedoraWindup: 0,
+    bagThrowAnimTimer: 0,
     flyingFedora: null as FlyingFedora | null,
     nextWhale: 200,
     coins: 0,
@@ -614,7 +620,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     g.hawkBudget = hawkDropBudget(g.p.y, MARKET_BASELINE + 1600);
     g.hawkTimer = 600;
     g.hawkBags = 0;
-    g.cases = []; g.throwAnimTimer = 0;
+    g.cases = []; g.throwAnimTimer = 0; g.bagThrowAnimTimer = 0;
   }, []);
 
   const activatePrinter = useCallback(() => {
@@ -654,7 +660,24 @@ export const CandleGame: React.FC<CandleGameProps> = ({
   // Manual mouse aim; projectiles retain their ballistic trajectory and spinning.
   const throwBriefcase = useCallback(() => {
     const g = gameRef.current;
-    if (g.currentState !== 'play' || g.falling || g.hawkTimer > 0 || g.caseCooldown > 0 || g.flyingFedora || (g.p && g.p.carry > 0) || !g.p) return;
+    if (g.currentState !== 'play' || g.falling || g.caseCooldown > 0 || g.flyingFedora || !g.p) return;
+
+    if (g.hawkTimer > 0) {
+      if (g.p.carry <= 0 || g.p.shieldKind !== 'bag' || g.hawkBags <= 0) return;
+      const x = g.p.x + 18;
+      const y = g.p.y - 20;
+      const velocity = aimedVelocity({ x, y }, aimRef.current ?? { x: x + 100, y }, 11.5 + speedAt(g.score));
+      g.cases.push({ x, y, vx: velocity.x, vy: velocity.y, life: 70, angle: 0, kind: 'bag' });
+      g.hawkBags--;
+      g.p.carry = 0;
+      g.p.shieldKind = undefined;
+      g.bagThrowAnimTimer = 16;
+      g.caseCooldown = 45;
+      sound.playBag();
+      return;
+    }
+
+    if (g.p.carry > 0) return;
 
     if (g.fedoraTimer > 0 && g.fedoraCount > 0) {
       if (g.flyingFedora || g.fedoraWindup > 0) return;
@@ -800,7 +823,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
           g.hawkBudget = hawkDropBudget(g.p.y, MARKET_BASELINE + 1600);
           g.hawkTimer = 600;
           g.hawkBags = 0;
-          g.cases = []; g.throwAnimTimer = 0;
+          g.cases = []; g.throwAnimTimer = 0; g.bagThrowAnimTimer = 0;
         }
       }
     }
@@ -816,6 +839,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
       }
     }
     if (g.throwAnimTimer > 0) g.throwAnimTimer--;
+    if (g.bagThrowAnimTimer > 0) g.bagThrowAnimTimer--;
 
     // Active Diamond Hands decrement
     if (g.p.carry > 0) {
@@ -1201,14 +1225,6 @@ export const CandleGame: React.FC<CandleGameProps> = ({
       if (caught) g.flyingFedora = null;
     }
 
-    // Live Swan, Hawk and Pigeon contact is lethal before rocket/stomp resolution.
-    for (const bird of g.swans) {
-      if (lethalBirdContact(bird, g.p)) {
-        die('Bird collision: Dodge or throw a briefcase.');
-        return;
-      }
-    }
-
     // ROCKET IMPACT: Kills remaining enemies on impact while player is in rocket!
     if (g.p.rocketTimer > 0) {
       for (const enemy of [...g.swans, ...g.animals]) {
@@ -1230,7 +1246,9 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     if (g.p.rocketTimer <= 0) {
       for (const enemy of [...g.swans, ...g.animals]) {
         if (enemy.dying || enemy.dead || enemy.shieldPassed) continue;
-        if ('type' in enemy && enemy.type === 'whale') continue;
+        // Whales are never stompable, and mounted riders must be defeated or
+        // dismounted before the remaining mount can be stomped separately.
+        if ('type' in enemy && (enemy.type === 'whale' || enemy.mount)) continue;
         const top = 'type' in enemy ? enemy.feet - animalHeight(enemy) : enemy.y - 16;
         if (
           Math.abs(enemy.x - g.p.x) < ('type' in enemy ? (enemy.type === 'bull' ? 55 : 50) : 20) &&
@@ -1253,11 +1271,16 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     }
 
     // Collisions with Living Enemies (Skipped when in rocket mode!).
-    // A carried diamond absorbs an animal hit, but never a direct bird collision.
+    // A carried diamond absorbs one collision from any enemy, including birds.
     if (g.p.rocketTimer <= 0) {
       for (const s of g.swans) {
-        if (!s.dead && !s.dying && Math.abs(s.x - g.p.x) < 18 && Math.abs(s.y - (g.p.y - 25)) < 18) {
-          die('Black Swan collision: Dodge, stomp, or throw briefcase.');
+        if (!s.dead && !s.dying && lethalBirdContact(s, g.p)) {
+          if (absorbEnemyHit(g.p, s)) {
+            g.popups.push({ x: g.p.x, y: g.p.y - 35, text: 'Good DD', color: '#38bdf8', life: 40 });
+            sound.playHit();
+          } else {
+            die('Bird collision: Dodge or throw a briefcase.');
+          }
           return;
         }
       }
@@ -1656,7 +1679,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     if (!g.p) return;
     const stride = g.p.air ? Math.sin(g.p.ph) * 0.45 + Math.max(-0.6, Math.min(0.6, -g.p.vy / 14)) : Math.sin(g.p.ph);
     // Offset only the crash sprite; keep the market anchor on its final candle.
-    const sx = g.p.x - g.cx + (g.zeroCrash ? 32 : 0);
+    const sx = g.p.x - g.cx + mobileHeroRenderOffset() + (g.zeroCrash ? 32 : 0);
     const sy = g.p.y - g.cy;
 
     ctx.save();
@@ -1928,11 +1951,11 @@ export const CandleGame: React.FC<CandleGameProps> = ({
       ctx.fillStyle = '#eab28e'; ctx.fillRect(0, -63, 3.5, 4);
     }
     // Far-side left arm stays behind the torso, opposite the right-hand stride.
-    if (g.p.carry <= 0 && g.throwAnimTimer > 0) {
+    if (g.p.carry <= 0 && g.throwAnimTimer > 0 && g.bagThrowAnimTimer <= 0) {
       ctx.strokeStyle = '#18212f'; ctx.lineWidth = 4;
       ctx.beginPath(); ctx.moveTo(0, -31); ctx.lineTo(-10, -23); ctx.lineTo(-15, -15); ctx.stroke();
     }
-    if (g.p.carry <= 0 && g.throwAnimTimer <= 0) {
+    if (g.p.carry <= 0 && g.throwAnimTimer <= 0 && g.bagThrowAnimTimer <= 0) {
       ctx.strokeStyle = '#18212f';
       ctx.lineWidth = 4;
       ctx.beginPath();
@@ -1993,9 +2016,27 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     }
     ctx.restore();
     if (g.hatSoiled) {
+      // Make the hat hit read as a deliberate splat instead of a tiny dot.
+      // The outline keeps it visible against both the dark and light hat.
       ctx.fillStyle = theme === 'dark' ? '#ffffff' : '#000000';
-      ctx.beginPath(); ctx.ellipse(0, -56, 5, 2, -0.2, 0, Math.PI * 2); ctx.fill();
-      ctx.beginPath(); ctx.ellipse(3, -53, 2, 4, -0.3, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = theme === 'dark' ? 'rgba(0,0,0,0.55)' : 'rgba(255,255,255,0.55)';
+      ctx.lineWidth = 1.1;
+      if (g.apeTimer > 0) {
+        // Monkey mode uses a captain cap: in day mode the stain lands on the
+        // white crown, while at night it reads on the dark forward visor.
+        const stainX = theme === 'dark' ? 13 : 3;
+        const stainY = theme === 'dark' ? -47 : -57;
+        ctx.beginPath(); ctx.ellipse(stainX, stainY, 6.5, 2.8, -0.18, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        ctx.beginPath(); ctx.ellipse(stainX + 2, stainY + 3.5, 2.8, 5.2, -0.3, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        ctx.beginPath(); ctx.arc(stainX - 6, stainY + 1, 1.9, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(stainX + 6, stainY + 1, 1.5, 0, Math.PI * 2); ctx.fill();
+      } else {
+        ctx.beginPath(); ctx.ellipse(0, -56, 7, 3.2, -0.2, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        ctx.beginPath(); ctx.ellipse(3, -52.5, 3.2, 6, -0.3, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        ctx.beginPath(); ctx.arc(-6, -55, 2.1, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(7, -55, 1.7, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(0, -48, 1.5, 0, Math.PI * 2); ctx.fill();
+      }
     }
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(-3, -35, 8, 2);
@@ -2009,7 +2050,17 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     }
 
     // --- CASE A: DIAMOND HANDS — HOLDING DIAMOND PROUDLY OVERHEAD WITH RAISED ARMS ---
-    if (g.p.carry > 0 && g.p.shieldKind === 'bag') {
+    if (g.bagThrowAnimTimer > 0) {
+      const reach = Math.min(1, g.bagThrowAnimTimer / 8);
+      ctx.strokeStyle = '#334155'; ctx.lineWidth = 4.5; ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(3, -31);
+      ctx.lineTo(3 - 10 * reach, -47 - 7 * reach);
+      ctx.lineTo(3 + 9 * reach, -64 - 15 * reach);
+      ctx.stroke();
+      ctx.fillStyle = '#fed7aa';
+      ctx.beginPath(); ctx.arc(3 + 9 * reach, -64 - 15 * reach, 3, 0, Math.PI * 2); ctx.fill();
+    } else if (g.p.carry > 0 && g.p.shieldKind === 'bag') {
       // Heavy load is carried low in front, with bent elbows and both hands.
       const loadBob = Math.sin(g.p.ph * 2) * 0.8;
       ctx.save();
@@ -2083,7 +2134,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
 
     // Visible right arm holds the case in the right-profile view.
     // Draw after the torso: the near-side right hand and case remain visible.
-    if (g.p.carry <= 0 && g.throwAnimTimer <= 0 && g.fedoraWindup <= 0 && g.fedoraTimer <= 0 && !g.flyingFedora) {
+    if (g.p.carry <= 0 && g.throwAnimTimer <= 0 && g.bagThrowAnimTimer <= 0 && g.fedoraWindup <= 0 && g.fedoraTimer <= 0 && !g.flyingFedora) {
       const arm = briefcaseArmPose(g.p.air, g.p.vy, stride);
       const rightHandX = arm.handX;
       const rightHandY = arm.handY;
@@ -2463,6 +2514,17 @@ export const CandleGame: React.FC<CandleGameProps> = ({
         continue;
       }
 
+      if (bCase.kind === 'bag') {
+        ctx.save(); ctx.rotate(-bCase.angle);
+        const length = Math.hypot(bCase.vx, bCase.vy) || 1;
+        ctx.strokeStyle = 'rgba(239, 68, 68, 0.45)'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(-bCase.vx / length * 18, -bCase.vy / length * 18); ctx.lineTo(-bCase.vx / length * 7, -bCase.vy / length * 7); ctx.stroke();
+        ctx.restore();
+        drawPickupAsset(ctx, { type: 'bag', x: 0, y: 0, taken: false }, 0, 0);
+        ctx.restore();
+        continue;
+      }
+
       const colors = briefcaseColors(theme === 'dark');
       ctx.fillStyle = colors.body;
       ctx.fillRect(-10, -7, 20, 14);
@@ -2561,19 +2623,31 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     if (hc) {
       ctx.font = '900 15px monospace';
       ctx.textAlign = 'left';
-      ctx.fillStyle = g.p && g.p.carry > 0 && g.p.shieldKind === 'bag'
-        ? (theme === 'light' ? '#b91c1c' : '#ef5350')
-        : (theme === 'light' ? '#047857' : '#55d6ae');
+      ctx.fillStyle = '#08795c';
       if (encounter) {
         ctx.fillStyle = '#ef4444'; ctx.font = 'bold 25px sans-serif';
         ctx.fillText('♥'.repeat(encounter.player.lives) + '♡'.repeat(3 - encounter.player.lives), 14, TAPE_HEIGHT + 20);
       } else {
-        const text = `PIPS: ${totalScoreVal.toLocaleString()}`;
+        const label = 'SCORE: ';
+        const value = totalScoreVal.toLocaleString();
+        const text = `${label}${value}`;
         const padding = 14;
         ctx.save();
+        const scoreFontFamily = '"JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace';
+        const maxScoreWidth = W - AX - padding * 2;
+        const baseFontSize = 15;
+        ctx.font = `900 ${baseFontSize}px ${scoreFontFamily}`;
+        const baseWidth = ctx.measureText(text).width;
+        const fontSize = Math.min(baseFontSize, baseFontSize * maxScoreWidth / Math.max(1, baseWidth));
+        ctx.font = `900 ${Math.max(10, fontSize)}px ${scoreFontFamily}`;
         ctx.textBaseline = 'alphabetic';
         const metrics = ctx.measureText(text);
-        ctx.fillText(text, padding + metrics.actualBoundingBoxLeft, TAPE_HEIGHT + padding + metrics.actualBoundingBoxAscent);
+        const x = padding + metrics.actualBoundingBoxLeft;
+        const y = TAPE_HEIGHT + padding + metrics.actualBoundingBoxAscent;
+        ctx.fillStyle = '#08795c';
+        ctx.fillText(label, x, y);
+        ctx.fillStyle = '#55d6ae';
+        ctx.fillText(value, x + ctx.measureText(label).width, y);
         ctx.restore();
       }
 

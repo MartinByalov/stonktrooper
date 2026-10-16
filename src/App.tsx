@@ -31,6 +31,7 @@ export default function App() {
   const [shareDDOpen, setShareDDOpen] = useState(false);
   const [siteSection, setSiteSection] = useState<SiteSection | null>(null);
   const appRef = useRef<HTMLDivElement>(null);
+  const previousMobilePortrait = useRef<boolean | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [fullscreenError, setFullscreenError] = useState('');
   const requestMobileLandscape = async () => {
@@ -206,6 +207,9 @@ export default function App() {
   useEffect(() => {
     const syncOrientation = () => {
       const portrait = window.matchMedia('(max-width: 1024px) and (pointer: coarse)').matches && window.innerHeight > window.innerWidth;
+      const wasPortrait = previousMobilePortrait.current;
+      if (wasPortrait === false && portrait && state === 'play') setState('paused');
+      previousMobilePortrait.current = portrait;
       if (!portrait && awaitingLandscape) {
         // The initial request is made from the START tap. Retry after the
         // physical rotation as some mobile browsers only expose the final
@@ -447,7 +451,7 @@ export default function App() {
                   {state === 'over' && <><LiquidatedBackdrop day={theme === 'light'} /><div className="absolute inset-0 bg-slate-950/15 pointer-events-none" aria-hidden="true" /></>}
                   <div className={`relative z-10 ${state === 'over' ? 'game-result-content pt-28 pb-4' : ''}`}>
 
-                    {state === 'paused' && <h2 className="font-black tracking-tight mb-2 font-mono-term text-3xl sm:text-4xl text-[var(--green)]">Margin Call</h2>}
+                    {state === 'paused' && <h2 className="font-black tracking-tight mb-2 font-mono-term text-3xl sm:text-4xl text-[#08795c]">Margin Call</h2>}
 
 
                     {/* Score summary on game over */}
@@ -492,7 +496,7 @@ export default function App() {
 
               {pausedGuideOpen && <div className="paused-guide-overlay absolute z-40" onPointerDown={e => e.stopPropagation()}>
                 <div role="dialog" aria-modal="true" aria-labelledby="paused-guide-title" className="paused-guide-dialog bg-[var(--panel)] border border-[var(--line)] rounded-xl p-4" onKeyDown={e => { e.stopPropagation(); if (e.key === 'Escape') setPausedGuideOpen(false); }}>
-                  <div className="relative flex items-center justify-center pb-2 border-b border-[var(--line)] mb-3 min-h-10 px-10">
+                  <div className="relative flex items-center justify-center pb-2 mb-3 min-h-10 px-10">
                     <h2 id="paused-guide-title" className="how-to-play-label text-xl sm:text-2xl font-black font-mono-term tracking-tight text-center">How to Play</h2>
                     <button type="button" autoFocus title="Close How to Play" aria-label="Close How to Play and return to pause" onClick={() => setPausedGuideOpen(false)} className="dialog-close absolute right-0 top-0 p-2 rounded border border-[var(--line)] text-[var(--text)] hover:bg-[var(--alt)] transition-colors cursor-pointer"><X className="w-5 h-5" aria-hidden="true" /></button>
                   </div>
@@ -507,7 +511,7 @@ export default function App() {
 
         {mobileGuideOpen && <div className="mobile-how-to-dialog fixed inset-0 z-50 flex items-center justify-center p-3" onPointerDown={e => e.stopPropagation()}>
           <div role="dialog" aria-modal="true" aria-labelledby="mobile-guide-title" className="mobile-how-to-panel w-full h-full overflow-hidden bg-[var(--panel)] border border-[var(--line)] rounded-xl p-3">
-            <div className="relative flex items-center justify-center pb-2 border-b border-[var(--line)] mb-3 min-h-10 px-10">
+            <div className="relative flex items-center justify-center pb-2 mb-3 min-h-10 px-10">
               <h2 id="mobile-guide-title" className="how-to-play-label text-xl font-black font-mono-term tracking-tight text-center">How to Play</h2>
               <button type="button" autoFocus title="Close How to Play" aria-label="Close How to Play" onClick={() => setMobileGuideOpen(false)} className="dialog-close absolute right-0 top-0 p-2 rounded border border-[var(--line)] text-[var(--text)] hover:bg-[var(--alt)] transition-colors cursor-pointer"><X className="w-5 h-5" aria-hidden="true" /></button>
             </div>

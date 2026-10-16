@@ -22,7 +22,11 @@ test('pigeon drop falls visibly before hitting the hat and can miss', () => {
 
 test('pigeon poop and hat stain are white at night and black during the day', () => {
   const game = readFileSync(new URL('./CandleGame.tsx', import.meta.url), 'utf8');
-  assert.match(game, /if \(g\.hatSoiled\) \{\s*ctx\.fillStyle = theme === 'dark' \? '#ffffff' : '#000000';/);
+  assert.match(game, /if \(g\.hatSoiled\) \{[\s\S]*?ctx\.fillStyle = theme === 'dark' \? '#ffffff' : '#000000';/);
+  assert.match(game, /ctx\.ellipse\(0, -56, 7, 3\.2/);
+  assert.match(game, /ctx\.ellipse\(3, -52\.5, 3\.2, 6/);
+  assert.match(game, /ctx\.strokeStyle = theme === 'dark' \? 'rgba\(0,0,0,0\.55\)' : 'rgba\(255,255,255,0\.55\)'/);
+  assert.match(game, /if \(g\.apeTimer > 0\) \{[\s\S]*?const stainX = theme === 'dark' \? 13 : 3;[\s\S]*?const stainY = theme === 'dark' \? -47 : -57;/);
   const drops = game.slice(game.indexOf('for (const drop of g.pigeonDrops) {', game.indexOf('const draw =')));
   assert.match(drops, /ctx\.strokeStyle = theme === 'dark' \? 'rgba\(255,255,255,0\.45\)' : 'rgba\(0,0,0,0\.45\)'/);
   assert.match(drops, /ctx\.fillStyle = theme === 'dark' \? '#ffffff' : '#000000'; ctx\.beginPath\(\); ctx\.ellipse\(x, y, 3\.5, 6/);

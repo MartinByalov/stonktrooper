@@ -25,8 +25,9 @@ for (const kind of ['swan', 'hawk', 'pigeon'] as const) {
   });
 }
 
-test('runner checks lethal birds before both rocket and stomp protection', () => {
+test('runner resolves rocket and stomp protection before lethal bird contact', () => {
   const source = readFileSync(new URL('./CandleGame.tsx', import.meta.url), 'utf8');
-  assert(source.indexOf('lethalBirdContact(bird, g.p)') < source.indexOf('// ROCKET IMPACT:'));
-  assert(source.indexOf('lethalBirdContact(bird, g.p)') < source.indexOf('// Jump Stomp'));
+  assert(source.indexOf('// ROCKET IMPACT:') < source.indexOf('// Jump Stomp'));
+  assert(source.indexOf('// Jump Stomp') < source.indexOf('lethalBirdContact(s, g.p)'));
+  assert.match(source, /if \(absorbEnemyHit\(g\.p, s\)\)/);
 });

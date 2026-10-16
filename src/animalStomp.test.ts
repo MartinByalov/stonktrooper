@@ -27,3 +27,28 @@ test('descending edge landings stomp Bull/Bear before their wider weapon contact
     }
   }
 });
+
+test('Whales and mounted riders cannot be stomped, but a separated non-Whale mount can', () => {
+  const source = readFileSync(new URL('./CandleGame.tsx', import.meta.url), 'utf8');
+  const start = source.indexOf('// Jump Stomp on Enemies');
+  const end = source.indexOf('// Collisions with Living Enemies', start);
+  const resolve = new Function('g', 'animalHeight', 'sound', 'awardEnemy', source.slice(start, end));
+  const stomp = (enemy: Record<string, unknown>) => {
+    const g = { p: { x: 100, previousY: 230, y: 250, vy: 12, rocketTimer: 0, air: true }, swans: [], animals: [enemy] };
+    let awards = 0;
+    resolve(g, animalHeight, { playHit() {} }, () => awards++);
+    return { enemy, awards };
+  };
+
+  const whale = stomp({ type: 'whale', x: 100, feet: 300, y: 242.5, dead: false, dying: false });
+  assert.equal(whale.awards, 0);
+  assert.equal(whale.enemy.dying, false);
+
+  const mountedRider = stomp({ type: 'bull', mount: 'bear', x: 100, feet: 300, y: 253, dead: false, dying: false });
+  assert.equal(mountedRider.awards, 0);
+  assert.equal(mountedRider.enemy.dying, false);
+
+  const separatedMount = stomp({ type: 'bear', x: 100, feet: 300, y: 270, dead: false, dying: false });
+  assert.equal(separatedMount.awards, 1);
+  assert.equal(separatedMount.enemy.dying, true);
+});

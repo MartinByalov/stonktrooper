@@ -109,7 +109,7 @@ export interface ScorePopup {
 }
 
 export interface Briefcase {
-  kind?: 'banana';
+  kind?: 'banana' | 'bag';
   x: number;
   y: number;
   vx: number;

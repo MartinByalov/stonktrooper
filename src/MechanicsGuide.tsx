@@ -19,13 +19,15 @@ const cards: { asset: PreviewAsset; below?: PreviewAsset; title: string; text: s
 export function MechanicsGuide({ theme }: { theme: 'light' | 'dark' }) {
   return <div className="mechanics-guide min-w-0 flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1 text-xs leading-tight">
     {cards.map(card => <div key={card.asset} className="rounded border border-[var(--line)] bg-[var(--alt)] overflow-hidden flex flex-col">
-      <h3 className="uppercase text-xs font-bold text-center leading-tight px-2 py-1 border-b border-[var(--line)]">{card.title}</h3>
       <div className="flex flex-1 items-stretch">
         <div className="mechanics-guide-visuals w-[88px] shrink-0 grid auto-rows-fr border-r border-[var(--line)] bg-[var(--bg)]/30">
           <div className="min-h-[72px] flex items-center justify-center px-1"><AssetPreview asset={card.asset} compact theme={theme} /></div>
           {card.below && <div className="min-h-[72px] border-t border-[var(--line)] flex items-center justify-center px-1"><AssetPreview asset={card.below} compact theme={theme} /></div>}
         </div>
-        <div className="min-w-0 flex-1 flex items-center justify-center text-center px-2 py-1.5"><p className="m-0 whitespace-pre-line">{card.text.split(/((?:Pigeon|Hawk|Swan) \(\+\d+ pips\)|A \/ ← \(Move Left\)|D \/ → \(Move Right\)|S \/ ↓ \(Does Nothing\)|\+\d+ pips)/g).map((part, index) => /^(?:(?:Pigeon|Hawk|Swan) \(\+\d+ pips\)|A \/ ← \(Move Left\)|D \/ → \(Move Right\)|S \/ ↓ \(Does Nothing\)|\+\d+ pips)$/.test(part) ? <strong key={index}>{part}</strong> : part)}</p></div>
+        <div className="min-w-0 flex-1 flex flex-col items-center justify-center text-center px-2 py-1.5">
+          <h3 className="uppercase text-xs font-bold leading-tight mb-1">{card.title}</h3>
+          <p className="m-0 whitespace-pre-line">{card.text.split(/((?:Pigeon|Hawk|Swan) \(\+\d+ pips\)|A \/ ← \(Move Left\)|D \/ → \(Move Right\)|S \/ ↓ \(Does Nothing\)|\+\d+ pips)/g).map((part, index) => /^(?:(?:Pigeon|Hawk|Swan) \(\+\d+ pips\)|A \/ ← \(Move Left\)|D \/ → \(Move Right\)|S \/ ↓ \(Does Nothing\)|\+\d+ pips)$/.test(part) ? <strong key={index}>{part}</strong> : part)}</p>
+        </div>
       </div>
     </div>)}
   </div>;

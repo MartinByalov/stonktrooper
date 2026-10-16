@@ -42,12 +42,21 @@ test('mobile Margin Call How to Play reuses the fullscreen mobile guide', () => 
   assert.match(app, /mobileGuideOpen && <div className="mobile-how-to-dialog fixed inset-0/);
 });
 
+test('mobile landscape to portrait rotation pauses an active game', () => {
+  const app = readFileSync(new URL('./App.tsx', import.meta.url), 'utf8');
+  assert.match(app, /const previousMobilePortrait = useRef<boolean \| null>\(null\);/);
+  assert.match(app, /const wasPortrait = previousMobilePortrait\.current;\s*if \(wasPortrait === false && portrait && state === 'play'\) setState\('paused'\);\s*previousMobilePortrait\.current = portrait;/);
+  assert.match(app, /window\.addEventListener\('orientationchange', syncOrientation\)/);
+});
+
 test('mobile canvas zoom enlarges the game and keeps pointer aiming inverse-mapped', () => {
   const game = readFileSync(new URL('./CandleGame.tsx', import.meta.url), 'utf8');
   assert.match(game, /const mobileCanvasZoom = \(\): number =>/);
   assert.match(game, /window\.matchMedia\('\(max-width: 1024px\) and \(pointer: coarse\)'\)/);
   assert.match(game, /const shortSide = Math\.min\(window\.innerWidth, window\.innerHeight\)/);
-  assert.match(game, /return Math\.min\(1\.24, orientationBoost \+ 1 \+ sizeBoost\)/);
+  assert.match(game, /return Math\.min\(1\.34, orientationBoost \+ 1 \+ sizeBoost\)/);
+  assert.match(game, /const mobileHeroRenderOffset = \(\): number =>/);
+  assert.match(game, /g\.p\.x - g\.cx \+ mobileHeroRenderOffset\(\)/);
   assert.match(game, /ctx\.translate\(W \/ 2, 0\);\s*ctx\.scale\(zoom, zoom\);\s*ctx\.translate\(-W \/ 2, 0\)/);
   assert.match(game, /return \{ x: \(x - W \/ 2\) \/ zoom \+ W \/ 2, y: y \/ zoom \}/);
   assert.match(game, /const canvasPoint = zoomCanvasPoint\(/);
@@ -56,7 +65,7 @@ test('mobile canvas zoom enlarges the game and keeps pointer aiming inverse-mapp
 
 test('mobile joystick scales from the smaller viewport dimension', () => {
   const css = readFileSync(new URL('./index.css', import.meta.url), 'utf8');
-  assert.match(css, /\.mobile-joystick\s*\{[\s\S]*?--joystick-size: clamp\(64px, min\(18vw, 24vh\), 94px\);[\s\S]*?--joystick-knob-size: clamp\(30px, min\(8vw, 11vh\), 46px\);/);
+  assert.match(css, /\.mobile-joystick\s*\{[\s\S]*?--joystick-size: clamp\(56px, min\(14vw, 18vh\), 78px\);[\s\S]*?--joystick-knob-size: clamp\(26px, min\(6\.5vw, 8\.5vh\), 38px\);/);
 });
 
 test('canvas keeps mobile backing resolution bounded and avoids render storms during catch-up', () => {

@@ -35,28 +35,21 @@ test('fedora ribbon switches immediately when drawing with a different theme', (
   }
 });
 
-test('the hero fedora has level crown ends and only appears higher in front because of its tilt', () => {
+test('the character keeps the broad legacy fedora silhouette', () => {
   for (const darkMode of [false, true]) {
-    const paths: unknown[][][] = [];
-    let path: unknown[][] = [];
-    const rotations: number[] = [];
-    const ctx = new Proxy({}, {
-      get: (_, key) => key === 'beginPath' ? () => { path = []; }
-        : key === 'rotate' ? (angle: number) => { rotations.push(angle); }
-        : key === 'moveTo' || key === 'lineTo' || key === 'quadraticCurveTo'
-          ? (...args: number[]) => { path.push([key, ...args]); }
-          : key === 'fill' ? () => { paths.push(path); }
-            : () => {},
-      set: () => true,
-    }) as CanvasRenderingContext2D;
-    drawCharacterHat(ctx, false, false, darkMode);
-    const crown = paths[1];
-    const rearTop = crown.find(call => call[0] === 'lineTo' && call[1] === -8);
-    const frontTop = crown.find(call => call[0] === 'quadraticCurveTo' && call[3] === 9);
-    assert.equal(rearTop?.[2], -21);
-    assert.equal(frontTop?.[4], rearTop?.[2]);
-    assert(rotations.some(angle => angle < 0));
+    const calls: unknown[][] = [];
+    drawCharacterHat(recordingContext(calls), false, false, darkMode);
+    assert(calls.some(call => call[0] === 'scale' && call[1] === 0.86 && call[2] === 0.86));
+    assert(calls.some(call => call[0] === 'ellipse' && call[2] === -7 && call[3] === 20));
+    assert(calls.some(call => call[0] === 'lineTo' && call[1] === -8 && call[2] === -21));
   }
+});
+
+test('the collect fedora uses the separate spinning 3D renderer', () => {
+  const calls: unknown[][] = [];
+  drawPickupAsset(recordingContext(calls), { type: 'fedora', x: 0, y: 0, taken: false }, 0, 0, 10);
+  assert(calls.some(call => call[0] === 'scale' && call[1] === 0.7 && call[2] === 0.7));
+  assert(calls.filter(call => call[0] === 'closePath').length >= 32);
 });
 
 test('tender pickup renders at the slightly enlarged scale', () => {

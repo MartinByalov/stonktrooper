@@ -94,6 +94,11 @@ html[data-theme="light"] .game-app .site-footer {
   background: #eaf0f5;
 }
 
+html[data-theme="light"] .mechanics-guide > div,
+html[data-theme="light"] .mechanics-guide .mechanics-guide-visuals {
+  background: #ffffff !important;
+}
+
 @media (min-width: 640px) {
   .game-app {
     --header-gutter: 1.5rem;
@@ -318,6 +323,16 @@ body {
 .game-app:fullscreen header,
 .game-app:fullscreen footer { flex-shrink: 0; }
 
+@media (max-width: 1024px) and (pointer: coarse) {
+  .game-app:fullscreen footer { display: none; }
+  .game-app:fullscreen .game-arena { height: 100%; }
+  .game-app:fullscreen .mobile-joystick {
+    position: fixed;
+    bottom: max(10px, env(safe-area-inset-bottom));
+    left: max(10px, env(safe-area-inset-left));
+  }
+}
+
 .game-app:fullscreen .initial-guide { max-height: 100%; min-height: 0; overflow: auto; }
 .game-app:fullscreen .initial-guide aside { min-height: 0; }
 .game-app:fullscreen .initial-guide aside > div:first-child { min-height: 0; }
@@ -395,6 +410,10 @@ html[data-theme="dark"] .game-result:not(.game-result-over) .how-to-play-action 
   border-color: #ffffff !important;
 }
 
+html[data-theme="dark"] .game-result-over .liquidated-how-to-play {
+  border-color: #ffffff !important;
+}
+
 html[data-theme="dark"] .game-result:not(.game-result-over) .how-to-play-action:hover {
   background: #e5edf6 !important;
 }
@@ -466,8 +485,8 @@ html[data-theme="light"] .share-dd-social-button {
 }
 
 .mobile-joystick {
-  --joystick-size: clamp(64px, min(18vw, 24vh), 94px);
-  --joystick-knob-size: clamp(30px, min(8vw, 11vh), 46px);
+  --joystick-size: clamp(56px, min(14vw, 18vh), 78px);
+  --joystick-knob-size: clamp(26px, min(6.5vw, 8.5vh), 38px);
   width: var(--joystick-size);
   height: var(--joystick-size);
   bottom: max(12px, env(safe-area-inset-bottom));
@@ -596,7 +615,8 @@ html[data-theme="light"] .share-dd-social-button {
   .game-over-overlay {
     align-items: center;
     justify-content: center;
-    overflow: hidden;
+    overflow-y: auto;
+    overflow-x: hidden;
     padding: max(8px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
   }
 
@@ -639,8 +659,8 @@ html[data-theme="light"] .share-dd-social-button {
   .game-result-over {
     width: min(448px, calc(100% - 4px));
     max-width: min(448px, calc(100% - 4px));
-    max-height: calc(100% - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 16px);
-    overflow: hidden !important;
+    max-height: calc(100% - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 12px);
+    overflow: visible !important;
     margin: auto;
     flex: 0 0 auto;
   }
@@ -648,11 +668,14 @@ html[data-theme="light"] .share-dd-social-button {
   .game-over-overlay {
     align-items: center;
     justify-content: center;
-    overflow: hidden;
+    overflow-y: auto;
+    overflow-x: hidden;
   }
 
   .game-result-over .game-result-content {
     padding-top: clamp(28px, 8vh, 60px) !important;
+    max-height: none;
+    overflow: visible;
   }
 
   .game-result-over .game-result-content > .space-y-2\.5 {
@@ -967,20 +990,26 @@ kbd {
   .game-over-overlay {
     align-items: center;
     justify-content: center;
-    overflow: hidden;
+    overflow-y: auto;
+    overflow-x: hidden;
   }
 
   .game-result-over {
-    max-height: calc(100% - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 16px);
-    overflow: hidden !important;
+    max-height: calc(100% - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 12px);
+    overflow: visible !important;
     margin: auto;
   }
 
   .game-result-over .game-result-content {
     min-width: 0;
-    max-height: 100%;
-    overflow-y: auto;
+    max-height: none;
+    overflow: visible;
     overscroll-behavior: contain;
+  }
+
+  .game-result:not(.game-result-over) {
+    max-height: calc(100% - 12px);
+    overflow-y: auto;
   }
 
   .share-dd-overlay {
@@ -1178,7 +1207,7 @@ kbd {
   }
 
   .game-app .site-footer > nav {
-    order: 2;
+    order: 1;
     display: flex;
     justify-content: center;
     flex-wrap: wrap;
@@ -1186,7 +1215,7 @@ kbd {
   }
 
   .game-app .site-footer > .site-footer-copyright {
-    order: 1;
+    order: 2;
   }
 
   .site-footer-copyright {

@@ -6,7 +6,9 @@ export function drawSpinningFedora(ctx: CanvasRenderingContext2D, angle: number,
   ctx.save();
   const project = ({ x, y, z }: Point) => {
     const horizontal = x * Math.cos(angle) + z * Math.sin(angle);
-    const vertical = y + (-x * Math.sin(angle) + z * Math.cos(angle)) * 0.34;
+    // Keep enough depth visible at quarter turns so the hat does not read as
+    // a flat card viewed from either side.
+    const vertical = y + (-x * Math.sin(angle) + z * Math.cos(angle)) * 0.48;
     // The logo tips upward on the right rather than sitting perfectly level.
     return { x: horizontal * Math.cos(-0.12) - vertical * Math.sin(-0.12),
       y: horizontal * Math.sin(-0.12) + vertical * Math.cos(-0.12) };
@@ -33,30 +35,31 @@ export function drawSpinningFedora(ctx: CanvasRenderingContext2D, angle: number,
   const crown = darkMode ? ['#ffffff', '#f8fafc', '#e2e8f0'] : ['#303239', '#17191d', '#080a0e'];
   const band = darkMode ? '#111318' : '#ffffff';
 
-  // The back of the brim sits behind the crown; its front rim is drawn last.
+  // Keep the flying weapon compact: the brim is short and the crown is rounded
+  // so the silhouette reads as a fedora rather than a cowboy hat.
   for (let i = 0; i < segments; i++) {
-    const a = ring(i, 20, 13, 4), b = ring(i + 1, 20, 13, 4);
-    polygon([a, b, ring(i + 1, 11, 8, 3), ring(i, 11, 8, 3)], brimTop);
+    const a = ring(i, 18.5, 14.5, 4), b = ring(i + 1, 18.5, 14.5, 4);
+    polygon([a, b, ring(i + 1, 10.3, 9.2, 3), ring(i, 10.3, 9.2, 3)], brimTop);
   }
 
-  // The crown is as shallow as the character's fedora: 13 units above the band/brim.
-  const crownY = -10;
+  // A low, rounded crown avoids the tall pinched profile of a cowboy hat.
+  const crownY = -8;
   // Back walls, then top, then front walls: the changing silhouette has depth.
   const walls = (near: boolean) => {
     for (let i = 0; i < segments; i++) {
-      if (front(ring(i + 0.5, 11, 8, 0)) !== near) continue;
+      if (front(ring(i + 0.5, 11, 9.2, 0)) !== near) continue;
       const light = Math.cos((i + 0.5) * Math.PI * 2 / segments - angle);
       const shade = light > 0.35 ? crown[0] : light > -0.35 ? crown[1] : crown[2];
-      polygon([ring(i, 11, 8, 3), ring(i + 1, 11, 8, 3), ring(i + 1, 8, 5.5, crownY), ring(i, 8, 5.5, crownY)], shade);
+        polygon([ring(i, 10.3, 9.2, 3), ring(i + 1, 10.3, 9.2, 3), ring(i + 1, 8.5, 7.2, crownY), ring(i, 8.5, 7.2, crownY)], shade);
       // A contrasting band wraps the volume rather than facing the camera.
-      polygon([ring(i, 11.1, 8.1, -1), ring(i + 1, 11.1, 8.1, -1),
-        ring(i + 1, 10.8, 7.8, 3), ring(i, 10.8, 7.8, 3)], band);
+        polygon([ring(i, 10.4, 9.3, -1), ring(i + 1, 10.4, 9.3, -1),
+          ring(i + 1, 10.1, 9.1, 3), ring(i, 10.1, 9.1, 3)], band);
     }
   };
   walls(false);
   const crownTop: Point[] = [];
   // Level crown rim; the visible height difference comes from projection and tilt.
-  for (let i = 0; i < segments; i++) crownTop.push(ring(i, 8, 5.5, crownY));
+  for (let i = 0; i < segments; i++) crownTop.push(ring(i, 8.5, 7.2, crownY));
   polygon(crownTop, darkMode ? '#ffffff' : '#24262b');
   // Recessed central dent follows the orientation of the crown.
   polygon([{ x: -5, y: crownY, z: -1 }, { x: 0, y: crownY + 4, z: -3 },
@@ -70,10 +73,10 @@ export function drawSpinningFedora(ctx: CanvasRenderingContext2D, angle: number,
       { x: 10.2, y: -1, z: 2 }, { x: 11, y: 2, z: 0 }], darkMode ? '#111318' : '#ffffff');
   }
   for (let i = 0; i < segments; i++) {
-    const outer = ring(i + 0.5, 20, 13, 4);
+    const outer = ring(i + 0.5, 18.5, 14.5, 4);
     if (!front(outer)) continue;
-    polygon([ring(i, 20, 13, 4), ring(i + 1, 20, 13, 4),
-      ring(i + 1, 20, 13, 6), ring(i, 20, 13, 6)], brimEdge);
+    polygon([ring(i, 18.5, 14.5, 4), ring(i + 1, 18.5, 14.5, 4),
+      ring(i + 1, 18.5, 14.5, 6), ring(i, 18.5, 14.5, 6)], brimEdge);
   }
   ctx.restore();
 }

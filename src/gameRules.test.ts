@@ -105,7 +105,7 @@ test('current arcade profit uses pips times current price and can decrease', () 
 });
 
 test('shield consumes one charge and lets the same animal pass without knockback', () => {
-  for (const type of ['bull', 'bear']) {
+  for (const type of ['bull', 'bear', 'hawk']) {
     const player = { carry: 200, x: 100, y: 320, vy: 0, air: false };
     const enemy = { type, x: 110, y: 295, shieldPassed: false };
     assert(absorbEnemyHit(player, enemy));
