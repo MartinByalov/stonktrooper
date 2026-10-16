@@ -20,7 +20,7 @@ export function SiteFooter({ onOpen, theme, section, setSection }: { onOpen: () 
       <nav aria-label="Site information" className="flex flex-wrap items-center justify-start justify-self-start gap-3">
         {sections.map(item => <button key={item} type="button" className="hover:text-[var(--text)] underline underline-offset-2 cursor-pointer" onClick={() => { onOpen(); setMessage(''); setSection(item); }}>{item}</button>)}
       </nav>
-      <span className="site-footer-copyright justify-self-end whitespace-nowrap">© Stonktrooper.lol 2026</span>
+      <span className="site-footer-copyright justify-self-end whitespace-nowrap">2026 © Stonktrooper.lol</span>
     </footer>
     {section && <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4" onPointerDown={event => event.stopPropagation()}>
       <div ref={dialog} role="dialog" aria-modal="true" aria-labelledby="site-info-title" className="w-full max-w-xl max-h-[85dvh] overflow-y-auto rounded-xl border border-[var(--line)] bg-[var(--panel)] p-5 shadow-2xl" onKeyDown={event => {

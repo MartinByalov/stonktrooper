@@ -66,6 +66,11 @@ test('portrait mobile presents How to Play instead of a rotate prompt and keeps 
   assert.match(css, /\.how-to-layout > \.mechanics-guide \{[\s\S]*?grid-template-columns: 1fr;/);
 });
 
+test('header controls use one shared button size', () => {
+  const css = readFileSync(new URL('./index.css', import.meta.url), 'utf8');
+  assert.match(css, /\.game-app \.header-controls > button\s*\{[\s\S]*?width: 2rem;[\s\S]*?height: 2rem;[\s\S]*?padding: 0;[\s\S]*?box-sizing: border-box;[\s\S]*?display: inline-flex;[\s\S]*?align-items: center;[\s\S]*?justify-content: center;/);
+});
+
 test('portrait mobile separates the hero and controls from a fullscreen scrollable How to Play dialog', () => {
   const app = readFileSync(new URL('./App.tsx', import.meta.url), 'utf8');
   const css = readFileSync(new URL('./index.css', import.meta.url), 'utf8');
@@ -202,13 +207,13 @@ test('About shows a coffee support button below contacts with a styled cup and s
 
 test('footer keeps copyright left, navigation centered and preference clearing centered', () => {
   const footer = readFileSync(new URL('./SiteFooter.tsx', import.meta.url), 'utf8');
-  assert.match(footer, /© Stonktrooper\.lol 2026<\/span>/);
+  assert.match(footer, /2026 © Stonktrooper\.lol<\/span>/);
   assert.doesNotMatch(footer, /new Date\(\)\.getFullYear\(\)/);
   assert.doesNotMatch(footer, /Free personal project/);
   assert.match(footer, /sm:grid-cols-\[1fr_auto_1fr\]/);
   assert.match(footer, /aria-label="Site information" className="[^\"]*justify-start justify-self-start/);
   assert.match(footer, /className="site-footer-copyright justify-self-end whitespace-nowrap"/);
-  assert.ok(footer.indexOf('aria-label="Site information"') < footer.indexOf('© Stonktrooper.lol 2026'));
+  assert.ok(footer.indexOf('aria-label="Site information"') < footer.indexOf('2026 © Stonktrooper.lol'));
   assert.match(footer, /const sections = \['About', 'Privacy', 'Disclaimer', 'Preferences'\]/);
   assert.match(footer, /section === 'Preferences'/);
   assert.doesNotMatch(footer, /'Local data'/);

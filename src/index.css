@@ -395,6 +395,16 @@ html[data-theme="light"] .mobile-portrait-how-to-play {
   box-sizing: border-box;
 }
 
+.game-app .header-controls > button {
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
 html[data-theme="dark"] .game-app .header-controls button {
   color: #fff;
   border-color: #fff;
@@ -1075,8 +1085,6 @@ kbd {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-width: 2rem;
-    min-height: 2rem;
     padding: 0.25rem;
   }
 
