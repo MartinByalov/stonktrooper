@@ -82,7 +82,7 @@ test('canvas keeps mobile backing resolution bounded and avoids render storms du
 
 test('ticker item widths are measured once instead of every rendered frame', () => {
   const game = readFileSync(new URL('./CandleGame.tsx', import.meta.url), 'utf8');
-  assert.match(game, /if \(item\.width === 0\) item\.width = ctx\.measureText\(message\)\.width \+ 48/);
+  assert.match(game, /feedTextCache\.current\.get\(item\.news\)/);
 });
 
 test('collecting a tender activates hawk mode rather than adding a companion', () => {

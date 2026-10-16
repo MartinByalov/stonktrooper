@@ -23,6 +23,10 @@ test('Pages validates the project and deploys only the generated site', () => {
   for (const command of ['npm ci', 'npm run lint', 'npm test', 'npm run build']) {
     assert(workflow.includes(command), command);
   }
+  assert.match(workflow, /runs-on: ubuntu-24\.04/);
+  for (const action of ['checkout@v6', 'setup-node@v5', 'configure-pages@v6', 'upload-pages-artifact@v5', 'deploy-pages@v5']) {
+    assert(workflow.includes(action), action);
+  }
   assert.match(workflow, /PAGES_BASE_PATH:.*steps\.pages\.outputs\.base_path/);
   assert.match(workflow, /cp CNAME dist\/CNAME/);
   assert.match(workflow, /path: dist/);

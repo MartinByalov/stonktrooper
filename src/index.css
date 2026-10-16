@@ -455,12 +455,12 @@ html[data-theme="dark"] .game-result:not(.game-result-over) .how-to-play-action:
 }
 
 html[data-theme="light"] .game-app .header-controls button {
-  color: #000000;
-  border-color: #000000;
+  color: #333a4b;
+  border-color: #333a4b;
 }
 
 html[data-theme="light"] .game-app .header-controls button svg {
-  color: #000000;
+  color: #333a4b;
 }
 
 html[data-theme="dark"] .game-app .mobile-header-theme-icon {
@@ -715,7 +715,9 @@ html[data-theme="light"] .game-app[data-state="paused"] .mobile-how-to-panel .di
     width: min(448px, calc(100% - 4px));
     max-width: min(448px, calc(100% - 4px));
     max-height: calc(100% - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 12px);
-    overflow: visible !important;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden !important;
     margin: auto;
     flex: 0 0 auto;
   }
@@ -729,8 +731,10 @@ html[data-theme="light"] .game-app[data-state="paused"] .mobile-how-to-panel .di
 
   .game-result-over .game-result-content {
     padding-top: clamp(28px, 8vh, 60px) !important;
-    max-height: none;
-    overflow: visible;
+    min-height: 0;
+    flex: 1 1 auto;
+    max-height: 100%;
+    overflow-y: auto;
   }
 
   .game-result-over .game-result-content > .space-y-2\.5 {
@@ -1051,14 +1055,18 @@ kbd {
 
   .game-result-over {
     max-height: calc(100% - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 12px);
-    overflow: visible !important;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden !important;
     margin: auto;
   }
 
   .game-result-over .game-result-content {
     min-width: 0;
-    max-height: none;
-    overflow: visible;
+    min-height: 0;
+    flex: 1 1 auto;
+    max-height: 100%;
+    overflow-y: auto;
     overscroll-behavior: contain;
   }
 
@@ -1128,6 +1136,7 @@ kbd {
 
   .game-app .mobile-header-control {
     display: inline-flex;
+    min-width: 2rem;
     align-items: center;
     justify-content: center;
     padding: 0.25rem;
@@ -1355,7 +1364,7 @@ kbd {
     overflow: hidden;
   }
 
-  .game-app .game-overlay .game-result {
+  .game-app .game-overlay .game-result:not(.game-result-over) {
     width: min(100%, 28rem, 110dvh);
     max-width: 100%;
     max-height: none;
@@ -1371,8 +1380,10 @@ kbd {
   }
 
   .game-app .game-result-over .game-result-content {
-    max-height: none;
-    overflow: visible;
+    min-height: 0;
+    flex: 1 1 auto;
+    max-height: 100%;
+    overflow-y: auto;
     padding-top: clamp(28px, 9dvh, 72px) !important;
     padding-bottom: clamp(4px, 1dvh, 10px) !important;
   }

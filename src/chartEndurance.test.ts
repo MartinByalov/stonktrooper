@@ -17,7 +17,8 @@ import type { ChartWindowState } from './chartWindow';
 // React is replaced only by identity useCallback and a plain ref; no DOM needed.
 const source = readFileSync(new URL('./CandleGame.tsx', import.meta.url), 'utf8');
 function generator() {
-  const constants = source.slice(source.indexOf('const W ='), source.indexOf('export const CandleGame:'));
+  const constants = source.slice(source.indexOf('const W ='), source.indexOf('export const CandleGame:'))
+    .replace(/^export\s+/gm, '');
   const state = source.slice(source.indexOf('  const gameRef = useRef({'), source.indexOf('  const lvOf ='))
     .replace('useRef({', '({ current: {').replace(/\}\);\s*$/, '} });');
   const functions = source.slice(source.indexOf('  const lvOf ='), source.indexOf('  const die ='));

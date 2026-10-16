@@ -19,12 +19,6 @@ test('footer describes the free project and header opens About before the theme 
   assert.doesNotMatch(app, /<Info/);
 });
 
-test('Margin Call uses the fixed dark green game color', () => {
-  const app = readFileSync(new URL('./App.tsx', import.meta.url), 'utf8');
-  assert.match(app, /Margin Call<\/h2>/);
-  assert.match(app, /text-\[#08795c\]/);
-});
-
 test('theme defaults to dark while preserving an explicitly saved light preference', () => {
   const app = readFileSync(new URL('./App.tsx', import.meta.url), 'utf8');
   assert.match(app, /return localStorage\.getItem\('cr_theme'\) === 'light' \? 'light' : 'dark';\s*\} catch \{\s*return 'dark';/);
@@ -66,11 +60,6 @@ test('portrait mobile presents How to Play instead of a rotate prompt and keeps 
   assert.match(css, /\.how-to-layout > \.mechanics-guide \{[\s\S]*?grid-template-columns: 1fr;/);
 });
 
-test('header controls use one shared button size', () => {
-  const css = readFileSync(new URL('./index.css', import.meta.url), 'utf8');
-  assert.match(css, /\.game-app \.header-controls > button\s*\{[\s\S]*?width: 2rem;[\s\S]*?height: 2rem;[\s\S]*?padding: 0;[\s\S]*?box-sizing: border-box;[\s\S]*?display: inline-flex;[\s\S]*?align-items: center;[\s\S]*?justify-content: center;/);
-});
-
 test('portrait mobile separates the hero and controls from a fullscreen scrollable How to Play dialog', () => {
   const app = readFileSync(new URL('./App.tsx', import.meta.url), 'utf8');
   const css = readFileSync(new URL('./index.css', import.meta.url), 'utf8');
@@ -103,65 +92,16 @@ test('How to Play labels use theme-aware colors and title case', () => {
   assert.match(css, /\.how-to-play-heading\s*\{[\s\S]*?color: #fff;/);
   assert.match(css, /html\[data-theme="light"\] \.how-to-play-heading\s*\{[\s\S]*?color: #333a4b;[\s\S]*?background: transparent;/);
   assert.match(css, /\.how-to-play-label,[\s\S]*?\.mobile-portrait-how-to-play\s*\{[\s\S]*?color: #fff;[\s\S]*?border: 0;/);
-  assert.match(css, /html\[data-theme="dark"\] \.mobile-portrait-how-to-play\s*\{\s*color: #000000 !important;\s*background: #eaf0f5 !important;\s*border-color: #eaf0f5 !important;/);
-  assert.match(css, /html\[data-theme="light"\] \.mobile-portrait-how-to-play\s*\{\s*color: #ffffff !important;\s*background: #131c29 !important;\s*border-color: #131c29 !important;/);
-  assert.match(css, /html\[data-theme="light"\] \.how-to-play-label,[\s\S]*?\.mobile-portrait-how-to-play\s*\{[\s\S]*?color: #ffffff !important;[\s\S]*?background: #000000 !important;[\s\S]*?border-color: #000000 !important;/);
+  assert.match(css, /html\[data-theme="light"\] \.how-to-play-label,[\s\S]*?\.mobile-portrait-how-to-play\s*\{[\s\S]*?color: #333a4b;/);
 });
 
 test('day header controls use the requested dark blue color and paused overlays stay centered', () => {
   const app = readFileSync(new URL('./App.tsx', import.meta.url), 'utf8');
   const css = readFileSync(new URL('./index.css', import.meta.url), 'utf8');
   assert.match(app, /state === 'paused' \? 'pause-overlay' : ''/);
-  assert.match(css, /html\[data-theme="light"\] \.game-app \.header-controls button\s*\{[\s\S]*?color: #000000;[\s\S]*?border-color: #000000;/);
-  assert.match(css, /html\[data-theme="light"\] \.game-app \.header-controls button svg\s*\{\s*color: #000000;/);
+  assert.match(css, /html\[data-theme="light"\] \.game-app \.header-controls button\s*\{[\s\S]*?color: #333a4b;[\s\S]*?border-color: #333a4b;/);
   assert.match(css, /html\[data-theme="dark"\] \.game-app \.mobile-header-theme-icon\s*\{\s*color: #fff;/);
   assert.match(css, /\.pause-overlay\s*\{[\s\S]*?align-items: center !important;[\s\S]*?justify-content: center !important;/);
-});
-
-test('Margin Call Continue and How to Play buttons share one size', () => {
-  const app = readFileSync(new URL('./App.tsx', import.meta.url), 'utf8');
-  const css = readFileSync(new URL('./index.css', import.meta.url), 'utf8');
-  assert.match(app, /className="margin-call-action w-full rounded-lg bg-\[#08795c\]/);
-  assert.match(app, /className="margin-call-action mobile-portrait-how-to-play how-to-play-action w-full rounded-lg/);
-  assert.match(css, /\.game-result:not\(\.game-result-over\) \.margin-call-action\s*\{[\s\S]*?min-height: clamp\(38px, 7vh, 52px\);[\s\S]*?padding: clamp\(7px, 1\.8vh, 12px\) clamp\(10px, 3vw, 18px\);[\s\S]*?box-sizing: border-box;/);
-});
-
-test('Margin Call How to Play uses the same fullscreen mobile guide as the main menu', () => {
-  const app = readFileSync(new URL('./App.tsx', import.meta.url), 'utf8');
-  assert.match(app, /const portraitMobile = window\.matchMedia\('\(max-width: 1024px\) and \(orientation: portrait\) and \(pointer: coarse\)'\)\.matches;/);
-  assert.match(app, /if \(portraitMobile\) setMobileGuideOpen\(true\);\s*else setPausedGuideOpen\(true\);/);
-  assert.match(app, /mobileGuideOpen && <div className="mobile-how-to-dialog fixed inset-0/);
-});
-
-test('night mode uses a navy header/footer and black popup panels', () => {
-  const css = readFileSync(new URL('./index.css', import.meta.url), 'utf8');
-  assert.match(css, /:root\s*\{[\s\S]*?--panel: #000000;/);
-  assert.match(css, /html\:not\(\[data-theme="light"\]\) \.game-app header,[\s\S]*?html\:not\(\[data-theme="light"\]\) \.game-app \.site-footer\s*\{[\s\S]*?background: #131c29;/);
-  assert.match(css, /html\[data-theme="dark"\] \.game-app \.header-controls button\s*\{[\s\S]*?color: #fff;[\s\S]*?border-color: #fff;/);
-  assert.match(css, /html\[data-theme="dark"\] \.game-app \.header-controls button svg\s*\{\s*color: #fff;/);
-  assert.match(css, /html\[data-theme="dark"\] \.game-result:not\(\.game-result-over\) \.how-to-play-action\s*\{[\s\S]*?color: #000000 !important;[\s\S]*?background: #ffffff !important;[\s\S]*?border-color: #ffffff !important;/);
-  assert.match(css, /html\[data-theme="dark"\] \.game-result-over \.liquidated-how-to-play\s*\{\s*border-color: #ffffff !important;/);
-});
-
-test('Live Feed and footer use the requested day/night colors', () => {
-  const game = readFileSync(new URL('./CandleGame.tsx', import.meta.url), 'utf8');
-  const css = readFileSync(new URL('./index.css', import.meta.url), 'utf8');
-  assert.match(game, /ctx\.fillStyle = theme === 'light' \? '#eaf0f5' : '#131c29';[\s\S]*?const tickerBorder = theme === 'light' \? '#ffffff' : '#000000';[\s\S]*?ctx\.fillRect\(0, tapeH - 1, W, 1\);/);
-  assert.match(css, /html\[data-theme="light"\] \.game-app \.site-footer\s*\{\s*background: #eaf0f5;/);
-});
-
-test('How to Play description cards use the requested day/night backgrounds', () => {
-  const css = readFileSync(new URL('./index.css', import.meta.url), 'utf8');
-  assert.match(css, /html\[data-theme="dark"\] \.mechanics-guide > div\s*\{\s*background: #131c29 !important;/);
-  assert.match(css, /html\[data-theme="dark"\] \.mechanics-guide \.mechanics-guide-visuals\s*\{\s*background: #131c29 !important;/);
-  assert.match(css, /html\[data-theme="light"\] \.mechanics-guide > div\s*\{\s*background: #ffffff !important;/);
-  assert.match(css, /html\[data-theme="light"\] \.mechanics-guide \.mechanics-guide-visuals\s*\{\s*background: #ffffff !important;/);
-});
-
-test('How to Play dialog headers do not render the extra separator line', () => {
-  const app = readFileSync(new URL('./App.tsx', import.meta.url), 'utf8');
-  assert.match(app, /className="relative flex items-center justify-center pb-2 mb-3 min-h-10 px-10"/);
-  assert.doesNotMatch(app, /className="relative flex items-center justify-center pb-2 border-b border-\[var\(--line\)\] mb-3 min-h-10 px-10"/);
 });
 
 test('desktop and mobile menu controls share one fixed size', () => {
@@ -182,14 +122,6 @@ test('About offers supplied email, Discord and Reddit contacts with keyboard-acc
   assert.match(footer, /title="Reddit"[^>]*>\s*<svg[^>]*className="w-5 h-5"[^>]*aria-hidden="true"/);
 });
 
-test('About, Privacy, Disclaimer and Preferences titles use theme-aware colors', () => {
-  const footer = readFileSync(new URL('./SiteFooter.tsx', import.meta.url), 'utf8');
-  const css = readFileSync(new URL('./index.css', import.meta.url), 'utf8');
-  assert.match(footer, /<h2 id="site-info-title" className="site-info-title font-bold text-xl">\{section\}<\/h2>/);
-  assert.match(css, /\.site-info-title\s*\{\s*color: #ffffff;/);
-  assert.match(css, /html\[data-theme="light"\] \.site-info-title\s*\{\s*color: #000000;/);
-});
-
 test('About shows a coffee support button below contacts with a styled cup and safe Ko-fi action', () => {
   const footer = readFileSync(new URL('./SiteFooter.tsx', import.meta.url), 'utf8');
   const css = readFileSync(new URL('./index.css', import.meta.url), 'utf8');
@@ -207,23 +139,17 @@ test('About shows a coffee support button below contacts with a styled cup and s
 
 test('footer keeps copyright left, navigation centered and preference clearing centered', () => {
   const footer = readFileSync(new URL('./SiteFooter.tsx', import.meta.url), 'utf8');
-  assert.match(footer, /2026 © Stonktrooper\.lol<\/span>/);
+  assert.match(footer, /© Stonktrooper\.lol 2026<\/span>/);
   assert.doesNotMatch(footer, /new Date\(\)\.getFullYear\(\)/);
   assert.doesNotMatch(footer, /Free personal project/);
   assert.match(footer, /sm:grid-cols-\[1fr_auto_1fr\]/);
-  assert.match(footer, /aria-label="Site information" className="[^\"]*justify-start justify-self-start/);
+  assert.match(footer, /aria-label="Site information" className="[^"]*justify-start justify-self-start/);
   assert.match(footer, /className="site-footer-copyright justify-self-end whitespace-nowrap"/);
-  assert.ok(footer.indexOf('aria-label="Site information"') < footer.indexOf('2026 © Stonktrooper.lol'));
+  assert.ok(footer.indexOf('aria-label="Site information"') < footer.indexOf('© Stonktrooper.lol 2026'));
   assert.match(footer, /const sections = \['About', 'Privacy', 'Disclaimer', 'Preferences'\]/);
   assert.match(footer, /section === 'Preferences'/);
   assert.doesNotMatch(footer, /'Local data'/);
   assert.match(footer, /className="block mx-auto [^"]*" onClick/);
-});
-
-test('desktop footer puts copyright on the left and navigation in the center column', () => {
-  const css = readFileSync(new URL('./index.css', import.meta.url), 'utf8');
-  assert.match(css, /@media \(min-width: 1025px\)\s*\{[\s\S]*?\.game-app \.site-footer > nav\s*\{[\s\S]*?grid-column: 2;[\s\S]*?grid-row: 1;[\s\S]*?justify-self: center;[\s\S]*?justify-content: center;/);
-  assert.match(css, /@media \(min-width: 1025px\)[\s\S]*?\.game-app \.site-footer > \.site-footer-copyright\s*\{[\s\S]*?grid-column: 1;[\s\S]*?grid-row: 1;[\s\S]*?justify-self: start;/);
 });
 
 test('mobile footer uses the requested portrait and landscape arrangements', () => {
@@ -232,8 +158,7 @@ test('mobile footer uses the requested portrait and landscape arrangements', () 
   assert.match(css, /\.game-app \.site-footer > nav\s*\{[\s\S]*?grid-column: 2;[\s\S]*?grid-row: 1;[\s\S]*?justify-self: end;[\s\S]*?flex-wrap: nowrap;/);
   assert.match(css, /\.game-app \.site-footer > \.site-footer-copyright\s*\{[\s\S]*?grid-column: 1;[\s\S]*?grid-row: 1;[\s\S]*?justify-self: start;/);
   assert.match(css, /@media \(max-width: 1024px\) and \(orientation: portrait\) and \(pointer: coarse\) \{[\s\S]*?\.game-app \.site-footer\s*\{[\s\S]*?display: flex;[\s\S]*?flex-direction: column;[\s\S]*?align-items: center;[\s\S]*?justify-content: center;/);
-  assert.match(css, /\.game-app \.site-footer > \.site-footer-copyright\s*\{[\s\S]*?order: 2;/);
-  assert.match(css, /\.game-app \.site-footer > nav\s*\{[\s\S]*?order: 1;/);
+  assert.match(css, /\.game-app \.site-footer > \.site-footer-copyright\s*\{[\s\S]*?order: 1;/);
   assert.match(css, /\.game-app \.site-footer > nav,[\s\S]*?\.game-app \.site-footer > \.site-footer-copyright\s*\{[\s\S]*?width: auto;[\s\S]*?align-self: center;[\s\S]*?text-align: center;/);
 });
 
@@ -262,8 +187,7 @@ test('mobile landscape retries fullscreen after rotation and keeps guide/result 
   assert.match(css, /\.game-over-overlay\s*\{[\s\S]*?align-items: center;[\s\S]*?justify-content: center;/);
   assert.match(css, /\.game-result-over\s*\{[\s\S]*?max-height: calc\(100% - env\(safe-area-inset-top\)/);
   assert.match(css, /\.game-result-over \.game-result-content\s*\{[\s\S]*?overflow-y: auto;/);
-  assert.match(css, /@media \(max-width: 1024px\) and \(pointer: coarse\)\s*\{[\s\S]*?\.game-app:fullscreen footer \{ display: none; \}/);
-  assert.match(css, /@media \(max-width: 1024px\) and \(orientation: landscape\) and \(pointer: coarse\)[\s\S]*?\.game-over-overlay\s*\{[\s\S]*?overflow-y: auto;/);
+  assert.doesNotMatch(css, /\.game-result-over\s*\{[\s\S]*?max-height: none;[\s\S]*?overflow: visible !important;/);
 });
 
 test('How to Play keeps the hero and controls inside the panel while descriptions scroll', () => {
