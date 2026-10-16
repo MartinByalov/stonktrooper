@@ -20,8 +20,8 @@ export function drawShareCard(ctx: CanvasRenderingContext2D, score: number, back
   ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
   ctx.shadowBlur = 12;
   ctx.fillStyle = '#f8fafc';
-  ctx.font = 'bold 34px sans-serif';
-  ctx.fillText('BEST SCORE', centerX, 601);
+  ctx.font = 'bold 28px Georgia, serif';
+  ctx.fillText('BEST SCORE', centerX, 580);
 
   const fullScore = formatShareScore(score);
   // A single line remains legible up to a safe integer; avoid microscopic type
@@ -31,12 +31,12 @@ export function drawShareCard(ctx: CanvasRenderingContext2D, score: number, back
   ctx.font = 'bold 86px sans-serif';
   const fontSize = Math.max(32, Math.min(86, 86 * maxWidth / Math.max(1, ctx.measureText(value).width)));
   ctx.font = `bold ${fontSize}px sans-serif`;
-  ctx.fillStyle = '#55d6ae';
+  ctx.fillStyle = '#08795c';
   // Clip both glyphs and shadow to the inside of the case, even if a browser's
   // font metrics or fillText(maxWidth) handling differs from the measurement.
   ctx.beginPath();
   ctx.rect(700, 622, 424, 116);
   ctx.clip();
-  ctx.fillText(value, centerX, 672, maxWidth);
+  ctx.fillText(value, centerX, 650, maxWidth);
   ctx.restore();
 }

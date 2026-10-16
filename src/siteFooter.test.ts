@@ -15,7 +15,7 @@ test('footer describes the free project and header opens About before the theme 
   assert.doesNotMatch(app, /<Coffee|ko-fi\.com/);
   assert.match(app, /aria-label="Open information about the game" aria-haspopup="dialog"/);
   assert.match(app, /if \(state === 'play'\) setState\('paused'\); setSoundMenuOpen\(false\); setSiteSection\('About'\)/);
-  assert.match(app, /<span className="flex w-3\.5 h-3\.5 items-center justify-center font-serif text-xl font-bold leading-none" aria-hidden="true">i<\/span>\s*<\/button>\s*<button\s+type="button"\s+onClick=\{\(\) => setTheme/);
+  assert.match(app, /<span className="mobile-header-info-icon flex w-3 h-3 items-center justify-center font-serif text-lg font-bold leading-none" aria-hidden="true">i<\/span>\s*<\/button>\s*<button\s+type="button"\s+onClick=\{\(\) => setTheme/);
   assert.doesNotMatch(app, /<Info/);
 });
 
@@ -24,21 +24,131 @@ test('theme defaults to dark while preserving an explicitly saved light preferen
   assert.match(app, /return localStorage\.getItem\('cr_theme'\) === 'light' \? 'light' : 'dark';\s*\} catch \{\s*return 'dark';/);
 });
 
-test('Easy mode and privacy links use sky blue and preference clearing matches paused How to Play', () => {
+test('Mode selector and privacy links use sky blue and preference clearing matches paused How to Play', () => {
   const app = readFileSync(new URL('./App.tsx', import.meta.url), 'utf8');
   const css = readFileSync(new URL('./index.css', import.meta.url), 'utf8');
   const footer = readFileSync(new URL('./SiteFooter.tsx', import.meta.url), 'utf8');
-  assert.match(app, /selectedMode === 'easy'[^\n]*bg-\[#38bdf8\]/);
-  assert.match(app, /selectedMode === 'hard'[^\n]*is-selected[^\n]*>HARD MODE<\/button>/);
+  assert.match(app, /aria-label="Change game mode"/);
+  assert.match(app, /onClick=\{handleModeSelectorClick\}/);
+  assert.match(app, /onKeyDown=\{handleModeSelectorKeyDown\}/);
+  assert.match(app, /selectedMode === 'hard' && <ChevronLeft className="how-to-mode-selector-arrow how-to-mode-selector-arrow-left" aria-hidden="true" \/>/);
+  assert.match(app, /selectedMode === 'easy' && <ChevronRight className="how-to-mode-selector-arrow how-to-mode-selector-arrow-right" aria-hidden="true" \/>/);
+  assert.match(app, /selectedMode === 'easy' \? 'There is no Easy Mode' : 'Hard Mode'/);
   assert.doesNotMatch(app, /selectedMode === 'hard'[^\n]*✓/);
+  assert.doesNotMatch(app, /how-to-mode-selector[^\n]*font-bold/);
   assert.match(css, /\.how-to-mode-button\.is-selected\s*\{[\s\S]*text-decoration: underline;/);
+  assert.match(css, /\.how-to-mode-selector\s*\{[\s\S]*position: relative;[\s\S]*justify-content: center;/);
+  assert.match(css, /\.how-to-mode-selector-arrow\s*\{[\s\S]*position: absolute;[\s\S]*top: 50%;[\s\S]*transform: translateY\(-50%\);/);
   for (const label of ['GitHub Privacy Statement', 'Google Fonts privacy information']) {
     assert.match(footer, new RegExp(`<a className="underline text-\\[#38bdf8\\]"[^>]*>${label}</a>`));
   }
   const guide = app.match(/className="([^"]*)">How to Play<\/button>/);
   const preferences = footer.match(/className="([^"]*)" onClick=\{\(\) => \{\s*try \{ localStorage.removeItem/);
   assert(guide && preferences);
-  assert(preferences[1].startsWith(`block mx-auto ${guide[1]}`));
+  assert(guide[1].includes('how-to-play-action'));
+  assert(preferences[1].startsWith('block mx-auto'));
+});
+
+test('portrait mobile presents How to Play instead of a rotate prompt and keeps only info/theme header controls', () => {
+  const app = readFileSync(new URL('./App.tsx', import.meta.url), 'utf8');
+  const css = readFileSync(new URL('./index.css', import.meta.url), 'utf8');
+  assert.doesNotMatch(app, /rotate-prompt|Rotate your phone/);
+  assert.match(css, /@media \(max-width: 1024px\) and \(orientation: portrait\) and \(pointer: coarse\)/);
+  assert.match(css, /\.game-app \.header-controls > :not\(\.mobile-header-control\) \{\s*display: none;/);
+  assert.match(css, /mobile-header-control/);
+  assert.match(css, /min-width: 2rem/);
+  assert.match(css, /\.how-to-layout > \.mechanics-guide \{[\s\S]*?grid-template-columns: 1fr;/);
+});
+
+test('portrait mobile separates the hero and controls from a fullscreen scrollable How to Play dialog', () => {
+  const app = readFileSync(new URL('./App.tsx', import.meta.url), 'utf8');
+  const css = readFileSync(new URL('./index.css', import.meta.url), 'utf8');
+  assert.match(app, /mobileGuideOpen/);
+  assert.match(app, /className="mobile-portrait-guide/);
+  assert.match(app, /className="menu-action-button mobile-portrait-action-button mobile-portrait-how-to-play/);
+  assert.match(app, />\s*How to Play\s*<\/button>/);
+  assert.match(app, /className=\{`menu-action-button mobile-portrait-action-button how-to-mode-selector/);
+  assert.match(app, /className="menu-action-button mobile-portrait-action-button w-full/);
+  assert.match(app, /selectedMode === 'easy' \? 'There is no Easy Mode' : 'Hard Mode'/);
+  assert.match(app, />\s*Start\s*<\/button>/);
+  assert.match(app, /aria-label="Close How to Play"/);
+  assert.match(app, /className="mobile-how-to-panel/);
+  assert.match(css, /\.game-app \.desktop-initial-guide\s*\{\s*display: none;/);
+  assert.match(css, /\.mobile-portrait-guide\s*\{\s*display: flex;/);
+  assert.match(css, /\.mobile-portrait-action-button\s*\{\s*font-family: var\(--font-mono\);\s*\}/);
+  assert.match(css, /\.how-to-mode-selector\s*\{[\s\S]*?font-family: var\(--font-mono\);[\s\S]*?font-size: 0\.875rem;[\s\S]*?font-weight: 700;[\s\S]*?line-height: 1\.25;/);
+  assert.match(css, /\.menu-action-button\s*\{[\s\S]*?height: 2\.75rem;[\s\S]*?min-height: 2\.75rem;[\s\S]*?padding-top: 0;[\s\S]*?padding-bottom: 0;/);
+  assert.match(css, /\.mobile-how-to-panel > \.mechanics-guide\s*\{[\s\S]*?overflow-y: auto;/);
+  assert.match(css, /\.game-app \.site-footer\s*\{[\s\S]*?display: flex;[\s\S]*?flex-direction: column;[\s\S]*?align-items: center;/);
+  assert.match(css, /\.game-app \.site-footer > nav,[\s\S]*?\.game-app \.site-footer > \.site-footer-copyright\s*\{[\s\S]*?align-self: center;[\s\S]*?text-align: center;/);
+});
+
+test('How to Play labels use theme-aware colors and title case', () => {
+  const app = readFileSync(new URL('./App.tsx', import.meta.url), 'utf8');
+  const css = readFileSync(new URL('./index.css', import.meta.url), 'utf8');
+  assert.match(app, />\s*How to Play\s*<\/h2>/);
+  assert.match(app, />\s*Start\s*<\/button>/);
+  assert.match(app, /className="how-to-play-label[^>]*">How to Play<\/h2>/);
+  assert.match(css, /\.how-to-play-heading\s*\{[\s\S]*?color: #fff;/);
+  assert.match(css, /html\[data-theme="light"\] \.how-to-play-heading\s*\{[\s\S]*?color: #333a4b;[\s\S]*?background: transparent;/);
+  assert.match(css, /\.how-to-play-label,[\s\S]*?\.mobile-portrait-how-to-play\s*\{[\s\S]*?color: #fff;[\s\S]*?border: 0;/);
+  assert.match(css, /html\[data-theme="dark"\] \.mobile-portrait-how-to-play\s*\{\s*color: #000000 !important;\s*background: #eaf0f5 !important;\s*border-color: #eaf0f5 !important;/);
+  assert.match(css, /html\[data-theme="light"\] \.mobile-portrait-how-to-play\s*\{\s*color: #ffffff !important;\s*background: #131c29 !important;\s*border-color: #131c29 !important;/);
+  assert.match(css, /html\[data-theme="light"\] \.how-to-play-label,[\s\S]*?\.mobile-portrait-how-to-play\s*\{[\s\S]*?color: #ffffff !important;[\s\S]*?background: #000000 !important;[\s\S]*?border-color: #000000 !important;/);
+});
+
+test('day header controls use the requested dark blue color and paused overlays stay centered', () => {
+  const app = readFileSync(new URL('./App.tsx', import.meta.url), 'utf8');
+  const css = readFileSync(new URL('./index.css', import.meta.url), 'utf8');
+  assert.match(app, /state === 'paused' \? 'pause-overlay' : ''/);
+  assert.match(css, /html\[data-theme="light"\] \.game-app \.header-controls button\s*\{[\s\S]*?color: #000000;[\s\S]*?border-color: #000000;/);
+  assert.match(css, /html\[data-theme="light"\] \.game-app \.header-controls button svg\s*\{\s*color: #000000;/);
+  assert.match(css, /html\[data-theme="dark"\] \.game-app \.mobile-header-theme-icon\s*\{\s*color: #fff;/);
+  assert.match(css, /\.pause-overlay\s*\{[\s\S]*?align-items: center !important;[\s\S]*?justify-content: center !important;/);
+});
+
+test('Margin Call Continue and How to Play buttons share one size', () => {
+  const app = readFileSync(new URL('./App.tsx', import.meta.url), 'utf8');
+  const css = readFileSync(new URL('./index.css', import.meta.url), 'utf8');
+  assert.match(app, /className="margin-call-action w-full rounded-lg bg-\[#08795c\]/);
+  assert.match(app, /className="margin-call-action mobile-portrait-how-to-play how-to-play-action w-full rounded-lg/);
+  assert.match(css, /\.game-result:not\(\.game-result-over\) \.margin-call-action\s*\{[\s\S]*?min-height: clamp\(38px, 7vh, 52px\);[\s\S]*?padding: clamp\(7px, 1\.8vh, 12px\) clamp\(10px, 3vw, 18px\);[\s\S]*?box-sizing: border-box;/);
+});
+
+test('Margin Call How to Play uses the same fullscreen mobile guide as the main menu', () => {
+  const app = readFileSync(new URL('./App.tsx', import.meta.url), 'utf8');
+  assert.match(app, /const portraitMobile = window\.matchMedia\('\(max-width: 1024px\) and \(orientation: portrait\) and \(pointer: coarse\)'\)\.matches;/);
+  assert.match(app, /if \(portraitMobile\) setMobileGuideOpen\(true\);\s*else setPausedGuideOpen\(true\);/);
+  assert.match(app, /mobileGuideOpen && <div className="mobile-how-to-dialog fixed inset-0/);
+});
+
+test('night mode uses a navy header/footer and black popup panels', () => {
+  const css = readFileSync(new URL('./index.css', import.meta.url), 'utf8');
+  assert.match(css, /:root\s*\{[\s\S]*?--panel: #000000;/);
+  assert.match(css, /html\:not\(\[data-theme="light"\]\) \.game-app header,[\s\S]*?html\:not\(\[data-theme="light"\]\) \.game-app \.site-footer\s*\{[\s\S]*?background: #131c29;/);
+  assert.match(css, /html\[data-theme="dark"\] \.game-app \.header-controls button\s*\{[\s\S]*?color: #fff;[\s\S]*?border-color: #fff;/);
+  assert.match(css, /html\[data-theme="dark"\] \.game-app \.header-controls button svg\s*\{\s*color: #fff;/);
+  assert.match(css, /html\[data-theme="dark"\] \.game-result:not\(\.game-result-over\) \.how-to-play-action\s*\{[\s\S]*?color: #000000 !important;[\s\S]*?background: #ffffff !important;[\s\S]*?border-color: #ffffff !important;/);
+});
+
+test('Live Feed and footer use the requested day/night colors', () => {
+  const game = readFileSync(new URL('./CandleGame.tsx', import.meta.url), 'utf8');
+  const css = readFileSync(new URL('./index.css', import.meta.url), 'utf8');
+  assert.match(game, /ctx\.fillStyle = theme === 'light' \? '#eaf0f5' : '#131c29';[\s\S]*?const tickerBorder = theme === 'light' \? '#ffffff' : '#000000';[\s\S]*?ctx\.fillRect\(0, tapeH - 1, W, 1\);/);
+  assert.match(css, /html\[data-theme="light"\] \.game-app \.site-footer\s*\{\s*background: #eaf0f5;/);
+});
+
+test('How to Play description cards use the requested day/night backgrounds', () => {
+  const css = readFileSync(new URL('./index.css', import.meta.url), 'utf8');
+  assert.match(css, /html\[data-theme="dark"\] \.mechanics-guide > div\s*\{\s*background: #131c29 !important;/);
+  assert.match(css, /html\[data-theme="dark"\] \.mechanics-guide \.mechanics-guide-visuals\s*\{\s*background: #131c29 !important;/);
+  assert.match(css, /html\[data-theme="light"\] \.mechanics-guide > div\s*\{\s*background: #eaf0f5 !important;/);
+  assert.match(css, /html\[data-theme="light"\] \.mechanics-guide \.mechanics-guide-visuals\s*\{\s*background: #eaf0f5 !important;/);
+});
+
+test('desktop and mobile menu controls share one fixed size', () => {
+  const app = readFileSync(new URL('./App.tsx', import.meta.url), 'utf8');
+  assert.equal((app.match(/menu-action-button/g) || []).length, 6);
 });
 
 test('About offers supplied email, Discord and Reddit contacts with keyboard-accessible links', () => {
@@ -52,6 +162,14 @@ test('About offers supplied email, Discord and Reddit contacts with keyboard-acc
   assert.match(footer, /href="https:\/\/www\.reddit\.com\/u\/NagatoKami\/" target="_blank" rel="noopener noreferrer" aria-label="Contact me on Reddit"/);
   assert.doesNotMatch(footer, /Neither-Exercise-612/);
   assert.match(footer, /title="Reddit"[^>]*>\s*<svg[^>]*className="w-5 h-5"[^>]*aria-hidden="true"/);
+});
+
+test('About, Privacy, Disclaimer and Preferences titles use theme-aware colors', () => {
+  const footer = readFileSync(new URL('./SiteFooter.tsx', import.meta.url), 'utf8');
+  const css = readFileSync(new URL('./index.css', import.meta.url), 'utf8');
+  assert.match(footer, /<h2 id="site-info-title" className="site-info-title font-bold text-xl">\{section\}<\/h2>/);
+  assert.match(css, /\.site-info-title\s*\{\s*color: #ffffff;/);
+  assert.match(css, /html\[data-theme="light"\] \.site-info-title\s*\{\s*color: #000000;/);
 });
 
 test('About shows a coffee support button below contacts with a styled cup and safe Ko-fi action', () => {
@@ -71,15 +189,33 @@ test('About shows a coffee support button below contacts with a styled cup and s
 
 test('footer keeps copyright left, navigation centered and preference clearing centered', () => {
   const footer = readFileSync(new URL('./SiteFooter.tsx', import.meta.url), 'utf8');
-  assert.match(footer, /Stonktrooper\.lol<\/span>/);
+  assert.match(footer, /© Stonktrooper\.lol 2026<\/span>/);
+  assert.doesNotMatch(footer, /new Date\(\)\.getFullYear\(\)/);
   assert.doesNotMatch(footer, /Free personal project/);
   assert.match(footer, /sm:grid-cols-\[1fr_auto_1fr\]/);
-  assert.match(footer, /className="justify-self-start whitespace-nowrap"/);
-  assert.match(footer, /aria-label="Site information" className="[^"]*justify-self-center/);
+  assert.match(footer, /aria-label="Site information" className="[^\"]*justify-start justify-self-start/);
+  assert.match(footer, /className="site-footer-copyright justify-self-end whitespace-nowrap"/);
+  assert.ok(footer.indexOf('aria-label="Site information"') < footer.indexOf('© Stonktrooper.lol 2026'));
   assert.match(footer, /const sections = \['About', 'Privacy', 'Disclaimer', 'Preferences'\]/);
   assert.match(footer, /section === 'Preferences'/);
   assert.doesNotMatch(footer, /'Local data'/);
   assert.match(footer, /className="block mx-auto [^"]*" onClick/);
+});
+
+test('desktop footer puts copyright on the left and navigation in the center column', () => {
+  const css = readFileSync(new URL('./index.css', import.meta.url), 'utf8');
+  assert.match(css, /@media \(min-width: 1025px\)\s*\{[\s\S]*?\.game-app \.site-footer > nav\s*\{[\s\S]*?grid-column: 2;[\s\S]*?grid-row: 1;[\s\S]*?justify-self: center;[\s\S]*?justify-content: center;/);
+  assert.match(css, /@media \(min-width: 1025px\)[\s\S]*?\.game-app \.site-footer > \.site-footer-copyright\s*\{[\s\S]*?grid-column: 1;[\s\S]*?grid-row: 1;[\s\S]*?justify-self: start;/);
+});
+
+test('mobile footer uses the requested portrait and landscape arrangements', () => {
+  const css = readFileSync(new URL('./index.css', import.meta.url), 'utf8');
+  assert.match(css, /@media \(max-width: 1024px\) and \(orientation: landscape\) and \(pointer: coarse\) \{[\s\S]*?\.game-app \.site-footer\s*\{\s*grid-template-columns: 1fr auto;/);
+  assert.match(css, /\.game-app \.site-footer > nav\s*\{[\s\S]*?grid-column: 2;[\s\S]*?grid-row: 1;[\s\S]*?justify-self: end;[\s\S]*?flex-wrap: nowrap;/);
+  assert.match(css, /\.game-app \.site-footer > \.site-footer-copyright\s*\{[\s\S]*?grid-column: 1;[\s\S]*?grid-row: 1;[\s\S]*?justify-self: start;/);
+  assert.match(css, /@media \(max-width: 1024px\) and \(orientation: portrait\) and \(pointer: coarse\) \{[\s\S]*?\.game-app \.site-footer\s*\{[\s\S]*?display: flex;[\s\S]*?flex-direction: column;[\s\S]*?align-items: center;[\s\S]*?justify-content: center;/);
+  assert.match(css, /\.game-app \.site-footer > \.site-footer-copyright\s*\{[\s\S]*?order: 1;/);
+  assert.match(css, /\.game-app \.site-footer > nav,[\s\S]*?\.game-app \.site-footer > \.site-footer-copyright\s*\{[\s\S]*?width: auto;[\s\S]*?align-self: center;[\s\S]*?text-align: center;/);
 });
 
 test('app renders the full site footer and keeps its links visible in landscape', () => {
@@ -91,13 +227,23 @@ test('app renders the full site footer and keeps its links visible in landscape'
   assert.match(css, /\.game-app footer \{ flex: 0 0 auto; height: auto;/);
 });
 
+test('portrait menu keeps the Live Feed strip visible below the header', () => {
+  const css = readFileSync(new URL('./index.css', import.meta.url), 'utf8');
+  assert.match(css, /\.game-app \.game-overlay\.how-to-play-overlay\s*\{\s*inset: calc\(100% \* 44 \/ 840\) 0 0;/);
+});
+
 test('mobile landscape retries fullscreen after rotation and keeps guide/result content scrollable', () => {
   const app = readFileSync(new URL('./App.tsx', import.meta.url), 'utf8');
   const css = readFileSync(new URL('./index.css', import.meta.url), 'utf8');
+  assert.match(app, /window\.matchMedia\('\(max-width: 1024px\) and \(pointer: coarse\)'\)/);
+  assert.match(app, /void requestMobileLandscape\(\);\s*sound\.unlock\(\);\s*if \(window\.matchMedia\('\(max-width: 1024px\) and \(pointer: coarse\)'\)\.matches && window\.innerHeight > window\.innerWidth\)/);
   assert.match(app, /if \(!portrait && awaitingLandscape\) \{\s*\/\/ The initial request is made from the START tap\.[\s\S]*?void requestMobileLandscape\(\);/);
   assert.match(css, /@media \(max-width: 1024px\) and \(orientation: landscape\) and \(pointer: coarse\)/);
   assert.match(css, /\.how-to-layout > \.mechanics-guide \{[\s\S]*?overflow-y: auto;[\s\S]*?grid-template-rows: none;/);
-  assert.match(css, /\.game-result-over \{[\s\S]*?overflow: visible !important;/);
+  assert.match(css, /\.game-over-overlay\s*\{[\s\S]*?align-items: center;[\s\S]*?justify-content: center;/);
+  assert.match(css, /\.game-result-over\s*\{[\s\S]*?max-height: calc\(100% - env\(safe-area-inset-top\)/);
+  assert.match(css, /\.game-result-over \.game-result-content\s*\{[\s\S]*?overflow-y: auto;/);
+  assert.doesNotMatch(css, /\.game-result-over\s*\{[\s\S]*?max-height: none;[\s\S]*?overflow: visible !important;/);
 });
 
 test('How to Play keeps the hero and controls inside the panel while descriptions scroll', () => {
@@ -107,8 +253,13 @@ test('How to Play keeps the hero and controls inside the panel while description
   assert.match(css, /\.how-to-layout > \.how-to-aside\s*\{[\s\S]*?min-height: 0;[\s\S]*?overflow: hidden;/);
   assert.match(css, /\.how-to-layout > \.mechanics-guide\s*\{[\s\S]*?overflow-y: auto;/);
   assert.match(css, /\.initial-guide \.mechanics-guide \{[\s\S]*?grid-template-rows: none;[\s\S]*?overflow-y: auto;/);
+  assert.match(css, /\.initial-guide \.mechanics-guide \{[\s\S]*?grid-auto-rows: minmax\(min-content, 1fr\);[\s\S]*?align-content: stretch;/);
+  assert.doesNotMatch(css, /\.initial-guide \.mechanics-guide \{[\s\S]*?grid-auto-rows: max-content;[\s\S]*?align-content: start;/);
   assert.match(css, /\.how-to-layout > \.how-to-aside > \.how-to-hero\s*\{[\s\S]*?flex: 1 1 auto;[\s\S]*?min-height: 0;/);
   assert.match(css, /\.how-to-layout > \.how-to-aside > \.how-to-controls\s*\{[\s\S]*?flex: 0 0 auto;/);
+  assert.match(css, /\.initial-guide aside \{[\s\S]*?display: flex;[\s\S]*?flex-direction: column;[\s\S]*?height: 100%;[\s\S]*?overflow: hidden;/);
+  assert.match(css, /\.initial-guide aside > div:first-child \{[\s\S]*?flex: 1 1 auto;[\s\S]*?overflow: hidden;/);
+  assert.match(css, /\.initial-guide aside img \{[\s\S]*?height: 100%;[\s\S]*?object-fit: cover;/);
 });
 
 test('About starts its first sentence with an inline theme-aware logo and preference button has extra top spacing', () => {

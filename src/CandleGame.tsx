@@ -76,11 +76,14 @@ const AX = 64;   // Price axis width on right
 const CW = 9;    // Candlestick width in pixels
 
 // Mobile screens render the fixed 1920 × 840 game canvas at a very small
-// physical size. Enlarge the whole canvas drawing slightly so the runner,
-// candles, Live Feed and Pips remain readable without changing game physics.
+// physical size. Dynamically enlarge the drawing so the runner, candles,
+// Live Feed and Pips remain readable without changing game physics.
 const mobileCanvasZoom = (): number => {
-  if (typeof window === 'undefined' || !window.matchMedia('(max-width: 767px) and (pointer: coarse)').matches) return 1;
-  return window.innerWidth > window.innerHeight ? 1.08 : 1.12;
+  if (typeof window === 'undefined' || !window.matchMedia('(max-width: 1024px) and (pointer: coarse)').matches) return 1;
+  const shortSide = Math.min(window.innerWidth, window.innerHeight);
+  const orientationBoost = window.innerWidth > window.innerHeight ? 0.1 : 0.11;
+  const sizeBoost = Math.min(0.12, 48 / Math.max(240, shortSide));
+  return Math.min(1.24, orientationBoost + 1 + sizeBoost);
 };
 
 // High-DPI canvases are disproportionately expensive on phones. Keep desktop
@@ -97,7 +100,9 @@ const canvasPixelRatio = (): number => {
 const zoomCanvasPoint = (client: AimPoint, rect: { left: number; top: number; width: number; height: number }, zoom: number): AimPoint => {
   const x = (client.x - rect.left) / rect.width * W;
   const y = (client.y - rect.top) / rect.height * H;
-  return { x: (x - W / 2) / zoom + W / 2, y: (y - H / 2) / zoom + H / 2 };
+  // The render zoom is anchored at the top edge so the enlarged Live Feed
+  // remains visible instead of being cropped by a centered transform.
+  return { x: (x - W / 2) / zoom + W / 2, y: y / zoom };
 };
 const CAP = 50;
 const LEN = 360; // Candlesticks per market cycle
@@ -180,6 +185,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     printerProgress: 0,
     printerRotation: 0,
     printerSaved: null as Candle[] | null,
+    rocketBags: 0,
     printerTurns: [] as PrinterTurn[],
     nextPigeon: 160,
     penalty: 0,
@@ -486,6 +492,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     g.penalty = 0;
     g.bagDrainFrames = 0;
     g.hawkBags = 0;
+    g.rocketBags = 0;
     g.apeTimer = 0;
     g.apes = [];
     g.nextBanana = trackPickupDelay('banana', 'first');
@@ -1339,6 +1346,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
           sound.playDiamond();
         } else if (d.type === 'bag') {
           if (g.hawkTimer > 0) g.hawkBags++;
+          if (g.p.rocketTimer > 0) g.rocketBags++;
           g.bagDrainFrames = 0;
           g.p.carry = 300;
           g.p.shieldKind = 'bag';
@@ -1355,6 +1363,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
         } else if (d.type === 'banknote' && g.printerTimer <= 0) {
           g.banknotes = (g.banknotes || 0) + 1;
           g.p.rocketTimer = 420; // 7 seconds of Rocket Mode!
+          g.rocketBags = 0;
           g.gapAirborne = false;
           g.rocketCoinFrontier = Math.floor(g.p.x / CW) - 1;
           g.popups.push({ x: d.x, y: d.y - 26, text: 'TO THE MOON!', color: '#22c55e', life: 55 });
@@ -1807,6 +1816,18 @@ export const CandleGame: React.FC<CandleGameProps> = ({
       ctx.closePath();
       ctx.stroke();
 
+      // Collected bags hang from hooks along the rocket's lower side,
+      // matching the visible side-mounted bags used by the Hawk dumpster.
+      for (let bag = 0; bag < g.rocketBags; bag++) {
+        const x = -20 + (bag % 4) * 12;
+        const y = 25 + Math.floor(bag / 4) * 11;
+        ctx.strokeStyle = '#d1d5db'; ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.moveTo(x, 10); ctx.lineTo(x, y - 10); ctx.stroke();
+        ctx.save(); ctx.translate(x, y); ctx.scale(0.48, 0.48);
+        drawPickupAsset(ctx, { type: 'bag', x: 0, y: 0, taken: false }, 0, 0);
+        ctx.restore();
+      }
+
       // Hero Seated Inside Cockpit!
       for (const [apeIndex, ape] of g.apes.entries()) {
         // Rear passenger seat: hide the lower body inside the fuselage.
@@ -2185,11 +2206,12 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     };
 
     // NORMAL WIRE TICKER
-    ctx.fillStyle = theme === 'light' ? '#ffffff' : '#0a0f18';
+    ctx.fillStyle = theme === 'light' ? '#eaf0f5' : '#131c29';
     ctx.fillRect(0, 0, W, tapeH);
-    const tickerBorder = theme === 'light' ? '#c5d1dc' : '#26364b';
+    const tickerBorder = theme === 'light' ? '#ffffff' : '#000000';
     ctx.fillStyle = tickerBorder;
     ctx.fillRect(0, 0, W, 1);
+    ctx.fillRect(0, tapeH - 1, W, 1);
 
     ctx.textAlign = 'left';
 
@@ -2296,9 +2318,9 @@ export const CandleGame: React.FC<CandleGameProps> = ({
 
     const zoom = mobileCanvasZoom();
     ctx.save();
-    ctx.translate(W / 2, H / 2);
+    ctx.translate(W / 2, 0);
     ctx.scale(zoom, zoom);
-    ctx.translate(-W / 2, -H / 2);
+    ctx.translate(-W / 2, 0);
 
     if (g.currentState === 'menu') {
       // Decorative only: the initial screen never advances physics or spawns.
@@ -2595,7 +2617,9 @@ export const CandleGame: React.FC<CandleGameProps> = ({
       ctx.fillStyle = '#fff';
       ctx.fillText(price(hc.c), W - AX + 6, y + 4);
     }
-    // Draw last so axis markers cannot cover the full-width feed.
+    ctx.restore();
+    // Draw last while the mobile zoom is still active so the Live Feed scales
+    // with the gameplay and remains readable on small screens.
     drawTopTickerTape(ctx);
     ctx.restore();
   }, [drawHero, drawPickups, drawSwans, drawAnimals, drawTopTickerTape, theme, bossEncounter]);

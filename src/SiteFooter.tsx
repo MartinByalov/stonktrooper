@@ -17,10 +17,10 @@ export function SiteFooter({ onOpen, theme, section, setSection }: { onOpen: () 
   }, [section]);
   return <>
     <footer className="site-footer border-t border-[var(--line)] shrink-0 grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr] items-center gap-x-4 gap-y-1 px-3 py-1 text-[10px] text-[var(--muted)] font-mono-term">
-      <span className="justify-self-start whitespace-nowrap">© {new Date().getFullYear()} Stonktrooper.lol</span>
-      <nav aria-label="Site information" className="flex flex-wrap items-center justify-center justify-self-center gap-3">
+      <nav aria-label="Site information" className="flex flex-wrap items-center justify-start justify-self-start gap-3">
         {sections.map(item => <button key={item} type="button" className="hover:text-[var(--text)] underline underline-offset-2 cursor-pointer" onClick={() => { onOpen(); setMessage(''); setSection(item); }}>{item}</button>)}
       </nav>
+      <span className="site-footer-copyright justify-self-end whitespace-nowrap">© Stonktrooper.lol 2026</span>
     </footer>
     {section && <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4" onPointerDown={event => event.stopPropagation()}>
       <div ref={dialog} role="dialog" aria-modal="true" aria-labelledby="site-info-title" className="w-full max-w-xl max-h-[85dvh] overflow-y-auto rounded-xl border border-[var(--line)] bg-[var(--panel)] p-5 shadow-2xl" onKeyDown={event => {
@@ -35,7 +35,7 @@ export function SiteFooter({ onOpen, theme, section, setSection }: { onOpen: () 
         }
       }}>
         <div className="relative flex justify-center items-center min-h-10 mb-4 px-10">
-          <h2 id="site-info-title" className="font-bold text-xl text-[var(--green)]">{section}</h2>
+          <h2 id="site-info-title" className="site-info-title font-bold text-xl">{section}</h2>
           <button ref={close} type="button" aria-label="Close site information" onClick={() => setSection(null)} className="dialog-close absolute right-0 top-0 p-2 border border-[var(--line)] rounded hover:bg-[var(--alt)] cursor-pointer"><X className="w-5 h-5" aria-hidden="true" /></button>
         </div>
         <div className="space-y-3 text-sm leading-relaxed">

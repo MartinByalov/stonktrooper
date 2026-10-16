@@ -20,16 +20,43 @@ test('How to Play starts below the unblurred Live Feed strip', () => {
   const game = readFileSync(new URL('./CandleGame.tsx', import.meta.url), 'utf8');
   assert.match(game, /const H = 840;\s*const TAPE_HEIGHT = 44;/);
   assert.match(app, /state === 'menu' \? 'how-to-play-overlay' : ''/);
-  assert.match(css, /\.how-to-play-overlay\s*\{\s*top: 5\.238095238%;/);
+  assert.match(css, /\.how-to-play-overlay\s*\{\s*top: calc\(100% \* 44 \/ 840\);/);
+  assert.match(css, /\.game-app \.game-overlay\.how-to-play-overlay\s*\{\s*inset: calc\(100% \* 44 \/ 840\) 0 0;/);
+});
+
+test('paused How to Play stays below Live Feed and inside the header/footer bounds', () => {
+  const app = readFileSync(new URL('./App.tsx', import.meta.url), 'utf8');
+  const css = readFileSync(new URL('./index.css', import.meta.url), 'utf8');
+  assert.match(app, /pausedGuideOpen && <div className="paused-guide-overlay absolute z-40"/);
+  assert.doesNotMatch(app, /pausedGuideOpen && <div className="fixed inset-0/);
+  assert.match(css, /\.paused-guide-overlay\s*\{[\s\S]*?top: calc\(100% \* 44 \/ 840\);[\s\S]*?right: var\(--header-gutter\);[\s\S]*?bottom: 0;[\s\S]*?left: 0;/);
+  assert.match(css, /\.game-app\s*\{\s*--header-gutter: 1rem;/);
+  assert.match(css, /@media \(min-width: 640px\)[\s\S]*?--header-gutter: 1\.5rem;/);
+  assert.match(css, /\.paused-guide-dialog\s*\{[\s\S]*?width: 100%;[\s\S]*?height: 100%;[\s\S]*?overflow-y: auto;/);
+});
+
+test('mobile Margin Call How to Play reuses the fullscreen mobile guide', () => {
+  const app = readFileSync(new URL('./App.tsx', import.meta.url), 'utf8');
+  assert.match(app, /portraitMobile = window\.matchMedia\('\(max-width: 1024px\) and \(orientation: portrait\) and \(pointer: coarse\)'\)\.matches/);
+  assert.match(app, /portraitMobile\) setMobileGuideOpen\(true\);/);
+  assert.match(app, /mobileGuideOpen && <div className="mobile-how-to-dialog fixed inset-0/);
 });
 
 test('mobile canvas zoom enlarges the game and keeps pointer aiming inverse-mapped', () => {
   const game = readFileSync(new URL('./CandleGame.tsx', import.meta.url), 'utf8');
   assert.match(game, /const mobileCanvasZoom = \(\): number =>/);
-  assert.match(game, /window\.innerWidth > window\.innerHeight \? 1\.08 : 1\.12/);
-  assert.match(game, /ctx\.translate\(W \/ 2, H \/ 2\);\s*ctx\.scale\(zoom, zoom\);\s*ctx\.translate\(-W \/ 2, -H \/ 2\)/);
+  assert.match(game, /window\.matchMedia\('\(max-width: 1024px\) and \(pointer: coarse\)'\)/);
+  assert.match(game, /const shortSide = Math\.min\(window\.innerWidth, window\.innerHeight\)/);
+  assert.match(game, /return Math\.min\(1\.24, orientationBoost \+ 1 \+ sizeBoost\)/);
+  assert.match(game, /ctx\.translate\(W \/ 2, 0\);\s*ctx\.scale\(zoom, zoom\);\s*ctx\.translate\(-W \/ 2, 0\)/);
+  assert.match(game, /return \{ x: \(x - W \/ 2\) \/ zoom \+ W \/ 2, y: y \/ zoom \}/);
   assert.match(game, /const canvasPoint = zoomCanvasPoint\(/);
   assert.match(game, /pointerToWorld\(canvasPoint, \{ left: 0, top: 0, width: W, height: H \}/);
+});
+
+test('mobile joystick scales from the smaller viewport dimension', () => {
+  const css = readFileSync(new URL('./index.css', import.meta.url), 'utf8');
+  assert.match(css, /\.mobile-joystick\s*\{[\s\S]*?--joystick-size: clamp\(64px, min\(18vw, 24vh\), 94px\);[\s\S]*?--joystick-knob-size: clamp\(30px, min\(8vw, 11vh\), 46px\);/);
 });
 
 test('canvas keeps mobile backing resolution bounded and avoids render storms during catch-up', () => {
@@ -58,6 +85,17 @@ test('collecting a tender activates hawk mode rather than adding a companion', (
   assert.match(source, /const landing = tenderLanding\(g.C, d.x, CW\);/);
   assert.match(source, /stepTenderFall\(d, landing.y\)/);
   assert.match(source, /const activateHawk = useCallback[\s\S]*?g\.hawkTimer = 600;/);
+});
+
+test('bags collected during To the Moon hang from the rocket and reset for each ride', () => {
+  const source = readFileSync(new URL('./CandleGame.tsx', import.meta.url), 'utf8');
+  assert.match(source, /rocketBags: 0/);
+  assert.match(source, /g\.p\.rocketTimer = 420;[\s\S]*?g\.rocketBags = 0;/);
+  assert.match(source, /if \(g\.p\.rocketTimer > 0\) g\.rocketBags\+\+;/);
+  const rocket = source.slice(source.indexOf('// --- CASE 1: SEATED IN ROCKET'), source.indexOf('// --- STANDARD ON-FOOT RUNNER SPRITE'));
+  assert.match(rocket, /for \(let bag = 0; bag < g\.rocketBags; bag\+\+\)/);
+  assert.match(rocket, /ctx\.translate\(x, y\); ctx\.scale\(0\.48, 0\.48\)/);
+  assert.match(rocket, /type: 'bag'/);
 });
 
 test('printer ticker shows its prefix once and repeats only trailing R letters', () => {

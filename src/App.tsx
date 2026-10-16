@@ -2,7 +2,7 @@ import { MechanicsGuide } from './MechanicsGuide';
 import { MenuHero } from './MenuHero';
 import { BoxingGame } from './BoxingGame';
 import type { BossArena } from './boxingRules';
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, type MouseEvent as ReactMouseEvent, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { GameState } from './types';
 import { CandleGame } from './CandleGame';
 import { AssetPreview } from './AssetPreview';
@@ -13,7 +13,7 @@ import { ShareDD } from './ShareDD';
 import { SiteFooter } from './SiteFooter';
 import type { SiteSection } from './SiteFooter';
 import { sharedScore } from './shareLinks';
-import { Volume2, VolumeX, Maximize, Minimize, Sun, Moon, Pause, Play, X } from 'lucide-react';
+import { Volume2, VolumeX, Maximize, Minimize, Sun, Moon, Pause, Play, X, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export default function App() {
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
@@ -27,13 +27,14 @@ export default function App() {
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [soundMenuOpen, setSoundMenuOpen] = useState(false);
   const [pausedGuideOpen, setPausedGuideOpen] = useState(false);
+  const [mobileGuideOpen, setMobileGuideOpen] = useState(false);
   const [shareDDOpen, setShareDDOpen] = useState(false);
   const [siteSection, setSiteSection] = useState<SiteSection | null>(null);
   const appRef = useRef<HTMLDivElement>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [fullscreenError, setFullscreenError] = useState('');
   const requestMobileLandscape = async () => {
-    if (!window.matchMedia('(max-width: 767px) and (pointer: coarse)').matches) return;
+    if (!window.matchMedia('(max-width: 1024px) and (pointer: coarse)').matches) return;
     try {
       if (!document.fullscreenElement && appRef.current?.requestFullscreen) await appRef.current.requestFullscreen();
       const orientation = screen.orientation as ScreenOrientation & { lock?: (orientation: 'landscape') => Promise<void> };
@@ -64,7 +65,6 @@ export default function App() {
   useEffect(() => { if (state !== 'over') setShareDDOpen(false); }, [state]);
   const [selectedMode, setSelectedMode] = useState<'easy' | 'hard'>('hard');
   const [awaitingLandscape, setAwaitingLandscape] = useState(false);
-  const [portraitPhone, setPortraitPhone] = useState(false);
   const [gameKey, setGameKey] = useState<number>(0);
   const [printerRequest, setPrinterRequest] = useState(0);
   const [invertedRequest, setInvertedRequest] = useState(0);
@@ -136,6 +136,7 @@ export default function App() {
       if (key === 'm') toggleSound();
       if (key === 'f') void toggleFullscreen();
       if (key === 'n') setTheme(current => current === 'dark' ? 'light' : 'dark');
+      if (key === 'escape' && mobileGuideOpen) setMobileGuideOpen(false);
       if (key === 'h' && state === 'play') setState('paused');
       if (key === 'p' && !pausedGuideOpen && !soundMenuOpen) {
         setState(current => current === 'play' ? 'paused' : current === 'paused' ? 'play' : current);
@@ -143,7 +144,7 @@ export default function App() {
     };
     window.addEventListener('keydown', shortcuts, true);
     return () => window.removeEventListener('keydown', shortcuts, true);
-  }, [state, soundEnabled, pausedGuideOpen, soundMenuOpen]);
+  }, [state, soundEnabled, pausedGuideOpen, mobileGuideOpen, soundMenuOpen]);
 
   // App owns playback: replacing a game canvas must not stop the new game's audio.
   useEffect(() => {
@@ -173,7 +174,7 @@ export default function App() {
     if (state === 'menu' && selectedMode !== 'hard') return;
     void requestMobileLandscape();
     sound.unlock();
-    if (window.matchMedia('(max-width: 767px) and (pointer: coarse)').matches && window.innerHeight > window.innerWidth) {
+    if (window.matchMedia('(max-width: 1024px) and (pointer: coarse)').matches && window.innerHeight > window.innerWidth) {
       setAwaitingLandscape(true);
       return;
     }
@@ -187,10 +188,24 @@ export default function App() {
     setState('play');
   };
 
+  const handleModeSelectorClick = (event: ReactMouseEvent<HTMLButtonElement>) => {
+    const bounds = event.currentTarget.getBoundingClientRect();
+    setSelectedMode(event.clientX - bounds.left < bounds.width / 2 ? 'easy' : 'hard');
+  };
+
+  const handleModeSelectorKeyDown = (event: ReactKeyboardEvent<HTMLButtonElement>) => {
+    if (event.key === 'ArrowLeft') {
+      event.preventDefault();
+      setSelectedMode('easy');
+    } else if (event.key === 'ArrowRight') {
+      event.preventDefault();
+      setSelectedMode('hard');
+    }
+  };
+
   useEffect(() => {
     const syncOrientation = () => {
-      const portrait = window.matchMedia('(max-width: 767px) and (pointer: coarse)').matches && window.innerHeight > window.innerWidth;
-      setPortraitPhone(portrait);
+      const portrait = window.matchMedia('(max-width: 1024px) and (pointer: coarse)').matches && window.innerHeight > window.innerWidth;
       if (!portrait && awaitingLandscape) {
         // The initial request is made from the START tap. Retry after the
         // physical rotation as some mobile browsers only expose the final
@@ -225,7 +240,6 @@ export default function App() {
 
   return (
     <div ref={appRef} data-state={state} className="game-app min-h-screen bg-[var(--bg)] text-[var(--text)] transition-colors duration-200">
-      {portraitPhone && <div className="rotate-prompt" role="status"><span className="rotate-prompt-arrow" aria-hidden="true">↻</span><strong>Rotate your phone<br />for the full experience</strong></div>}
       <div className="w-full pt-2">
 
         {/* Sleek Top Utility & Navigation Bar */}
@@ -274,17 +288,17 @@ export default function App() {
             }} className="px-2.5 py-1.5 rounded border border-[var(--line)] bg-[var(--alt)] text-xs text-[var(--green)] disabled:opacity-40">🦘 Kangaroo</button>
             <button type="button" title="Music styles" aria-expanded={soundMenuOpen} onClick={() => { if (state === 'play') setState('paused'); setSoundMenuOpen(true); }} className="px-2.5 py-1.5 rounded border border-[var(--line)] bg-[var(--alt)] text-xs text-[var(--green)]">♫ Music</button>
             </div>
-            <button type="button" title="About" aria-label="Open information about the game" aria-haspopup="dialog" onClick={() => { if (state === 'play') setState('paused'); setSoundMenuOpen(false); setSiteSection('About'); }} className="px-2.5 py-1.5 rounded border border-[var(--line)] bg-[var(--alt)] hover:border-[var(--green)] text-[var(--green)] transition-colors cursor-pointer">
-              <span className="flex w-3.5 h-3.5 items-center justify-center font-serif text-xl font-bold leading-none" aria-hidden="true">i</span>
+            <button type="button" title="About" aria-label="Open information about the game" aria-haspopup="dialog" onClick={() => { if (state === 'play') setState('paused'); setSoundMenuOpen(false); setSiteSection('About'); }} className="mobile-header-control px-2.5 py-1.5 rounded border border-[var(--line)] bg-[var(--alt)] hover:border-[var(--green)] text-[var(--green)] transition-colors cursor-pointer">
+              <span className="mobile-header-info-icon flex w-3 h-3 items-center justify-center font-serif text-lg font-bold leading-none" aria-hidden="true">i</span>
             </button>
             <button
               type="button"
               onClick={() => setTheme(current => current === 'dark' ? 'light' : 'dark')}
-              className="px-2.5 py-1.5 rounded border border-[var(--line)] bg-[var(--alt)] hover:border-[var(--green)] text-[var(--green)] transition-colors cursor-pointer"
+              className="mobile-header-control px-2.5 py-1.5 rounded border border-[var(--line)] bg-[var(--alt)] hover:border-[var(--green)] text-[var(--green)] transition-colors cursor-pointer"
               title={theme === 'dark' ? 'Day mode (N)' : 'Night mode (N)'}
               aria-label={theme === 'dark' ? 'Switch to day mode' : 'Switch to night mode'}
             >
-              {theme === 'dark' ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
+              {theme === 'dark' ? <Sun className="mobile-header-theme-icon w-3 h-3" /> : <Moon className="mobile-header-theme-icon w-3 h-3" />}
             </button>
             <button
               type="button"
@@ -347,14 +361,14 @@ export default function App() {
           {/* OVERLAYS: START MENU / PAUSE / MARGIN CALL */}
           {state === 'boxing' && <BoxingGame encounter={bossEncounter} onDefeat={() => { boxingActive.current = false; setState('over'); }} onComplete={() => { bossEncounter.current = null; boxingActive.current = false; setState('play'); }} />}
           {state !== 'play' && state !== 'boxing' && (
-            <div className={`game-overlay ${state === 'menu' ? 'how-to-play-overlay' : ''} absolute inset-0 z-30 flex items-center justify-center p-3 sm:p-6 ${state === 'menu' ? (theme === 'light' ? 'bg-slate-100/20 backdrop-blur-xs' : 'bg-slate-950/25 backdrop-blur-xs') : state === 'over' ? (theme === 'light' ? 'bg-slate-100/45 backdrop-blur-sm' : 'bg-slate-950/55 backdrop-blur-xs') : 'bg-[var(--veil)] backdrop-blur-xs'} transition-opacity duration-200`}>
+            <div className={`game-overlay ${state === 'menu' ? 'how-to-play-overlay' : ''} ${state === 'paused' ? 'pause-overlay' : ''} ${state === 'over' ? 'game-over-overlay' : ''} absolute inset-0 z-30 flex items-center justify-center p-3 sm:p-6 ${state === 'menu' ? (theme === 'light' ? 'bg-slate-100/20 backdrop-blur-xs' : 'bg-slate-950/25 backdrop-blur-xs') : state === 'over' ? (theme === 'light' ? 'bg-slate-100/45 backdrop-blur-sm' : 'bg-slate-950/55 backdrop-blur-xs') : 'bg-[var(--veil)] backdrop-blur-xs'} transition-opacity duration-200`}>
 
               {/* INITIAL START BRIEFING MODAL (state === 'menu') */}
               {state === 'menu' && (
-                <div style={{ backgroundColor: 'color-mix(in srgb, var(--panel) 88%, transparent)' }} className="initial-guide max-w-[1640px] w-full border border-[var(--line)] rounded-xl p-3 sm:p-5 shadow-2xl text-left">
+                <div style={{ backgroundColor: 'color-mix(in srgb, var(--panel) 88%, transparent)' }} className="initial-guide desktop-initial-guide max-w-[1640px] w-full border border-[var(--line)] rounded-xl p-3 sm:p-5 shadow-2xl text-left">
                   <div className="flex items-center justify-center pb-2 border-b border-[var(--line)] mb-3">
-                    <h2 className="text-xl sm:text-2xl font-black font-mono-term tracking-tight text-[var(--green)]">
-                      HOW TO PLAY
+                    <h2 className="menu-action-button how-to-play-heading text-xl sm:text-2xl font-black font-mono-term tracking-tight">
+                      How to Play
                     </h2>
 
                   </div>
@@ -363,24 +377,66 @@ export default function App() {
                   <div className="how-to-layout flex flex-col items-stretch gap-3">
                     <aside className="how-to-aside w-full max-w-[320px] mx-auto lg:mx-0 lg:w-[280px] xl:w-[320px] shrink-0 flex flex-col items-stretch gap-3"><div className="how-to-hero w-full overflow-hidden rounded-xl"><MenuHero theme={theme} /></div>                  {/* Launch Button */}
                       <div className="how-to-controls w-full mt-auto flex flex-col gap-2">
-                        <div className="how-to-mode-buttons flex flex-col gap-2">
-                          <button type="button" aria-pressed={selectedMode === 'easy'} onClick={() => setSelectedMode('easy')} className={`how-to-mode-button px-4 py-2 rounded-lg border-0 bg-[#38bdf8] text-white font-bold text-xs transition-all hover:brightness-105 ${selectedMode === 'easy' ? 'is-selected' : ''}`}>
-                            {selectedMode === 'easy' ? 'THERE IS NO EASY MODE' : 'EASY MODE'}
+                        <div className="how-to-mode-buttons">
+                          <button
+                            type="button"
+                            aria-label="Change game mode"
+                            aria-live="polite"
+                            onClick={handleModeSelectorClick}
+                            onKeyDown={handleModeSelectorKeyDown}
+                            className={`menu-action-button mobile-portrait-action-button how-to-mode-selector w-full rounded-lg border-0 text-white transition-all hover:brightness-105 ${selectedMode === 'easy' ? 'bg-[#38bdf8]' : 'bg-[#ef5350]'}`}
+                          >
+                            {selectedMode === 'hard' && <ChevronLeft className="how-to-mode-selector-arrow how-to-mode-selector-arrow-left" aria-hidden="true" />}
+                            {selectedMode === 'easy' ? 'There is no Easy Mode' : 'Hard Mode'}
+                            {selectedMode === 'easy' && <ChevronRight className="how-to-mode-selector-arrow how-to-mode-selector-arrow-right" aria-hidden="true" />}
                           </button>
-                          <button type="button" aria-pressed={selectedMode === 'hard'} onClick={() => setSelectedMode('hard')} className={`how-to-mode-button px-4 py-2 rounded-lg border-0 bg-[#ef5350] text-white hover:brightness-95 font-bold text-xs transition-colors ${selectedMode === 'hard' ? 'is-selected' : ''}`}>HARD MODE</button>
                         </div>
                         <button
                           type="button"
                           onClick={handleStartOrResume}
                           disabled={selectedMode !== 'hard'}
-                          style={{ fontWeight: 700 }}
-                          className="w-full py-3.5 px-6 rounded-lg bg-[#08795c] hover:brightness-110 active:brightness-95 text-white font-bold text-sm sm:text-base transition-all shadow-lg flex items-center justify-center gap-2 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                          className="menu-action-button mobile-portrait-action-button w-full rounded-lg bg-[#08795c] hover:brightness-110 active:brightness-95 text-white font-bold text-sm sm:text-base transition-all shadow-lg flex items-center justify-center gap-2 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                         >
-                          START
+                          Start
                         </button>
                       </div>
                     </aside>
                     <MechanicsGuide theme={theme} />
+                  </div>
+                </div>
+              )}
+
+              {state === 'menu' && (
+                <div className="mobile-portrait-guide w-full h-full flex-col items-center justify-center gap-3 p-3 text-center">
+                  <div className="mobile-portrait-hero w-full rounded-xl overflow-hidden">
+                    <MenuHero theme={theme} />
+                  </div>
+                  <button type="button" onClick={() => setMobileGuideOpen(true)} className="menu-action-button mobile-portrait-action-button mobile-portrait-how-to-play w-full rounded-lg border border-[#ffd230] bg-slate-900/85 text-[#ffd230] hover:bg-slate-800 font-bold text-sm font-mono-term">
+                    How to Play
+                  </button>
+                  <div className="how-to-controls mobile-portrait-controls w-full flex flex-col gap-2">
+                    <div className="how-to-mode-buttons">
+                      <button
+                        type="button"
+                        aria-label="Change game mode"
+                        aria-live="polite"
+                        onClick={handleModeSelectorClick}
+                        onKeyDown={handleModeSelectorKeyDown}
+                        className={`menu-action-button mobile-portrait-action-button how-to-mode-selector w-full rounded-lg border-0 text-white transition-all hover:brightness-105 ${selectedMode === 'easy' ? 'bg-[#38bdf8]' : 'bg-[#ef5350]'}`}
+                      >
+                        {selectedMode === 'hard' && <ChevronLeft className="how-to-mode-selector-arrow how-to-mode-selector-arrow-left" aria-hidden="true" />}
+                        {selectedMode === 'easy' ? 'There is no Easy Mode' : 'Hard Mode'}
+                        {selectedMode === 'easy' && <ChevronRight className="how-to-mode-selector-arrow how-to-mode-selector-arrow-right" aria-hidden="true" />}
+                      </button>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleStartOrResume}
+                      disabled={selectedMode !== 'hard'}
+                      className="menu-action-button mobile-portrait-action-button w-full rounded-lg bg-[#08795c] hover:brightness-110 active:brightness-95 text-white font-bold text-sm transition-all shadow-lg flex items-center justify-center gap-2 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      Start
+                    </button>
                   </div>
                 </div>
               )}
@@ -409,18 +465,22 @@ export default function App() {
                       <button
                         type="button"
                         onClick={handleStartOrResume}
-                        className="w-full py-3 px-4 rounded-lg bg-[#08795c] hover:brightness-110 active:brightness-95 text-white font-bold font-mono-term text-sm transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer"
+                        className="margin-call-action w-full rounded-lg bg-[#08795c] hover:brightness-110 active:brightness-95 text-white font-bold font-mono-term text-sm transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer"
                       >
                         <span>{state === 'paused' ? 'Continue' : 'New Game'}</span>
                       </button>
-                      {state === 'paused' && <button type="button" onClick={() => setPausedGuideOpen(true)} className="w-full py-2.5 px-3 rounded-lg border border-[#ffd230] bg-slate-900/85 text-[#ffd230] hover:bg-slate-800 font-bold text-xs font-mono-term">How to Play</button>}
+                      {state === 'paused' && <button type="button" onClick={() => {
+                        const portraitMobile = window.matchMedia('(max-width: 1024px) and (orientation: portrait) and (pointer: coarse)').matches;
+                        if (portraitMobile) setMobileGuideOpen(true);
+                        else setPausedGuideOpen(true);
+                      }} className="margin-call-action mobile-portrait-how-to-play how-to-play-action w-full rounded-lg font-bold font-mono-term">How to Play</button>}
 
-                      {state === 'over' && <button type="button" onClick={() => setShareDDOpen(true)} className="w-full py-2.5 px-3 rounded-lg border border-[#38bdf8] bg-slate-900/85 text-[#38bdf8] hover:bg-slate-800 font-bold text-xs font-mono-term transition-colors cursor-pointer">Share DD</button>}
+                      {state === 'over' && <button type="button" onClick={() => setShareDDOpen(true)} className="share-dd-open w-full py-2.5 px-3 rounded-lg border border-[#38bdf8] bg-slate-900/85 text-[#38bdf8] hover:bg-slate-800 font-bold text-xs font-mono-term transition-colors cursor-pointer">Share DD</button>}
 
                       {state === 'over' && <button
                         type="button"
                         onClick={handleReturnMenu}
-                        className="w-full py-2.5 px-3 rounded-lg border border-[#ffd230] bg-slate-900/85 text-[#ffd230] hover:bg-slate-800 font-bold text-xs font-mono-term transition-colors cursor-pointer"
+                        className="how-to-play-action liquidated-how-to-play w-full py-2.5 px-3 rounded-lg bg-slate-900/85 hover:bg-slate-800 font-bold text-xs font-mono-term transition-colors cursor-pointer"
                       >
                         How to Play
                       </button>}
@@ -430,15 +490,26 @@ export default function App() {
                 </div>
               )}
 
+              {pausedGuideOpen && <div className="paused-guide-overlay absolute z-40" onPointerDown={e => e.stopPropagation()}>
+                <div role="dialog" aria-modal="true" aria-labelledby="paused-guide-title" className="paused-guide-dialog bg-[var(--panel)] border border-[var(--line)] rounded-xl p-4" onKeyDown={e => { e.stopPropagation(); if (e.key === 'Escape') setPausedGuideOpen(false); }}>
+                  <div className="relative flex items-center justify-center pb-2 border-b border-[var(--line)] mb-3 min-h-10 px-10">
+                    <h2 id="paused-guide-title" className="how-to-play-label text-xl sm:text-2xl font-black font-mono-term tracking-tight text-center">How to Play</h2>
+                    <button type="button" autoFocus title="Close How to Play" aria-label="Close How to Play and return to pause" onClick={() => setPausedGuideOpen(false)} className="dialog-close absolute right-0 top-0 p-2 rounded border border-[var(--line)] text-[var(--text)] hover:bg-[var(--alt)] transition-colors cursor-pointer"><X className="w-5 h-5" aria-hidden="true" /></button>
+                  </div>
+                  <MechanicsGuide theme={theme} />
+                </div>
+              </div>}
+
             </div>
           )}
         </section>
         {shareDDOpen && state === 'over' && <ShareDD score={currentResult} onClose={() => setShareDDOpen(false)} theme={'dark'} />}
-        {pausedGuideOpen && <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4" onPointerDown={e => e.stopPropagation()}>
-          <div role="dialog" aria-modal="true" aria-labelledby="paused-guide-title" className="w-full max-w-[1440px] max-h-[90vh] overflow-y-auto bg-[var(--panel)] border border-[var(--line)] rounded-xl p-4" onKeyDown={e => { e.stopPropagation(); if (e.key === 'Escape') setPausedGuideOpen(false); }}>
+
+        {mobileGuideOpen && <div className="mobile-how-to-dialog fixed inset-0 z-50 flex items-center justify-center p-3" onPointerDown={e => e.stopPropagation()}>
+          <div role="dialog" aria-modal="true" aria-labelledby="mobile-guide-title" className="mobile-how-to-panel w-full h-full overflow-hidden bg-[var(--panel)] border border-[var(--line)] rounded-xl p-3">
             <div className="relative flex items-center justify-center pb-2 border-b border-[var(--line)] mb-3 min-h-10 px-10">
-              <h2 id="paused-guide-title" className="text-xl sm:text-2xl font-black font-mono-term tracking-tight text-[var(--green)] text-center">HOW TO PLAY</h2>
-              <button type="button" autoFocus title="Close How to Play" aria-label="Close How to Play and return to pause" onClick={() => setPausedGuideOpen(false)} className="dialog-close absolute right-0 top-0 p-2 rounded border border-[var(--line)] text-[var(--text)] hover:bg-[var(--alt)] transition-colors cursor-pointer"><X className="w-5 h-5" aria-hidden="true" /></button>
+              <h2 id="mobile-guide-title" className="how-to-play-label text-xl font-black font-mono-term tracking-tight text-center">How to Play</h2>
+              <button type="button" autoFocus title="Close How to Play" aria-label="Close How to Play" onClick={() => setMobileGuideOpen(false)} className="dialog-close absolute right-0 top-0 p-2 rounded border border-[var(--line)] text-[var(--text)] hover:bg-[var(--alt)] transition-colors cursor-pointer"><X className="w-5 h-5" aria-hidden="true" /></button>
             </div>
             <MechanicsGuide theme={theme} />
           </div>

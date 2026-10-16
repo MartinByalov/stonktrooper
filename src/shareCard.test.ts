@@ -5,13 +5,13 @@ import { test } from 'node:test';
 import { drawShareCard, formatShareScore, shareCardBackground, SHARE_CARD_WIDTH, SHARE_CARD_HEIGHT } from './shareCard';
 
 test('share card draws the provided background and centers the score inside the case', () => {
-  const labels: { text: string; x: number; y: number; maxWidth?: number; font: string }[] = [];
+  const labels: { text: string; x: number; y: number; maxWidth?: number; font: string; fillStyle: unknown }[] = [];
   const backgrounds: unknown[][] = [];
   let saves = 0, restores = 0;
-  const state = { font: '' };
+  const state: { font: string; fillStyle?: unknown } = { font: '' };
   const ctx = new Proxy(state, {
     get: (target, key) => key === 'measureText' ? (value: string) => ({ width: value.length * 40 })
-      : key === 'fillText' ? (text: string, x: number, y: number, maxWidth?: number) => labels.push({ text, x, y, maxWidth, font: target.font })
+      : key === 'fillText' ? (text: string, x: number, y: number, maxWidth?: number) => labels.push({ text, x, y, maxWidth, font: target.font, fillStyle: target.fillStyle })
       : key === 'drawImage' ? (...args: unknown[]) => backgrounds.push(args)
       : () => { if (key === 'save') saves++; if (key === 'restore') restores++; },
     set: (target, key, value) => { Reflect.set(target, key, value); return true; },
@@ -21,8 +21,12 @@ test('share card draws the provided background and centers the score inside the 
   assert.deepEqual(backgrounds, [[background, 0, 0, SHARE_CARD_WIDTH, SHARE_CARD_HEIGHT]]);
   assert.deepEqual(labels.map(label => label.text), ['BEST SCORE', '12,346']);
   assert(labels.every(label => label.x === 912 && label.y >= 528 && label.y <= 760));
+  assert.equal(labels[0].y, 580);
+  assert.equal(labels[1].y, 650);
+  assert.equal(labels[0].font, 'bold 28px Georgia, serif');
   assert.equal(labels[1].maxWidth, 390);
   assert.equal(labels[1].font, 'bold 86px sans-serif');
+  assert.equal(labels[1].fillStyle, '#08795c');
   assert.equal(saves, restores);
   assert.equal(formatShareScore(NaN), '0');
 });
@@ -87,6 +91,20 @@ test('score dialog keeps its image and actions usable on mobile landscape screen
   assert.match(css, /\.share-dd-canvas \{[\s\S]*?max-width: 100%;[\s\S]*?height: auto;/);
   assert.match(css, /\.share-dd-dialog \{[\s\S]*?max-height: calc\(100dvh/);
   assert.match(css, /\.share-dd-canvas \{[\s\S]*?max-height: min\(58dvh, 62vw\);/);
+});
+
+test('Liquidated and Share DD controls use the requested theme colors', () => {
+  const app = readFileSync(new URL('./App.tsx', import.meta.url), 'utf8');
+  const component = readFileSync(new URL('./ShareDD.tsx', import.meta.url), 'utf8');
+  const css = readFileSync(new URL('./index.css', import.meta.url), 'utf8');
+  assert.match(app, /className="share-dd-open[^>]*>Share DD<\/button>/);
+  assert.match(app, /className="how-to-play-action liquidated-how-to-play[^>]*>\s*How to Play\s*<\/button>/);
+  assert.match(css, /\.game-result-over \.liquidated-how-to-play\s*\{[\s\S]*?border-color: #ffffff !important;/);
+  assert.match(css, /\.game-result-over \.share-dd-open\s*\{[\s\S]*?color: #facc15 !important;[\s\S]*?border-color: #facc15 !important;/);
+  assert.match(css, /html\[data-theme="dark"\] \.share-dd-social-button\s*\{\s*background: #131c29 !important;/);
+  assert.match(css, /html\[data-theme="light"\] \.share-dd-social-button\s*\{\s*background: #eaf0f5 !important;/);
+  assert.match(css, /\.share-dd-close:hover,[\s\S]*?\.share-dd-close:focus-visible\s*\{[\s\S]*?color: #ffffff !important;[\s\S]*?border-color: #ffffff !important;/);
+  assert.doesNotMatch(component, />SCORE<\/h2>/);
 });
 
 test('header actions and Liquidated buttons follow the requested order', () => {

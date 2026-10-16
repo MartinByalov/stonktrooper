@@ -69,7 +69,7 @@ html:not([data-theme="light"]) .coffee-cup {
 :root {
   color-scheme: dark;
   --bg: #0c111b;
-  --panel: #131c29;
+  --panel: #000000;
   --alt: #192435;
   --line: #29364a;
   --text: #e5edf6;
@@ -79,6 +79,25 @@ html:not([data-theme="light"]) .coffee-cup {
   --veil: rgba(12, 17, 27, 0.94);
   --dialog-close-hover: #facc15;
   --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.game-app {
+  --header-gutter: 1rem;
+}
+
+html:not([data-theme="light"]) .game-app header,
+html:not([data-theme="light"]) .game-app .site-footer {
+  background: #131c29;
+}
+
+html[data-theme="light"] .game-app .site-footer {
+  background: #eaf0f5;
+}
+
+@media (min-width: 640px) {
+  .game-app {
+    --header-gutter: 1.5rem;
+  }
 }
 
 html[data-theme="light"] {
@@ -133,7 +152,7 @@ body {
   overflow: hidden;
 }
 
-.game-app > div:not(.rotate-prompt) {
+.game-app > div {
   width: 100%;
   min-width: 0;
   min-height: 100svh;
@@ -171,7 +190,7 @@ body {
 /* Keep the canvas Live Feed (44 of 840 canvas pixels) above the How to Play
    overlay, without dimming or blurring it. The guide fills the area below. */
 .how-to-play-overlay {
-  top: 5.238095238%;
+  top: calc(100% * 44 / 840);
 }
 
 .how-to-mode-button.is-selected {
@@ -222,7 +241,7 @@ body {
   min-height: 0;
   overflow-x: hidden;
   overflow-y: auto;
-  align-content: start;
+  align-content: stretch;
 }
 
 .game-arena:fullscreen {
@@ -249,7 +268,7 @@ body {
   overflow: hidden;
 }
 
-.game-app:fullscreen > div:not(.rotate-prompt) {
+.game-app:fullscreen > div {
   height: 100%;
   min-height: 0;
   padding-top: 0;
@@ -273,7 +292,7 @@ body {
   min-height: 0;
 }
 
-.game-app:fullscreen > div:not(.rotate-prompt) {
+.game-app:fullscreen > div {
   width: 100vw;
   height: 100dvh;
   min-height: 0;
@@ -307,6 +326,55 @@ body {
   font-family: var(--font-mono);
 }
 
+.site-info-title {
+  color: #ffffff;
+}
+
+html[data-theme="light"] .site-info-title {
+  color: #000000;
+}
+
+.how-to-play-heading {
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+html[data-theme="light"] .how-to-play-heading {
+  color: #333a4b;
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
+}
+
+.how-to-play-label,
+.how-to-play-action,
+.mobile-portrait-how-to-play {
+  color: #fff;
+  border: 0;
+}
+
+html[data-theme="light"] .how-to-play-label,
+html[data-theme="light"] .how-to-play-action,
+html[data-theme="light"] .mobile-portrait-how-to-play {
+  color: #ffffff !important;
+  background: #000000 !important;
+  border-color: #000000 !important;
+}
+
+html[data-theme="dark"] .mobile-portrait-how-to-play {
+  color: #000000 !important;
+  background: #eaf0f5 !important;
+  border-color: #eaf0f5 !important;
+}
+
+html[data-theme="light"] .mobile-portrait-how-to-play {
+  color: #ffffff !important;
+  background: #131c29 !important;
+  border-color: #131c29 !important;
+}
+
 .game-app header {
   padding-top: 8px;
   box-sizing: border-box;
@@ -321,8 +389,74 @@ html[data-theme="dark"] .game-app .header-controls button svg {
   color: #fff;
 }
 
+html[data-theme="dark"] .game-result:not(.game-result-over) .how-to-play-action {
+  color: #000000 !important;
+  background: #ffffff !important;
+  border-color: #ffffff !important;
+}
+
+html[data-theme="dark"] .game-result:not(.game-result-over) .how-to-play-action:hover {
+  background: #e5edf6 !important;
+}
+
+html[data-theme="light"] .game-app .header-controls button {
+  color: #000000;
+  border-color: #000000;
+}
+
+html[data-theme="light"] .game-app .header-controls button svg {
+  color: #000000;
+}
+
+html[data-theme="dark"] .game-app .mobile-header-theme-icon {
+  color: #fff;
+}
+
+html[data-theme="light"] .game-app .mobile-header-theme-icon {
+  color: #000000;
+}
+
+html[data-theme="dark"] .mechanics-guide > div {
+  background: #131c29 !important;
+}
+
+html[data-theme="dark"] .mechanics-guide .mechanics-guide-visuals {
+  background: #131c29 !important;
+}
+
+html[data-theme="light"] .mechanics-guide > div {
+  background: #eaf0f5 !important;
+}
+
+html[data-theme="light"] .mechanics-guide .mechanics-guide-visuals {
+  background: #eaf0f5 !important;
+}
+
+.game-result-over .liquidated-how-to-play {
+  border-color: #ffffff !important;
+}
+
+.game-result-over .share-dd-open {
+  color: #facc15 !important;
+  border-color: #facc15 !important;
+}
+
+html[data-theme="dark"] .share-dd-social-button {
+  background: #131c29 !important;
+}
+
+html[data-theme="light"] .share-dd-social-button {
+  background: #eaf0f5 !important;
+}
+
+.share-dd-close:hover,
+.share-dd-close:focus-visible {
+  color: #ffffff !important;
+  border-color: #ffffff !important;
+}
+
 .how-to-grid > div {
-  padding: 0.5rem;
+  padding: 0.25rem;
   gap: 0.5rem;
 }
 
@@ -332,8 +466,8 @@ html[data-theme="dark"] .game-app .header-controls button svg {
 }
 
 .mobile-joystick {
-  --joystick-size: clamp(64px, 18vw, 82px);
-  --joystick-knob-size: clamp(30px, 8vw, 42px);
+  --joystick-size: clamp(64px, min(18vw, 24vh), 94px);
+  --joystick-knob-size: clamp(30px, min(8vw, 11vh), 46px);
   width: var(--joystick-size);
   height: var(--joystick-size);
   bottom: max(12px, env(safe-area-inset-bottom));
@@ -362,6 +496,14 @@ html[data-theme="dark"] .game-app .header-controls button svg {
   max-width: calc(100% - 24px);
   max-height: calc(100% - 16px);
   box-sizing: border-box;
+}
+
+.game-result:not(.game-result-over) .margin-call-action {
+  min-height: clamp(38px, 7vh, 52px);
+  padding: clamp(7px, 1.8vh, 12px) clamp(10px, 3vw, 18px);
+  box-sizing: border-box;
+  font-size: clamp(11px, 2.4vw, 14px);
+  line-height: 1.15;
 }
 
 .game-result-over {
@@ -394,6 +536,36 @@ html[data-theme="dark"] .game-app .header-controls button svg {
   min-height: 0;
 }
 
+.pause-overlay {
+  align-items: center !important;
+  justify-content: center !important;
+  overflow: hidden !important;
+}
+
+.paused-guide-overlay {
+  top: calc(100% * 44 / 840);
+  right: var(--header-gutter);
+  bottom: 0;
+  left: 0;
+  overflow: hidden;
+  pointer-events: auto;
+}
+
+.paused-guide-dialog {
+  width: 100%;
+  height: 100%;
+  max-height: 100%;
+  box-sizing: border-box;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.paused-guide-dialog > .mechanics-guide {
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
 .share-dd-overlay {
   overflow-x: hidden;
   overflow-y: auto;
@@ -421,6 +593,13 @@ html[data-theme="dark"] .game-app .header-controls button svg {
 }
 
 @media (max-width: 767px) {
+  .game-over-overlay {
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    padding: max(8px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
+  }
+
   .game-result {
     width: calc(100% - 16px);
     max-width: calc(100% - 16px);
@@ -430,6 +609,9 @@ html[data-theme="dark"] .game-app .header-controls button svg {
 
   .game-result-over .game-result-content {
     padding-top: clamp(40px, 11vh, 84px) !important;
+    max-height: 100%;
+    overflow-y: auto;
+    overscroll-behavior: contain;
   }
 
   .game-result-over .py-3 {
@@ -457,10 +639,16 @@ html[data-theme="dark"] .game-app .header-controls button svg {
   .game-result-over {
     width: min(448px, calc(100% - 4px));
     max-width: min(448px, calc(100% - 4px));
-    max-height: none;
-    overflow: visible !important;
+    max-height: calc(100% - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 16px);
+    overflow: hidden !important;
     margin: auto;
     flex: 0 0 auto;
+  }
+
+  .game-over-overlay {
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
   }
 
   .game-result-over .game-result-content {
@@ -500,34 +688,14 @@ html[data-theme="dark"] .game-app .header-controls button svg {
   }
 }
 
-/* Key cap style */
-.rotate-prompt {
-  position: fixed; inset: 0; z-index: 100; display: flex;
-  flex-direction: column; align-items: center; justify-content: center;
-  gap: 1rem; padding: 2rem; text-align: center; background: var(--bg);
-}
-
-.rotate-prompt-arrow {
-  font-size: clamp(2.5rem, 12vw, 5rem);
-  line-height: 1;
-}
-
-.rotate-prompt strong {
-  font-size: clamp(1rem, 4vw, 1.5rem);
-}
-
-@media (max-width: 1024px) and (orientation: portrait) and (pointer: coarse) {
-  .rotate-prompt {
-    position: fixed; inset: 0; z-index: 100; display: flex;
-    flex-direction: column; align-items: center; justify-content: center;
-    gap: 1rem; padding: 2rem; text-align: center; background: var(--bg);
-  }
-}
-
 /* Landscape is a fixed-height app shell. The stage receives all remaining space. */
 @media (orientation: landscape) {
+  .game-app {
+    --header-gutter: max(12px, env(safe-area-inset-right));
+  }
+
   .game-app, .game-app:fullscreen { height: 100svh; height: 100dvh; min-height: 0; overflow: hidden; }
-  .game-app > div:not(.rotate-prompt) { height: 100%; min-height: 0; padding-top: 0; display: flex; flex-direction: column; }
+  .game-app > div { height: 100%; min-height: 0; padding-top: 0; display: flex; flex-direction: column; }
   .game-app header { flex: 0 0 auto; flex-wrap: nowrap; gap: clamp(0.35rem, 1.5vw, 1rem); padding: max(8px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) 6px max(12px, env(safe-area-inset-left)); min-height: 42px; box-sizing: border-box; overflow: visible; }
   .game-app header h1 { font-size: clamp(12px, 1.2vw, 20px); }
   .game-app header > div:last-child { gap: clamp(3px, 0.5vw, 8px); min-width: 0; }
@@ -537,15 +705,16 @@ html[data-theme="dark"] .game-app .header-controls button svg {
   .game-app footer { flex: 0 0 auto; height: auto; padding-bottom: max(4px, env(safe-area-inset-bottom)); }
   .game-app .game-arena > .absolute.inset-0 { padding: clamp(4px, 1.5vh, 16px) max(4px, env(safe-area-inset-right)) clamp(4px, 1.5vh, 16px) max(4px, env(safe-area-inset-left)); }
 
-  .initial-guide { width: min(100%, 1640px); max-width: 100%; max-height: calc(100% - 8px); min-height: 0; overflow: hidden; padding: clamp(6px, 1vw, 20px); box-sizing: border-box; }
+  .initial-guide { width: min(100%, 1640px); max-width: 100%; height: calc(100% - 8px); max-height: calc(100% - 8px); min-height: 0; overflow: hidden; padding: clamp(6px, 1vw, 20px); box-sizing: border-box; }
   .initial-guide > div:first-child { margin-bottom: clamp(4px, 0.6vw, 12px); padding-bottom: clamp(4px, 0.6vw, 12px); }
   .initial-guide h2 { font-size: clamp(15px, 1.6vw, 24px); }
   .how-to-layout { flex-direction: row !important; gap: clamp(6px, 0.8vw, 16px); min-width: 0; min-height: 0; }
-  .initial-guide aside { flex: 1 1 0; width: auto; max-width: none; min-width: 0; min-height: 0; margin: 0; gap: clamp(4px, 0.6vw, 12px); }
-  .initial-guide aside > div:first-child { flex: 0 0 auto; width: 100%; min-width: 0; min-height: 0; overflow: hidden; }
-  .initial-guide aside img { display: block; width: 100%; height: auto; object-fit: initial; }
+  .initial-guide aside { display: flex; flex-direction: column; flex: 1 1 0; width: auto; height: 100%; max-width: none; min-width: 0; min-height: 0; margin: 0; gap: clamp(4px, 0.6vw, 12px); overflow: hidden; }
+  .initial-guide aside > div:first-child { flex: 1 1 auto; width: 100%; height: auto; min-width: 0; min-height: 0; overflow: hidden; }
+  .initial-guide aside img { display: block; width: 100%; height: 100%; max-height: 100%; object-fit: cover; object-position: center 38%; }
   .initial-guide aside button { padding: clamp(5px, 0.6vw, 10px); font-size: clamp(10px, 0.75vw, 13px); }
-  .initial-guide .mechanics-guide { flex: 3 1 0; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: none; grid-auto-rows: max-content; align-self: stretch; min-width: 0; min-height: 0; overflow-x: hidden; overflow-y: auto; align-content: start; font-size: clamp(9px, 0.7vw, 12px); }
+  .initial-guide .how-to-controls { flex: 0 0 auto; min-height: 0; overflow: hidden; }
+  .initial-guide .mechanics-guide { flex: 3 1 0; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: none; grid-auto-rows: minmax(min-content, 1fr); align-self: stretch; min-width: 0; min-height: 0; overflow-x: hidden; overflow-y: auto; align-content: stretch; font-size: clamp(9px, 0.7vw, 12px); }
   .initial-guide .mechanics-guide h3 { font-size: inherit; padding: clamp(2px, 0.25vw, 5px); }
   .initial-guide .mechanics-guide .w-\[88px\] { width: clamp(36px, 4vw, 88px); }
   .initial-guide .mechanics-guide .min-h-\[72px\] { min-height: 0; padding: 0; }
@@ -652,10 +821,10 @@ html[data-theme="dark"] .game-app .header-controls button svg {
     min-height: 0;
     overflow-x: hidden;
     overflow-y: auto;
-    align-content: start;
+    align-content: stretch;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     grid-template-rows: none;
-    grid-auto-rows: max-content;
+    grid-auto-rows: minmax(min-content, 1fr);
   }
 
   .how-to-layout > .mechanics-guide > div {
@@ -679,6 +848,25 @@ kbd {
    landscape rules so the guide cards remain readable instead of being
    compressed into four clipped grid rows. */
 @media (max-width: 1024px) and (orientation: landscape) and (pointer: coarse) {
+  .game-app .site-footer {
+    grid-template-columns: 1fr auto;
+  }
+
+  .game-app .site-footer > nav {
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: end;
+    justify-content: flex-end;
+    flex-wrap: nowrap;
+    white-space: nowrap;
+  }
+
+  .game-app .site-footer > .site-footer-copyright {
+    grid-column: 1;
+    grid-row: 1;
+    justify-self: start;
+  }
+
   .game-overlay {
     align-items: flex-start;
     justify-content: flex-start;
@@ -758,10 +946,10 @@ kbd {
     min-height: 0;
     overflow-x: hidden;
     overflow-y: auto;
-    align-content: start;
+    align-content: stretch;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     grid-template-rows: none;
-    grid-auto-rows: max-content;
+    grid-auto-rows: minmax(min-content, 1fr);
   }
 
   .how-to-layout > .mechanics-guide > div {
@@ -776,13 +964,23 @@ kbd {
     overflow: visible;
   }
 
+  .game-over-overlay {
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
   .game-result-over {
-    max-height: none;
-    overflow: visible !important;
+    max-height: calc(100% - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 16px);
+    overflow: hidden !important;
+    margin: auto;
   }
 
   .game-result-over .game-result-content {
     min-width: 0;
+    max-height: 100%;
+    overflow-y: auto;
+    overscroll-behavior: contain;
   }
 
   .share-dd-overlay {
@@ -814,5 +1012,265 @@ kbd {
   .share-dd-actions button {
     min-width: 42px;
     min-height: 42px;
+  }
+}
+
+.mobile-portrait-guide {
+  display: none;
+}
+
+@media (max-width: 1024px) and (orientation: portrait) and (pointer: coarse) {
+  .game-app {
+    --header-gutter: max(20px, env(safe-area-inset-right));
+  }
+
+  .game-app header {
+    flex-wrap: nowrap;
+    gap: 0.5rem;
+    padding: max(8px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) 8px max(20px, env(safe-area-inset-left));
+  }
+
+  .game-app .stonktrooper-logo {
+    height: 2rem;
+  }
+
+  .game-app .header-controls {
+    gap: 0.25rem;
+  }
+
+  .game-app .header-controls > :not(.mobile-header-control) {
+    display: none;
+  }
+
+  .game-app .mobile-header-control {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2rem;
+    min-height: 2rem;
+    padding: 0.25rem;
+  }
+
+  .game-app .game-arena {
+    min-height: 0;
+  }
+
+  .game-app .game-arena > .absolute.inset-0 {
+    align-items: stretch;
+    justify-content: stretch;
+    overflow: hidden;
+    padding: max(8px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
+  }
+
+  /* Keep the 44px Live Feed strip of the game canvas visible below the header;
+     the portrait How to Play overlay starts beneath it. */
+  .game-app .game-overlay.how-to-play-overlay {
+    inset: calc(100% * 44 / 840) 0 0;
+  }
+
+  .game-app .desktop-initial-guide {
+    display: none;
+  }
+
+  .mobile-portrait-guide {
+    display: flex;
+  }
+
+  .mobile-portrait-hero {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: 58vh;
+  }
+
+  .mobile-portrait-hero img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center 38%;
+  }
+
+  .mobile-portrait-controls {
+    flex: 0 0 auto;
+  }
+
+  .mobile-how-to-dialog {
+    background: color-mix(in srgb, var(--bg) 78%, transparent);
+    padding: max(8px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
+  }
+
+  .mobile-how-to-panel {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    max-height: 100%;
+  }
+
+  .mobile-how-to-panel > .mechanics-guide {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    grid-template-columns: 1fr;
+    grid-template-rows: none;
+    grid-auto-rows: minmax(min-content, auto);
+    align-content: start;
+  }
+
+  .initial-guide {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: none;
+    height: 100%;
+    max-height: 100%;
+    min-height: 0;
+    overflow: hidden;
+    padding: 0.75rem;
+  }
+
+  .initial-guide > div:first-child {
+    flex: 0 0 auto;
+  }
+
+  .how-to-layout {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .how-to-layout > .how-to-aside {
+    width: 100%;
+    max-width: none;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .how-to-layout > .how-to-aside > .how-to-hero {
+    flex: 0 0 clamp(120px, 24vh, 220px);
+    height: clamp(120px, 24vh, 220px);
+  }
+
+  .how-to-layout > .mechanics-guide {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    grid-template-columns: 1fr;
+    grid-template-rows: none;
+    grid-auto-rows: minmax(min-content, auto);
+    align-content: start;
+  }
+
+  .game-app .site-footer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem;
+  }
+
+  .game-app .site-footer > nav,
+  .game-app .site-footer > .site-footer-copyright {
+    width: auto;
+    align-self: center;
+    text-align: center;
+  }
+
+  .game-app .site-footer > nav {
+    order: 2;
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    white-space: normal;
+  }
+
+  .game-app .site-footer > .site-footer-copyright {
+    order: 1;
+  }
+
+  .site-footer-copyright {
+    grid-column: auto;
+    align-self: center;
+  }
+}
+
+.mobile-portrait-action-button {
+  font-family: var(--font-mono);
+}
+
+.menu-action-button {
+  box-sizing: border-box;
+  height: 2.75rem;
+  min-height: 2.75rem;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+.site-footer-copyright {
+  grid-column: 3;
+}
+
+@media (min-width: 1025px) {
+  .game-app .site-footer > nav {
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: center;
+    justify-content: center;
+  }
+
+  .game-app .site-footer > .site-footer-copyright {
+    grid-column: 1;
+    grid-row: 1;
+    justify-self: start;
+  }
+}
+
+.how-to-mode-selector {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 2.75rem;
+  min-height: 2.75rem;
+  padding: 0.5rem 0.75rem;
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  font-weight: 700;
+  line-height: 1.25;
+  cursor: pointer;
+}
+
+.how-to-mode-selector-arrow {
+  position: absolute;
+  top: 50%;
+  flex: 0 0 auto;
+  width: 1.1rem;
+  height: 1.1rem;
+  transform: translateY(-50%);
+}
+
+.how-to-mode-selector-arrow-left {
+  left: 0.75rem;
+}
+
+.how-to-mode-selector-arrow-right {
+  right: 0.75rem;
+}
+
+/* Portrait menu controls share one typographic treatment and footer row alignment. */
+.mobile-portrait-action-button {
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+@media (max-width: 1024px) and (orientation: portrait) and (pointer: coarse) {
+  .game-app .site-footer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
   }
 }
