@@ -173,7 +173,7 @@ test('app renders the full site footer and keeps its links visible in landscape'
 
 test('portrait menu keeps the Live Feed strip visible below the header', () => {
   const css = readFileSync(new URL('./index.css', import.meta.url), 'utf8');
-  assert.match(css, /\.game-app \.game-overlay\.how-to-play-overlay\s*\{\s*inset: calc\(100% \* 44 \/ 840\) 0 0;/);
+  assert.match(css, /\.game-app \.game-overlay\.how-to-play-overlay\s*\{\s*inset: calc\(100% \* 56 \/ 840\) 0 0;/);
 });
 
 test('mobile landscape retries fullscreen after rotation and keeps guide/result content scrollable', () => {

@@ -15,4 +15,5 @@ test('every modal X uses the shared theme-aware close style', () => {
   assert.match(css, /:root\s*\{[^}]*--dialog-close-hover: #facc15;/);
   assert.match(css, /html\[data-theme="light"\]\s*\{[^}]*--dialog-close-hover: #0b1426;/);
   assert.match(css, /\.dialog-close:hover,\s*\.dialog-close:focus-visible\s*\{\s*color: var\(--dialog-close-hover\);\s*border-color: var\(--dialog-close-hover\);/);
+  assert.match(css, /\.dialog-close:hover svg,\s*\.dialog-close:focus-visible svg\s*\{\s*color: var\(--dialog-close-hover\);/);
 });

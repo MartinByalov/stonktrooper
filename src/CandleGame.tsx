@@ -71,7 +71,7 @@ interface CandleGameProps {
 
 const W = 1920;
 const H = 840;
-const TAPE_HEIGHT = 44;
+const TAPE_HEIGHT = 56;
 const TIME_AXIS_HEIGHT = 12;
 const AX = 64;   // Price axis width on right
 const CW = 9;    // Candlestick width in pixels
@@ -168,7 +168,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
       const mobile = window.matchMedia('(max-width: 1024px) and (pointer: coarse)').matches;
       const bounds = canvas.getBoundingClientRect();
       const scale = Math.max(0.01, Math.min(bounds.width / W, bounds.height / H) * mobileCanvasZoom());
-      feedLayout.current = { mobile, fontSize: mobile ? Math.min(32, Math.max(11, 14 / scale)) : 11 };
+      feedLayout.current = { mobile, fontSize: mobile ? Math.min(50, Math.max(11, 14 / scale)) : 11 };
     };
     const observer = new ResizeObserver(refresh);
     observer.observe(canvas);

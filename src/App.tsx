@@ -41,7 +41,7 @@ export default function App() {
       const canvas = app.querySelector('.game-stage > canvas');
       if (!canvas) return;
       const rect = canvas.getBoundingClientRect();
-      const feedHeight = rect.height * 44 / 840 * mobileCanvasZoom();
+      const feedHeight = rect.height * 56 / 840 * mobileCanvasZoom();
       app.style.setProperty('--live-feed-bottom', `${rect.top + feedHeight}px`);
       app.style.setProperty('--live-feed-height', `${feedHeight}px`);
     };

@@ -76,6 +76,7 @@ test('share card uses theme-specific backgrounds and preview/export use the same
   assert.doesNotMatch(component, /Share this score link:|Score link copied\. Ready to share\.|await navigator.share\(|This browser cannot share images/);
   assert.match(component, /void shareSocial\(platform.name\)/);
   assert.match(component, /window\.open\(destination\.href, '_blank', 'noopener,noreferrer'\)/);
+  assert.doesNotMatch(component.slice(component.indexOf('const shareSocial'), component.indexOf('return <div')), /copyText/);
   assert.match(component, /Share score link to \$\{platform\.name\}/);
   assert.doesNotMatch(component, /Download PNG|link.download|createObjectURL|const download/);
   assert.doesNotMatch(component, /score-share-link|linkInput|<input/);
@@ -105,7 +106,7 @@ test('Liquidated and Share DD controls use the requested theme colors', () => {
   assert.match(css, /\.game-result-over \.share-dd-open\s*\{[\s\S]*?color: #facc15 !important;[\s\S]*?border-color: #facc15 !important;/);
   assert.match(css, /html\[data-theme="dark"\] \.share-dd-social-button\s*\{\s*background: #131c29 !important;/);
   assert.match(css, /html\[data-theme="light"\] \.share-dd-social-button\s*\{\s*background: #eaf0f5 !important;/);
-  assert.match(css, /\.share-dd-close:hover,[\s\S]*?\.share-dd-close:focus-visible\s*\{[\s\S]*?color: #ffffff !important;[\s\S]*?border-color: #ffffff !important;/);
+  assert.doesNotMatch(css, /\.share-dd-close:hover/);
   assert.doesNotMatch(component, />SCORE<\/h2>/);
 });
 

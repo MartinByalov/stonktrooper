@@ -71,13 +71,10 @@ export function ShareDD({ score, theme, scoreTheme = theme, demo = false, onClos
     setSharing(true);
     try {
       window.open(destination.href, '_blank', 'noopener,noreferrer');
-      await copyText(url, navigator, document, dialog.current ?? document.body);
-      setMessage(`${platform} opened with your score link. The link was also copied.`);
-    } catch (cause) {
+      setMessage(`${platform} opened with your score link.`);
+    } catch {
       setMessage('');
-      if (!(cause instanceof DOMException && cause.name === 'AbortError')) {
-        setError(`Unable to prepare the ${platform} share link.`);
-      }
+      setError(`Unable to open the ${platform} share link.`);
     } finally { setSharing(false); }
   };
   return <div className="share-dd-overlay fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4" onPointerDown={event => event.stopPropagation()}>

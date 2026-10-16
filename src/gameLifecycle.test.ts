@@ -18,10 +18,10 @@ test('How to Play starts below the unblurred Live Feed strip', () => {
   const app = readFileSync(new URL('./App.tsx', import.meta.url), 'utf8');
   const css = readFileSync(new URL('./index.css', import.meta.url), 'utf8');
   const game = readFileSync(new URL('./CandleGame.tsx', import.meta.url), 'utf8');
-  assert.match(game, /const H = 840;\s*const TAPE_HEIGHT = 44;/);
+  assert.match(game, /const H = 840;\s*const TAPE_HEIGHT = 56;/);
   assert.match(app, /state === 'menu' \? 'how-to-play-overlay' : ''/);
-  assert.match(css, /\.how-to-play-overlay\s*\{\s*top: calc\(100% \* 44 \/ 840\);/);
-  assert.match(css, /\.game-app \.game-overlay\.how-to-play-overlay\s*\{\s*inset: calc\(100% \* 44 \/ 840\) 0 0;/);
+  assert.match(css, /\.how-to-play-overlay\s*\{\s*top: calc\(100% \* 56 \/ 840\);/);
+  assert.match(css, /\.game-app \.game-overlay\.how-to-play-overlay\s*\{\s*inset: calc\(100% \* 56 \/ 840\) 0 0;/);
 });
 
 test('paused How to Play stays below Live Feed and inside the header/footer bounds', () => {
@@ -29,7 +29,7 @@ test('paused How to Play stays below Live Feed and inside the header/footer boun
   const css = readFileSync(new URL('./index.css', import.meta.url), 'utf8');
   assert.match(app, /pausedGuideOpen && <div className="paused-guide-overlay absolute z-40"/);
   assert.doesNotMatch(app, /pausedGuideOpen && <div className="fixed inset-0/);
-  assert.match(css, /\.paused-guide-overlay\s*\{[\s\S]*?top: calc\(100% \* 44 \/ 840\);[\s\S]*?right: var\(--header-gutter\);[\s\S]*?bottom: 0;[\s\S]*?left: 0;/);
+  assert.match(css, /\.paused-guide-overlay\s*\{[\s\S]*?top: calc\(100% \* 56 \/ 840\);[\s\S]*?right: var\(--header-gutter\);[\s\S]*?bottom: 0;[\s\S]*?left: 0;/);
   assert.match(css, /\.game-app\s*\{\s*--header-gutter: 1rem;/);
   assert.match(css, /@media \(min-width: 640px\)[\s\S]*?--header-gutter: 1\.5rem;/);
   assert.match(css, /\.paused-guide-dialog\s*\{[\s\S]*?width: 100%;[\s\S]*?height: 100%;[\s\S]*?overflow-y: auto;/);
@@ -51,7 +51,10 @@ test('mobile landscape to portrait rotation pauses an active game', () => {
 
 test('mobile canvas zoom enlarges the game and keeps pointer aiming inverse-mapped', () => {
   const game = readFileSync(new URL('./CandleGame.tsx', import.meta.url), 'utf8');
+  const app = readFileSync(new URL('./App.tsx', import.meta.url), 'utf8');
   assert.match(game, /const mobileCanvasZoom = \(\): number =>/);
+  assert.match(game, /feedLayout\.current = \{ mobile, fontSize: mobile \? Math\.min\(50, Math\.max\(11, 14 \/ scale\)\) : 11 \}/);
+  assert.match(app, /rect\.height \* 56 \/ 840 \* mobileCanvasZoom\(\)/);
   assert.match(game, /window\.matchMedia\('\(max-width: 1024px\) and \(pointer: coarse\)'\)/);
   assert.match(game, /const shortSide = Math\.min\(window\.innerWidth, window\.innerHeight\)/);
   assert.match(game, /return Math\.min\(1\.34, orientationBoost \+ 1 \+ sizeBoost\)/);
