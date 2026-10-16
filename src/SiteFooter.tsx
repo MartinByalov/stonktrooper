@@ -22,8 +22,8 @@ export function SiteFooter({ onOpen, theme, section, setSection }: { onOpen: () 
       </nav>
       <span className="site-footer-copyright justify-self-end whitespace-nowrap">© Stonktrooper.lol 2026</span>
     </footer>
-    {section && <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4" onPointerDown={event => event.stopPropagation()}>
-      <div ref={dialog} role="dialog" aria-modal="true" aria-labelledby="site-info-title" className="w-full max-w-xl max-h-[85dvh] overflow-y-auto rounded-xl border border-[var(--line)] bg-[var(--panel)] p-5 shadow-2xl" onKeyDown={event => {
+    {section && <div className="site-info-overlay fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4" onPointerDown={event => event.stopPropagation()}>
+      <div ref={dialog} role="dialog" aria-modal="true" aria-labelledby="site-info-title" className="site-info-dialog w-full max-w-xl max-h-[85dvh] overflow-y-auto rounded-xl border border-[var(--line)] bg-[var(--panel)] p-5 shadow-2xl" onKeyDown={event => {
         event.stopPropagation();
         if (event.key === 'Escape') setSection(null);
         if (event.key === 'Tab') {
@@ -36,7 +36,7 @@ export function SiteFooter({ onOpen, theme, section, setSection }: { onOpen: () 
       }}>
         <div className="relative flex justify-center items-center min-h-10 mb-4 px-10">
           <h2 id="site-info-title" className="site-info-title font-bold text-xl">{section}</h2>
-          <button ref={close} type="button" aria-label="Close site information" onClick={() => setSection(null)} className="dialog-close absolute right-0 top-0 p-2 border border-[var(--line)] rounded hover:bg-[var(--alt)] cursor-pointer"><X className="w-5 h-5" aria-hidden="true" /></button>
+          <button ref={close} type="button" aria-label="Close site information" onClick={() => setSection(null)} className="dialog-close site-info-close absolute right-0 top-0 p-2 border border-[var(--line)] rounded hover:bg-[var(--alt)] cursor-pointer"><X className="w-5 h-5" aria-hidden="true" /></button>
         </div>
         <div className="space-y-3 text-sm leading-relaxed">
           {section === 'About' && <>
@@ -88,7 +88,7 @@ export function SiteFooter({ onOpen, theme, section, setSection }: { onOpen: () 
             <p>The game saves only theme and sound preferences in this browser. <br></br> You can remove them below or through your browser's site-data settings.</p>
             <p>Removing the saved settings does not interrupt the current game. <br></br>Defaults apply after your next reload. Later preference changes may save new settings.</p>
             <div className="pt-2">
-              <button type="button" className="block mx-auto w-full py-2.5 px-3 rounded-lg border border-[#ffd230] bg-slate-900/85 text-[#ffd230] hover:bg-slate-800 font-bold text-xs font-mono-term cursor-pointer" onClick={() => {
+              <button type="button" className="preferences-clear-button block mx-auto w-full py-2.5 px-3 rounded-lg border font-bold text-xs font-mono-term cursor-pointer" onClick={() => {
                 try { localStorage.removeItem('cr_theme'); localStorage.removeItem('stonker-sounds'); setMessage('Saved theme and sound preferences removed.'); }
                 catch { setMessage('Unable to access browser storage. Use your browser site-data settings.'); }
               }}>Clear saved preferences</button>

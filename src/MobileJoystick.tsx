@@ -1,10 +1,11 @@
 // Browser game module for MobileJoystick.
 import { useRef, useState } from 'react';
 
-export function MobileJoystick({ onMove, onPress, onRelease }: {
+export function MobileJoystick({ onMove, onPress, onRelease, movementEnabled }: {
   onMove: (x: number, y: number) => void;
   onPress: () => void;
   onRelease: () => void;
+  movementEnabled: boolean;
 }) {
   const pointer = useRef<number | null>(null);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
@@ -14,7 +15,7 @@ export function MobileJoystick({ onMove, onPress, onRelease }: {
     setOffset({ x: 0, y: 0 }); onMove(0, 0); onRelease();
   };
   return <div
-    role="button" aria-label="Joystick: tap to jump, drag to move" tabIndex={0}
+    role="button" aria-label={movementEnabled ? 'Joystick: tap to jump, drag to move' : 'Joystick: tap to jump'} tabIndex={0}
     className="mobile-joystick absolute bottom-4 left-4 z-50 flex items-center justify-center rounded-full touch-none select-none pointer-events-auto min-[1025px]:hidden"
     onPointerDown={e => {
       e.preventDefault(); e.stopPropagation();
@@ -24,6 +25,7 @@ export function MobileJoystick({ onMove, onPress, onRelease }: {
     onPointerMove={e => {
       if (pointer.current !== e.pointerId) return;
       e.preventDefault(); e.stopPropagation();
+      if (!movementEnabled) return;
       const rect = e.currentTarget.getBoundingClientRect();
       const dx = e.clientX - rect.left - rect.width / 2;
       const dy = e.clientY - rect.top - rect.height / 2;

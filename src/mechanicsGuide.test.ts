@@ -18,6 +18,8 @@ test('Fedora guide preview uses the chart pickup orientation', () => {
 test('guide titles occupy a separate top row above descriptions', () => {
   const guide = readFileSync(new URL('./MechanicsGuide.tsx', import.meta.url), 'utf8');
   assert.match(guide, /<h3 className="[^"]*shrink-0 min-h-\[3em\]"/);
+  assert.match(guide, /<h3 className="[^\"]*pt-2 pb-1[^\"]*">/);
+  assert.match(guide, /<h3 className="[^\"]*pt-2 pb-1[^\"]*">/);
   assert.doesNotMatch(guide, /flex-col items-center justify-center text-center/);
 });
 

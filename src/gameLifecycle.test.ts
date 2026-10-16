@@ -18,10 +18,12 @@ test('How to Play starts below the unblurred Live Feed strip', () => {
   const app = readFileSync(new URL('./App.tsx', import.meta.url), 'utf8');
   const css = readFileSync(new URL('./index.css', import.meta.url), 'utf8');
   const game = readFileSync(new URL('./CandleGame.tsx', import.meta.url), 'utf8');
-  assert.match(game, /const H = 840;\s*const TAPE_HEIGHT = 56;/);
+  assert.match(game, /const H = 840;\s*const TAPE_HEIGHT = 48;/);
   assert.match(app, /state === 'menu' \? 'how-to-play-overlay' : ''/);
-  assert.match(css, /\.how-to-play-overlay\s*\{\s*top: calc\(100% \* 56 \/ 840\);/);
-  assert.match(css, /\.game-app \.game-overlay\.how-to-play-overlay\s*\{\s*inset: calc\(100% \* 56 \/ 840\) 0 0;/);
+  assert.match(css, /\.how-to-play-overlay\s*\{\s*top: calc\(100% \* 48 \/ 840\);/);
+  assert.match(css, /\.game-app \.game-overlay\.how-to-play-overlay\s*\{\s*inset: calc\(100% \* 48 \/ 840\) 0 0;/);
+  assert.match(app, /relative flex h-10 items-center justify-center border-b[^>]*>[\s\S]*?id="paused-guide-title"[\s\S]*?top-1\/2 -translate-y-1\/2/);
+  assert.match(app, /relative flex h-10 items-center justify-center mb-3[^>]*>[\s\S]*?id="mobile-guide-title"[\s\S]*?top-1\/2 -translate-y-1\/2/);
 });
 
 test('paused How to Play stays below Live Feed and inside the header/footer bounds', () => {
@@ -29,7 +31,7 @@ test('paused How to Play stays below Live Feed and inside the header/footer boun
   const css = readFileSync(new URL('./index.css', import.meta.url), 'utf8');
   assert.match(app, /pausedGuideOpen && <div className="paused-guide-overlay absolute z-40"/);
   assert.doesNotMatch(app, /pausedGuideOpen && <div className="fixed inset-0/);
-  assert.match(css, /\.paused-guide-overlay\s*\{[\s\S]*?top: calc\(100% \* 56 \/ 840\);[\s\S]*?right: var\(--header-gutter\);[\s\S]*?bottom: 0;[\s\S]*?left: 0;/);
+  assert.match(css, /\.paused-guide-overlay\s*\{[\s\S]*?top: calc\(100% \* 48 \/ 840\);[\s\S]*?right: var\(--header-gutter\);[\s\S]*?bottom: 0;[\s\S]*?left: 0;/);
   assert.match(css, /\.game-app\s*\{\s*--header-gutter: 1rem;/);
   assert.match(css, /@media \(min-width: 640px\)[\s\S]*?--header-gutter: 1\.5rem;/);
   assert.match(css, /\.paused-guide-dialog\s*\{[\s\S]*?width: 100%;[\s\S]*?height: 100%;[\s\S]*?overflow-y: auto;/);
@@ -49,12 +51,23 @@ test('mobile landscape to portrait rotation pauses an active game', () => {
   assert.match(app, /window\.addEventListener\('orientationchange', syncOrientation\)/);
 });
 
+test('mobile landscape lock is released outside play, pause and Kangaroo', () => {
+  const app = readFileSync(new URL('./App.tsx', import.meta.url), 'utf8');
+  assert.match(app, /state === 'play' \|\| state === 'paused' \|\| state === 'boxing' \|\| awaitingLandscape/);
+  assert.match(app, /orientation\?\.unlock\?\.\(\)/);
+  assert.match(app, /document\.fullscreenElement === appRef\.current\) void document\.exitFullscreen\(\)/);
+});
+
 test('mobile canvas zoom enlarges the game and keeps pointer aiming inverse-mapped', () => {
   const game = readFileSync(new URL('./CandleGame.tsx', import.meta.url), 'utf8');
   const app = readFileSync(new URL('./App.tsx', import.meta.url), 'utf8');
   assert.match(game, /const mobileCanvasZoom = \(\): number =>/);
-  assert.match(game, /feedLayout\.current = \{ mobile, fontSize: mobile \? Math\.min\(50, Math\.max\(11, 14 \/ scale\)\) : 11 \}/);
-  assert.match(app, /rect\.height \* 56 \/ 840 \* mobileCanvasZoom\(\)/);
+  assert.match(game, /feedLayout\.current = \{ mobile, fontSize: mobile \? Math\.min\(64, Math\.max\(11, 14 \/ scale\)\) : 11, textScaleX \}/);
+  assert.match(game, /const scale = Math\.max\(0\.01, bounds\.height \/ H \* mobileCanvasZoom\(\)\)/);
+  assert.match(game, /const horizontalScale = Math\.max\(0\.01, bounds\.width \/ W \* mobileCanvasZoom\(\)\)/);
+  assert.match(game, /const textScaleX = mobile \? scale \/ horizontalScale : 1/);
+  assert.match(game, /ctx\.scale\(textScaleX, 1\)/);
+  assert.match(app, /rect\.height \* 48 \/ 840 \* mobileCanvasZoom\(\)/);
   assert.match(game, /window\.matchMedia\('\(max-width: 1024px\) and \(pointer: coarse\)'\)/);
   assert.match(game, /const shortSide = Math\.min\(window\.innerWidth, window\.innerHeight\)/);
   assert.match(game, /return Math\.min\(1\.34, orientationBoost \+ 1 \+ sizeBoost\)/);
@@ -69,6 +82,14 @@ test('mobile canvas zoom enlarges the game and keeps pointer aiming inverse-mapp
 test('mobile joystick scales from the smaller viewport dimension', () => {
   const css = readFileSync(new URL('./index.css', import.meta.url), 'utf8');
   assert.match(css, /\.mobile-joystick\s*\{[\s\S]*?--joystick-size: clamp\(56px, min\(14vw, 18vh\), 78px\);[\s\S]*?--joystick-knob-size: clamp\(26px, min\(6\.5vw, 8\.5vh\), 38px\);/);
+});
+
+test('mobile joystick only sends movement in Kangaroo mode', () => {
+  const game = readFileSync(new URL('./CandleGame.tsx', import.meta.url), 'utf8');
+  const joystick = readFileSync(new URL('./MobileJoystick.tsx', import.meta.url), 'utf8');
+  assert.match(game, /<MobileJoystick\s+movementEnabled=\{state === 'boxing'\}/);
+  assert.match(joystick, /if \(!movementEnabled\) return;/);
+  assert.match(joystick, /onPress\(\)/);
 });
 
 test('canvas keeps mobile backing resolution bounded and avoids render storms during catch-up', () => {

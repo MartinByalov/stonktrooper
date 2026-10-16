@@ -71,7 +71,7 @@ interface CandleGameProps {
 
 const W = 1920;
 const H = 840;
-const TAPE_HEIGHT = 56;
+const TAPE_HEIGHT = 48;
 const TIME_AXIS_HEIGHT = 12;
 const AX = 64;   // Price axis width on right
 const CW = 9;    // Candlestick width in pixels
@@ -159,16 +159,18 @@ export const CandleGame: React.FC<CandleGameProps> = ({
   onHawkActivated
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const feedLayout = useRef({ mobile: false, fontSize: 11 });
-  const feedTextCache = useRef(new WeakMap<MarketNews, { message: string; font: string; width: number }>());
+  const feedLayout = useRef({ mobile: false, fontSize: 11, textScaleX: 1 });
+  const feedTextCache = useRef(new WeakMap<MarketNews, { message: string; font: string; width: number; textScaleX: number }>());
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const refresh = () => {
       const mobile = window.matchMedia('(max-width: 1024px) and (pointer: coarse)').matches;
       const bounds = canvas.getBoundingClientRect();
-      const scale = Math.max(0.01, Math.min(bounds.width / W, bounds.height / H) * mobileCanvasZoom());
-      feedLayout.current = { mobile, fontSize: mobile ? Math.min(50, Math.max(11, 14 / scale)) : 11 };
+      const scale = Math.max(0.01, bounds.height / H * mobileCanvasZoom());
+      const horizontalScale = Math.max(0.01, bounds.width / W * mobileCanvasZoom());
+      const textScaleX = mobile ? scale / horizontalScale : 1;
+      feedLayout.current = { mobile, fontSize: mobile ? Math.min(64, Math.max(11, 14 / scale)) : 11, textScaleX };
     };
     const observer = new ResizeObserver(refresh);
     observer.observe(canvas);
@@ -2250,7 +2252,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
   const drawTopTickerTape = useCallback((ctx: CanvasRenderingContext2D) => {
     const g = gameRef.current;
     const tapeH = TAPE_HEIGHT;
-    const { mobile, fontSize: feedFontSize } = feedLayout.current;
+    const { mobile, fontSize: feedFontSize, textScaleX } = feedLayout.current;
 
     ctx.save();
     ctx.textBaseline = 'alphabetic';
@@ -2260,7 +2262,11 @@ export const CandleGame: React.FC<CandleGameProps> = ({
       const metrics = ctx.measureText('Hg');
       const ascent = metrics.actualBoundingBoxAscent ?? 9;
       const descent = metrics.actualBoundingBoxDescent ?? 2;
-      ctx.fillText(text, x, tapeH / 2 + (ascent - descent) / 2);
+      ctx.save();
+      ctx.translate(x, tapeH / 2 + (ascent - descent) / 2);
+      ctx.scale(textScaleX, 1);
+      ctx.fillText(text, 0, 0);
+      ctx.restore();
     };
 
     // NORMAL WIRE TICKER
@@ -2291,9 +2297,9 @@ export const CandleGame: React.FC<CandleGameProps> = ({
         ctx.textAlign = 'left';
         // The prefix never wraps; only the trailing R stream repeats.
         const prefix = 'MONEY PRINTER GO B';
-        const prefixWidth = ctx.measureText(prefix).width;
+        const prefixWidth = ctx.measureText(prefix).width * textScaleX;
         if (g.printerTickerX + prefixWidth > 0) writeCentered(prefix, g.printerTickerX);
-        const letterWidth = Math.max(1, ctx.measureText('R').width);
+        const letterWidth = Math.max(1, ctx.measureText('R').width * textScaleX);
         const tailX = g.printerTickerX + prefixWidth;
         const visibleTailX = tailX < 0 ? -((-tailX) % letterWidth) : tailX;
         if (visibleTailX < W) {
@@ -2310,9 +2316,9 @@ export const CandleGame: React.FC<CandleGameProps> = ({
       }
       const item = g.tickerQueue[itemIndex++];
       let cached = feedTextCache.current.get(item.news);
-      if (!cached || cached.font !== ctx.font) {
+      if (!cached || cached.font !== ctx.font || cached.textScaleX !== textScaleX) {
         const message = cached?.message ?? `${item.news.source}: ${formatFeedHeadline(item.news.headline)}`.replace(/[\p{Extended_Pictographic}\uFE0F\u200D]/gu, '');
-        cached = { message, font: ctx.font, width: ctx.measureText(message).width + 48 };
+        cached = { message, font: ctx.font, width: (ctx.measureText(message).width + 48) * textScaleX, textScaleX };
         feedTextCache.current.set(item.news, cached);
       }
       const message = cached.message;
@@ -3046,6 +3052,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
 
 
       {(state === 'play' || state === 'boxing') && <MobileJoystick
+        movementEnabled={state === 'boxing'}
         onPress={() => {
           if (gameRef.current.currentState === 'boxing' && bossEncounter.current) bossEncounter.current.jumpRequested = true;
           else pressJump();

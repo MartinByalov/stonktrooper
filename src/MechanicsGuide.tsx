@@ -25,7 +25,7 @@ export function MechanicsGuide({ theme }: { theme: 'light' | 'dark' }) {
           {card.below && <div className="min-h-[72px] border-t border-[var(--line)] flex items-center justify-center px-1"><AssetPreview asset={card.below} compact theme={theme} /></div>}
         </div>
         <div className="min-w-0 flex-1 flex flex-col items-center text-center px-2 py-1.5">
-          <h3 className="uppercase text-xs font-bold leading-tight mb-2 w-full shrink-0 min-h-[3em]">{card.title}</h3>
+          <h3 className="uppercase text-xs font-bold leading-tight px-2 pt-2 pb-1 mb-2 w-full shrink-0 min-h-[3em]">{card.title}</h3>
           <p className="m-0 whitespace-pre-line">{card.text.split(/((?:Pigeon|Hawk|Swan) \(\+\d+ pips\)|A \/ ← \(Move Left\)|D \/ → \(Move Right\)|S \/ ↓ \(Does Nothing\)|\+\d+ pips)/g).map((part, index) => /^(?:(?:Pigeon|Hawk|Swan) \(\+\d+ pips\)|A \/ ← \(Move Left\)|D \/ → \(Move Right\)|S \/ ↓ \(Does Nothing\)|\+\d+ pips)$/.test(part) ? <strong key={index}>{part}</strong> : part)}</p>
         </div>
       </div>

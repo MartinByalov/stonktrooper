@@ -14,8 +14,8 @@ test('footer describes the free project and header opens About before the theme 
   assert.match(footer, /Google Fonts/);
   assert.doesNotMatch(app, /<Coffee|ko-fi\.com/);
   assert.match(app, /aria-label="Open information about the game" aria-haspopup="dialog"/);
-  assert.match(app, /if \(state === 'play'\) setState\('paused'\); setSoundMenuOpen\(false\); setSiteSection\('About'\)/);
-  assert.match(app, /<span className="mobile-header-info-icon flex w-3 h-3 items-center justify-center font-serif text-lg font-bold leading-none" aria-hidden="true">i<\/span>\s*<\/button>\s*<button\s+type="button"\s+onClick=\{\(\) => setTheme/);
+  assert.match(app, /setSoundMenuOpen\(false\); setSiteSection\('About'\)/);
+  assert.match(app, /mobile-header-about-control[\s\S]*?mobile-header-info-icon[\s\S]*?<\/button>\}\s*<button[\s\S]*?onClick=\{\(\) => setTheme/);
   assert.doesNotMatch(app, /<Info/);
 });
 
@@ -46,7 +46,10 @@ test('Mode selector and privacy links use sky blue and preference clearing match
   const preferences = footer.match(/className="([^"]*)" onClick=\{\(\) => \{\s*try \{ localStorage.removeItem/);
   assert(guide && preferences);
   assert(guide[1].includes('how-to-play-action'));
-  assert(preferences[1].startsWith('block mx-auto'));
+  assert(preferences[1].startsWith('preferences-clear-button block mx-auto'));
+  assert(preferences[1].includes('preferences-clear-button'));
+  assert.match(css, /\.preferences-clear-button\s*\{[\s\S]*?background: #fff;[\s\S]*?color: #000;[\s\S]*?border-color: #fff;/);
+  assert.match(css, /html\[data-theme="light"\] \.preferences-clear-button\s*\{[\s\S]*?background: #000;[\s\S]*?color: #fff;[\s\S]*?border-color: #000;/);
 });
 
 test('portrait mobile presents How to Play instead of a rotate prompt and keeps only info/theme header controls', () => {
@@ -56,8 +59,30 @@ test('portrait mobile presents How to Play instead of a rotate prompt and keeps 
   assert.match(css, /@media \(max-width: 1024px\) and \(orientation: portrait\) and \(pointer: coarse\)/);
   assert.match(css, /\.game-app \.header-controls > :not\(\.mobile-header-control\) \{\s*display: none;/);
   assert.match(css, /mobile-header-control/);
-  assert.match(css, /min-width: 2rem/);
+  assert.match(css, /min-width: 38px/);
+  assert.match(css, /\.game-app \.header-controls\s*\{[\s\S]*?flex-direction: row;/);
+  assert.match(css, /\.game-app \.header-controls > \.mobile-header-control\s*\{[\s\S]*?width: 38px;[\s\S]*?height: 38px;[\s\S]*?min-width: 38px;/);
+  assert.match(css, /\.game-app \.mobile-header-about-control\s*\{\s*order: 1;/);
+  assert.match(css, /\.game-app \.mobile-header-theme-control\s*\{\s*order: 2;/);
+  assert.match(css, /\.game-app \.mobile-header-pause-control\s*\{\s*order: 3;/);
+  assert.match(app, /\{state !== 'play' && state !== 'boxing' && <button[\s\S]*?mobile-header-about-control/);
+  assert.match(app, /\{\(state === 'play' \|\| state === 'paused'\) && <button[\s\S]*?mobile-header-pause-control/);
   assert.match(css, /\.how-to-layout > \.mechanics-guide \{[\s\S]*?grid-template-columns: 1fr;/);
+});
+
+test('mobile information dialogs fit between the Live Feed and visible footer', () => {
+  const app = readFileSync(new URL('./App.tsx', import.meta.url), 'utf8');
+  const footer = readFileSync(new URL('./SiteFooter.tsx', import.meta.url), 'utf8');
+  const css = readFileSync(new URL('./index.css', import.meta.url), 'utf8');
+  assert.match(app, /footerRect = footer\?\.getBoundingClientRect\(\)/);
+  assert.match(app, /--footer-inset-bottom/);
+  assert.match(footer, /className="site-info-overlay fixed inset-0 z-50/);
+  assert.match(footer, /className="dialog-close site-info-close/);
+  assert.match(css, /\.game-app \.fixed\.inset-0\.z-50\s*\{[\s\S]*?top: var\(--live-feed-bottom, 0px\);[\s\S]*?bottom: var\(--footer-inset-bottom, 0px\);/);
+  assert.match(css, /\.site-info-dialog\s*\{\s*padding-inline: clamp\(32px, 4vw, 48px\);/);
+  assert.match(css, /\.game-app \.site-info-overlay\.fixed\.inset-0\.z-50 > \.site-info-dialog\s*\{\s*padding-inline: clamp\(22px, 6vw, 28px\);/);
+  assert.match(css, /html:not\(\[data-theme="light"\]\) \.site-info-overlay \.site-info-close:hover[\s\S]*?border-color: #fff;/);
+  assert.match(css, /html:not\(\[data-theme="light"\]\) \.site-info-overlay \.site-info-close:hover svg[\s\S]*?color: #fff;/);
 });
 
 test('portrait mobile separates the hero and controls from a fullscreen scrollable How to Play dialog', () => {
@@ -66,16 +91,20 @@ test('portrait mobile separates the hero and controls from a fullscreen scrollab
   assert.match(app, /mobileGuideOpen/);
   assert.match(app, /className="mobile-portrait-guide/);
   assert.match(app, /className="menu-action-button mobile-portrait-action-button mobile-portrait-how-to-play/);
+  assert.doesNotMatch(app, /mobile-portrait-controls/);
   assert.match(app, />\s*How to Play\s*<\/button>/);
   assert.match(app, /className=\{`menu-action-button mobile-portrait-action-button how-to-mode-selector/);
   assert.match(app, /className="menu-action-button mobile-portrait-action-button w-full/);
   assert.match(app, /selectedMode === 'easy' \? 'There is no Easy Mode' : 'Hard Mode'/);
   assert.match(app, />\s*Start\s*<\/button>/);
   assert.match(app, /aria-label="Close How to Play"/);
+  assert.match(app, /relative flex h-10 items-center justify-center[^>]*>[\s\S]*?id="mobile-guide-title"[\s\S]*?top-1\/2 -translate-y-1\/2/);
   assert.match(app, /className="mobile-how-to-panel/);
   assert.match(css, /\.game-app \.desktop-initial-guide\s*\{\s*display: none;/);
   assert.match(css, /\.mobile-portrait-guide\s*\{\s*display: flex;/);
-  assert.match(css, /\.mobile-portrait-action-button\s*\{\s*font-family: var\(--font-mono\);\s*\}/);
+  assert.match(css, /\.mobile-portrait-guide\s*\{[\s\S]*?justify-content: flex-end;[\s\S]*?gap: clamp\(8px, 2vh, 16px\);[\s\S]*?padding: 12px;/);
+  assert.match(css, /\.mobile-portrait-action-button\s*\{[\s\S]*?display: flex;[\s\S]*?align-items: center;[\s\S]*?justify-content: center;[\s\S]*?text-align: center;[\s\S]*?font-size: 0\.875rem;[\s\S]*?font-weight: 700;/);
+  assert.match(css, /\.mobile-portrait-hero\s*\{[\s\S]*?flex: 1 1 auto;[\s\S]*?max-height: none;/);
   assert.match(css, /\.how-to-mode-selector\s*\{[\s\S]*?font-family: var\(--font-mono\);[\s\S]*?font-size: 0\.875rem;[\s\S]*?font-weight: 700;[\s\S]*?line-height: 1\.25;/);
   assert.match(css, /\.menu-action-button\s*\{[\s\S]*?height: 2\.75rem;[\s\S]*?min-height: 2\.75rem;[\s\S]*?padding-top: 0;[\s\S]*?padding-bottom: 0;/);
   assert.match(css, /\.mobile-how-to-panel > \.mechanics-guide\s*\{[\s\S]*?overflow-y: auto;/);
@@ -149,7 +178,7 @@ test('footer keeps copyright left, navigation centered and preference clearing c
   assert.match(footer, /const sections = \['About', 'Privacy', 'Disclaimer', 'Preferences'\]/);
   assert.match(footer, /section === 'Preferences'/);
   assert.doesNotMatch(footer, /'Local data'/);
-  assert.match(footer, /className="block mx-auto [^"]*" onClick/);
+  assert.match(footer, /className="preferences-clear-button block mx-auto [^"]*" onClick/);
 });
 
 test('mobile footer uses the requested portrait and landscape arrangements', () => {
@@ -173,7 +202,7 @@ test('app renders the full site footer and keeps its links visible in landscape'
 
 test('portrait menu keeps the Live Feed strip visible below the header', () => {
   const css = readFileSync(new URL('./index.css', import.meta.url), 'utf8');
-  assert.match(css, /\.game-app \.game-overlay\.how-to-play-overlay\s*\{\s*inset: calc\(100% \* 56 \/ 840\) 0 0;/);
+  assert.match(css, /\.game-app \.game-overlay\.how-to-play-overlay\s*\{\s*inset: calc\(100% \* 48 \/ 840\) 0 0;/);
 });
 
 test('mobile landscape retries fullscreen after rotation and keeps guide/result content scrollable', () => {

@@ -37,17 +37,25 @@ export default function App() {
     const app = appRef.current;
     const arena = app?.querySelector('.game-arena');
     if (!app || !arena) return;
+    const footer = app.querySelector<HTMLElement>('.site-footer');
     const updateFeedBoundary = () => {
       const canvas = app.querySelector('.game-stage > canvas');
       if (!canvas) return;
       const rect = canvas.getBoundingClientRect();
-      const feedHeight = rect.height * 56 / 840 * mobileCanvasZoom();
+      const feedHeight = rect.height * 48 / 840 * mobileCanvasZoom();
       app.style.setProperty('--live-feed-bottom', `${rect.top + feedHeight}px`);
       app.style.setProperty('--live-feed-height', `${feedHeight}px`);
+      const footerRect = footer?.getBoundingClientRect();
+      const footerVisible = !!footerRect && footerRect.height > 0
+        && !!footer && window.getComputedStyle(footer).display !== 'none'
+        && footerRect.top < window.innerHeight;
+      const footerInsetBottom = footerVisible && footerRect ? Math.max(0, window.innerHeight - footerRect.top) : 0;
+      app.style.setProperty('--footer-inset-bottom', `${footerInsetBottom}px`);
     };
     const observer = new ResizeObserver(updateFeedBoundary);
     observer.observe(arena);
     observer.observe(app);
+    if (footer) observer.observe(footer);
     window.addEventListener('resize', updateFeedBoundary);
     window.addEventListener('scroll', updateFeedBoundary, true);
     updateFeedBoundary();
@@ -92,6 +100,15 @@ export default function App() {
   useEffect(() => { if (state !== 'over') setShareDDOpen(false); }, [state]);
   const [selectedMode, setSelectedMode] = useState<'easy' | 'hard'>('hard');
   const [awaitingLandscape, setAwaitingLandscape] = useState(false);
+  useEffect(() => {
+    if (!window.matchMedia('(max-width: 1024px) and (pointer: coarse)').matches
+      || state === 'play' || state === 'paused' || state === 'boxing' || awaitingLandscape) return;
+    try {
+      const orientation = screen.orientation as ScreenOrientation & { unlock?: () => void };
+      orientation?.unlock?.();
+      if (document.fullscreenElement === appRef.current) void document.exitFullscreen().catch(() => {});
+    } catch { }
+  }, [state, awaitingLandscape]);
   const [gameKey, setGameKey] = useState<number>(0);
   const [printerRequest, setPrinterRequest] = useState(0);
   const [invertedRequest, setInvertedRequest] = useState(0);
@@ -318,29 +335,28 @@ export default function App() {
             }} className="px-2.5 py-1.5 rounded border border-[var(--line)] bg-[var(--alt)] text-xs text-[var(--green)] disabled:opacity-40">🦘 Kangaroo</button>
             <button type="button" title="Music styles" aria-expanded={soundMenuOpen} onClick={() => { if (state === 'play') setState('paused'); setSoundMenuOpen(true); }} className="px-2.5 py-1.5 rounded border border-[var(--line)] bg-[var(--alt)] text-xs text-[var(--green)]">♫ Music</button>
             </div>
-            <button type="button" title="About" aria-label="Open information about the game" aria-haspopup="dialog" onClick={() => { if (state === 'play') setState('paused'); setSoundMenuOpen(false); setSiteSection('About'); }} className="mobile-header-control px-2.5 py-1.5 rounded border border-[var(--line)] bg-[var(--alt)] hover:border-[var(--green)] text-[var(--green)] transition-colors cursor-pointer">
+            {state !== 'play' && state !== 'boxing' && <button type="button" title="About" aria-label="Open information about the game" aria-haspopup="dialog" onClick={() => { setSoundMenuOpen(false); setSiteSection('About'); }} className="mobile-header-control mobile-header-about-control px-2.5 py-1.5 rounded border border-[var(--line)] bg-[var(--alt)] hover:border-[var(--green)] text-[var(--green)] transition-colors cursor-pointer">
               <span className="mobile-header-info-icon flex w-3 h-3 items-center justify-center font-serif text-lg font-bold leading-none" aria-hidden="true">i</span>
-            </button>
+            </button>}
             <button
               type="button"
               onClick={() => setTheme(current => current === 'dark' ? 'light' : 'dark')}
-              className="mobile-header-control px-2.5 py-1.5 rounded border border-[var(--line)] bg-[var(--alt)] hover:border-[var(--green)] text-[var(--green)] transition-colors cursor-pointer"
+              className="mobile-header-control mobile-header-theme-control px-2.5 py-1.5 rounded border border-[var(--line)] bg-[var(--alt)] hover:border-[var(--green)] text-[var(--green)] transition-colors cursor-pointer"
               title={theme === 'dark' ? 'Day mode (N)' : 'Night mode (N)'}
               aria-label={theme === 'dark' ? 'Switch to day mode' : 'Switch to night mode'}
             >
-              {theme === 'dark' ? <Sun className="mobile-header-theme-icon w-3 h-3" /> : <Moon className="mobile-header-theme-icon w-3 h-3" />}
+              {theme === 'dark' ? <Sun className="mobile-header-theme-icon w-5 h-5" /> : <Moon className="mobile-header-theme-icon w-5 h-5" />}
             </button>
-            <button
+            {(state === 'play' || state === 'paused') && <button
               type="button"
               onClick={() => setState(current => current === 'play' ? 'paused' : current === 'paused' ? 'play' : current)}
-              disabled={state !== 'play' && state !== 'paused'}
               title={state === 'paused' ? 'Play (P)' : 'HODL (P)'}
               aria-label={state === 'paused' ? 'Resume game' : 'Pause game'}
               aria-pressed={state === 'paused'}
-              className="px-2.5 py-1.5 rounded border border-[var(--line)] bg-[var(--alt)] hover:border-[var(--green)] text-[var(--green)] transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-default"
+              className="mobile-header-control mobile-header-pause-control px-2.5 py-1.5 rounded border border-[var(--line)] bg-[var(--alt)] hover:border-[var(--green)] text-[var(--green)] transition-colors cursor-pointer"
             >
               {state === 'paused' ? <Play className="w-3.5 h-3.5" /> : <Pause className="w-3.5 h-3.5" />}
-            </button>
+            </button>}
             <button
               type="button"
               onClick={toggleSound}
@@ -437,37 +453,33 @@ export default function App() {
               )}
 
               {state === 'menu' && (
-                <div className="mobile-portrait-guide w-full h-full flex-col items-center justify-center gap-3 p-3 text-center">
+                <div className="mobile-portrait-guide w-full h-full text-center">
                   <div className="mobile-portrait-hero w-full rounded-xl overflow-hidden">
                     <MenuHero theme={theme} />
                   </div>
-                  <button type="button" onClick={() => setMobileGuideOpen(true)} className="menu-action-button mobile-portrait-action-button mobile-portrait-how-to-play w-full rounded-lg border border-[#ffd230] bg-slate-900/85 text-[#ffd230] hover:bg-slate-800 font-bold text-sm font-mono-term">
+                  <button type="button" onClick={() => setMobileGuideOpen(true)} className="menu-action-button mobile-portrait-action-button mobile-portrait-how-to-play w-full rounded-lg border border-[#ffd230] bg-slate-900/85 text-[#ffd230] hover:bg-slate-800">
                     How to Play
                   </button>
-                  <div className="how-to-controls mobile-portrait-controls w-full flex flex-col gap-2">
-                    <div className="how-to-mode-buttons">
-                      <button
-                        type="button"
-                        aria-label="Change game mode"
-                        aria-live="polite"
-                        onClick={handleModeSelectorClick}
-                        onKeyDown={handleModeSelectorKeyDown}
-                        className={`menu-action-button mobile-portrait-action-button how-to-mode-selector w-full rounded-lg border-0 text-white transition-all hover:brightness-105 ${selectedMode === 'easy' ? 'bg-[#38bdf8]' : 'bg-[#ef5350]'}`}
-                      >
-                        {selectedMode === 'hard' && <ChevronLeft className="how-to-mode-selector-arrow how-to-mode-selector-arrow-left" aria-hidden="true" />}
-                        {selectedMode === 'easy' ? 'There is no Easy Mode' : 'Hard Mode'}
-                        {selectedMode === 'easy' && <ChevronRight className="how-to-mode-selector-arrow how-to-mode-selector-arrow-right" aria-hidden="true" />}
-                      </button>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={handleStartOrResume}
-                      disabled={selectedMode !== 'hard'}
-                      className="menu-action-button mobile-portrait-action-button w-full rounded-lg bg-[#08795c] hover:brightness-110 active:brightness-95 text-white font-bold text-sm transition-all shadow-lg flex items-center justify-center gap-2 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-                    >
-                      Start
-                    </button>
-                  </div>
+                  <button
+                    type="button"
+                    aria-label="Change game mode"
+                    aria-live="polite"
+                    onClick={handleModeSelectorClick}
+                    onKeyDown={handleModeSelectorKeyDown}
+                    className={`menu-action-button mobile-portrait-action-button how-to-mode-selector w-full rounded-lg border-0 text-white transition-all hover:brightness-105 ${selectedMode === 'easy' ? 'bg-[#38bdf8]' : 'bg-[#ef5350]'}`}
+                  >
+                    {selectedMode === 'hard' && <ChevronLeft className="how-to-mode-selector-arrow how-to-mode-selector-arrow-left" aria-hidden="true" />}
+                    {selectedMode === 'easy' ? 'There is no Easy Mode' : 'Hard Mode'}
+                    {selectedMode === 'easy' && <ChevronRight className="how-to-mode-selector-arrow how-to-mode-selector-arrow-right" aria-hidden="true" />}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleStartOrResume}
+                    disabled={selectedMode !== 'hard'}
+                    className="menu-action-button mobile-portrait-action-button w-full rounded-lg bg-[#08795c] hover:brightness-110 active:brightness-95 text-white transition-all shadow-lg cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    Start
+                  </button>
                 </div>
               )}
 
@@ -522,9 +534,9 @@ export default function App() {
 
               {pausedGuideOpen && <div className="paused-guide-overlay absolute z-40" onPointerDown={e => e.stopPropagation()}>
                 <div role="dialog" aria-modal="true" aria-labelledby="paused-guide-title" className="paused-guide-dialog bg-[var(--panel)] border border-[var(--line)] rounded-xl p-4" onKeyDown={e => { e.stopPropagation(); if (e.key === 'Escape') setPausedGuideOpen(false); }}>
-                  <div className="relative flex items-center justify-center pb-2 mb-3 min-h-10 px-10">
+                  <div className="relative flex h-10 items-center justify-center border-b border-[var(--line)] mb-3 px-10">
                     <h2 id="paused-guide-title" className="how-to-play-label text-xl sm:text-2xl font-black font-mono-term tracking-tight text-center">How to Play</h2>
-                    <button type="button" autoFocus title="Close How to Play" aria-label="Close How to Play and return to pause" onClick={() => setPausedGuideOpen(false)} className="dialog-close absolute right-0 top-0 p-2 rounded border border-[var(--line)] text-[var(--text)] hover:bg-[var(--alt)] transition-colors cursor-pointer"><X className="w-5 h-5" aria-hidden="true" /></button>
+                    <button type="button" autoFocus title="Close How to Play" aria-label="Close How to Play and return to pause" onClick={() => setPausedGuideOpen(false)} className="dialog-close absolute right-0 top-1/2 -translate-y-1/2 p-2 rounded border border-[var(--line)] text-[var(--text)] hover:bg-[var(--alt)] transition-colors cursor-pointer"><X className="w-5 h-5" aria-hidden="true" /></button>
                   </div>
                   <MechanicsGuide theme={theme} />
                 </div>
@@ -537,9 +549,9 @@ export default function App() {
 
         {mobileGuideOpen && <div className="mobile-how-to-dialog fixed inset-0 z-50 flex items-center justify-center p-3" onPointerDown={e => e.stopPropagation()}>
           <div role="dialog" aria-modal="true" aria-labelledby="mobile-guide-title" className="mobile-how-to-panel w-full h-full overflow-hidden bg-[var(--panel)] border border-[var(--line)] rounded-xl p-3">
-            <div className="relative flex items-center justify-center pb-2 mb-3 min-h-10 px-10">
+            <div className="relative flex h-10 items-center justify-center mb-3 px-10">
               <h2 id="mobile-guide-title" className="how-to-play-label text-xl font-black font-mono-term tracking-tight text-center">How to Play</h2>
-              <button type="button" autoFocus title="Close How to Play" aria-label="Close How to Play" onClick={() => setMobileGuideOpen(false)} className="dialog-close absolute right-0 top-0 p-2 rounded border border-[var(--line)] text-[var(--text)] hover:bg-[var(--alt)] transition-colors cursor-pointer"><X className="w-5 h-5" aria-hidden="true" /></button>
+              <button type="button" autoFocus title="Close How to Play" aria-label="Close How to Play" onClick={() => setMobileGuideOpen(false)} className="dialog-close absolute right-0 top-1/2 -translate-y-1/2 p-2 rounded border border-[var(--line)] text-[var(--text)] hover:bg-[var(--alt)] transition-colors cursor-pointer"><X className="w-5 h-5" aria-hidden="true" /></button>
             </div>
             <MechanicsGuide theme={theme} />
           </div>

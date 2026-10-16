@@ -130,6 +130,41 @@ html[data-theme="light"] {
   color: var(--dialog-close-hover);
 }
 
+.site-info-dialog {
+  padding-inline: clamp(32px, 4vw, 48px);
+}
+
+html:not([data-theme="light"]) .site-info-overlay .site-info-close:hover,
+html:not([data-theme="light"]) .site-info-overlay .site-info-close:focus-visible {
+  color: #fff;
+  border-color: #fff;
+}
+
+html:not([data-theme="light"]) .site-info-overlay .site-info-close:hover svg,
+html:not([data-theme="light"]) .site-info-overlay .site-info-close:focus-visible svg {
+  color: #fff;
+}
+
+.preferences-clear-button {
+  background: #fff;
+  color: #000;
+  border-color: #fff;
+}
+
+.preferences-clear-button:hover {
+  background: #f1f5f9;
+}
+
+html[data-theme="light"] .preferences-clear-button {
+  background: #000;
+  color: #fff;
+  border-color: #000;
+}
+
+html[data-theme="light"] .preferences-clear-button:hover {
+  background: #1f2937;
+}
+
 body {
   font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   background-color: var(--bg);
@@ -197,15 +232,15 @@ body {
   height: 100%;
 }
 
-/* Keep the canvas Live Feed (56 of 840 canvas pixels) above the How to Play
+/* Keep the canvas Live Feed (48 of 840 canvas pixels) above the How to Play
    overlay, without dimming or blurring it. The guide fills the area below. */
 .how-to-play-overlay {
-  top: calc(100% * 56 / 840);
+  top: calc(100% * 48 / 840);
 }
 
 @media (pointer: fine), (min-width: 1025px) {
   .game-app .game-overlay {
-    top: calc(100% * 56 / 840);
+    top: calc(100% * 48 / 840);
   }
 
   .game-app .fixed.inset-0.z-50 {
@@ -606,7 +641,7 @@ html[data-theme="light"] .share-dd-social-button {
 }
 
 .paused-guide-overlay {
-  top: calc(100% * 56 / 840);
+  top: calc(100% * 48 / 840);
   right: var(--header-gutter);
   bottom: 0;
   left: 0;
@@ -1116,6 +1151,8 @@ kbd {
   }
 
   .game-app .header-controls {
+    flex-direction: row;
+    align-items: center;
     gap: 0.25rem;
   }
 
@@ -1123,12 +1160,27 @@ kbd {
     display: none;
   }
 
-  .game-app .mobile-header-control {
+  .game-app .header-controls > .mobile-header-control {
     display: inline-flex;
-    min-width: 2rem;
+    width: 38px;
+    height: 38px;
+    min-width: 38px;
+    flex: 0 0 38px;
     align-items: center;
     justify-content: center;
-    padding: 0.25rem;
+    padding: 0;
+  }
+
+  .game-app .mobile-header-theme-control {
+    order: 2;
+  }
+
+  .game-app .mobile-header-about-control {
+    order: 1;
+  }
+
+  .game-app .mobile-header-pause-control {
+    order: 3;
   }
 
   .game-app .game-arena {
@@ -1142,10 +1194,10 @@ kbd {
     padding: max(8px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
   }
 
-  /* Keep the 56px Live Feed strip of the game canvas visible below the header;
+  /* Keep the 48px Live Feed strip of the game canvas visible below the header;
      the portrait How to Play overlay starts beneath it. */
   .game-app .game-overlay.how-to-play-overlay {
-    inset: calc(100% * 56 / 840) 0 0;
+    inset: calc(100% * 48 / 840) 0 0;
   }
 
   .game-app .desktop-initial-guide {
@@ -1154,12 +1206,18 @@ kbd {
 
   .mobile-portrait-guide {
     display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-end;
+    gap: clamp(8px, 2vh, 16px);
+    padding: 12px;
+    box-sizing: border-box;
   }
 
   .mobile-portrait-hero {
     flex: 1 1 auto;
     min-height: 0;
-    max-height: 58vh;
+    max-height: none;
   }
 
   .mobile-portrait-hero img {
@@ -1168,10 +1226,6 @@ kbd {
     height: 100%;
     object-fit: cover;
     object-position: center 38%;
-  }
-
-  .mobile-portrait-controls {
-    flex: 0 0 auto;
   }
 
   .mobile-how-to-dialog {
@@ -1275,10 +1329,6 @@ kbd {
   }
 }
 
-.mobile-portrait-action-button {
-  font-family: var(--font-mono);
-}
-
 .menu-action-button {
   box-sizing: border-box;
   height: 2.75rem;
@@ -1310,7 +1360,7 @@ kbd {
 @media (max-width: 1024px) and (pointer: coarse) {
   .game-app .game-overlay,
   .game-app .game-overlay.how-to-play-overlay {
-    top: var(--live-feed-height, calc(100% * 56 / 840));
+    top: var(--live-feed-height, calc(100% * 48 / 840));
   }
 
   .game-app .paused-guide-overlay {
@@ -1320,6 +1370,7 @@ kbd {
 
   .game-app .fixed.inset-0.z-50 {
     top: var(--live-feed-bottom, 0px);
+    bottom: var(--footer-inset-bottom, 0px);
     box-sizing: border-box;
     padding: max(8px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
     align-items: center;
@@ -1343,6 +1394,10 @@ kbd {
     overflow-y: hidden;
     overscroll-behavior: contain;
     overflow-wrap: anywhere;
+  }
+
+  .game-app .site-info-overlay.fixed.inset-0.z-50 > .site-info-dialog {
+    padding-inline: clamp(22px, 6vw, 28px);
   }
 
   .game-app .game-overlay:is(.pause-overlay, .game-over-overlay) {
@@ -1431,6 +1486,12 @@ kbd {
 
 /* Portrait menu controls share one typographic treatment and footer row alignment. */
 .mobile-portrait-action-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  box-sizing: border-box;
+  padding-inline: 0.75rem;
   font-family: var(--font-mono);
   font-size: 0.875rem;
   font-weight: 700;
