@@ -5,6 +5,7 @@ import React, { useEffect, useLayoutEffect, useRef, useCallback } from 'react';
 import { briefcaseArmPose } from './characterPose';
 import { randomDelay } from './randomTiming';
 import { lethalBirdContact } from './birdCollision';
+import { tryBirdHatTheft, type PlayerHat } from './birdHatTheft';
 import { stepHawkFlight } from './hawkFlight';
 import { trackPickupDelay } from './pickupTiming';
 import { compactChartWindow, ensureChartAhead } from './chartWindow';
@@ -15,11 +16,13 @@ import { MobileJoystick } from './MobileJoystick';
 import { renderBackingSize } from './renderBudget';
 import { drawDiagnosticsEnabled, recordDrawDuration } from './drawDiagnostics';
 import { drawDumpster } from './dumpsterRenderer';
-import { hawkBagThrowPose } from './hawkBagThrow';
+import { hawkBagThrowPose, nearestHawkEnemy, steerHawkBag } from './hawkBagThrow';
+import { whaleCompanionPose, applyWhaleRiderSeat, applyWhaleRiderSwim, drawWhaleRiderArm, drawWhaleRiderLeg, WHALE_RIDER_SEAT, WHALE_RIDER_SCALE } from './whaleRider';
 import { swanBagPose } from './swanBag';
 import { printerFallRotation } from './printerFall';
 import { aimedVelocity, pointerToWorld, plotViewY, AimPoint } from './aim';
 import { chartViewport, chartToScreen, screenToChart } from './chartViewport';
+import { chartHistory } from './chartHistory';
 import { pickupInRenderBounds, pickupRenderBounds } from './pickupVisibility';
 import { RenderExperimentPanel } from './RenderExperimentPanel';
 import { actorLayers, getRenderMode, renderExperimentEnabled, renderLayers } from './renderExperiment';
@@ -39,6 +42,9 @@ import { drawBossHero } from './bossHeroRenderer';
 import { ApeCompanion, addCompanion, tickCompanions } from './companions';
 import { getRandomNews, getTickerNews, formatFeedHeadline, MarketNews } from './news';
 import { trackHeightAt, animalTrackHeightAt, animalFallsInGap, rocketTrackPose } from './track';
+import { canMountWhale, touchesWhale, jumpWhaleMount, stepWhaleMount, whaleStompsEnemy, WHALE_CONTACT_RADIUS, WHALE_MOUNT_DURATION, WHALE_SEAT_HEIGHT, WHALE_SPEED_MULTIPLIER } from './whaleMount';
+import { marketClockLabel, marketClockStep } from './marketClock';
+import { popupColor } from './popupColors';
 import { FEDORA_DURATION, FEDORA_WINDUP, FEDORA_MAX_THROWS, addFedoraTime, weaponHatCount, fedoraArmPose, fedoraHit, fedoraHitsMount, separateFedoraMount, stepFlyingFedora, type FlyingFedora } from './fedoraBoomerang';
 import { drawSpinningFedora } from './fedoraRenderer';
 import { bagDrainPenalty, enemyMovementSpeed, canLandOnTrack, canRecoverSolidLanding, doubleJumpChargeOnLanding, whaleDropsBanknote, BAG_PIPS_PENALTY, APE_DURATION, APE_THROW_INTERVAL, ROCKET_SPEED_MULTIPLIER, absorbEnemyHit, isBlockedByTallCandle, arcadeProfit } from './gameRules';
@@ -46,6 +52,7 @@ import { ANIMAL_CENTER, animalHeight, drawAnimalCharacter } from './animalRender
 import { extendMarketPath, sampleMarketPath, MarketKnot, MARKET_BASELINE, candleVolatilityBoost, extendMarketRegimes, marketRegimeAt, MarketRegime } from './marketPath';
 
 interface CandleGameProps {
+  whaleDemo?: boolean;
   candleDemo?: boolean;
   printerRequest?: number;
   invertedRequest?: number;
@@ -118,8 +125,8 @@ const heroCameraOffset = (): number => {
   return currentChartViewport().x;
 };
 
-const GREEN = '#26a69a';
-const RED = '#ef5350';
+const GREEN = '#159e83';
+const RED = '#e94343';
 
 const LEVELS: MarketLevel[] = [
   { n: 'Normal market', t: 'NORMAL', tint: '#142637', bull: 0.52, vol: 9, description: 'Calm cyclical baseline' },
@@ -145,7 +152,6 @@ const R = (a: number, b: number) => a + Math.random() * (b - a);
 
 // Slower, enjoyable pacing for readable gameplay
 const price = (y: number) => chartPrice(y, MARKET_BASELINE).toFixed(2);
-const pad = (n: number) => String(n).padStart(2, '0');
 
 export const CandleGame: React.FC<CandleGameProps> = ({
   theme,
@@ -159,6 +165,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
   onInvertedActivated,
   onPrinterActivated,
   candleDemo = false,
+  whaleDemo = false,
   hawkRequest = 0,
   onHawkActivated
 }) => {
@@ -244,6 +251,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     lastEncounterFrame: -210,
     lastBellIndex: 0,
     hatSoiled: false,
+    playerHat: 'default' as PlayerHat,
     pigeonDrops: [] as PigeonDrop[],
     spits: [] as { x: number; y: number; vx: number; vy: number; life: number }[],
     printerStartX: 0,
@@ -635,10 +643,35 @@ export const CandleGame: React.FC<CandleGameProps> = ({
       previousY: g.C[startIndex].top
     };
 
+    if (whaleDemo) {
+      // A clean runway covers the mount, companion pickups and two targets
+      // for watching mounted banana throws using ordinary combat mechanics.
+      const top = g.p.y;
+      const endX = g.p.x + 1500;
+      for (let i = startIndex - 1; i <= Math.ceil(endX / CW); i++) {
+        g.C[i] = { ...g.C[i], hole: false, o: top + 8, c: top, top,
+          bot: top + 8, h: top - 3, l: top + 12, sp: false, doubleJumpBarrier: false };
+      }
+      g.pickups = g.pickups.filter(pickup => pickup.x > endX);
+      const whaleX = g.p.x + 150;
+      g.animals = g.animals.filter(animal => animal.x > endX);
+      g.animals.push({ type: 'whale', x: whaleX, y: top - ANIMAL_CENTER,
+        feet: top, previousFeet: top, phase: 0, dead: false });
+      for (const distance of [300, 420]) {
+        g.pickups.push({ type: 'banana', x: g.p.x + distance,
+          y: top - WHALE_SEAT_HEIGHT - 25, taken: false });
+      }
+      for (const [index, distance] of [1100, 1400].entries()) {
+        g.animals.push({ type: index === 0 ? 'bear' : 'bull',
+          x: g.p.x + distance, y: top - ANIMAL_CENTER,
+          feet: top, previousFeet: top, phase: 0, dead: false });
+      }
+    }
+
     g.cx = g.p.x - heroCameraOffset();
     g.cy = g.p.y - H * 0.62;
     g.score = 0;
-    g.activityPips = 0; g.hawkTimer = 0; g.nextHawk = randomDelay(140, 550); g.spits = []; g.hatSoiled = false; g.pigeonDrops = [];
+    g.activityPips = 0; g.hawkTimer = 0; g.nextHawk = randomDelay(140, 550); g.spits = []; g.hatSoiled = false; g.playerHat = 'default'; g.pigeonDrops = [];
     g.lastEncounterFrame = -210;
     g.printerTimer = 0; g.printerSaved = null; g.nextPigeon = randomDelay(120, 400);
     g.invertedView = false; g.printerExitInverted = false;
@@ -650,7 +683,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     g.gapAirborne = false;
     g.fallFrame = 0;
     g.cause = '';
-  }, [genCandle]);
+  }, [genCandle, whaleDemo]);
 
   const die = useCallback((causeText: string) => {
     const g = gameRef.current;
@@ -720,17 +753,19 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     g.popups.push({ x: enemy.x, y: enemy.y - 20, text: `+${points}`, color: '#fbbf24', life: 35 });
   }, []);
 
-  // Manual mouse aim; projectiles retain their ballistic trajectory and spinning.
+  // Hawk bags auto-target; ordinary projectiles retain manual ballistic aim.
   const throwBriefcase = useCallback(() => {
     const g = gameRef.current;
-    if (g.currentState !== 'play' || g.falling || g.caseCooldown > 0 || g.flyingFedora || !g.p) return;
+    if (g.currentState !== 'play' || g.falling || g.caseCooldown > 0 || g.flyingFedora || !g.p || g.p.whaleMount) return;
 
     if (g.hawkTimer > 0) {
       if (g.p.carry <= 0 || g.p.shieldKind !== 'bag' || g.hawkBags <= 0) return;
       const x = g.p.x + 18;
       const y = g.p.y - 20;
-      const velocity = aimedVelocity({ x, y }, aimRef.current ?? { x: x + 100, y }, 11.5 + speedAt(g.score));
-      g.cases.push({ x, y, vx: velocity.x, vy: velocity.y, life: 70, angle: 0, kind: 'bag', windup: 8 });
+      const target = nearestHawkEnemy(g.p, [...g.swans, ...g.animals]);
+      const homingSpeed = 11.5 + speedAt(g.score);
+      const velocity = aimedVelocity({ x, y }, target ?? aimRef.current ?? { x: x + 100, y }, homingSpeed);
+      g.cases.push({ x, y, vx: velocity.x, vy: velocity.y, life: 70, angle: 0, kind: 'bag', windup: 8, target, homingSpeed });
       g.bagThrowDirection = velocity.x < 0 ? -1 : 1;
       g.hawkBags--;
       g.p.carry = 0;
@@ -823,10 +858,10 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     if (!g.p) return;
 
     if (g.caseCooldown > 0) g.caseCooldown--;
-    if (g.fedoraTimer > 0 && --g.fedoraTimer === 0) {
+    if (!g.p.whaleMount && g.fedoraTimer > 0 && --g.fedoraTimer === 0) {
       g.fedoraCount = 0; g.fedoraWindup = 0;
     }
-    if (g.fedoraWindup > 0 && --g.fedoraWindup === 0 && g.p) {
+    if (!g.p.whaleMount && g.fedoraWindup > 0 && --g.fedoraWindup === 0 && g.p) {
       g.flyingFedora = { x: g.p.x + 33, y: g.p.y - 25, angle: 0, returning: false };
       sound.playFedoraThrow();
     }
@@ -956,6 +991,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
       g.nextWhale = g.score + randomDelay(100, g.difficultyActive ? 240 : 700);
     }
     for (const a of g.animals) {
+      a.previousFeet = a.feet;
       if (a.dying) {
         if (a.type === 'whale' && !a.lootRolled) {
           a.lootRolled = true;
@@ -1078,6 +1114,11 @@ export const CandleGame: React.FC<CandleGameProps> = ({
         continue;
       }
 
+      if (s.stolenHat) {
+        s.x -= 4; s.y -= 0.7; s.phase += 0.12;
+        s.isCharging = false;
+        continue;
+      }
       if (!s.cargoRolled) {
         s.cargoRolled = true;
         if (s.kind !== 'white') {
@@ -1191,10 +1232,10 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     }
 
     // Briefcase physics: straight forward with ballistic drop and dynamic rapid spin
-    g.apes = tickCompanions(g.apes, g.p.rocketTimer > 0);
+    g.apes = tickCompanions(g.apes, g.p.rocketTimer > 0 || !!g.p.whaleMount, !!g.p.whaleMount);
     g.apeTimer = Math.max(0, ...g.apes.map(ape => ape.timer));
     for (const [apeIndex, ape] of g.apes.entries()) {
-      if (g.hawkTimer > 0 || (g.p.carry > 0 && g.p.shieldKind === 'bag')) {
+      if (g.hawkTimer > 0 || (!g.p.whaleMount && g.p.carry > 0 && g.p.shieldKind === 'bag')) {
         ape.throwTimer = 0;
         continue;
       }
@@ -1203,7 +1244,10 @@ export const CandleGame: React.FC<CandleGameProps> = ({
 
       const apeX = g.p.x - 45 - apeIndex * 32;
       const apeFeet = g.p.air ? g.p.y : trackHeightAt(g.C, apeX, CW, g.p.y);
-      const origin = g.p.rocketTimer > 0
+      const follower = whaleCompanionPose(apeIndex);
+      const origin = g.p.whaleMount
+        ? { x: g.p.x + follower.x + follower.scale * WHALE_RIDER_SEAT.x, y: g.p.y + follower.y + follower.scale * WHALE_RIDER_SEAT.y - 24 * APE_SCALE * WHALE_RIDER_SCALE }
+        : g.p.rocketTimer > 0
         ? { x: g.p.x - 37 - apeIndex * 32, y: g.p.y - 46 }
         : { x: apeX, y: apeFeet - 43 * APE_SCALE };
       const target = [...g.swans, ...g.animals]
@@ -1212,7 +1256,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
       if (target && ape.cooldown === 0) {
         ape.direction = target.x >= origin.x ? 1 : -1;
         ape.throwTimer = 15;
-        origin.x += ape.direction * 28 * APE_SCALE;
+        origin.x += ape.direction * 28 * APE_SCALE * (g.p.whaleMount ? WHALE_RIDER_SCALE : 1);
         const frames = Math.max(12, Math.hypot(target.x - origin.x, target.y - origin.y) / 12);
         g.cases.push({ ...origin, vx: (target.x - origin.x) / frames - 1.5, vy: (target.y - origin.y) / frames - 0.025 * (frames - 1), life: 75, angle: 0, kind: 'banana' });
         ape.cooldown = APE_THROW_INTERVAL;
@@ -1231,6 +1275,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
       }
       const prevX = b.x;
       const prevY = b.y;
+      if (b.kind === 'bag') steerHawkBag(b, g.p, [...g.swans, ...g.animals]);
       b.x += b.vx;
       b.y += b.vy;
       b.vy += 0.05;
@@ -1320,19 +1365,35 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     }
 
     // Jump Stomp on Enemies (only if not in rocket mode)
-    if (g.p.rocketTimer <= 0) {
+    if (g.p.rocketTimer <= 0 && !g.p.whaleMount) {
       for (const enemy of [...g.swans, ...g.animals]) {
         if (enemy.dying || enemy.dead || enemy.shieldPassed) continue;
-        // Whales are never stompable, and mounted riders must be defeated or
-        // dismounted before the remaining mount can be stomped separately.
-        if ('type' in enemy && (enemy.type === 'whale' || enemy.mount)) continue;
+        // Mounted riders must be defeated first; lone whales have a taming roll.
+        if ('type' in enemy && enemy.mount) continue;
         const top = 'type' in enemy ? enemy.feet - animalHeight(enemy) : enemy.y - 16;
+        const whale = 'type' in enemy && enemy.type === 'whale';
         if (
+          whale ? touchesWhale(g.p, enemy) : (
           Math.abs(enemy.x - g.p.x) < ('type' in enemy ? (enemy.type === 'bull' ? 55 : 50) : 20) &&
           g.p.y > g.p.previousY &&
           g.p.previousY <= top + 5 &&
           g.p.y >= top
+          )
         ) {
+          if ('type' in enemy && enemy.type === 'whale') {
+            if (!canMountWhale(g.printerTimer > 0 || g.hawkTimer > 0, whaleDemo ? 0 : Math.random())) continue;
+            g.p.whaleMount = { timer: WHALE_MOUNT_DURATION, feet: enemy.feet, previousFeet: enemy.feet, vy: 0, phase: 0,
+              bags: g.p.carry > 0 && g.p.shieldKind === 'bag' ? 1 : 0 };
+            enemy.dead = true; // Transfer to the player; no kill score or loot.
+            g.p.y = enemy.feet - WHALE_SEAT_HEIGHT;
+            g.p.vy = 0; g.p.buf = 0; g.gapAirborne = false;
+            g.cases = []; g.flyingFedora = null; g.fedoraWindup = 0;
+            g.throwAnimTimer = 0; g.bagThrowAnimTimer = 0;
+            for (const ape of g.apes) { ape.throwTimer = 0; ape.whalePhase = 0; }
+            g.popups.push({ x: g.p.x, y: g.p.y - 45, text: 'WHALE RIDER!', color: '#38bdf8', life: 60 });
+            sound.playCoin();
+            break;
+          }
           enemy.dying = true;
           enemy.dieTimer = 25;
           enemy.dieVx = 3.0;
@@ -1347,9 +1408,41 @@ export const CandleGame: React.FC<CandleGameProps> = ({
       }
     }
 
+    const mount = g.p.whaleMount;
+    if (mount) {
+      for (const enemy of [...g.swans, ...g.animals]) {
+        if (enemy.dead || enemy.dying || enemy.shieldPassed) continue;
+        const top = 'type' in enemy ? enemy.feet - animalHeight(enemy) : enemy.y - 16;
+        if (Math.abs(enemy.x - g.p.x) >= ('type' in enemy ? 55 : 25)) continue;
+        if (whaleStompsEnemy(mount, g.p.x, enemy.x, top, 'type' in enemy ? 55 : 25)) {
+          enemy.dying = true; enemy.dieTimer = 25;
+          enemy.dieVx = 3; enemy.dieVy = -5.5; enemy.dieAngle = 0;
+          sound.playHit(); awardEnemy(enemy);
+          continue;
+        }
+        const bottom = 'type' in enemy ? enemy.feet : enemy.y + 16;
+        if (mount.feet > top && g.p.y - 48 < bottom) {
+          if ('type' in enemy && enemy.type === 'whale' && !enemy.mount) {
+            enemy.dead = true;
+            mount.timer = WHALE_MOUNT_DURATION;
+            mount.feet = enemy.feet; mount.previousFeet = enemy.feet; mount.vy = 0;
+            mount.jumps = 0; mount.launchFeet = undefined;
+            mount.phase = 0;
+            g.p.y = enemy.feet - WHALE_SEAT_HEIGHT; g.p.vy = 0;
+            break;
+          }
+          g.p.whaleMount = undefined;
+          g.p.vy = -7.5; g.p.air = true;
+          enemy.shieldPassed = true;
+          sound.playHit();
+          return;
+        }
+      }
+    }
+
     // Collisions with Living Enemies (Skipped when in rocket mode!).
     // A carried diamond absorbs one collision from any enemy, including birds.
-    if (g.p.rocketTimer <= 0) {
+    if (g.p.rocketTimer <= 0 && !g.p.whaleMount) {
       for (const s of g.swans) {
         if (!s.dead && !s.dying && lethalBirdContact(s, g.p)) {
           if (absorbEnemyHit(g.p, s)) {
@@ -1362,6 +1455,9 @@ export const CandleGame: React.FC<CandleGameProps> = ({
         }
       }
 
+      // All bird collisions have been resolved; surviving near misses may steal a hat.
+      for (const bird of g.swans) tryBirdHatTheft(bird, g);
+
       for (const a of g.animals) {
         const bullSwing = a.type === 'bull' && !a.attackHit && (a.attackTimer ?? 0) <= 10 && (a.attackTimer ?? 0) >= 5;
         const hitRange = a.type === 'bull' ? 55 : 50;
@@ -1369,7 +1465,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
         const overlapsVertically = g.printerTimer > 0
           ? Math.abs(playerCenterY - a.y) < animalHeight(a) / 2 + 24
           : g.p.y > a.feet - animalHeight(a) && g.p.y - 48 < a.feet;
-        if (!a.dead && !a.dying && !a.shieldPassed && (a.type !== 'bull' || bullSwing) && Math.abs(a.x - g.p.x) < (a.type === 'whale' ? 65 : hitRange) && overlapsVertically) {
+        if (!a.dead && !a.dying && !a.shieldPassed && (a.type !== 'bull' || bullSwing) && Math.abs(a.x - g.p.x) < (a.type === 'whale' ? WHALE_CONTACT_RADIUS : hitRange) && overlapsVertically) {
           a.attackHit = true;
           if (absorbEnemyHit(g.p, a)) {
             g.popups.push({ x: g.p.x, y: g.p.y - 35, text: 'Good DD', color: '#38bdf8', life: 40 });
@@ -1392,6 +1488,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
           d.taken = true;
           g.popups = [];
           g.activeNews = null;
+          g.p.whaleMount = undefined;
           g.currentState = 'boxing';
           onStateChange('boxing');
           sound.playBell();
@@ -1445,6 +1542,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
           g.popups.push({ x: d.x, y: d.y - 20, text: `+${points}`, color: '#38bdf8', life: 40 });
           sound.playDiamond();
         } else if (d.type === 'bag') {
+          if (g.p.whaleMount) g.p.whaleMount.bags = (g.p.whaleMount.bags ?? 0) + 1;
           if (g.hawkTimer > 0) g.hawkBags++;
           if (g.p.rocketTimer > 0) g.rocketBags++;
           g.bagDrainFrames = 0;
@@ -1457,6 +1555,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
           sound.playTender();
         } else if (d.type === 'banana') {
           if (!addCompanion(g.apes, APE_DURATION)) { d.taken = false; continue; }
+          if (g.p.whaleMount) g.apes[g.apes.length - 1].whalePhase = 0;
           g.apeTimer = Math.max(...g.apes.map(ape => ape.timer));
           g.popups.push({ x: d.x, y: d.y - 20, text: 'Apes together strong', color: '#fde047', life: 40 });
           sound.playCoin();
@@ -1482,7 +1581,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     g.swans = g.swans.filter((s) => !s.dead && s.x + 80 > g.p!.x - HX);
     g.animals = g.animals.filter((a) => !a.dead && a.x + 80 > g.p!.x - HX);
     g.cases = g.cases.filter((b) => b.life > 0);
-  }, [die, triggerSyntheticNews, onStateChange, activatePrinter, activateHawk, awardEnemy]);
+  }, [die, triggerSyntheticNews, onStateChange, activatePrinter, activateHawk, awardEnemy, whaleDemo]);
 
   const update = useCallback(() => {
     const g = gameRef.current;
@@ -1529,7 +1628,9 @@ export const CandleGame: React.FC<CandleGameProps> = ({
       return;
     }
     const isRocketMode = g.p.rocketTimer > 0;
-    const sp = speedAt(currentIdx) * (isRocketMode ? ROCKET_SPEED_MULTIPLIER : hawkSpeedMultiplier(g.hawkTimer, g.hawkBags));
+    if (isRocketMode || g.printerTimer > 0 || g.hawkTimer > 0 || (g.p.whaleMount?.timer ?? 1) <= 0) g.p.whaleMount = undefined;
+    const ridingWhale = !!g.p.whaleMount;
+    const sp = speedAt(currentIdx) * (isRocketMode ? ROCKET_SPEED_MULTIPLIER : ridingWhale ? WHALE_SPEED_MULTIPLIER : hawkSpeedMultiplier(g.hawkTimer, g.hawkBags));
 
     g.p.x += sp;
     g.p.ph += 0.28;
@@ -1559,6 +1660,12 @@ export const CandleGame: React.FC<CandleGameProps> = ({
       g.p.y = pose.y;
       g.printerRotation = pose.rotation;
       g.p.vy = 0; g.p.air = false; g.p.buf = 0;
+    } else if (g.p.whaleMount) {
+      stepWhaleMount(g.p.whaleMount, g.C, g.p.x, CW);
+      g.p.y = g.p.whaleMount.feet - WHALE_SEAT_HEIGHT;
+      g.p.vy = g.p.whaleMount.vy;
+      g.p.air = (g.p.whaleMount.jumps ?? 0) > 0;
+      g.p.buf = 0; g.gapAirborne = false;
     } else if (isRocketMode) {
       // Follow the track, bridging gaps between the surrounding solid candle tops.
       g.p.y = rocketTrackPose(g.C, g.p.x, CW, g.p.y).y;
@@ -1573,10 +1680,10 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     const i0 = Math.max(0, Math.floor((g.p.x - 7) / CW));
     const i1 = Math.min(g.C.length - 1, Math.floor((g.p.x + 7) / CW));
     const overGap = g.C.slice(i0, i1 + 1).length > 0 && g.C.slice(i0, i1 + 1).every(c => c.hole);
-    if (overGap && !isRocketMode && !printerActive) g.gapAirborne = true;
+    if (overGap && !isRocketMode && !printerActive && !ridingWhale) g.gapAirborne = true;
     let bestCandle: Candle | null = null;
 
-    if (!isRocketMode && !printerActive) {
+    if (!isRocketMode && !printerActive && !ridingWhale) {
       for (let i = i0; i <= i1; i++) {
         const c = g.C[i];
         if (!c || c.hole) continue;
@@ -1614,7 +1721,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     }
 
     // Gap fall death (Skipped if in rocket mode!)
-    if (!printerActive && !landed && g.p.vy > 0 && g.p.rocketTimer <= 0) {
+    if (!printerActive && !ridingWhale && !landed && g.p.vy > 0 && g.p.rocketTimer <= 0) {
       let maxBottom = -1e9;
       for (let i = Math.max(0, i0 - 10); i <= Math.min(g.C.length - 1, i1 + 10); i++) {
         const c = g.C[i];
@@ -1637,7 +1744,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     else g.p.coy--;
 
     if (g.p.buf > 0) g.p.buf--;
-    if (!isRocketMode && g.p.buf > 0 && g.p.coy > 0) {
+    if (!isRocketMode && !ridingWhale && g.p.buf > 0 && g.p.coy > 0) {
       g.p.vy = -9.2;
       g.p.coy = 0;
       g.p.buf = 0;
@@ -1704,7 +1811,8 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     }
 
     if (g.currentState !== 'play') return;
-    g.cx = (g.printerTimer > 0 ? g.printerProgress : g.p.x) - heroCameraOffset();
+    // Leave room for the separated whale train behind the rider.
+    g.cx = (g.printerTimer > 0 ? g.printerProgress : g.p.x) - heroCameraOffset() - (g.p.whaleMount ? 90 : 0);
     if (g.printerTimer <= 0 && g.cx > g.printerEndX + 60) g.printerSaved = null;
     // Never rebase a temporary boss arena: its callbacks capture chart indices.
     if (!bossTrack.current) {
@@ -1772,19 +1880,20 @@ export const CandleGame: React.FC<CandleGameProps> = ({
       ctx.restore(); return;
     }
     if (g.falling) {
-      drawFallingCharacter(ctx, g.fallFrame, g.apeTimer > 0, false, theme === 'dark');
+      drawFallingCharacter(ctx, g.fallFrame, g.apeTimer > 0, false, theme === 'dark', g.playerHat !== 'none');
       ctx.restore();
       return;
     }
 
     if (g.hawkTimer > 0 && g.p.rocketTimer <= 0) {
       drawDumpster(ctx, g.apes.length, g.p.ph, weaponHatCount(g.fedoraTimer, g.fedoraWindup, !!g.flyingFedora), theme === 'dark',
-        g.p.carry > 0 && g.p.shieldKind === 'diamond', g.hawkBags, g.globalFrame, g.hatSoiled, g.bagThrowAnimTimer, g.bagThrowDirection);
+        g.p.carry > 0 && g.p.shieldKind === 'diamond', g.hawkBags, g.globalFrame, g.hatSoiled, g.bagThrowAnimTimer, g.bagThrowDirection, g.playerHat === 'standard');
       ctx.restore(); return;
     }
 
-    // A visible one-hit shield, tied to the same diamond state as collisions.
-    if (g.p.carry > 0 && g.p.shieldKind !== 'bag') {
+    // Whale riders keep the active diamond in their lap instead of showing
+    // the aura. Remaining protection becomes visible again after dismount.
+    if (!g.p.whaleMount && g.p.carry > 0 && g.p.shieldKind !== 'bag') {
       ctx.fillStyle = 'rgba(56, 189, 248, 0.09)';
       ctx.strokeStyle = 'rgba(125, 211, 252, 0.75)';
       ctx.lineWidth = 1.8;
@@ -1946,9 +2055,10 @@ export const CandleGame: React.FC<CandleGameProps> = ({
       }
       // Clear profile eye instead of a dark mask-like band.
       if (g.apeTimer > 0) {
-        ctx.save(); ctx.translate(2, -22); ctx.scale(0.65, 0.65); drawApeHead(ctx); ctx.restore();
+        ctx.save(); ctx.translate(2, -22); ctx.scale(0.65, 0.65); drawApeHead(ctx, g.playerHat === 'default');
+        if (g.playerHat === 'standard') drawCharacterHat(ctx, false, false, theme === 'dark'); ctx.restore();
       } else {
-      ctx.save(); ctx.translate(2, -22); ctx.scale(0.65, 0.65); drawHumanHead(ctx, true, theme === 'dark'); ctx.restore();
+      ctx.save(); ctx.translate(2, -22); ctx.scale(0.65, 0.65); drawHumanHead(ctx, g.playerHat !== 'none', theme === 'dark'); ctx.restore();
       }
 
       // Suit shoulders & red tie
@@ -1995,6 +2105,91 @@ export const CandleGame: React.FC<CandleGameProps> = ({
       ctx.restore();
       ctx.restore();
       return;
+    }
+
+    if (g.p.whaleMount) {
+      // Rear-most follower first; every rider shows their right profile.
+      for (let index = g.apes.length - 1; index >= 0; index--) {
+        const follower = whaleCompanionPose(index);
+        ctx.save(); ctx.translate(follower.x, follower.y); ctx.scale(follower.scale, follower.scale);
+        const ape = g.apes[index];
+        const phase = ape.whalePhase ?? 0;
+        applyWhaleRiderSwim(ctx, phase);
+        const riderScale = APE_SCALE * WHALE_RIDER_SCALE / follower.scale;
+        ctx.save(); applyWhaleRiderSeat(ctx, phase, riderScale);
+        drawWhaleRiderLeg(ctx, false, '#4e301d', '#a7774d', 8); ctx.restore();
+        ctx.save(); ctx.translate(0, 40); ctx.scale(-1, 1);
+        drawAnimalCharacter(ctx, { type: 'whale', x: 0, y: 0, feet: 0, phase, dead: false }, false, false, theme === 'dark', false, false, true);
+        ctx.restore();
+        applyWhaleRiderSeat(ctx, phase, riderScale); ctx.translate(0, -11);
+        drawApeAsset(ctx, g.p.ph, true, ape.throwTimer, ape.direction, false, false, true);
+        ctx.restore();
+      }
+      ctx.save();
+      const phase = g.p.whaleMount.phase ?? 0;
+      applyWhaleRiderSwim(ctx, phase);
+      ctx.save(); applyWhaleRiderSeat(ctx, phase, WHALE_RIDER_SCALE);
+      drawWhaleRiderLeg(ctx, false, '#111827', '#090d16'); ctx.restore();
+      ctx.save(); ctx.translate(0, WHALE_SEAT_HEIGHT); ctx.scale(-1, 1);
+      drawAnimalCharacter(ctx, { type: 'whale', x: 0, y: 0, feet: 0, phase, dead: false }, false, false, theme === 'dark', false, false, true);
+      ctx.restore();
+      if (g.apes.length > 0) {
+        // Seat the cap's lower band into the forehead contour, rather than
+        // placing its origin at the top of the head (which leaves a gap).
+        // This stays inside the whale's shared swimming transform.
+        ctx.save(); ctx.translate(30, -10); ctx.rotate(0.12); ctx.scale(0.85, 0.85);
+        drawCharacterHat(ctx, true, false, theme === 'dark'); ctx.restore();
+      }
+      ctx.save(); applyWhaleRiderSeat(ctx, phase, WHALE_RIDER_SCALE);
+      drawWhaleRiderArm(ctx, false, '#18212f', '#dca581');
+      // Narrow side-on torso; the right knee overlaps the whale's near flank.
+      ctx.fillStyle = '#1e293b'; ctx.fillRect(-7, -29, 15, 23);
+      // Airflow pulls the tie behind the right-profile rider.
+      const tieFlutter = Math.sin(g.globalFrame * 0.35) * 3;
+      ctx.fillStyle = '#e11d48';
+      ctx.beginPath(); ctx.moveTo(5, -28); ctx.lineTo(2, -24);
+      ctx.quadraticCurveTo(-10, -25 + tieFlutter, -24, -22 + tieFlutter);
+      ctx.lineTo(-28, -26 + tieFlutter); ctx.lineTo(-22, -29 + tieFlutter);
+      ctx.quadraticCurveTo(-9, -28 + tieFlutter, 5, -28); ctx.fill();
+      ctx.fillStyle = '#1e293b'; ctx.fillRect(-6, -7, 13, 8);
+      drawWhaleRiderLeg(ctx, true, '#18212f', '#090d16');
+      ctx.save(); ctx.translate(0, -38); ctx.scale(0.8, 0.8);
+      if (g.apeTimer > 0) {
+        drawApeHead(ctx, g.playerHat === 'default' && g.fedoraTimer <= 0);
+        if (g.playerHat === 'standard') drawCharacterHat(ctx, false, false, theme === 'dark');
+      } else drawHumanHead(ctx, g.playerHat !== 'none', theme === 'dark');
+      ctx.restore();
+      const hats = weaponHatCount(g.fedoraTimer, g.fedoraWindup, !!g.flyingFedora);
+      for (let hat = 0; hat < hats; hat++) {
+        ctx.save(); ctx.translate(0, -49 - hat * 11); ctx.scale(0.8, 0.8);
+        drawCharacterHat(ctx, false, false, theme === 'dark'); ctx.restore();
+      }
+      // Keep lap luggage stacked: collected bags no longer replace the case.
+      if (g.p.carry > 0 && g.p.shieldKind !== 'bag') {
+        ctx.save(); ctx.translate(9, -7); ctx.scale(0.55, 0.55);
+        drawPickupAsset(ctx, { type: 'diamond', x: 0, y: 0, taken: false }, 0, 0, g.globalFrame, theme === 'dark');
+        ctx.restore();
+      } else {
+        const colors = briefcaseColors(theme === 'dark');
+        ctx.save(); ctx.translate(9, -7); ctx.scale(0.85, 0.75);
+        ctx.fillStyle = colors.body; ctx.fillRect(-10, -7, 20, 14);
+        ctx.strokeStyle = colors.outline; ctx.lineWidth = 1.2; ctx.strokeRect(-10, -7, 20, 14);
+        ctx.strokeStyle = colors.handle; ctx.lineWidth = 2; ctx.strokeRect(-4, -10, 8, 3);
+        ctx.fillStyle = colors.clasp; ctx.fillRect(-2, -2, 4, 4);
+        ctx.restore();
+      }
+      const lapBags = g.p.whaleMount.bags ?? 0;
+      const visibleBags = Math.max(lapBags, g.p.carry > 0 && g.p.shieldKind === 'bag' ? 1 : 0);
+      for (let bag = 0; bag < visibleBags; bag++) {
+        ctx.save(); ctx.translate(9 + (bag % 2) * 3, -16 - bag * 9); ctx.scale(0.45, 0.45);
+        drawPickupAsset(ctx, { type: 'bag', x: 0, y: 0, taken: false }, 0, 0, g.globalFrame, theme === 'dark');
+        ctx.restore();
+      }
+      // Near/right arm is foreground; the left shoulder remains behind torso.
+      drawWhaleRiderArm(ctx, true, '#334155', '#fed7aa');
+      ctx.restore();
+      ctx.restore();
+      ctx.restore(); return;
     }
 
     // --- STANDARD ON-FOOT RUNNER SPRITE ---
@@ -2080,10 +2275,11 @@ export const CandleGame: React.FC<CandleGameProps> = ({
 
     // Head
     if (g.apeTimer > 0) {
-      ctx.save(); ctx.translate(3, -42); ctx.scale(0.8, 0.8); drawApeHead(ctx, g.fedoraTimer <= 0); ctx.restore();
+      ctx.save(); ctx.translate(3, -42); ctx.scale(0.8, 0.8); drawApeHead(ctx, g.playerHat === 'default' && g.fedoraTimer <= 0);
+      if (g.playerHat === 'standard') drawCharacterHat(ctx, false, false, theme === 'dark'); ctx.restore();
       ctx.fillStyle = '#ffffff'; ctx.fillRect(-3, -35, 8, 2);
     } else {
-    ctx.save(); ctx.translate(3, -42); ctx.scale(0.8, 0.8); drawHumanHead(ctx, true, theme === 'dark');
+    ctx.save(); ctx.translate(3, -42); ctx.scale(0.8, 0.8); drawHumanHead(ctx, g.playerHat !== 'none', theme === 'dark');
     if (g.hawkTimer > 0) {
       ctx.fillStyle = '#fff7ed'; ctx.beginPath(); ctx.ellipse(3, 0, 7, 9, 0, 0, Math.PI * 2); ctx.fill();
       ctx.fillStyle = '#ef4444'; ctx.beginPath(); ctx.arc(10, 0, 3, 0, Math.PI * 2); ctx.fill();
@@ -2103,7 +2299,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
       drawCharacterHat(ctx, false, false, theme === 'dark'); ctx.restore();
     }
 
-    if (g.hatSoiled) {
+    if (g.hatSoiled && (g.playerHat !== 'none' || g.fedoraTimer > 0)) {
       const hats = weaponHatCount(g.fedoraTimer, g.fedoraWindup, !!g.flyingFedora);
       const captain = g.apeTimer > 0 && hats === 0;
       const stainY = hats > 0 ? (g.apeTimer > 0 ? -57 : -65) - (hats - 1) * 11 : -57;
@@ -2287,7 +2483,16 @@ export const CandleGame: React.FC<CandleGameProps> = ({
       }
       // Keep ordinary swan behaviour, but show White Swan below the inverted chart.
       const whiteSwan = gameRef.current.invertedView && (s.kind === 'swan' || s.kind === undefined);
-      drawSwanAsset(ctx, whiteSwan ? { ...s, kind: 'white' } : s, false, theme === 'dark');
+      drawSwanAsset(ctx, whiteSwan ? { ...s, kind: 'white' } : s, theme === 'dark', theme === 'dark');
+      if (s.stolenHat) {
+        // Positions are in world-scale pixels, matching each rendered beak.
+        const beak = s.kind === 'hawk' ? { x: -27, y: -2 }
+          : s.kind === 'pigeon' ? { x: -19, y: -1 }
+          : { x: -20, y: -14 };
+        ctx.save(); ctx.translate(beak.x, beak.y + 6);
+        ctx.rotate(-0.35 + Math.sin(s.phase) * 0.08); ctx.scale(0.65, 0.65);
+        drawCharacterHat(ctx, s.stolenHat === 'captain', false, theme === 'dark'); ctx.restore();
+      }
       ctx.restore();
     }
   }, [theme]);
@@ -2421,6 +2626,10 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     } else if (g.hawkTimer > 0) {
       ctx.fillStyle = '#1a2e05'; ctx.fillRect(0, tapeH - 3, W, 3);
       ctx.fillStyle = '#a3e635'; ctx.fillRect(0, tapeH - 3, (W) * Math.min(1, g.hawkTimer / 600), 3);
+    } else if (g.p?.whaleMount) {
+      ctx.fillStyle = '#172b48'; ctx.fillRect(0, tapeH - 3, W, 3);
+      ctx.fillStyle = '#688baf';
+      ctx.fillRect(0, tapeH - 3, W * Math.max(0, Math.min(1, g.p.whaleMount.timer / WHALE_MOUNT_DURATION)), 3);
     } else if (g.apeTimer > 0) {
       ctx.fillStyle = '#713f12'; ctx.fillRect(0, tapeH - 3, W, 3);
       ctx.fillStyle = '#fde047'; ctx.fillRect(0, tapeH - 3, W * Math.min(1, g.apeTimer / APE_DURATION), 3);
@@ -2437,6 +2646,13 @@ export const CandleGame: React.FC<CandleGameProps> = ({
       ctx.fillRect(0, tapeH - 3, (W) * fraction, 3);
     }
     ctx.restore();
+    if (g.p?.whaleMount && g.currentState !== 'boxing') {
+      ctx.save();
+      ctx.font = 'bold 13px monospace'; ctx.textAlign = 'right'; ctx.textBaseline = 'top';
+      ctx.fillStyle = theme === 'dark' ? '#a6bdca' : '#344c73';
+      ctx.fillText(`WHALE ${Math.max(0, Math.ceil(g.p.whaleMount.timer / 60))}s`, W - AX - 12, feedLayout.current.tapeHeight + 8);
+      ctx.restore();
+    }
   }, [bossEncounter, theme]);
 
   const draw = useCallback((ctx: CanvasRenderingContext2D) => {
@@ -2515,15 +2731,17 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     }
     const visibleLeft = screenToChart({ x: 0, y: 0 }, viewport).x;
     const visibleRight = screenToChart({ x: W - AX, y: 0 }, viewport).x;
-    const a = Math.max(0, Math.floor((g.cx + visibleLeft) / CW) - 1);
+    const a = Math.floor((g.cx + visibleLeft) / CW) - 1;
     const b = Math.ceil((g.cx + visibleRight) / CW) + 2;
 
     // Temporarily project the boss encounter onto this chart, retaining the run.
     const encounter = g.currentState === 'boxing' ? bossEncounter.current : null;
 
     if (layers.chart) {
+    const tickPixels = Math.abs(chartToScreen({ x: CW, y: 0 }, viewport).x - chartToScreen({ x: 0, y: 0 }, viewport).x);
+    const tickStep = marketClockStep(tickPixels, ctx.measureText(marketClockLabel(g.candleOffset + b)).width + 18);
     for (let i = a; i <= b; i++) {
-      if (i % 10 === 0) {
+      if ((g.candleOffset + i) % tickStep === 0) {
         const x = i * CW - g.cx;
         ctx.beginPath();
         ctx.moveTo(x, TAPE_HEIGHT);
@@ -2533,7 +2751,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     }
 
     for (let i = a; i <= b; i++) {
-      const c = g.C[i];
+      const c = chartHistory(g.C, i);
       if (!c || c.hole) continue;
       const x = i * CW - g.cx;
       const h = c.v * 40;
@@ -2542,7 +2760,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     }
 
     for (let i = a; i <= b; i++) {
-      const c = g.C[i];
+      const c = chartHistory(g.C, i);
       if (!c || g.printerTimer > 0) continue;
 
       if (c.hole) {
@@ -2662,7 +2880,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
 
     for (const pop of encounter || !actors.effects ? [] : g.popups) {
       ctx.save();
-      ctx.fillStyle = pop.color;
+      ctx.fillStyle = popupColor(pop.color, theme === 'dark');
       ctx.font = 'bold 13px monospace';
       ctx.textAlign = 'center';
       ctx.translate(pop.x - g.cx, pop.y - g.cy);
@@ -2692,7 +2910,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
         drawBossEncounter(ctx, encounter, theme === 'dark'); ctx.restore();
       }
     } else if (actors.hero) drawHero(ctx);
-    if (actors.hero && !encounter && g.p && g.apeTimer > 0 && g.p.rocketTimer <= 0 && (g.hawkTimer <= 0 || g.falling)) {
+    if (actors.hero && !encounter && g.p && !g.p.whaleMount && g.apeTimer > 0 && g.p.rocketTimer <= 0 && (g.hawkTimer <= 0 || g.falling)) {
       for (const [apeIndex, ape] of g.apes.entries()) {
       ctx.save();
       const apeX = g.p.x - 45 - apeIndex * 32;
@@ -2786,7 +3004,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     for (let i = a; i <= b; i++) {
       if (i % 10 === 0) {
         const labelX = chartToScreen({ x: i * CW - g.cx, y: 0 }, viewport).x;
-        if (labelX >= 0 && labelX < W - AX) ctx.fillText('T+' + pad(i), labelX, H - 3);
+        if (labelX >= 0 && labelX < W - AX) ctx.fillText(marketClockLabel(g.candleOffset + i), labelX, H - 3);
       }
     }
 
@@ -2826,6 +3044,15 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     const g = gameRef.current;
     if (g.printerTimer > 0) return;
     if (g.currentState === 'play' && g.p && !g.falling) {
+      if (g.p.whaleMount) {
+        if (jumpWhaleMount(g.p.whaleMount)) {
+          g.p.vy = g.p.whaleMount.vy;
+          g.p.air = true;
+          g.p.buf = 0;
+        }
+        g.held = true;
+        return;
+      }
       if (g.p.air && g.p.jumps === 1 && g.p.doubleReady) {
         g.p.vy = -9.2;
         g.p.jumps = 2;

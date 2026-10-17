@@ -20,6 +20,7 @@ export interface Candle {
 }
 
 export interface Player {
+  whaleMount?: import('./whaleMount').WhaleMount;
   x: number;
   y: number;
   vy: number;
@@ -48,6 +49,8 @@ export interface Pickup {
 }
 
 export interface Swan {
+  stolenHat?: 'standard' | 'captain' | 'fedora';
+  hatNearMiss?: boolean;
   fedoraHats?: number;
   cargoRolled?: boolean;
   cargoFlight?: boolean;
@@ -75,6 +78,7 @@ export interface Swan {
 }
 
 export interface Animal {
+  previousFeet?: number;
   trackRotation?: number;
   fedoraHats?: number;
   mountFedoraHats?: number;
@@ -109,6 +113,8 @@ export interface ScorePopup {
 }
 
 export interface Briefcase {
+  target?: Animal | Swan; // Hawk-only live reference; chart compaction moves it with enemies.
+  homingSpeed?: number;
   windup?: number; // Hawk bag remains in both hands until the overhead release.
   kind?: 'banana' | 'bag';
   x: number;

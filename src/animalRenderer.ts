@@ -2,13 +2,14 @@
 import { drawBaseballBat } from './batRenderer';
 import { drawCharacterHat } from './assetRenderer';
 import type { Animal } from './types';
+import { applyWhaleSwim } from './whaleRider';
 
 export const ANIMAL_HEIGHT = 60;
 export const ANIMAL_CENTER = 30;
 export const animalHeight = (animal: Animal): number => animal.mount === 'whale' ? 115 : animal.mount ? 94 : ANIMAL_HEIGHT;
 
 // Shared face geometry for upright characters and their four-legged mount variants.
-export const drawAnimalHead = (ctx: CanvasRenderingContext2D, type: 'bear' | 'bull', charging = false): void => {
+export const drawAnimalHead = (ctx: CanvasRenderingContext2D, type: 'bear' | 'bull', charging = false, darkMode = false): void => {
   const bear = type === 'bear';
   ctx.save();
   ctx.fillStyle = bear ? '#784c28' : '#883a24';
@@ -17,7 +18,7 @@ export const drawAnimalHead = (ctx: CanvasRenderingContext2D, type: 'bear' | 'bu
     ctx.beginPath(); ctx.arc(-8, -8, 4, 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle = '#b48a60'; ctx.beginPath(); ctx.arc(-8, -8, 2, 0, Math.PI * 2); ctx.fill();
   } else {
-    ctx.strokeStyle = '#fef3c7'; ctx.lineWidth = 3;
+    ctx.strokeStyle = darkMode ? '#fef3c7' : '#000000'; ctx.lineWidth = 3;
     ctx.beginPath(); ctx.moveTo(-7, -6); ctx.quadraticCurveTo(-17, -9, -15, -16);
     ctx.moveTo(6, -6); ctx.quadraticCurveTo(15, -10, 11, -16); ctx.stroke();
   }
@@ -32,7 +33,7 @@ export const drawAnimalHead = (ctx: CanvasRenderingContext2D, type: 'bear' | 'bu
   ctx.restore();
 };
 
-const drawDyingAnimal = (ctx: CanvasRenderingContext2D, animal: Animal): void => {
+const drawDyingAnimal = (ctx: CanvasRenderingContext2D, animal: Animal, darkMode: boolean): void => {
   const bear = animal.type === 'bear';
   const fur = bear ? '#784c28' : '#883a24';
   const muzzle = bear ? '#b48a60' : '#b86242';
@@ -67,7 +68,7 @@ const drawDyingAnimal = (ctx: CanvasRenderingContext2D, animal: Animal): void =>
     if (bear) {
       ctx.beginPath(); ctx.arc(side * 10, -65, 4, 0, Math.PI * 2); ctx.fill();
     } else {
-      ctx.strokeStyle = '#fef3c7'; ctx.lineWidth = 3;
+      ctx.strokeStyle = darkMode ? '#fef3c7' : '#000000'; ctx.lineWidth = 3;
       ctx.beginPath(); ctx.moveTo(side * 9, -62); ctx.quadraticCurveTo(side * 20, -65, side * 16, -74); ctx.stroke();
     }
   }
@@ -83,10 +84,10 @@ const drawDyingAnimal = (ctx: CanvasRenderingContext2D, animal: Animal): void =>
 };
 
 // Left profile faces the runner; far limbs render first, near left arm last.
-export const drawAnimalCharacter = (ctx: CanvasRenderingContext2D, animal: Animal, loweredBat = false, seated = false, darkMode = false, previewBatForward = false, whaleRider = false): void => {
+export const drawAnimalCharacter = (ctx: CanvasRenderingContext2D, animal: Animal, loweredBat = false, seated = false, darkMode = false, previewBatForward = false, whaleRider = false, whaleSwimApplied = false): void => {
   // Falling/death pose always takes precedence over mounts and weapon attacks.
   if (animal.dying && animal.type !== 'whale') {
-    drawDyingAnimal(ctx, animal);
+    drawDyingAnimal(ctx, animal, darkMode);
     return;
   }
   if (animal.mount) {
@@ -111,7 +112,7 @@ export const drawAnimalCharacter = (ctx: CanvasRenderingContext2D, animal: Anima
         ctx.fillStyle = fur; ctx.beginPath(); ctx.ellipse(0, -29, 31, 16, 0, 0, Math.PI * 2); ctx.fill();
         ctx.save(); ctx.translate(-28, animal.isCharging ? -34 : -37);
         if (animal.isCharging) ctx.rotate(-0.2);
-        drawAnimalHead(ctx, animal.mount, animal.isCharging);
+        drawAnimalHead(ctx, animal.mount, animal.isCharging, darkMode);
         for (let hat = 0; hat < (animal.mountFedoraHats ?? 0); hat++) {
           ctx.save(); ctx.translate(0, -7 - hat * 10); ctx.scale(0.65, 0.65);
           drawCharacterHat(ctx, false, false, darkMode); ctx.restore();
@@ -135,12 +136,7 @@ export const drawAnimalCharacter = (ctx: CanvasRenderingContext2D, animal: Anima
     const leap = Math.min(1, (animal.jumpAmount ?? 0) / 40);
     ctx.rotate(-leap * 0.12);
     ctx.scale(1 + leap * 0.04, 1 - leap * 0.06);
-    const bounce = Math.max(0, Math.sin(animal.phase));
-    ctx.translate(0, -bounce * 11);
-    ctx.rotate(Math.sin(animal.phase) * 0.11);
-    ctx.translate(0, -30);
-    ctx.scale(1 + Math.cos(animal.phase * 2) * 0.06, 1 - Math.cos(animal.phase * 2) * 0.08);
-    ctx.translate(0, 30);
+    if (!whaleSwimApplied) applyWhaleSwim(ctx, animal.phase);
     const skin = ctx.createLinearGradient(0, -57, 0, -4);
     skin.addColorStop(0, '#688baf'); skin.addColorStop(0.45, '#344c73'); skin.addColorStop(1, '#172b48');
     ctx.fillStyle = skin;
@@ -268,7 +264,7 @@ export const drawAnimalCharacter = (ctx: CanvasRenderingContext2D, animal: Anima
 
   ctx.save();
   ctx.translate(-5, -51);
-  drawAnimalHead(ctx, animal.type, animal.isCharging);
+  drawAnimalHead(ctx, animal.type, animal.isCharging, darkMode);
   for (let hat = 0; hat < (animal.fedoraHats ?? 0); hat++) {
     ctx.save(); ctx.translate(0, -7 - hat * 10); ctx.scale(0.7, 0.7);
     drawCharacterHat(ctx, false, false, darkMode); ctx.restore();

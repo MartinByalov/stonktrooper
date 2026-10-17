@@ -3,6 +3,7 @@ build/
 dist/
 coverage/
 trailer-output/
+state/
 .DS_Store
 *.log
 .env*

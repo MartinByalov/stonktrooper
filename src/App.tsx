@@ -168,6 +168,7 @@ export default function App() {
   const [invertedRequest, setInvertedRequest] = useState(0);
   const [hawkRequest, setHawkRequest] = useState(0);
   const [candleDemo, setCandleDemo] = useState(false);
+  const [whaleDemo, setWhaleDemo] = useState(false);
   const [currentResult, setCurrentResult] = useState(0);
   const boxingActive = useRef(false);
   const bossEncounter = useRef<BossArena | null>(null);
@@ -356,6 +357,23 @@ export default function App() {
           <div className="header-controls flex items-center gap-2 ml-auto">
             {/* Retain manual testing controls without exposing them on the site. */}
             <div hidden style={{ display: 'none' }} data-testid="hidden-mode-controls">
+            <button
+              type="button"
+              title="Start Whale mode: Whale, two bananas, then Bear and Bull targets"
+              aria-label="Toggle Whale game mode"
+              aria-pressed={whaleDemo}
+              disabled={state === 'boxing'}
+              onClick={() => {
+                sound.unlock();
+                setWhaleDemo(active => !active);
+                setCandleDemo(false);
+                setSoundMenuOpen(false);
+                setCurrentResult(0);
+                setGameKey(k => k + 1);
+                setState('play');
+              }}
+              className={`mobile-header-control px-2.5 py-1.5 rounded border border-[var(--line)] bg-[var(--alt)] text-xs text-[var(--green)] cursor-pointer disabled:opacity-40 ${whaleDemo ? 'ring-2 ring-[var(--green)]' : ''}`}
+            >🐋<span className="hidden sm:inline"> Whale</span></button>
             <button type="button" title="Toggle sudden candle growth and gap demo" aria-label="Toggle candle surprise demo" aria-pressed={candleDemo} disabled={state === 'boxing'} onClick={() => {
               sound.unlock(); setSoundMenuOpen(false);
               if (state === 'menu' || state === 'over') { setCurrentResult(0); setGameKey(k => k + 1); }
@@ -378,13 +396,13 @@ export default function App() {
               if (state === 'menu' || state === 'over') { setCurrentResult(0); setGameKey(k => k + 1); }
               setInvertedRequest(1); setState('play');
             }} className="px-2.5 py-1.5 rounded border border-[var(--line)] bg-[var(--alt)] text-xs text-[var(--green)] disabled:opacity-40">↕ Inverted</button>
-            <button type="button" title="Kangaroo mode" disabled={state === 'boxing'} onClick={() => {
+            <button type="button" title="Music styles" aria-expanded={soundMenuOpen} onClick={() => { if (state === 'play') setState('paused'); setSoundMenuOpen(true); }} className="px-2.5 py-1.5 rounded border border-[var(--line)] bg-[var(--alt)] text-xs text-[var(--green)]">♫ Music</button>
+            </div>
+            <button type="button" title="Kangaroo mode" aria-label="Activate Kangaroo mode" disabled={state === 'boxing'} onClick={() => {
               sound.unlock(); setSoundMenuOpen(false);
               if (state === 'menu' || state === 'over') { setCurrentResult(0); setGameKey(k => k + 1); }
               boxingActive.current = true; setState('boxing');
-            }} className="px-2.5 py-1.5 rounded border border-[var(--line)] bg-[var(--alt)] text-xs text-[var(--green)] disabled:opacity-40">🦘 Kangaroo</button>
-            <button type="button" title="Music styles" aria-expanded={soundMenuOpen} onClick={() => { if (state === 'play') setState('paused'); setSoundMenuOpen(true); }} className="px-2.5 py-1.5 rounded border border-[var(--line)] bg-[var(--alt)] text-xs text-[var(--green)]">♫ Music</button>
-            </div>
+            }} className="mobile-header-control px-2.5 py-1.5 rounded border border-[var(--line)] bg-[var(--alt)] text-xs text-[var(--green)] cursor-pointer disabled:opacity-40">🦘<span className="hidden sm:inline"> Kangaroo</span></button>
             <button type="button" title="About" aria-label="Open information about the game" aria-haspopup="dialog" onClick={() => { if (state === 'play') setState('paused'); setSoundMenuOpen(false); setSiteSection('About'); }} className="mobile-header-control mobile-header-about-control px-2.5 py-1.5 rounded border border-[var(--line)] bg-[var(--alt)] hover:border-[var(--green)] text-[var(--green)] transition-colors cursor-pointer">
               <span className="mobile-header-info-icon flex w-3 h-3 items-center justify-center font-serif text-lg font-bold leading-none" aria-hidden="true">i</span>
             </button>
@@ -449,6 +467,7 @@ export default function App() {
             onInvertedActivated={() => setInvertedRequest(0)}
             hawkRequest={hawkRequest}
             candleDemo={candleDemo}
+            whaleDemo={whaleDemo}
             onHawkActivated={() => setHawkRequest(0)}
             onPrinterActivated={() => setPrinterRequest(0)}
           />
@@ -589,7 +608,7 @@ export default function App() {
             </div>
           )}
         </section>
-        {shareDDOpen && state === 'over' && <ShareDD score={currentResult} onClose={() => setShareDDOpen(false)} theme={'dark'} scoreTheme={theme} />}
+        {shareDDOpen && state === 'over' && <ShareDD score={currentResult} onClose={() => setShareDDOpen(false)} theme={theme} scoreTheme={theme} />}
 
         {mobileGuideOpen && <div className="mobile-how-to-dialog fixed inset-0 z-50 flex items-center justify-center p-3" onPointerDown={e => e.stopPropagation()}>
           <div role="dialog" aria-modal="true" aria-labelledby="mobile-guide-title" className="mobile-how-to-panel w-full h-full overflow-hidden bg-[var(--panel)] border border-[var(--line)] rounded-xl p-3">

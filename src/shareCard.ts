@@ -21,7 +21,7 @@ export function drawShareCard(ctx: CanvasRenderingContext2D, score: number, back
   ctx.shadowBlur = 12;
   ctx.fillStyle = '#f8fafc';
   ctx.font = '700 28px "Space Grotesk", sans-serif';
-  ctx.fillText('BEST SCORE', centerX, 580);
+  ctx.fillText('BEST SCORE', centerX, 572);
 
   const fullScore = formatShareScore(score);
   // A single line remains legible up to a safe integer; avoid microscopic type

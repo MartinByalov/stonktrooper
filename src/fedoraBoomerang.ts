@@ -4,6 +4,7 @@ import { trackHeightAt } from './track';
 export const FEDORA_DURATION = 600;
 export const FEDORA_WINDUP = 10;
 export const FEDORA_MAX_THROWS = 3;
+export const FEDORA_HAT_CHANCE = 0.35;
 
 // Each pickup adds its full duration instead of replacing unused time.
 export function addFedoraTime(remaining: number): number {
@@ -15,9 +16,9 @@ export function weaponHatCount(remainingTime: number, windup = 0, flying = false
   return Math.max(0, Math.ceil(remainingTime / FEDORA_DURATION) - (windup > 0 || flying ? 1 : 0));
 }
 
-// Each impact decorates the struck character half the time, including riders and mounts.
+// Each impact has a 35% chance to decorate the struck character, including riders and mounts.
 export function fedoraHit(enemy: Animal | Swan, roll: number, mountHit = false): 'hat' | 'kill' {
-  if (roll < 0.5) {
+  if (roll < FEDORA_HAT_CHANCE) {
     if (mountHit && 'type' in enemy && enemy.mount) enemy.mountFedoraHats = (enemy.mountFedoraHats ?? 0) + 1;
     else enemy.fedoraHats = (enemy.fedoraHats ?? 0) + 1;
     return 'hat';

@@ -2,6 +2,7 @@
 import type { Pickup, Swan } from './types';
 import { drawChickenTender } from './tenderRenderer';
 import { drawSpinningFedora } from './fedoraRenderer';
+import { drawWhaleRiderArm, drawWhaleRiderLeg } from './whaleRider';
 
 export const APE_SCALE = 0.6;
 
@@ -91,6 +92,9 @@ export const drawCharacterHat = (ctx: CanvasRenderingContext2D, captain: boolean
 // Shared rounded right-profile head for running and seated poses.
 export const drawHumanHead = (ctx: CanvasRenderingContext2D, hat = true, darkMode = false): void => {
   ctx.save();
+  // Overlap both the jaw and shirt/shoulders, including scaled seated poses.
+  // Draw behind the face so the chin keeps its rounded profile.
+  ctx.fillStyle = '#eab28e'; ctx.fillRect(-2, 4, 5, 10);
   ctx.fillStyle = '#fed7aa';
   ctx.beginPath(); ctx.moveTo(-7, -4); ctx.bezierCurveTo(-7, -12, 5, -13, 7, -5);
   ctx.quadraticCurveTo(7, -2, 8.5, 0); ctx.quadraticCurveTo(9, 1.5, 7, 2);
@@ -104,7 +108,7 @@ export const drawHumanHead = (ctx: CanvasRenderingContext2D, hat = true, darkMod
 };
 
 // Front-facing meme pose; feet are at the local origin.
-export const drawFallingCharacter = (ctx: CanvasRenderingContext2D, frame: number, apeHead = false, companion = false, darkMode = false): void => {
+export const drawFallingCharacter = (ctx: CanvasRenderingContext2D, frame: number, apeHead = false, companion = false, darkMode = false, hat = true): void => {
   ctx.save();
   const raisedSide = Math.floor(frame / 10) % 2 === 0 ? -1 : 1;
   const skin = apeHead ? '#d6a573' : '#efb58f';
@@ -143,7 +147,7 @@ export const drawFallingCharacter = (ctx: CanvasRenderingContext2D, frame: numbe
   }
   ctx.strokeStyle = '#70442d'; ctx.lineWidth = 1.2;
   ctx.beginPath(); ctx.moveTo(-4, -46); ctx.quadraticCurveTo(0, -43, 4, -46); ctx.stroke();
-  if (!apeHead) {
+  if (!apeHead && hat) {
     ctx.save(); ctx.translate(0, -52); drawCharacterHat(ctx, false, true, darkMode); ctx.restore();
   }
   ctx.restore();
@@ -151,6 +155,8 @@ export const drawFallingCharacter = (ctx: CanvasRenderingContext2D, frame: numbe
 
 export const drawApeHead = (ctx: CanvasRenderingContext2D, hat = true): void => {
   ctx.save();
+  // A short fur-covered neck joins the head to either the suit or ape torso.
+  ctx.fillStyle = '#754526'; ctx.fillRect(-3, 6, 6, 8);
   ctx.fillStyle = '#754526';
   ctx.beginPath(); ctx.ellipse(0, 0, 9, 10, 0, 0, Math.PI * 2); ctx.fill();
   ctx.fillStyle = '#432918'; ctx.beginPath(); ctx.arc(-7, 0, 3.5, 0, Math.PI * 2); ctx.fill();
@@ -166,11 +172,31 @@ export const drawApeHead = (ctx: CanvasRenderingContext2D, hat = true): void => 
   ctx.restore();
 };
 
-export const drawApeAsset = (ctx: CanvasRenderingContext2D, phase = 0, seated = false, throwTimer = 0, throwDirection = 1, airborne = false, holdingBag = false): void => {
+export const drawApeAsset = (ctx: CanvasRenderingContext2D, phase = 0, seated = false, throwTimer = 0, throwDirection = 1, airborne = false, holdingBag = false, whaleRider = false): void => {
   ctx.save();
   if (airborne && !seated) { ctx.rotate(Math.sin(phase) * 0.1); ctx.scale(1.04, 0.94); }
   const bob = seated ? 0 : Math.abs(Math.sin(phase)) * 1.5;
   const limb = (near: boolean, arm: boolean) => {
+    if (whaleRider && arm) {
+      if (near && throwTimer > 0) {
+        // Only the foreground/right hand releases its grip. Blend back to
+        // the same palm position as the holding pose when the throw ends.
+        const reach = Math.min(1, throwTimer / 8);
+        const handX = 27 + (2 + throwDirection * 28 - 27) * reach;
+        const handY = 3 - 18 * reach;
+        ctx.strokeStyle = '#754526'; ctx.lineWidth = 6; ctx.lineCap = 'round';
+        ctx.beginPath(); ctx.moveTo(2, -14);
+        ctx.lineTo(13 + throwDirection * 4 * reach, -6 - 7 * reach);
+        ctx.lineTo(handX, handY); ctx.stroke();
+        ctx.fillStyle = '#d6a573';
+        ctx.beginPath(); ctx.ellipse(handX, handY, 4, 3, 0, 0, Math.PI * 2); ctx.fill();
+        return { x: handX, y: handY };
+      }
+      ctx.save(); ctx.translate(0, 11);
+      drawWhaleRiderArm(ctx, near, near ? '#754526' : '#4e301d', near ? '#d6a573' : '#a7774d', 6);
+      ctx.restore();
+      return { x: near ? 27 : 23, y: near ? 3 : 1 };
+    }
     const swing = seated ? 0 : Math.sin(phase + (near ? 0 : Math.PI)) * (arm ? -11 : 9);
     const rootX = near ? 2 : -2;
     const rootY = arm ? -8 : 11;
@@ -190,14 +216,18 @@ export const drawApeAsset = (ctx: CanvasRenderingContext2D, phase = 0, seated = 
     return { x: endX, y: endY };
   };
   // Left limbs are behind the torso; the visible right limbs render last.
-  limb(false, false);
+  if (!whaleRider) limb(false, false);
   limb(false, true);
   ctx.fillStyle = '#754526'; ctx.strokeStyle = '#432918'; ctx.lineWidth = 1.5;
-  ctx.beginPath(); ctx.ellipse(0, -bob, 11, 17, -0.18, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+  ctx.beginPath(); ctx.ellipse(0, -bob, whaleRider ? 8 : 11, 17, -0.18, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
   ctx.fillStyle = '#bb8554';
   ctx.beginPath(); ctx.ellipse(5, 1 - bob, 5, 11, -0.15, 0, Math.PI * 2); ctx.fill();
   ctx.save(); ctx.translate(4, -23 - bob); ctx.scale(1.15, 1.15); drawApeHead(ctx); ctx.restore();
-  limb(true, false);
+  if (whaleRider) {
+    ctx.save(); ctx.translate(0, 11);
+    drawWhaleRiderLeg(ctx, true, '#754526', '#d6a573', 8);
+    ctx.restore();
+  } else limb(true, false);
   const hand = limb(true, true);
   if (holdingBag) {
     drawPickupAsset(ctx, { type: 'bag', x: 0, y: 0, taken: false }, 20, 15);

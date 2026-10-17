@@ -4,7 +4,7 @@ import { drawPigeonStain } from './pigeonStain';
 import { hawkBagThrowPose } from './hawkBagThrow';
 
 // Feet at origin; passengers are drawn before the near wall to hide their bodies.
-export function drawDumpster(ctx: CanvasRenderingContext2D, monkeys: number, phase: number, fedoraHats = 0, darkMode = false, diamondShield = false, bags = 0, frame = 0, hatSoiled = false, bagThrowTimer = 0, bagThrowDirection = 1): void {
+export function drawDumpster(ctx: CanvasRenderingContext2D, monkeys: number, phase: number, fedoraHats = 0, darkMode = false, diamondShield = false, bags = 0, frame = 0, hatSoiled = false, bagThrowTimer = 0, bagThrowDirection = 1, standardHat = false): void {
   ctx.save();
   const rear = -8 - monkeys * 22;
   if (diamondShield) {
@@ -27,6 +27,10 @@ export function drawDumpster(ctx: CanvasRenderingContext2D, monkeys: number, pha
     ctx.fillStyle = '#fb923c'; ctx.beginPath(); ctx.arc(-6, -2, 4, 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle = '#111827'; ctx.beginPath(); ctx.arc(4, -3, 1, 0, Math.PI * 2); ctx.fill();
     if (i === 0) {
+      if (standardHat && fedoraHats === 0) {
+        ctx.save(); ctx.translate(-2, -5); ctx.scale(0.65, 0.65);
+        drawCharacterHat(ctx, false, false, darkMode); ctx.restore();
+      }
       // Smaller fedoras stack from the clown's head upward, not on the monkey passengers.
       for (let hat = 0; hat < fedoraHats; hat++) {
         ctx.save(); ctx.translate(-2, -5 - hat * 10); ctx.scale(0.65, 0.65);
