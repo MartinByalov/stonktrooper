@@ -93,6 +93,22 @@ swans, animals and the entire boss renderer (including boss effects). Effects
 includes thrown objects, pigeon drops, flying fedora and score popups. These are
 render-only gates; simulation and layout are unchanged.
 
+The next supplied device screenshots show Hero + companions at 65.5 callbacks/s
+(p95 33.0 ms), Pickups only at 44.2 (44.1 ms), Enemies only and Effects only at
+90.8 (11.0 ms), and No canvas at 90.5 (11.0 ms). No active effect is visible in
+the effects screenshot; it does not clear all effects of suspicion. Scenes and
+sample counts differ and UI only was not supplied. Pickup and hero drawing remain
+the priorities, not a confirmed single cause.
+
+The coin reflection now fills the analytic intersection of its moving strip and
+circular face rather than installing a circular canvas clip per coin per draw.
+Reflection speed, gradient and coin geometry are retained; off-face reflections
+issue no draw commands. Local Chromium pixel comparison across 81 positions at
+1x/2x/3x scale found 6617 changed pixels out of 7257600 (under 0.1%), with maximum
+channel difference 40/255, concentrated at rasterized edges. This is not pixel
+identity or a measured Firefox speedup. Compare Normal and Pickups only on the
+same phone after deployment; hero-only slowdown is not addressed by this change.
+
 ### Confirmed Firefox Android portrait landing spacing
 
 USB inspection on Android 14 / Firefox 158 measured visualViewport.height = app height = 758.77px and safe-area-inset-bottom = 47.6px. The footer applied that inset as bottom padding (86.17px total height). After temporarily setting footer bottom padding to 4px, the footer shrank to 42.57px; a separate 47.6px bottom padding remained on the landing overlay. The user confirmed that setting that overlay bottom padding to 8px also corrected the Start-to-footer gap. Permanent overrides are limited to coarse-pointer portrait menu state: footer 4px, landing overlay 8px. Other states, landscape, header and dialog safe areas are unchanged. This deliberately adopts the device-confirmed spacing; other devices with actual overlapping system UI still require validation. Chromium regression uses a simulated 48px bottom inset and asserts the actual 8px Start-to-footer gap and 4px footer padding. Validation: 337 tests, TypeScript, production build and Chromium audit passed. No Android gameplay performance fix is claimed.
