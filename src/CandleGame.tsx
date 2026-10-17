@@ -20,6 +20,7 @@ import { swanBagPose } from './swanBag';
 import { printerFallRotation } from './printerFall';
 import { aimedVelocity, pointerToWorld, plotViewY, AimPoint } from './aim';
 import { chartViewport, chartToScreen, screenToChart } from './chartViewport';
+import { pickupInRenderBounds, pickupRenderBounds } from './pickupVisibility';
 import { pigeonDropsPrinter } from './gameRules';
 import { extendPrinterTurns, endingPrinterCandle, printerSourceCandle, printerCrossingPose, printerEnemyPose, printerProfileFlip, rightEdgeSpawnX, PrinterTurn } from './printerTrack';
 import { aimedHitDefeatsEnemy, dismountRider, canCatchBossBell, bellDescentTop } from './gameRules';
@@ -2234,9 +2235,13 @@ export const CandleGame: React.FC<CandleGameProps> = ({
   // 2. PICKUPS (Coins, Diamonds, Banknotes)
   const drawPickups = useCallback((ctx: CanvasRenderingContext2D) => {
     const g = gameRef.current;
+    const bounds = pickupRenderBounds(renderViewport.current, W - AX, TAPE_HEIGHT, H - TIME_AXIS_HEIGHT, g.invertedView);
     for (const d of g.pickups) {
       const x = d.x - g.cx;
       const y = d.y - g.cy;
+      // Canvas clipping hides pixels, but does not avoid issuing asset commands.
+      // Cull only rendering; off-screen loot still participates in simulation.
+      if (!pickupInRenderBounds(x, y, bounds)) continue;
 
       ctx.save();
       ctx.translate(x, y);

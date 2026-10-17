@@ -40,7 +40,7 @@ try {
   for (const [width, height, touch, notch = false] of [[360,560,true],[390,664,true],[768,1024,true],[844,390,true],[844,390,true,true],[896,400,true,true],[896,400,true,'left'],[896,400,true,'right'],[1280,800,false]]) {
     await send('Emulation.setTouchEmulationEnabled', { enabled: touch, maxTouchPoints: 5 });
     await send('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: touch ? 3 : 1, mobile: touch });
-    await send('Emulation.setSafeAreaInsetsOverride', { insets: notch ? {top:0,left:notch === 'right' ? 0 : 44,right:notch === 'left' ? 0 : 44,bottom:21} : {top:0,left:0,right:0,bottom:0} });
+    await send('Emulation.setSafeAreaInsetsOverride', { insets: notch ? {top:0,left:notch === 'right' ? 0 : 44,right:notch === 'left' ? 0 : 44,bottom:21} : {top:0,left:0,right:0,bottom:touch && width < height ? 48 : 0} });
     await send('Page.navigate', { url: origin });
     for (let i = 0; i < 100; i++) {
       await wait(100);
@@ -49,6 +49,17 @@ try {
     await wait(300);
     assert.equal(await evaluate("matchMedia('(pointer: coarse)').matches"), touch);
     assert.equal(await evaluate("getComputedStyle(document.querySelector('.site-footer')).borderTopWidth"), touch && width < height ? '1px' : '0px', 'unexpected footer separator');
+    if (touch && width < height && width < 768) {
+      const landing = await evaluate(`(() => {
+        const footer = document.querySelector('.site-footer');
+        const start = [...document.querySelectorAll('.mobile-portrait-guide button')].find(e => e.textContent.trim() === 'Start');
+        return {padding:parseFloat(getComputedStyle(footer).paddingBottom),
+          gap:footer.getBoundingClientRect().top-start.getBoundingClientRect().bottom};
+      })()`);
+      assert.equal(landing.padding, 4, 'portrait footer repeats the Android navigation inset');
+      assert(Math.abs(landing.gap-8) < 1, 'portrait Start-to-footer gap differs from device-validated 8px');
+      console.log(JSON.stringify({width,height,portraitLanding:landing}));
+    }
     for (const section of ['About', 'Privacy', 'Disclaimer', 'Preferences']) {
       await evaluate(`Array.from(document.querySelectorAll('.site-footer nav button')).find(b => b.textContent === '${section}').click()`);
       await wait(150);

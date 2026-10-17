@@ -2702,6 +2702,18 @@ html[data-theme="light"] .game-app .chart-pause-control {
   }
 }
 
+/* Device-validated portrait landing gaps: Firefox Android reports a bottom
+   inset even when its navigation bar is already outside the visible shell. */
+@media (orientation: portrait) and (pointer: coarse) {
+  .game-app[data-state="menu"] .site-footer {
+    padding-bottom: 4px;
+  }
+
+  .game-app[data-state="menu"] .game-arena > .game-overlay.how-to-play-overlay {
+    padding-bottom: 8px;
+  }
+}
+
 /* Landscape gameplay follows the compact edge-aligned control reference.
    Keep portrait and header safe-area protection independent of game controls. */
 @media (orientation: landscape) and (pointer: coarse) {
