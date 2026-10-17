@@ -1,5 +1,5 @@
 // Browser game module for MobileJoystick.
-import { useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef } from 'react';
 import { joystickSwipe } from './joystickGesture';
 
 export function MobileJoystick({ onMove, onPress, onRelease, movementEnabled }: {
@@ -10,12 +10,33 @@ export function MobileJoystick({ onMove, onPress, onRelease, movementEnabled }: 
 }) {
   const pointer = useRef<number | null>(null);
   const gesture = useRef({ startY: 0, latched: false });
-  const [offset, setOffset] = useState({ x: 0, y: 0 });
+  const knob = useRef<HTMLSpanElement>(null);
+  const callbacks = useRef({ onMove, onRelease });
+  useLayoutEffect(() => { callbacks.current = { onMove, onRelease }; });
+  useEffect(() => {
+    const release = () => {
+      if (pointer.current === null) return;
+      pointer.current = null;
+      gesture.current.latched = false;
+      if (knob.current) knob.current.style.transform = 'translate(0px, 0px)';
+      callbacks.current.onMove(0, 0);
+      callbacks.current.onRelease();
+    };
+    const visibility = () => { if (document.hidden) release(); };
+    window.addEventListener('blur', release);
+    document.addEventListener('visibilitychange', visibility);
+    return () => {
+      window.removeEventListener('blur', release);
+      document.removeEventListener('visibilitychange', visibility);
+      release();
+    };
+  }, []);
   const reset = () => {
     if (pointer.current === null) return;
     pointer.current = null;
     gesture.current.latched = false;
-    setOffset({ x: 0, y: 0 }); onMove(0, 0); onRelease();
+    if (knob.current) knob.current.style.transform = 'translate(0px, 0px)';
+    onMove(0, 0); onRelease();
   };
   return <div
     role="button" aria-label={movementEnabled ? 'Joystick: drag to move, swipe up or tap to jump' : 'Joystick: tap to jump'} tabIndex={0}
@@ -40,11 +61,12 @@ export function MobileJoystick({ onMove, onPress, onRelease, movementEnabled }: 
       if (swipe.jump) onPress();
       const scale = length > radius ? radius / length : 1;
       const x = dx * scale, y = dy * scale;
-      setOffset({ x, y }); onMove(x / radius, y / radius);
+      if (knob.current) knob.current.style.transform = `translate(${x}px, ${y}px)`;
+      onMove(x / radius, y / radius);
     }}
     onPointerUp={e => { e.stopPropagation(); if (pointer.current === e.pointerId) reset(); }}
     onPointerCancel={reset} onLostPointerCapture={reset}
     onKeyDown={e => { if ((e.key === ' ' || e.key === 'Enter') && !e.repeat) { e.preventDefault(); onPress(); } }}
     onKeyUp={onRelease}
-  >{movementEnabled && <span className="mobile-joystick-knob rounded-full" style={{ transform: `translate(${offset.x}px, ${offset.y}px)` }} />}</div>;
+  >{movementEnabled && <span className="mobile-joystick-knob rounded-full" ref={knob} />}</div>;
 }

@@ -80,7 +80,8 @@ test('mobile preserves relative model sizes with one plot transform and unzoomed
   assert.match(game, /const canvasPoint = zoomCanvasPoint\(/);
   assert.match(game, /screenToChart\(canvasPoint, currentChartViewport\(bounds\)\)/);
   assert.match(game, /pointerToWorld\(chartPoint/);
-  assert.match(game, /const viewport = currentChartViewport\(ctx\.canvas\.getBoundingClientRect\(\)\);/);
+  assert.match(game, /renderViewport\.current = currentChartViewport\(bounds\);/);
+  assert.match(game, /const viewport = renderViewport\.current;/);
   assert.match(game, /ctx\.scale\(viewport\.scaleX, viewport\.scale\);/);
 });
 
@@ -99,14 +100,17 @@ test('mobile joystick only sends movement in Kangaroo mode', () => {
 
 test('canvas keeps mobile backing resolution bounded and avoids render storms during catch-up', () => {
   const game = readFileSync(new URL('./CandleGame.tsx', import.meta.url), 'utf8');
-  assert.match(game, /const canvasPixelRatio = \(\): number =>/);
-  assert.match(game, /Math\.min\(dpr, 1\.5\)/);
-  assert.match(game, /canvas\.width = Math\.round\(W \* ratio\)/);
-  assert.match(game, /canvas\.height = Math\.round\(H \* ratio\)/);
-  assert.match(game, /ctx\.setTransform\(ratio, 0, 0, ratio, 0, 0\)/);
+  assert.match(game, /renderPixelRatio\(display.width, display.height, W, H, dpr, window.matchMedia\('\(pointer: coarse\)'\).matches\)/);
+  assert.match(game, /Math\.round\(W \* ratio\)/);
+  assert.match(game, /Math\.round\(H \* ratio\)/);
+  assert.match(game, /ctx\.setTransform\(width \/ W, 0, 0, height \/ H, 0, 0\)/);
   assert.match(game, /let simulationSteps = 0/);
   assert.match(game, /simulationSteps\+\+/);
-  assert.match(game, /if \(simulationSteps < 4\) loopCallbacks\.current\.draw\(ctx\)/);
+  assert.match(game, /if \(simulationSteps > 0 \|\| needsDraw\)\s*\{\s*loopCallbacks\.current\.draw\(ctx\)/);
+  assert.match(game, /if \(document.hidden\)/);
+  assert.match(game, /document.removeEventListener\('visibilitychange', resetClock\)/);
+  const draw = game.slice(game.indexOf('const draw ='), game.indexOf('// Fresh callbacks'));
+  assert.doesNotMatch(draw.slice(0, draw.indexOf('onPointerMove')), /getBoundingClientRect/);
 });
 
 test('ticker item widths are measured once instead of every rendered frame', () => {

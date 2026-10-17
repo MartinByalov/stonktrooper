@@ -1,0 +1,108 @@
+// Run against a local Vite/preview server and a Chromium remote-debugging port.
+// This is browser emulation, not a substitute for an Android/iOS device run.
+import assert from 'node:assert/strict';
+const origin = process.env.AUDIT_ORIGIN || 'http://127.0.0.1:5511';
+const port = process.env.AUDIT_DEBUG_PORT || '9331';
+const tabs = await (await fetch(`http://127.0.0.1:${port}/json`)).json();
+const socket = new WebSocket(tabs.find(tab => tab.type === 'page').webSocketDebuggerUrl);
+await new Promise(resolve => socket.addEventListener('open', resolve, { once: true }));
+let id = 0;
+const pending = new Map();
+socket.addEventListener('message', event => {
+  const response = JSON.parse(event.data), entry = pending.get(response.id);
+  if (!entry) return;
+  pending.delete(response.id);
+  clearTimeout(entry.timer);
+  response.error ? entry.reject(new Error(JSON.stringify(response.error))) : entry.resolve(response.result);
+});
+const send = (method, params = {}) => new Promise((resolve, reject) => {
+  const current = ++id;
+  const timer = setTimeout(() => { pending.delete(current); reject(new Error(`Timeout: ${method}`)); }, 15000);
+  pending.set(current, { resolve, reject, timer });
+  socket.send(JSON.stringify({ id: current, method, params }));
+});
+const evaluate = async expression => {
+  const response = await send('Runtime.evaluate', { expression, returnByValue: true, awaitPromise: true, userGesture: true });
+  if (response.exceptionDetails) throw new Error(JSON.stringify(response.exceptionDetails));
+  return response.result.value;
+};
+const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+const hitTest = selector => evaluate(`(() => {
+  const e = document.querySelector(${JSON.stringify(selector)});
+  if (!e) return null;
+  const r = e.getBoundingClientRect(), hit = document.elementFromPoint(r.x+r.width/2,r.y+r.height/2);
+  return {width:r.width,height:r.height,x:r.x,y:r.y,bottom:r.bottom,
+    accessible:!!hit && (hit === e || e.contains(hit))};
+})()`);
+try {
+  await send('Network.enable');
+  await send('Network.setCacheDisabled', { cacheDisabled: true });
+  for (const [width, height, touch, notch = false] of [[360,560,true],[390,664,true],[768,1024,true],[844,390,true],[844,390,true,true],[1280,800,false]]) {
+    await send('Emulation.setTouchEmulationEnabled', { enabled: touch, maxTouchPoints: 5 });
+    await send('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: touch ? 3 : 1, mobile: touch });
+    await send('Emulation.setSafeAreaInsetsOverride', { insets: notch ? {top:0,left:44,right:44,bottom:21} : {top:0,left:0,right:0,bottom:0} });
+    await send('Page.navigate', { url: origin });
+    for (let i = 0; i < 100; i++) {
+      await wait(100);
+      if (await evaluate("!!document.querySelector('.site-footer')")) break;
+    }
+    await wait(300);
+    assert.equal(await evaluate("matchMedia('(pointer: coarse)').matches"), touch);
+    for (const section of ['About', 'Privacy', 'Disclaimer', 'Preferences']) {
+      await evaluate(`Array.from(document.querySelectorAll('.site-footer nav button')).find(b => b.textContent === '${section}').click()`);
+      await wait(150);
+      assert((await hitTest('.site-info-close'))?.accessible, `${width}: ${section} close inaccessible`);
+      const scroll = await evaluate(`(() => {
+        const e = document.querySelector('.site-info-content');
+        e.scrollTop = 0;
+        const start = e.firstElementChild.getBoundingClientRect().top >= e.getBoundingClientRect().top - 1;
+        e.scrollTop = e.scrollHeight;
+        return {start, end:e.scrollTop + e.clientHeight >= e.scrollHeight-1, scrollTop:e.scrollTop, clientHeight:e.clientHeight, scrollHeight:e.scrollHeight, top:e.getBoundingClientRect().top, childTop:e.firstElementChild.getBoundingClientRect().top};
+      })()`);
+      assert(scroll.start && scroll.end, `${width}: ${section}: clipped scroll content ${JSON.stringify(scroll)}`);
+      await evaluate("document.querySelector('.site-info-close').click()");
+    }
+    const canvas = await evaluate(`(() => {
+      const e = document.querySelector('.game-stage > canvas'), r = e.getBoundingClientRect();
+      return {width:e.width,height:e.height,cssWidth:r.width,cssHeight:r.height,documentHeight:document.scrollingElement.scrollHeight};
+    })()`);
+    if (touch) assert(canvas.documentHeight <= height + 1);
+    console.log(JSON.stringify({width,height,touch,notch,panels:'passed',canvas}));
+    if (width === 844 || !touch) {
+      // Avoid fullscreen/orientation transitions here so viewport dimensions stay deterministic.
+      await evaluate(`document.querySelector('.game-app').requestFullscreen = async () => {};
+        screen.orientation.lock = async () => {};
+        document.querySelector('.desktop-initial-guide .how-to-mode-selector').dispatchEvent(new KeyboardEvent('keydown', {key:'ArrowRight',bubbles:true}))`);
+      await wait(100);
+      await evaluate(`Array.from(document.querySelectorAll('.desktop-initial-guide button')).find(b => b.textContent.trim() === 'Start').click()`);
+      await wait(100);
+      assert.equal(await evaluate("document.querySelector('.game-app').dataset.state"), 'play');
+      const pause = await hitTest('.chart-pause-control');
+      assert(pause?.accessible, 'pause inaccessible');
+      if (touch) {
+        const joystick = await hitTest('.mobile-joystick');
+        assert(joystick?.accessible, 'joystick inaccessible');
+        if (notch) assert(joystick.x >= 44 && joystick.bottom <= height - 21, 'joystick intersects safe area');
+        const x = joystick.x + joystick.width/2, y = joystick.y + joystick.height/2;
+        await send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{x,y}] });
+        await send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+      } else {
+        assert.equal((await hitTest('.mobile-joystick'))?.width, 0);
+      }
+      await evaluate("document.querySelector('.chart-pause-control').click()");
+      assert.equal(await evaluate("document.querySelector('.game-app').dataset.state"), 'paused');
+      console.log(JSON.stringify({width,height,controls:'passed'}));
+      if (notch && process.argv.includes('--fullscreen')) {
+        await evaluate("document.querySelector('.game-app').requestFullscreen = Element.prototype.requestFullscreen; document.querySelector('.game-app').requestFullscreen()");
+        await wait(250);
+        assert.equal(await evaluate('!!document.fullscreenElement'), true);
+        await evaluate("Array.from(document.querySelectorAll('.site-footer nav button')).find(b => b.textContent === 'Privacy').click()");
+        await wait(150);
+        assert((await hitTest('.site-info-close'))?.accessible, 'fullscreen close inaccessible');
+        await evaluate("document.querySelector('.site-info-close').click(); document.exitFullscreen()");
+        await wait(250);
+        console.log(JSON.stringify({width,height,fullscreen:'passed'}));
+      }
+    }
+  }
+} finally { socket.close(); }

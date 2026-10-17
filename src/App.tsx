@@ -73,23 +73,35 @@ export default function App() {
         app.style.setProperty('--mobile-theme-control-right', `${Math.max(0, window.innerWidth - themeRect.right)}px`);
       }
     };
-    const observer = new ResizeObserver(updateFeedBoundary);
+    let boundaryFrame = 0;
+    const scheduleBoundary = () => {
+      if (!boundaryFrame) boundaryFrame = requestAnimationFrame(() => {
+        boundaryFrame = 0;
+        updateFeedBoundary();
+      });
+    };
+    const observer = new ResizeObserver(scheduleBoundary);
     observer.observe(arena);
     observer.observe(app);
     if (footer) observer.observe(footer);
     if (fullscreenControl) observer.observe(fullscreenControl);
     if (themeControl) observer.observe(themeControl);
     if (header) observer.observe(header);
-    const mutationObserver = new MutationObserver(updateFeedBoundary);
+    const mutationObserver = new MutationObserver(scheduleBoundary);
     mutationObserver.observe(app, { childList: true, subtree: true });
-    window.addEventListener('resize', updateFeedBoundary);
-    window.addEventListener('scroll', updateFeedBoundary, true);
+    window.addEventListener('resize', scheduleBoundary);
+    window.addEventListener('scroll', scheduleBoundary, true);
+    window.visualViewport?.addEventListener('resize', scheduleBoundary);
+    window.visualViewport?.addEventListener('scroll', scheduleBoundary);
     updateFeedBoundary();
     return () => {
       observer.disconnect();
       mutationObserver.disconnect();
-      window.removeEventListener('resize', updateFeedBoundary);
-      window.removeEventListener('scroll', updateFeedBoundary, true);
+      cancelAnimationFrame(boundaryFrame);
+      window.removeEventListener('resize', scheduleBoundary);
+      window.removeEventListener('scroll', scheduleBoundary, true);
+      window.visualViewport?.removeEventListener('resize', scheduleBoundary);
+      window.visualViewport?.removeEventListener('scroll', scheduleBoundary);
     };
   }, []);
   const previousMobilePortrait = useRef<boolean | null>(null);

@@ -204,6 +204,7 @@ test('portrait information bodies center below the fixed header with safe scroll
   assert.match(portrait, /@media \(orientation: portrait\) and \(pointer: coarse\)/);
   assert.match(portrait, /> \.site-info-content\s*\{\s*display: flex;\s*flex-direction: column;\s*min-height: 0;\s*overflow-y: auto;/);
   assert.match(portrait, /\.site-info-content > \.site-info-body\s*\{\s*flex: 0 0 auto;\s*width: 100%;\s*margin-block: auto;/);
+  assert.match(portrait, /justify-content: flex-start;/);
   assert.match(portrait, /\.site-info-content::after\s*\{\s*display: none;/);
   assert.doesNotMatch(portrait, /justify-content: center|site-info-header|site-info-close/);
 });

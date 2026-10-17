@@ -2224,12 +2224,12 @@ html[data-theme="light"] .game-app .chart-pause-control {
 
   .game-app .chart-pause-control {
     --pause-control-gap: var(--mobile-control-gap);
-    right: calc(var(--chart-axis-right, 64px) + var(--pause-control-gap));
-    bottom: var(--pause-control-gap);
+    right: max(calc(var(--chart-axis-right, 64px) + var(--pause-control-gap)), env(safe-area-inset-right));
+    bottom: max(var(--pause-control-gap), env(safe-area-inset-bottom));
   }
 
   .game-app {
-    --mobile-control-gap: max(8px, env(safe-area-inset-top), env(safe-area-inset-right), env(safe-area-inset-bottom), env(safe-area-inset-left));
+    --mobile-control-gap: 8px;
   }
 
   .game-app header {
@@ -2242,8 +2242,8 @@ html[data-theme="light"] .game-app .chart-pause-control {
   .game-app .mobile-joystick,
   .game-app:fullscreen .mobile-joystick {
     position: absolute;
-    left: var(--mobile-control-gap);
-    bottom: var(--mobile-control-gap);
+    left: max(var(--mobile-control-gap), env(safe-area-inset-left));
+    bottom: max(var(--mobile-control-gap), env(safe-area-inset-bottom));
   }
 
   /* Margin Call is an intrinsic-height, centered card in either orientation. */
@@ -2407,12 +2407,12 @@ html[data-theme="light"] .game-app .chart-pause-control {
   }
 
   .game-app .site-info-overlay.fixed.inset-0.z-50 > .site-info-dialog {
-    --site-info-mobile-gutter: max(8px, env(safe-area-inset-top), env(safe-area-inset-right), env(safe-area-inset-bottom), env(safe-area-inset-left));
+    --site-info-mobile-gutter: 8px;
     position: relative;
     height: 100%;
     max-height: 100%;
     max-width: none;
-    padding: var(--site-info-mobile-gutter);
+    padding: var(--site-info-mobile-gutter) max(var(--site-info-mobile-gutter), env(safe-area-inset-right)) var(--site-info-mobile-gutter) max(var(--site-info-mobile-gutter), env(safe-area-inset-left));
     border: 0;
     border-radius: 0;
     box-shadow: none;
@@ -2737,6 +2737,7 @@ html[data-theme="light"] .game-app .chart-pause-control {
     flex-direction: column;
     min-height: 0;
     overflow-y: auto;
+    justify-content: flex-start;
   }
 
   .game-app .site-info-content > .site-info-body {

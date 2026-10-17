@@ -14,7 +14,7 @@ test('PIPS glyphs fit below Live Feed and use the Liquidated typography', () => 
   assert.match(block, /ctx\.fillStyle = theme === 'light' \? '#08795c' : '#54d3ac';\s*ctx\.fillText\(label/);
   assert.match(block, /ctx\.fillStyle = theme === 'light' \? '#08795c' : '#54d3ac';\s*ctx\.fillText\(value/);
   assert.match(block, /mobileScore \? 16 \/ scoreScaleY : 15/);
-  const draw = new Function('ctx', 'totalScoreVal', 'TAPE_HEIGHT', 'W', 'AX', 'theme', 'canvasRef', 'H', 'mobileCanvasZoom', 'feedLayout', block);
+  const draw = new Function('ctx', 'totalScoreVal', 'TAPE_HEIGHT', 'W', 'AX', 'theme', 'canvasDisplay', 'H', 'mobileCanvasZoom', 'feedLayout', block);
   for (const score of [0, 12345, 999999999]) {
     for (const [width, height, zoom] of [[1920, 840, 1], [390, 650, 1.2], [844, 280, 1.1]]) {
     for (const ascent of [10, 12, 15]) {
@@ -26,7 +26,7 @@ test('PIPS glyphs fit below Live Feed and use the Liquidated typography', () => 
          scale(x: number) { textScaleX = x; },
         measureText: (text: string) => ({ width: text.length * 8, actualBoundingBoxLeft: left, actualBoundingBoxAscent: ascent }),
         fillText: (_text: string, x: number, y: number) => { positions.push([x, y]); },
-       }, score, tapeHeight, 1920, 64, 'light', { current: { getBoundingClientRect: () => ({ width, height }) } }, 840, () => zoom, { current: { mobile: width !== 1920 } });
+       }, score, tapeHeight, 1920, 64, 'light', { current: { width, height } }, 840, () => zoom, { current: { mobile: width !== 1920 } });
       assert.equal(positions.length, 2);
       const leftGap = width / 2 * (1 - zoom) + (positions[0][0] - left) * textScaleX * width / 1920 * zoom;
       const topGap = (positions[0][1] - ascent - tapeHeight) * height / 840 * zoom;

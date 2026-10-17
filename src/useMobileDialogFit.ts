@@ -6,7 +6,7 @@ export function useMobileDialogFit(root: RefObject<HTMLDivElement | null>): void
     const app = root.current;
     if (!app) return;
     const media = window.matchMedia('(pointer: coarse)');
-    const selector = '.game-result, .fixed.inset-0.z-50 > [role="dialog"]:not(.mobile-how-to-panel)';
+    const selector = '.game-result, .fixed.inset-0.z-50 > [role="dialog"]:not(.mobile-how-to-panel):not(.site-info-dialog):not(.share-dd-dialog)';
     const observed = new Set<Element>();
     let frame = 0;
     const fit = () => {
@@ -26,7 +26,9 @@ export function useMobileDialogFit(root: RefObject<HTMLDivElement | null>): void
         const width = parent.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
         const height = parent.clientHeight - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom);
         const scale = Math.max(0, Math.min(1, width / Math.max(1, dialog.offsetWidth), height / Math.max(1, dialog.offsetHeight)));
-        dialog.style.setProperty('--mobile-dialog-scale', String(scale));
+        if (dialog.style.getPropertyValue('--mobile-dialog-scale') !== String(scale)) {
+          dialog.style.setProperty('--mobile-dialog-scale', String(scale));
+        }
       });
       observed.forEach(element => {
         if (!targets.has(element)) { resize.unobserve(element); observed.delete(element); }

@@ -12,6 +12,7 @@ import { applyCandleSurprise, SURPRISE_MIN_GAP, SURPRISE_MAX_GAP, candleSurprise
 import { stepTenderFall, tenderLanding } from './tenderFall';
 import { randomBirdCargo, canReleaseBirdCargo } from './birdCargo';
 import { MobileJoystick } from './MobileJoystick';
+import { renderPixelRatio } from './renderBudget';
 import { drawDumpster } from './dumpsterRenderer';
 import { hawkBagThrowPose } from './hawkBagThrow';
 import { swanBagPose } from './swanBag';
@@ -89,12 +90,10 @@ const currentChartViewport = (display?: { width: number; height: number }) => ch
 // High-DPI canvases are disproportionately expensive on phones. Keep desktop
 // capture crisp, but cap the mobile backing store so the game spends its frame
 // budget on gameplay rather than filling millions of mostly invisible pixels.
-const canvasPixelRatio = (): number => {
+const canvasPixelRatio = (display: { width: number; height: number }): number => {
   if (typeof window === 'undefined') return 1;
   const dpr = window.devicePixelRatio || 1;
-  return window.matchMedia('(max-width: 767px) and (pointer: coarse)').matches
-    ? Math.min(dpr, 1.5)
-    : Math.min(dpr, 2);
+  return renderPixelRatio(display.width, display.height, W, H, dpr, window.matchMedia('(pointer: coarse)').matches);
 };
 
 const zoomCanvasPoint = (client: AimPoint, rect: { left: number; top: number; width: number; height: number }, zoom: number): AimPoint => {
@@ -159,6 +158,8 @@ export const CandleGame: React.FC<CandleGameProps> = ({
   onHawkActivated
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const canvasDisplay = useRef({ width: W, height: H });
+  const renderViewport = useRef(currentChartViewport());
   const headerFeedRef = useRef<HTMLCanvasElement | null>(null);
   const headerFeedActive = useRef(false);
   const headerFeedLayout = useRef({ height: 32, width: W, mainHeight: H });
@@ -170,6 +171,8 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     const refresh = () => {
       const mobile = window.matchMedia('(pointer: coarse)').matches;
       const bounds = canvas.getBoundingClientRect();
+      canvasDisplay.current = { width: bounds.width, height: bounds.height };
+      renderViewport.current = currentChartViewport(bounds);
       const scale = Math.max(0.01, bounds.height / H * mobileCanvasZoom());
       const horizontalScale = Math.max(0.01, bounds.width / W * mobileCanvasZoom());
       const axisLeft = bounds.width / 2 + (W / 2 - AX) * horizontalScale;
@@ -2473,7 +2476,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     ctx.rect(0, TAPE_HEIGHT, W - AX, H - TAPE_HEIGHT - TIME_AXIS_HEIGHT);
     ctx.clip();
 
-    const viewport = currentChartViewport(ctx.canvas.getBoundingClientRect());
+    const viewport = renderViewport.current;
     ctx.translate(viewport.x * (1 - viewport.scaleX), viewport.y * (1 - viewport.scale));
     ctx.scale(viewport.scaleX, viewport.scale);
 
@@ -2719,7 +2722,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
         const value = totalScoreVal.toLocaleString();
         const text = `${label}${value}`;
         const padding = 14;
-        const bounds = canvasRef.current?.getBoundingClientRect() ?? { width: W, height: H };
+        const bounds = canvasDisplay.current;
         const scoreZoom = mobileCanvasZoom();
         const scoreScaleX = Math.max(0.01, bounds.width / W * scoreZoom);
         const scoreScaleY = Math.max(0.01, bounds.height / H * scoreZoom);
@@ -3042,13 +3045,35 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const ratio = canvasPixelRatio();
-    canvas.width = Math.round(W * ratio);
-    canvas.height = Math.round(H * ratio);
-    ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+    const resizeCanvas = () => {
+      const ratio = canvasPixelRatio(canvas.getBoundingClientRect());
+      const width = Math.max(1, Math.round(W * ratio));
+      const height = Math.max(1, Math.round(H * ratio));
+      if (canvas.width !== width || canvas.height !== height) {
+        canvas.width = width;
+        canvas.height = height;
+      }
+      ctx.setTransform(width / W, 0, 0, height / H, 0, 0);
+    };
+    const resize = new ResizeObserver(resizeCanvas);
+    resize.observe(canvas);
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+    let needsDraw = true;
+    const resetClock = () => {
+      gameRef.current.previousTime = 0;
+      gameRef.current.accumulator = 0;
+      needsDraw = true;
+    };
+    document.addEventListener('visibilitychange', resetClock);
 
     const renderLoop = (now: number) => {
       if (disposed) return;
+      if (document.hidden) {
+        resetClock();
+        animationFrameId = requestAnimationFrame(renderLoop);
+        return;
+      }
       const g = gameRef.current;
       if (g.currentState === 'play' || g.currentState === 'boxing') {
         sound.setMusicMode(g.currentState === 'boxing' ? 'kangaroo' : g.printerTimer > 0 ? 'pigeon' : g.hawkTimer > 0 ? 'hawk' : 'normal');
@@ -3077,10 +3102,13 @@ export const CandleGame: React.FC<CandleGameProps> = ({
         g.accumulator -= 1 / 60;
       }
 
-      // A backgrounded/throttled tab can deliver a large timestamp jump. The
-      // fixed-step simulation catches up, but rendering every catch-up RAF
-      // would make the next frame even more expensive on mobile.
-      if (simulationSteps < 4) loopCallbacks.current.draw(ctx);
+      // Draw once per simulation tick, including after a slow frame. Skipping
+      // every overloaded frame can otherwise starve rendering indefinitely.
+      // High-refresh displays do not need duplicate 120/144 Hz canvas paints.
+      if (simulationSteps > 0 || needsDraw) {
+        loopCallbacks.current.draw(ctx);
+        needsDraw = false;
+      }
       animationFrameId = requestAnimationFrame(renderLoop);
     };
 
@@ -3088,6 +3116,9 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     return () => {
       disposed = true;
       cancelAnimationFrame(animationFrameId);
+      resize.disconnect();
+      window.removeEventListener('resize', resizeCanvas);
+      document.removeEventListener('visibilitychange', resetClock);
     };
   }, [initGame]);
 
