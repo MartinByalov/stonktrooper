@@ -93,7 +93,7 @@ test('Share DD uses only the image dialog and overlays its controls without visi
   const section = css.slice(css.indexOf('/* Share DD is the image itself'));
   assert.match(section, /aspect-ratio: 4 \/ 3;/);
   assert.match(section, /\.share-dd-close\s*\{[^}]*top: 8px;[^}]*right: 8px;/);
-  assert.match(section, /\.share-dd-actions\s*\{[^}]*left: calc\(4\.4% \+ 8px\);[^}]*bottom: calc\(7\.3% \+ 8px\);[^}]*flex-direction: column;/);
+  assert.match(section, /\.share-dd-actions\s*\{[^}]*left: calc\(4\.4% \+ 8px\);[^}]*bottom: calc\(7\.3% \+ 16px\);[^}]*flex-direction: column;/);
   assert.match(section, /padding: 0;[^}]*border: 0;[^}]*background: transparent;[^}]*box-shadow: none;/);
 });
 test('Liquidated and Share DD controls use the requested theme colors', () => {
@@ -119,6 +119,8 @@ test('square header, pause and close controls share the same theme and interacti
   assert.match(section, /:root\s*\{\s*--square-control-ink: #ffffff;\s*--square-control-fill: #182334;\s*--square-control-hover: #000000;/);
   assert.match(section, /html\[data-theme="light"\]\s*\{\s*--square-control-ink: #000000;\s*--square-control-fill: #eaf0f5;\s*--square-control-hover: #ffffff;/);
   assert.match(section, /svg\s*\{\s*color: inherit !important;/);
+  assert.match(section, /\.chart-pause-control:not\(:hover\):not\(:focus-visible\)\s*\{\s*background: transparent !important;/);
+  assert.match(section, /\.share-dd-actions > button\.share-dd-copy\s*\{\s*color: #ffffff !important;\s*background: #08795c !important;/);
 });
 
 test('header actions and Liquidated buttons follow the requested order', () => {

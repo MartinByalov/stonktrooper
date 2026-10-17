@@ -94,6 +94,15 @@ try {
       assert.equal(await evaluate("document.querySelector('.game-app').dataset.state"), 'play');
       const pause = await hitTest('.chart-pause-control');
       assert(pause?.accessible, 'pause inaccessible');
+      for (const theme of ['dark', 'light']) {
+        await evaluate(`document.documentElement.dataset.theme='${theme}'; document.activeElement?.blur(); document.querySelector('.chart-pause-control').style.transition='none'`);
+        await send('Input.dispatchMouseEvent', {type:'mouseMoved',x:0,y:0});
+        assert.equal(await evaluate("getComputedStyle(document.querySelector('.chart-pause-control')).backgroundColor"), 'rgba(0, 0, 0, 0)', 'pause idle should be transparent');
+        await send('Input.dispatchMouseEvent', {type:'mouseMoved',x:pause.x+pause.width/2,y:pause.y+pause.height/2});
+        assert.equal(await evaluate("getComputedStyle(document.querySelector('.chart-pause-control')).backgroundColor"), theme==='light'?'rgb(255, 255, 255)':'rgb(0, 0, 0)', 'pause hover fill incorrect');
+      }
+      await send('Input.dispatchMouseEvent', {type:'mouseMoved',x:0,y:0});
+      await evaluate("document.documentElement.dataset.theme='dark'");
       if (touch) {
         const joystick = await hitTest('.mobile-joystick');
         assert(joystick?.accessible, 'joystick inaccessible');
@@ -185,12 +194,12 @@ try {
     assert.equal(share.padding, '0px');
     for (const gap of [share.closeTop,share.closeRight]) assert(Math.abs(gap-8)<1, 'share close not at image corner');
     assert(Math.abs(share.actionsLeft-(share.imageWidth*0.044+8))<1, 'share actions not inside inner left boundary');
-    assert(Math.abs(share.actionsBottomGap-(share.imageHeight*0.073+8))<1, 'share actions not inside inner bottom boundary');
+    assert(Math.abs(share.actionsBottomGap-(share.imageHeight*0.073+16))<1, 'share actions not lifted above rounded inner bottom boundary');
     for (const selector of ['.share-dd-actions > button:first-child', '.share-dd-actions > button:last-child']) assert((await hitTest(selector))?.accessible, 'share action inaccessible');
     for (const theme of ['dark', 'light']) {
       const styles = await evaluate(`(() => {
         document.documentElement.dataset.theme = '${theme}';
-        const controls = [document.querySelector('.share-dd-close'), ...document.querySelectorAll('.header-controls > button, .share-dd-actions > button')].filter(e=>e.getBoundingClientRect().width>0);
+        const controls = [document.querySelector('.share-dd-close'), ...document.querySelectorAll('.header-controls > button, .share-dd-social-button')].filter(e=>e.getBoundingClientRect().width>0);
         controls.forEach(e => e.style.transition = 'none');
         const capture = e => {const s=getComputedStyle(e);return [s.color,s.borderColor,s.backgroundColor].join('|')};
         document.activeElement?.blur();
@@ -205,7 +214,20 @@ try {
       const hover = theme === 'light' ? 'rgb(255, 255, 255)' : 'rgb(0, 0, 0)';
       assert.equal(styles.idle[0], [ink,ink,fill].join('|'));
       assert.equal(styles.focus[0], [ink,ink,hover].join('|'));
+      const copyColors = await evaluate(`(() => {
+        const button=document.querySelector('.share-dd-copy');
+        button.style.transition='none';
+        document.activeElement?.blur();
+        const capture=()=>[getComputedStyle(button).color,getComputedStyle(button).backgroundColor].join('|');
+        const idle=capture();button.focus();return {idle,focus:capture()};
+      })()`);
+      assert.equal(copyColors.idle, 'rgb(255, 255, 255)|rgb(8, 121, 92)');
+      assert.equal(copyColors.focus, copyColors.idle);
       await evaluate('document.activeElement?.blur()');
+      const copyPoint = await hitTest('.share-dd-copy');
+      await send('Input.dispatchMouseEvent', {type:'mouseMoved',x:copyPoint.x+copyPoint.width/2,y:copyPoint.y+copyPoint.height/2});
+      assert.equal(await evaluate("getComputedStyle(document.querySelector('.share-dd-copy')).backgroundColor"), 'rgb(8, 121, 92)', 'Share hover should stay green');
+      await send('Input.dispatchMouseEvent', {type:'mouseMoved',x:0,y:0});
       const closePoint = await hitTest('.share-dd-close');
       await send('Input.dispatchMouseEvent', {type:'mouseMoved', x:closePoint.x+closePoint.width/2, y:closePoint.y+closePoint.height/2});
       const hovered = await evaluate(`(() => {

@@ -2767,7 +2767,8 @@ html[data-theme="light"] .game-app .chart-pause-control {
   /* The painted inner rectangle starts at 4.4% from the left and ends
      7.3% above the bottom in both share-card backgrounds. */
   left: calc(4.4% + 8px);
-  bottom: calc(7.3% + 8px);
+  /* Lift off the rounded bottom-left contour, not just its straight baseline. */
+  bottom: calc(7.3% + 16px);
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -2821,4 +2822,13 @@ html .game-app :is(.header-controls > button, .chart-pause-control, .dialog-clos
 
 html .game-app :is(.header-controls > button, .chart-pause-control, .dialog-close, .share-dd-actions > button) svg {
   color: inherit !important;
+}
+
+html .game-app .chart-pause-control:not(:hover):not(:focus-visible) {
+  background: transparent !important;
+}
+
+html .game-app .share-dd-actions > button.share-dd-copy {
+  color: #ffffff !important;
+  background: #08795c !important;
 }
