@@ -1,7 +1,7 @@
 import type { BossArena } from './boxingRules';
 import { paulHookPose, paulTailPose } from './paulRules';
 import { drawJointedArm } from './armRenderer';
-import { paulSurface, drawPaulMuscle, drawPaulGlove, drawPaulHead } from './paulModel';
+import { paulSurface, drawPaulMuscle, drawPaulGlove, drawPaulHead, paulHookMotion } from './paulModel';
 
 export function drawPaul(ctx: CanvasRenderingContext2D, b: BossArena['boss']): void {
   ctx.save(); ctx.translate(b.x, b.y); ctx.scale(b.facing, 1);
@@ -12,17 +12,27 @@ export function drawPaul(ctx: CanvasRenderingContext2D, b: BossArena['boss']): v
   const gait = b.moving ? Math.sin(b.walkPhase) : 0;
   const twist = tailAttack ? Math.sin((60 - b.attack) / 60 * Math.PI * 2) : 0;
   const shoulderShift = twist * 4;
+  const hook = paulHookMotion(b.attackKind === 'hook' ? b.attack : 0);
+  // Rotate around the waist, so the shoulders and rib cage load together.
+  const upperPoint = (x: number, y: number) => ({
+    x: Math.cos(hook.lean) * x - Math.sin(hook.lean) * (y + 25),
+    y: -25 + Math.sin(hook.lean) * x + Math.cos(hook.lean) * (y + 25),
+  });
 
   const drawTail = () => {
-    const rootX = chasing ? -26 : -13, rootY = -28;
+    // Bury the broad tail base inside the pelvis, and follow the same waist
+    // rotation/compression as the torso instead of anchoring at its silhouette.
+    const root = chasing ? { x: -24, y: -29 }
+      : upperPoint(-7 * (1 - Math.abs(twist) * 0.18), -27);
+    const rootX = root.x, rootY = root.y;
     const dx = tail.x - rootX, dy = tail.y - rootY;
     const length = Math.hypot(dx, dy) || 1, nx = -dy / length, ny = dx / length;
     ctx.fillStyle = paulSurface(ctx, (rootX + tail.x) / 2, (rootY + tail.y) / 2, length * 0.7);
-    ctx.beginPath(); ctx.moveTo(rootX + nx * 6, rootY + ny * 6);
+    ctx.beginPath(); ctx.moveTo(rootX + nx * 9, rootY + ny * 9);
     ctx.bezierCurveTo(rootX + dx * 0.3 + nx * 11, rootY + dy * 0.3 + ny * 11,
       tail.x - dx * 0.15 + nx * 8, tail.y - dy * 0.15 + ny * 8, tail.x, tail.y);
     ctx.bezierCurveTo(tail.x - dx * 0.15 - nx * 9, tail.y - dy * 0.15 - ny * 9,
-      rootX + dx * 0.3 - nx * 10, rootY + dy * 0.3 - ny * 10, rootX - nx * 6, rootY - ny * 6);
+      rootX + dx * 0.3 - nx * 10, rootY + dy * 0.3 - ny * 10, rootX - nx * 9, rootY - ny * 9);
     ctx.closePath(); ctx.fill();
     ctx.strokeStyle = '#a5b4bf'; ctx.lineWidth = 3;
     ctx.beginPath(); ctx.moveTo(tail.x - dx * 0.15, tail.y - dy * 0.15 - 1); ctx.lineTo(tail.x, tail.y); ctx.stroke();
@@ -33,8 +43,13 @@ export function drawPaul(ctx: CanvasRenderingContext2D, b: BossArena['boss']): v
     const dx = joint.x - root.x, dy = joint.y - root.y;
     drawPaulMuscle(ctx, root.x + dx * 0.4, root.y + dy * 0.4,
       upper * 0.56, Math.hypot(dx, dy) * 0.52, Math.atan2(dy, dx) - Math.PI / 2, near);
-    ctx.strokeStyle = near ? '#a6b5c2' : '#647689'; ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(root.x - 2, root.y + 2); ctx.lineTo(joint.x - 2, joint.y - 2); ctx.stroke();
+    // Blend the forearm into a smaller elbow instead of drawing a hard seam
+    // across the bend. The rounded core keeps wrists and ankles connected.
+    const forearmX = end.x - joint.x, forearmY = end.y - joint.y;
+    drawPaulMuscle(ctx, joint.x + forearmX * 0.43, joint.y + forearmY * 0.43,
+      lower * 0.52, Math.hypot(forearmX, forearmY) * 0.52,
+      Math.atan2(forearmY, forearmX) - Math.PI / 2, near);
+    drawPaulMuscle(ctx, joint.x, joint.y, lower * 0.52, lower * 0.58, 0, near);
   };
   const paw = (x: number, y: number, near: boolean) => {
     ctx.fillStyle = paulSurface(ctx, x, y - 2, 12, near);
@@ -83,16 +98,23 @@ export function drawPaul(ctx: CanvasRenderingContext2D, b: BossArena['boss']): v
     };
     const arm = (near: boolean) => {
       const active = b.attackKind === 'hook' && b.attack > 0 && b.arm === (near ? 1 : 0);
-      const hand = active ? paulHookPose(b) : { x: near ? 23 : 27, y: near ? -44 : -53 };
-      const shoulder = { x: near ? 1 + shoulderShift : 12 - shoulderShift, y: near ? -53 : -55 };
-      const elbow = { x: active ? hand.x * 0.5 - 5 : near ? 9 : 22, y: active ? hand.y + 15 : -34 };
+      // Active glove stays on the shared collision path; only the shoulder
+      // and elbow supply the wind-up, with the other hand held in guard.
+      const hand = active ? paulHookPose(b) : upperPoint(near ? 23 : 27, near ? -44 : -53);
+      const shoulder = upperPoint(near ? 1 + shoulderShift : 12 - shoulderShift, near ? -53 : -55);
+      const elbow = active ? {
+        x: hand.x * 0.5 - 5 - hook.load * 14 + hook.drive * 7,
+        y: hand.y + 15 - hook.load * 7 - hook.drive * 4,
+      } : upperPoint(near ? 9 : 22, -34);
       limb(near, shoulder, elbow, hand, near ? 14 : 10, near ? 10 : 7);
       drawPaulMuscle(ctx, shoulder.x, shoulder.y, near ? 11 : 8, near ? 13 : 10, -0.35, near);
       drawPaulGlove(ctx, hand.x, hand.y, near);
     };
     drawTail(); leg(false); arm(false);
     // Oblique rib cage: broad upper back, projecting chest, narrow waist and pelvis.
-    ctx.save(); ctx.scale(1 - Math.abs(twist) * 0.18, 1);
+    ctx.save();
+    ctx.translate(0, -25); ctx.rotate(hook.lean); ctx.translate(0, 25);
+    ctx.scale(1 - Math.abs(twist) * 0.18, 1);
     ctx.fillStyle = paulSurface(ctx, -1, -49, 34);
     ctx.beginPath(); ctx.moveTo(-19, -57); ctx.bezierCurveTo(-14, -68, 5, -68, 16, -57);
     ctx.bezierCurveTo(28, -53, 25, -40, 14, -36); ctx.lineTo(9, -22);

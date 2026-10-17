@@ -1,5 +1,14 @@
 // Sculpted canvas surfaces: key light from upper left, cool shadows underneath.
 // All geometry is local right profile; the encounter mirrors the complete model.
+export function paulHookMotion(attack: number): { load: number; drive: number; lean: number } {
+  if (attack <= 0) return { load: 0, drive: 0, lean: 0 };
+  const elapsed = Math.max(0, 44 - attack);
+  const smooth = (t: number) => { const u = Math.max(0, Math.min(1, t)); return u * u * (3 - 2 * u); };
+  const load = smooth(elapsed / 16) * (1 - smooth((elapsed - 16) / 9));
+  const drive = smooth((elapsed - 16) / 9) * (1 - smooth((elapsed - 25) / 19));
+  return { load, drive, lean: -0.10 * load + 0.08 * drive };
+}
+
 export function paulSurface(ctx: CanvasRenderingContext2D, x: number, y: number, radius: number, near = true): CanvasGradient {
   const light = ctx.createRadialGradient(x - radius * 0.35, y - radius * 0.45, 1, x, y, radius);
   light.addColorStop(0, near ? '#b6c2cd' : '#738497');
