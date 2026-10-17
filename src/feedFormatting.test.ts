@@ -10,24 +10,43 @@ test('feed separates sentences with periods instead of semicolons', () => {
   assert.equal(formatFeedHeadline('ALREADY DONE.'), 'ALREADY DONE.');
 });
 
+test('desktop header wire replaces the chart row and preserves hover pause', () => {
+  const css = readFileSync(new URL('./index.css', import.meta.url), 'utf8');
+  const game = readFileSync(new URL('./CandleGame.tsx', import.meta.url), 'utf8');
+  const desktop = css.slice(css.indexOf('/* Desktop shares the header wire'), css.indexOf('@media (pointer: coarse)', css.indexOf('/* Desktop shares the header wire')));
+  assert.match(desktop, /@media \(pointer: fine\)/);
+  assert.match(desktop, /\.game-app header\s*\{\s*flex-wrap: nowrap;/);
+  assert.match(desktop, /\.game-app \.mobile-header-feed\s*\{\s*display: block;\s*flex: 1 1 0;/);
+  assert.match(game, /headerFeed\?\.addEventListener\('pointerenter', pauseTicker\)/);
+  assert.match(game, /headerFeed\?\.removeEventListener\('pointerleave', resumeTicker\)/);
+});
+
+test('idle header divider is one CSS pixel while active countdowns occupy three', () => {
+  const game = readFileSync(new URL('./CandleGame.tsx', import.meta.url), 'utf8');
+  assert.match(game, /headerFeedActive\.current \? 1 \/ scale/);
+  assert.match(game, /ctx\.fillRect\(0, 0, W, tapeH\);\s*ctx\.scale\(1, tapeH\);\s*tapeH = 3;/);
+  for (const scale of [0.3, 0.7, 1, 1.5]) {
+    const tapeHeight = 1 / scale;
+    assert.ok(Math.abs(tapeHeight * scale - 1) < 1e-8);
+    assert.ok(Math.abs(3 * tapeHeight * scale - 3) < 1e-8);
+  }
+});
+
 test('Kangaroo Live Feed renders Jeromé in gold without changing the printer color', () => {
   const game = readFileSync(new URL('./CandleGame.tsx', import.meta.url), 'utf8');
   assert.match(game, /ctx\.fillStyle = theme === 'light' \? '#08795c' : '#55d6ae';[\s\S]*?if \(g\.currentState === 'boxing'\) \{\s*ctx\.fillStyle = '#ffd230';\s*writeCentered\('Jeromé', \(W\) \/ 2\);\s*\}\s*else \{/);
 });
 
-test('Live Feed borders are black in day mode and white in night mode', () => {
+test('Live Feed has no top or bottom border while retaining its background and status strips', () => {
   const game = readFileSync(new URL('./CandleGame.tsx', import.meta.url), 'utf8');
-  assert.match(game, /const tickerBorder = theme === 'light' \? '#000000' : '#ffffff';/);
-  assert.match(game, /ctx\.fillStyle = tickerBorder;\s*ctx\.fillRect\(0, 0, W, borderHeight\);\s*ctx\.fillRect\(0, tapeH - borderHeight, W, borderHeight\);/);
-  assert.match(game, /const borderHeight = H \/ Math\.max\(1, canvasRef\.current\?\.getBoundingClientRect\(\)\.height \?\? H\);/);
-  for (const height of [240, 390, 840]) {
-    assert.equal((840 / height) * (height / 840), 1);
-  }
+  assert.doesNotMatch(game, /tickerBorder|borderHeight/);
+  assert.match(game, /ctx\.fillStyle = theme === 'light' \? '#eaf0f5' : '#131c29';\s*ctx\.fillRect\(0, 0, W, tapeH\);/);
+  assert.match(game, /ctx\.fillRect\(0, tapeH - 3, W, 3\);/);
 });
 
-test('Live Feed text is centered between its top and bottom borders', () => {
+test('Live Feed text is centered within its height without borders', () => {
   const game = readFileSync(new URL('./CandleGame.tsx', import.meta.url), 'utf8');
-  assert.match(game, /const feedCenterY = \(1 \+ tapeH - 1\) \/ 2;\s*ctx\.translate\(x, feedCenterY \+ \(ascent - descent\) \/ 2\);/);
+  assert.match(game, /const feedCenterY = tapeH \/ 2;\s*ctx\.translate\(x, feedCenterY \+ \(ascent - descent\) \/ 2\);/);
   const start = game.indexOf('const writeCentered = (text: string, x: number) => {');
   assert.ok(start >= 0);
   const body = game.slice(game.indexOf('{', start) + 1, game.indexOf('\n    };', start));
@@ -45,8 +64,8 @@ test('Live Feed text is centered between its top and bottom borders', () => {
         save() {}, restore() {}, scale() {}, fillText() {},
         translate: (_x: number, y: number) => { baseline = y; },
       }, text, 100, tapeHeight, 0.75);
-      const topGap = baseline - ascent - 1;
-      const bottomGap = tapeHeight - 1 - (baseline + descent);
+      const topGap = baseline - ascent;
+      const bottomGap = tapeHeight - (baseline + descent);
       assert.ok(Math.abs(topGap - bottomGap) < 0.000001, `${text}: ${topGap} vs ${bottomGap}`);
     }
   }
@@ -57,7 +76,7 @@ test('mobile Live Feed uses the measured header height in canvas and overlay coo
   const app = readFileSync(new URL('./App.tsx', import.meta.url), 'utf8');
   assert.match(game, /let tapeH = feedLayout\.current\.tapeHeight;/);
   assert.match(game, /const TAPE_HEIGHT = feedLayout\.current\.tapeHeight;/);
-  assert.match(game, /const tapeHeight = headerFeedActive\.current \? 3 \/ scale : headerHeight > 0 \? headerHeight \/ scale : TAPE_HEIGHT;/);
+  assert.match(game, /const tapeHeight = headerFeedActive\.current \? 1 \/ scale : headerHeight > 0 \? headerHeight \/ scale : TAPE_HEIGHT;/);
   assert.match(app, /const feedHeight = feedInHeader \? 0 : headerHeight > 0 \? headerHeight :/);
   assert.match(app, /if \(header\) observer\.observe\(header\);/);
   for (const headerHeight of [44, 60, 80]) {

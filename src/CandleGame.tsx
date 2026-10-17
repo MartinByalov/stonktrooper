@@ -177,7 +177,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
       const textScaleX = mobile ? scale / horizontalScale : 1;
       const headerHeight = canvas.closest('.game-app')?.querySelector('header')?.getBoundingClientRect().height ?? 0;
       headerFeedRef.current = canvas.closest('.game-app')?.querySelector<HTMLCanvasElement>('.mobile-header-feed') ?? null;
-      headerFeedActive.current = mobile && (state === 'play' || state === 'boxing' || window.matchMedia('(orientation: landscape)').matches);
+      headerFeedActive.current = !mobile || state === 'play' || state === 'boxing' || window.matchMedia('(orientation: landscape)').matches;
       const headerFeed = headerFeedRef.current;
       if (headerFeed && headerFeedActive.current) {
         const rect = headerFeed.getBoundingClientRect();
@@ -185,16 +185,28 @@ export const CandleGame: React.FC<CandleGameProps> = ({
         headerFeed.width = Math.max(1, Math.round(rect.width * Math.min(window.devicePixelRatio || 1, 1.5)));
         headerFeed.height = Math.max(1, Math.round(rect.height * Math.min(window.devicePixelRatio || 1, 1.5)));
       }
-      const tapeHeight = headerFeedActive.current ? 3 / scale : headerHeight > 0 ? headerHeight / scale : TAPE_HEIGHT;
-      feedLayout.current = { mobile, fontSize: mobile ? Math.min(64, Math.max(11, 14 / scale)) : 11, textScaleX, tapeHeight };
+      const tapeHeight = headerFeedActive.current ? 1 / scale : headerHeight > 0 ? headerHeight / scale : TAPE_HEIGHT;
+      feedLayout.current = { mobile, fontSize: mobile || headerFeedActive.current ? Math.min(64, Math.max(11, 14 / scale)) : 11, textScaleX, tapeHeight };
     };
     const observer = new ResizeObserver(refresh);
     observer.observe(canvas);
     const header = canvas.closest('.game-app')?.querySelector('header');
     if (header) observer.observe(header);
+    const headerFeed = canvas.closest('.game-app')?.querySelector('.mobile-header-feed');
+    const pauseTicker = () => { tickerHoverPausedRef.current = true; };
+    const resumeTicker = () => { tickerHoverPausedRef.current = false; };
+    headerFeed?.addEventListener('pointerenter', pauseTicker);
+    headerFeed?.addEventListener('pointerleave', resumeTicker);
+    headerFeed?.addEventListener('pointercancel', resumeTicker);
     window.addEventListener('resize', refresh);
     refresh();
-    return () => { observer.disconnect(); window.removeEventListener('resize', refresh); };
+    return () => {
+      observer.disconnect(); window.removeEventListener('resize', refresh);
+      headerFeed?.removeEventListener('pointerenter', pauseTicker);
+      headerFeed?.removeEventListener('pointerleave', resumeTicker);
+      headerFeed?.removeEventListener('pointercancel', resumeTicker);
+      resumeTicker();
+    };
   }, [state]);
   const tickerHoverPausedRef = useRef(false);
   const aimRef = useRef<AimPoint | null>(null);
@@ -2292,20 +2304,19 @@ export const CandleGame: React.FC<CandleGameProps> = ({
       ctx = headerCtx;
       ctx.setTransform(header.width / W, 0, 0, header.height / tapeH, 0, 0);
     }
-    const borderHeight = H / Math.max(1, canvasRef.current?.getBoundingClientRect().height ?? H);
     const { mobile, fontSize: feedFontSize } = feedLayout.current;
     const textScaleX = header ? (headerFeedLayout.current.height / tapeH) / Math.max(0.01, headerFeedLayout.current.width / W) : feedLayout.current.textScaleX;
 
     ctx.save();
     ctx.textBaseline = 'alphabetic';
     const writeCentered = (text: string, x: number) => {
-      // Center the visible glyph bounds between the Live Feed's top and
-      // bottom borders, independent of glyph ascenders/descenders.
+      // Center the visible glyph bounds within the Live Feed, independent
+      // of glyph ascenders/descenders.
       const metrics = ctx.measureText(text);
       const ascent = metrics.actualBoundingBoxAscent ?? 9;
       const descent = metrics.actualBoundingBoxDescent ?? 2;
       ctx.save();
-      const feedCenterY = (1 + tapeH - 1) / 2;
+      const feedCenterY = tapeH / 2;
       ctx.translate(x, feedCenterY + (ascent - descent) / 2);
       ctx.scale(textScaleX, 1);
       ctx.fillText(text, 0, 0);
@@ -2313,16 +2324,12 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     };
 
     // NORMAL WIRE TICKER
-    const tickerBorder = theme === 'light' ? '#000000' : '#ffffff';
     if (header) {
       // Transparent header canvas: inherit the real header background, no frame.
       ctx.clearRect(0, 0, W, tapeH);
     } else {
       ctx.fillStyle = theme === 'light' ? '#eaf0f5' : '#131c29';
       ctx.fillRect(0, 0, W, tapeH);
-      ctx.fillStyle = tickerBorder;
-      ctx.fillRect(0, 0, W, borderHeight);
-      ctx.fillRect(0, tapeH - borderHeight, W, borderHeight);
     }
 
     ctx.textAlign = 'left';
@@ -2337,7 +2344,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     if (g.currentState === 'boxing' || g.printerTimer > 0) {
       ctx.textAlign = 'center';
       ctx.fillStyle = theme === 'light' ? '#08795c' : '#55d6ae';
-      ctx.font = `bold ${mobile ? feedFontSize : 13}px monospace`;
+      ctx.font = `bold ${mobile || header ? feedFontSize : 13}px monospace`;
       if (g.currentState === 'boxing') {
         ctx.fillStyle = '#ffd230';
         writeCentered('Jeromé', (W) / 2);
@@ -2383,10 +2390,10 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     ctx.save();
     tapeH = feedLayout.current.tapeHeight;
     if (headerFeedActive.current) {
-      // The old feed's top edge becomes a three-CSS-pixel countdown strip.
-      ctx.fillStyle = tickerBorder;
+      // Idle divider is one CSS pixel; active statuses extend to three pixels.
+      ctx.fillStyle = theme === 'light' ? '#000000' : '#ffffff';
       ctx.fillRect(0, 0, W, tapeH);
-      ctx.scale(1, tapeH / 3);
+      ctx.scale(1, tapeH);
       tapeH = 3;
     }
     if (g.currentState === 'boxing' && bossEncounter.current) {
@@ -2415,10 +2422,6 @@ export const CandleGame: React.FC<CandleGameProps> = ({
       ctx.fillStyle = g.p.shieldKind === 'bag' ? '#ef4444' : '#38bdf8';
       ctx.fillRect(0, tapeH - 3, (W) * fraction, 3);
     }
-    // Redraw the bottom border after the status strip using the same exact
-    // one-pixel fill as the top border.
-    ctx.fillStyle = tickerBorder;
-    if (!headerFeedActive.current) ctx.fillRect(0, tapeH - borderHeight, W, borderHeight);
     ctx.restore();
   }, [bossEncounter, theme]);
 
@@ -3101,7 +3104,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
           const zoom = mobileCanvasZoom();
           const canvasPoint = zoomCanvasPoint({ x: e.clientX, y: e.clientY }, bounds, zoom);
           const canvasY = canvasPoint.y;
-          tickerHoverPausedRef.current = canvasY >= 0 && canvasY <= TAPE_HEIGHT;
+          tickerHoverPausedRef.current = !headerFeedActive.current && canvasY >= 0 && canvasY <= TAPE_HEIGHT;
           const chartPoint = screenToChart(canvasPoint, currentChartViewport(bounds));
           aimRef.current = pointerToWorld(chartPoint, { left: 0, top: 0, width: W, height: H }, W, H, { x: g.cx, y: g.cy });
           aimRef.current.y = g.cy + plotViewY(aimRef.current.y - g.cy, g.invertedView && g.currentState !== 'boxing', TAPE_HEIGHT, H - TIME_AXIS_HEIGHT);

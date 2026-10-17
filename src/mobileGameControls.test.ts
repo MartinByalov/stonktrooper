@@ -4,15 +4,15 @@ import { test } from 'node:test';
 
 const css = readFileSync(new URL('./index.css', import.meta.url), 'utf8');
 
-test('active mobile gameplay moves the existing wire to the header and leaves a three-pixel timer', () => {
+test('desktop and active touch gameplay share the header wire with a thin idle divider', () => {
   const app = readFileSync(new URL('./App.tsx', import.meta.url), 'utf8');
   const game = readFileSync(new URL('./CandleGame.tsx', import.meta.url), 'utf8');
   assert.match(app, /<canvas className="mobile-header-feed" aria-label="Live Feed"/);
-  assert.match(game, /headerFeedActive\.current = mobile && \(state === 'play' \|\| state === 'boxing' \|\| window.matchMedia\('\(orientation: landscape\)'\).matches\)/);
-  assert.match(game, /headerFeedActive\.current \? 3 \/ scale/);
+  assert.match(game, /headerFeedActive\.current = !mobile \|\| state === 'play' \|\| state === 'boxing' \|\| window.matchMedia\('\(orientation: landscape\)'\).matches/);
+  assert.match(game, /headerFeedActive\.current \? 1 \/ scale/);
   assert.match(game, /ctx = headerCtx;/);
   assert.match(game, /ctx = plotCtx;/);
-  assert.match(game, /ctx\.scale\(1, tapeH \/ 3\);\s*tapeH = 3;/);
+  assert.match(game, /ctx\.scale\(1, tapeH\);\s*tapeH = 3;/);
   assert.match(css, /\.mobile-header-feed\s*\{\s*display: none;/);
 });
 

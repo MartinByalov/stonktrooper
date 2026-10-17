@@ -587,6 +587,29 @@ html[data-theme="light"] .share-dd-social-button {
   display: none;
 }
 
+/* Desktop shares the header wire instead of reserving another chart row. */
+@media (pointer: fine) {
+  .game-app header {
+    flex-wrap: nowrap;
+  }
+
+  .game-app header > div:first-child,
+  .game-app .header-controls {
+    flex: 0 0 auto;
+  }
+
+  .game-app .mobile-header-feed {
+    display: block;
+    flex: 1 1 0;
+    width: 0;
+    min-width: 0;
+    height: 2rem;
+    align-self: center;
+    -webkit-mask-image: linear-gradient(to right, transparent, #000 15%, #000 85%, transparent);
+    mask-image: linear-gradient(to right, transparent, #000 15%, #000 85%, transparent);
+  }
+}
+
 @media (pointer: coarse) {
   .game-app:is([data-state="play"], [data-state="boxing"]) header {
     flex-wrap: nowrap;
