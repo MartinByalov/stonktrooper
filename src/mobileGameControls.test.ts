@@ -4,16 +4,28 @@ import { test } from 'node:test';
 
 const css = readFileSync(new URL('./index.css', import.meta.url), 'utf8');
 
-test('desktop and active touch gameplay share the header wire with a thin idle divider', () => {
+test('visible header wire uses a thin idle divider and hidden header wire falls back to the chart', () => {
   const app = readFileSync(new URL('./App.tsx', import.meta.url), 'utf8');
   const game = readFileSync(new URL('./CandleGame.tsx', import.meta.url), 'utf8');
   assert.match(app, /<canvas className="mobile-header-feed" aria-label="Live Feed"/);
-  assert.match(game, /headerFeedActive\.current = !mobile \|\| state === 'play' \|\| state === 'boxing' \|\| window.matchMedia\('\(orientation: landscape\)'\).matches/);
+  assert.match(game, /headerFeedActive\.current = !!headerFeedRef\.current && headerFeedRef\.current\.getBoundingClientRect\(\)\.width > 0;/);
   assert.match(game, /headerFeedActive\.current \? 1 \/ scale/);
   assert.match(game, /ctx = headerCtx;/);
   assert.match(game, /ctx = plotCtx;/);
   assert.match(game, /ctx\.scale\(1, tapeH\);\s*tapeH = 3;/);
   assert.match(css, /\.mobile-header-feed\s*\{\s*display: none;/);
+});
+
+test('touch header wire is state-independent except for the portrait phone layout', () => {
+  const start = css.indexOf('@media (pointer: coarse)', css.indexOf('/* Desktop shares the header wire'));
+  const touch = css.slice(start, css.indexOf('/* Portrait phones keep the wire', start));
+  assert.match(touch, /\.game-app \.mobile-header-feed\s*\{\s*display: block;\s*flex: 1 1 0;/);
+  assert.match(touch, /\.game-app \.header-controls\s*\{\s*flex: 0 0 auto;\s*margin-left: 0;/);
+  assert.doesNotMatch(touch, /data-state|orientation:/);
+  const phone = css.slice(css.indexOf('/* Portrait phones keep the wire'), css.indexOf('.mobile-joystick:active'));
+  assert.match(phone, /@media \(max-width: 767px\) and \(orientation: portrait\) and \(pointer: coarse\)/);
+  assert.match(phone, /\.game-app \.mobile-header-feed\s*\{\s*display: none;/);
+  assert.doesNotMatch(phone, /data-state/);
 });
 
 test('mobile header news is frameless between the visible logo and controls', () => {
@@ -23,12 +35,12 @@ test('mobile header news is frameless between the visible logo and controls', ()
   assert.ok(header.indexOf('stonktrooper-logo') < header.indexOf('mobile-header-feed'));
   assert.ok(header.indexOf('mobile-header-feed') < header.indexOf('header-controls'));
   assert.match(css, /header > div:first-child\s*\{\s*flex: 0 0 auto;/);
-  assert.match(css, /@media \(pointer: coarse\)\s*\{\s*\.game-app:is\(\[data-state="play"\], \[data-state="boxing"\]\) header\s*\{\s*flex-wrap: nowrap;\s*gap: 16px;/);
+  assert.match(css, /@media \(pointer: coarse\)\s*\{\s*\.game-app header\s*\{\s*flex-wrap: nowrap;\s*gap: 16px;/);
   assert.match(game, /if \(header\) \{\s*\/\/[^\n]*\n\s*ctx\.clearRect\(0, 0, W, tapeH\);\s*\} else \{/);
 });
 
 test('mobile header feed fades into transparency at both ends without an opaque cover', () => {
-  const feed = css.match(/\.game-app:is\(\[data-state="play"\], \[data-state="boxing"\]\) \.mobile-header-feed\s*\{([^}]+)\}/)?.[1];
+  const feed = css.match(/\.game-app \.mobile-header-feed\s*\{([^}]+)\}/)?.[1];
   assert.ok(feed);
   assert.match(feed, /-webkit-mask-image: linear-gradient\(to right, transparent, #000 15%, #000 85%, transparent\);/);
   assert.match(feed, /\n\s*mask-image: linear-gradient\(to right, transparent, #000 15%, #000 85%, transparent\);/);

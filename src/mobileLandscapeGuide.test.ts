@@ -46,7 +46,7 @@ test('desktop and landscape landing align the image and heading within equal out
 });
 
 test('Pause guide gutters do not depend on the theme control position or following controls', () => {
-  const spacing = css.slice(css.indexOf('/* Pause guide spacing must not grow'));
+  const spacing = css.slice(css.indexOf('.game-app .mobile-how-to-panel {', css.indexOf('/* Pause guide spacing must not grow')));
   assert.match(spacing, /--pause-guide-gutter: max\(8px, env\(safe-area-inset-top\), env\(safe-area-inset-right\), env\(safe-area-inset-bottom\), env\(safe-area-inset-left\)\);/);
   assert.doesNotMatch(spacing, /--mobile-theme-control-right|@media/);
   assert.match(spacing, /\.game-app \.mobile-how-to-panel\s*\{[^}]*padding: var\(--pause-guide-gutter\);/);

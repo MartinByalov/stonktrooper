@@ -196,6 +196,18 @@ test('desktop headings stay lowered while mobile information titles share the cl
   assert.match(section, /background: transparent;\s*color: inherit;\s*border-color: currentColor;/);
 });
 
+test('portrait information bodies center below the fixed header with safe scrolling for long text', () => {
+  const footer = readFileSync(new URL('./SiteFooter.tsx', import.meta.url), 'utf8');
+  const css = readFileSync(new URL('./index.css', import.meta.url), 'utf8');
+  assert.match(footer, /className="site-info-content text-sm leading-relaxed">\s*<div className="site-info-body space-y-3">/);
+  const portrait = css.slice(css.indexOf('/* Portrait information text centers'), css.indexOf('.game-app .mobile-how-to-panel {', css.indexOf('/* Portrait information text centers')));
+  assert.match(portrait, /@media \(orientation: portrait\) and \(pointer: coarse\)/);
+  assert.match(portrait, /> \.site-info-content\s*\{\s*display: flex;\s*flex-direction: column;\s*min-height: 0;\s*overflow-y: auto;/);
+  assert.match(portrait, /\.site-info-content > \.site-info-body\s*\{\s*flex: 0 0 auto;\s*width: 100%;\s*margin-block: auto;/);
+  assert.match(portrait, /\.site-info-content::after\s*\{\s*display: none;/);
+  assert.doesNotMatch(portrait, /justify-content: center|site-info-header|site-info-close/);
+});
+
 test('desktop information close buttons have equal top and right panel insets', () => {
   const css = readFileSync(new URL('./index.css', import.meta.url), 'utf8');
   const desktop = css.slice(css.indexOf('/* Anchor desktop information close controls'), css.indexOf('/* The desktop landing guide fills'));

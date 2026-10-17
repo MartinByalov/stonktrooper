@@ -140,6 +140,16 @@ test('mobile Share DD fills the feed-to-footer space with an unscaled panel and 
   assert.match(component, /className="share-dd-content"/);
 });
 
+test('Share DD centers the card and actions together and sizes the image from available arena space', () => {
+  const component = readFileSync(new URL('./ShareDD.tsx', import.meta.url), 'utf8');
+  const css = readFileSync(new URL('./index.css', import.meta.url), 'utf8');
+  assert.match(component, /className="share-dd-content">\s*<div className="share-dd-group">/);
+  assert.match(css, /\.game-app \.share-dd-overlay\.fixed\.inset-0\.z-50\s*\{\s*top: var\(--live-feed-bottom, 0px\);\s*bottom: var\(--footer-inset-bottom, 0px\);/);
+  assert.match(css, /\.share-dd-dialog > \.share-dd-content\s*\{[^}]*margin-bottom: calc\(2rem \+ var\(--share-dd-gutter\)\);[^}]*container-type: size;/);
+  assert.match(css, /\.share-dd-content > \.share-dd-group\s*\{[^}]*margin-block: auto;/);
+  assert.match(css, /\.share-dd-group > \.share-dd-canvas\s*\{[^}]*width: min\(100%, max\(0px, calc\(\(100cqh - 76px\) \* 4 \/ 3\)\)\);[^}]*height: auto;[^}]*max-height: none;/);
+});
+
 test('game-over score sharing opens with the final result', () => {
   const app = readFileSync(new URL('./App.tsx', import.meta.url), 'utf8');
   assert.match(app, /state === 'over' && <button type="button" onClick=\{\(\) => setShareDDOpen\(true\)\}[^>]*>Share DD<\/button>/);

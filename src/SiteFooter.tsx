@@ -69,7 +69,8 @@ export function SiteFooter({ onOpen, theme, section, setSection }: { onOpen: () 
           <h2 id="site-info-title" className="site-info-title font-bold text-xl">{section}</h2>
           <button ref={close} type="button" aria-label="Close site information" onClick={() => setSection(null)} className="dialog-close mobile-dialog-close site-info-close absolute right-0 top-0 p-2 border border-[var(--line)] rounded hover:bg-[var(--alt)] cursor-pointer"><X className="w-5 h-5" aria-hidden="true" /></button>
         </div>
-        <div className="site-info-content space-y-3 text-sm leading-relaxed">
+        <div className="site-info-content text-sm leading-relaxed">
+          <div className="site-info-body space-y-3">
           {section === 'About' && <>
             <p><img src={`${import.meta.env.BASE_URL}images/${theme === 'dark' ? 'logo-inverted.png' : 'logo.png'}`} alt="Stonktrooper" className="relative -top-[1px] inline-block h-6 w-auto max-w-full align-middle" />{' '}is a game inspired by fictional financial markets, internet memes and experimental game design. It's an amalgamation of the author's experience with the real markets.</p>
             <p>The game is completely free to play. There are no purchases, subscriptions, paid upgrades or real-money gameplay. No account is required.</p>
@@ -126,6 +127,7 @@ export function SiteFooter({ onOpen, theme, section, setSection }: { onOpen: () 
             </div>
             {message && <p role="status">{message}</p>}
           </>}
+          </div>
         </div>
       </div>
     </div>}

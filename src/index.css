@@ -611,16 +611,16 @@ html[data-theme="light"] .share-dd-social-button {
 }
 
 @media (pointer: coarse) {
-  .game-app:is([data-state="play"], [data-state="boxing"]) header {
+  .game-app header {
     flex-wrap: nowrap;
     gap: 16px;
   }
 
-  .game-app:is([data-state="play"], [data-state="boxing"]) header > div:first-child {
+  .game-app header > div:first-child {
     flex: 0 0 auto;
   }
 
-  .game-app:is([data-state="play"], [data-state="boxing"]) .mobile-header-feed {
+  .game-app .mobile-header-feed {
     display: block;
     flex: 1 1 0;
     width: 0;
@@ -632,9 +632,16 @@ html[data-theme="light"] .share-dd-social-button {
     mask-image: linear-gradient(to right, transparent, #000 15%, #000 85%, transparent);
   }
 
-  .game-app:is([data-state="play"], [data-state="boxing"]) .header-controls {
+  .game-app .header-controls {
     flex: 0 0 auto;
     margin-left: 0;
+  }
+}
+
+/* Portrait phones keep the wire below the header, above the playable chart. */
+@media (max-width: 767px) and (orientation: portrait) and (pointer: coarse) {
+  .game-app .mobile-header-feed {
+    display: none;
   }
 }
 
@@ -755,6 +762,12 @@ html[data-theme="light"] .game-app .mobile-joystick {
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
+}
+
+/* Center sharing within the arena rather than the entire browser window. */
+.game-app .share-dd-overlay.fixed.inset-0.z-50 {
+  top: var(--live-feed-bottom, 0px);
+  bottom: var(--footer-inset-bottom, 0px);
 }
 
 .share-dd-dialog {
@@ -2348,9 +2361,27 @@ html[data-theme="light"] .game-app .chart-pause-control {
     flex: 1 1 auto;
     min-height: 0;
     margin-top: var(--share-dd-gutter);
+    margin-bottom: calc(2rem + var(--share-dd-gutter));
+    display: flex;
+    flex-direction: column;
+    container-type: size;
     overflow-x: hidden;
     overflow-y: auto;
     overscroll-behavior: contain;
+  }
+
+  .game-app .share-dd-content > .share-dd-group {
+    flex: 0 0 auto;
+    width: 100%;
+    margin-block: auto;
+  }
+
+  .game-app .share-dd-group > .share-dd-canvas {
+    /* Keep the 4:3 card intact and reserve room for the action row. */
+    width: min(100%, max(0px, calc((100cqh - 76px) * 4 / 3)));
+    height: auto;
+    max-height: none;
+    margin-inline: auto;
   }
 }
 
@@ -2697,6 +2728,26 @@ html[data-theme="light"] .game-app .chart-pause-control {
   display: block;
   height: var(--site-info-end-gap, 0px);
   margin: 0;
+}
+
+/* Portrait information text centers in the remaining space, not the header. */
+@media (orientation: portrait) and (pointer: coarse) {
+  .game-app .site-info-overlay.fixed.inset-0.z-50 > .site-info-dialog > .site-info-content {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow-y: auto;
+  }
+
+  .game-app .site-info-content > .site-info-body {
+    flex: 0 0 auto;
+    width: 100%;
+    margin-block: auto;
+  }
+
+  .game-app .site-info-dialog > .site-info-content::after {
+    display: none;
+  }
 }
 
 .game-app .mobile-how-to-panel {
