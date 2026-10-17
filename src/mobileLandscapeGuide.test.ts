@@ -5,6 +5,16 @@ import { test } from 'node:test';
 const css = readFileSync(new URL('./index.css', import.meta.url), 'utf8');
 const landscape = css.slice(css.indexOf('/* Landscape mobile uses the portrait guide styling'), css.indexOf('/* Desktop keeps its columns'));
 
+test('mobile guide uses measured shell space instead of fixed layout viewport bottom', () => {
+  const app = readFileSync(new URL('./App.tsx', import.meta.url), 'utf8');
+  assert.match(app, /const guideBottom = footerVisible && footerRect \? footerRect.top : app.getBoundingClientRect\(\).bottom;/);
+  assert.match(app, /setProperty\('--guide-available-height', `\$\{Math.max\(0, guideBottom - rect.top - feedHeight\)\}px`\)/);
+  assert.match(css, /\.mobile-how-to-dialog\.fixed\.inset-0\.z-50\s*\{[^}]*bottom: auto;[^}]*height: var\(--guide-available-height,/);
+  const spacing = css.slice(css.lastIndexOf('.game-app .mobile-how-to-panel {'));
+  assert.match(spacing, /--pause-guide-gutter: 8px;/);
+  assert.match(spacing, /padding: var\(--pause-guide-gutter\) max\(8px, env\(safe-area-inset-right\)\) max\(8px, env\(safe-area-inset-bottom\)\) max\(8px, env\(safe-area-inset-left\)\);/);
+});
+
 test('landscape mobile landing keeps desktop artwork and controls left with scrollable instructions right', () => {
   const landing = css.slice(css.indexOf('/* Mobile landscape landing uses'), css.indexOf('/* Pause guide spacing must not grow'));
   assert.match(landing, /@media \(orientation: landscape\) and \(pointer: coarse\)/);
@@ -47,9 +57,9 @@ test('desktop and landscape landing align the image and heading within equal out
 
 test('Pause guide gutters do not depend on the theme control position or following controls', () => {
   const spacing = css.slice(css.indexOf('.game-app .mobile-how-to-panel {', css.indexOf('/* Pause guide spacing must not grow')));
-  assert.match(spacing, /--pause-guide-gutter: max\(8px, env\(safe-area-inset-top\), env\(safe-area-inset-right\), env\(safe-area-inset-bottom\), env\(safe-area-inset-left\)\);/);
+  assert.match(spacing, /--pause-guide-gutter: 8px;/);
   assert.doesNotMatch(spacing, /--mobile-theme-control-right|@media/);
-  assert.match(spacing, /\.game-app \.mobile-how-to-panel\s*\{[^}]*padding: var\(--pause-guide-gutter\);/);
+  assert.match(spacing, /\.game-app \.mobile-how-to-panel\s*\{[^}]*padding: var\(--pause-guide-gutter\) max\(8px, env\(safe-area-inset-right\)\) max\(8px, env\(safe-area-inset-bottom\)\) max\(8px, env\(safe-area-inset-left\)\);/);
   assert.match(spacing, /> \.mobile-how-to-header\s*\{[^}]*width: 100%;[^}]*box-sizing: border-box;[^}]*flex: 0 0 2rem;[^}]*margin: 0;/);
   assert.match(spacing, /> \.mechanics-guide\s*\{[^}]*margin: var\(--pause-guide-gutter\) 0 0;/);
 });

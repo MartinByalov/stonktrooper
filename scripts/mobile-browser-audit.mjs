@@ -106,6 +106,25 @@ try {
       await evaluate("document.querySelector('.chart-pause-control').click()");
       assert.equal(await evaluate("document.querySelector('.game-app').dataset.state"), 'paused');
       console.log(JSON.stringify({width,height,controls:'passed'}));
+      if (touch) {
+        await evaluate("document.querySelector('.pause-overlay .how-to-play-action').click()");
+        await wait(150);
+        assert((await hitTest('.mobile-how-to-close'))?.accessible, 'landscape guide close inaccessible');
+        const guide = await evaluate(`(() => {
+          const bounds = document.querySelector('.mobile-how-to-dialog').getBoundingClientRect();
+          const panel = document.querySelector('.mobile-how-to-panel').getBoundingClientRect();
+          const footer = document.querySelector('.site-footer').getBoundingClientRect();
+          const app = document.querySelector('.game-app').getBoundingClientRect();
+          return {top:bounds.top,bottom:bounds.bottom,panelBottom:panel.bottom,
+            expectedTop:parseFloat(getComputedStyle(document.querySelector('.game-app')).getPropertyValue('--live-feed-bottom')),
+            expectedBottom:footer.height > 0 ? footer.top : app.bottom};
+        })()`);
+        assert(Math.abs(guide.top-guide.expectedTop) < 1, 'guide does not start at feed boundary');
+        assert(Math.abs(guide.bottom-guide.expectedBottom) < 1, 'guide does not fill shell height');
+        assert(Math.abs(guide.panelBottom-guide.bottom) < 1, 'guide panel does not fill overlay');
+        console.log(JSON.stringify({width,height,notch,guide}));
+        await evaluate("document.querySelector('.mobile-how-to-close').click()");
+      }
       if (notch && process.argv.includes('--fullscreen')) {
         await evaluate("document.querySelector('.game-app').requestFullscreen = Element.prototype.requestFullscreen; document.querySelector('.game-app').requestFullscreen()");
         await wait(250);

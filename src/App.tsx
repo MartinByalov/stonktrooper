@@ -61,6 +61,10 @@ export default function App() {
         && footerRect.top < window.innerHeight;
       const footerInsetBottom = footerVisible && footerRect ? Math.max(0, window.innerHeight - footerRect.top) : 0;
       app.style.setProperty('--footer-inset-bottom', `${footerInsetBottom}px`);
+      // Fixed-position containing blocks need not match the visual viewport.
+      // Measure the shell itself rather than deriving guide height from innerHeight.
+      const guideBottom = footerVisible && footerRect ? footerRect.top : app.getBoundingClientRect().bottom;
+      app.style.setProperty('--guide-available-height', `${Math.max(0, guideBottom - rect.top - feedHeight)}px`);
       const fullscreenRect = fullscreenControl?.getBoundingClientRect();
       if (fullscreenRect && fullscreenRect.width > 0 && fullscreenRect.height > 0) {
         app.style.setProperty('--fullscreen-control-width', `${fullscreenRect.width}px`);
