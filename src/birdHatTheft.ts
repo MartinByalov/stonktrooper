@@ -3,6 +3,12 @@ import { lethalBirdContact } from './birdCollision';
 
 export type PlayerHat = 'default' | 'standard' | 'none';
 
+export function restoreStolenHat(owner: { playerHat: PlayerHat; hatSoiled: boolean }, pickup: 'banana' | 'fedora'): void {
+  if (owner.playerHat !== 'none') return;
+  owner.playerHat = pickup === 'banana' ? 'default' : 'standard';
+  owner.hatSoiled = false;
+}
+
 interface HatOwner {
   p: { x: number; y: number; previousY?: number; rocketTimer: number } | null;
   playerHat: PlayerHat;

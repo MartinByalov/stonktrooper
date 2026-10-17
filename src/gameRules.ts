@@ -68,6 +68,14 @@ export const whaleDropsBanknote = (roll: number): boolean => roll < WHALE_BANKNO
 export const isBlockedByTallCandle = (barrier: boolean | undefined, feetY: number, top: number): boolean =>
   !!barrier && feetY > top + 4;
 
+// Relative swept feet/head contact also handles enemies moving vertically on the chart.
+export const canStompEnemy = (player: { x: number; y: number; previousY: number },
+  enemyX: number, top: number, previousTop: number, radius: number): boolean =>
+  Math.abs(enemyX - player.x) < radius
+  && player.y > player.previousY
+  && player.previousY <= previousTop + 5
+  && player.y >= top;
+
 // Only the enemy whose hit was absorbed may pass through; no global invulnerability.
 export const absorbEnemyHit = (player: { carry: number; shieldKind?: string }, enemy: { shieldPassed?: boolean }): boolean => {
   if (enemy.shieldPassed) return true;

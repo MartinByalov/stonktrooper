@@ -5,7 +5,7 @@ import React, { useEffect, useLayoutEffect, useRef, useCallback } from 'react';
 import { briefcaseArmPose } from './characterPose';
 import { randomDelay } from './randomTiming';
 import { lethalBirdContact } from './birdCollision';
-import { tryBirdHatTheft, type PlayerHat } from './birdHatTheft';
+import { tryBirdHatTheft, restoreStolenHat, type PlayerHat } from './birdHatTheft';
 import { stepHawkFlight } from './hawkFlight';
 import { trackPickupDelay } from './pickupTiming';
 import { compactChartWindow, ensureChartAhead } from './chartWindow';
@@ -36,8 +36,9 @@ import { hawkCandle, hawkDropBudget, hawkSpeedMultiplier } from './hawkTrack';
 import { zeroCrashCamera, zeroCrashComplete } from './zeroCrash';
 import { canSpawnEncounter, shouldPlaceBell, WARMUP_CANDLES, difficultyUnlocked, chartPrice, marketReachedZero } from './pacing';
 import { pigeonFlightY, stepPigeonDrop, PigeonDrop } from './pigeonEffects';
-import { createBossArena, sidewaysTops } from './boxingRules';
+import { createBossArena, sidewaysTops, bossName, randomBossKind } from './boxingRules';
 import { drawBossEncounter } from './bossRenderer';
+import { bossColors } from './bossColors';
 import { drawBossHero } from './bossHeroRenderer';
 import { ApeCompanion, addCompanion, tickCompanions } from './companions';
 import { getRandomNews, getTickerNews, formatFeedHeadline, MarketNews } from './news';
@@ -47,7 +48,7 @@ import { marketClockLabel, marketClockStep } from './marketClock';
 import { popupColor } from './popupColors';
 import { FEDORA_DURATION, FEDORA_WINDUP, FEDORA_MAX_THROWS, addFedoraTime, weaponHatCount, fedoraArmPose, fedoraHit, fedoraHitsMount, separateFedoraMount, stepFlyingFedora, type FlyingFedora } from './fedoraBoomerang';
 import { drawSpinningFedora } from './fedoraRenderer';
-import { bagDrainPenalty, enemyMovementSpeed, canLandOnTrack, canRecoverSolidLanding, doubleJumpChargeOnLanding, whaleDropsBanknote, BAG_PIPS_PENALTY, APE_DURATION, APE_THROW_INTERVAL, ROCKET_SPEED_MULTIPLIER, absorbEnemyHit, isBlockedByTallCandle, arcadeProfit } from './gameRules';
+import { bagDrainPenalty, enemyMovementSpeed, canLandOnTrack, canRecoverSolidLanding, doubleJumpChargeOnLanding, whaleDropsBanknote, BAG_PIPS_PENALTY, APE_DURATION, APE_THROW_INTERVAL, ROCKET_SPEED_MULTIPLIER, absorbEnemyHit, canStompEnemy, isBlockedByTallCandle, arcadeProfit } from './gameRules';
 import { ANIMAL_CENTER, animalHeight, drawAnimalCharacter } from './animalRenderer';
 import { extendMarketPath, sampleMarketPath, MarketKnot, MARKET_BASELINE, candleVolatilityBoost, extendMarketRegimes, marketRegimeAt, MarketRegime } from './marketPath';
 
@@ -172,6 +173,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const canvasDisplay = useRef({ width: W, height: H });
   const scoreInset = useRef(14);
+  const scoreTopInset = useRef(14);
   const renderViewport = useRef(currentChartViewport());
   const headerFeedRef = useRef<HTMLCanvasElement | null>(null);
   const headerFeedActive = useRef(false);
@@ -186,7 +188,9 @@ export const CandleGame: React.FC<CandleGameProps> = ({
       const bounds = canvas.getBoundingClientRect();
       canvasDisplay.current = { width: bounds.width, height: bounds.height };
       const logo = canvas.closest('.game-app')?.querySelector('.header-logo-frame');
-      if (logo) scoreInset.current = Math.max(0, logo.getBoundingClientRect().left - bounds.left) + 2;
+      if (logo) scoreInset.current = Math.max(0, logo.getBoundingClientRect().left - bounds.left) + (mobile ? 0 : 2);
+      const mobileEdgeGap = parseFloat(getComputedStyle(canvas).getPropertyValue('--mobile-edge-gap')) || 6;
+      scoreTopInset.current = mobile ? mobileEdgeGap : scoreInset.current;
       canvas.closest<HTMLElement>('.game-stage')?.style.setProperty('--game-hud-inset', `${scoreInset.current}px`);
       renderViewport.current = currentChartViewport(bounds);
       const scale = Math.max(0.01, bounds.height / H * mobileCanvasZoom());
@@ -1371,16 +1375,18 @@ export const CandleGame: React.FC<CandleGameProps> = ({
         // Mounted riders must be defeated first; lone whales have a taming roll.
         if ('type' in enemy && enemy.mount) continue;
         const top = 'type' in enemy ? enemy.feet - animalHeight(enemy) : enemy.y - 16;
+        const previousTop = 'type' in enemy ? (enemy.previousFeet ?? enemy.feet) - animalHeight(enemy) : top;
         const whale = 'type' in enemy && enemy.type === 'whale';
         if (
-          whale ? touchesWhale(g.p, enemy) : (
-          Math.abs(enemy.x - g.p.x) < ('type' in enemy ? (enemy.type === 'bull' ? 55 : 50) : 20) &&
-          g.p.y > g.p.previousY &&
-          g.p.previousY <= top + 5 &&
-          g.p.y >= top
-          )
+          whale ? touchesWhale(g.p, enemy) : canStompEnemy(g.p, enemy.x, top, previousTop,
+            'type' in enemy ? (enemy.type === 'bull' ? 55 : 50) : 20)
         ) {
           if ('type' in enemy && enemy.type === 'whale') {
+            // A whale cannot be stomped: diamond protection is spent even on a successful tame.
+            if (absorbEnemyHit(g.p, enemy)) {
+              g.popups.push({ x: g.p.x, y: g.p.y - 35, text: 'Good DD', color: '#38bdf8', life: 40 });
+              sound.playHit();
+            }
             if (!canMountWhale(g.printerTimer > 0 || g.hawkTimer > 0, whaleDemo ? 0 : Math.random())) continue;
             g.p.whaleMount = { timer: WHALE_MOUNT_DURATION, feet: enemy.feet, previousFeet: enemy.feet, vy: 0, phase: 0,
               bags: g.p.carry > 0 && g.p.shieldKind === 'bag' ? 1 : 0 };
@@ -1529,6 +1535,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
           g.popups.push({ x: d.x, y: d.y - 12, text: `+${points}`, color: '#fbbf24', life: 25 });
           sound.playCoin();
         } else if (d.type === 'fedora') {
+          restoreStolenHat(g, 'fedora');
           g.fedoraTimer = addFedoraTime(g.fedoraTimer);
           g.fedoraCount = FEDORA_MAX_THROWS;
           g.popups.push({ x: d.x, y: d.y - 20, text: 'YOLO', color: '#f8fafc', life: 40 });
@@ -1555,6 +1562,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
           sound.playTender();
         } else if (d.type === 'banana') {
           if (!addCompanion(g.apes, APE_DURATION)) { d.taken = false; continue; }
+          restoreStolenHat(g, 'banana');
           if (g.p.whaleMount) g.apes[g.apes.length - 1].whalePhase = 0;
           g.apeTimer = Math.max(...g.apes.map(ape => ape.timer));
           g.popups.push({ x: d.x, y: d.y - 20, text: 'Apes together strong', color: '#fde047', life: 40 });
@@ -1876,7 +1884,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     if (g.currentState === 'boxing') {
       const bossPlayer = bossEncounter.current?.player;
       const boss = bossEncounter.current;
-      drawBossHero(ctx, bossPlayer?.moving ? stride : 0, g.p.air, g.p.vy, g.throwAnimTimer, !!boss?.cases.length, boss?.weapon, boss?.swing, boss?.bagTimer, theme === 'dark');
+      drawBossHero(ctx, bossPlayer?.moving ? stride : 0, g.p.air, g.p.vy, g.throwAnimTimer, !!boss?.cases.length, boss?.weapon, boss?.swing, boss?.bagTimer, theme === 'dark', bossPlayer?.clownHead, bossPlayer?.soiledHead);
       ctx.restore(); return;
     }
     if (g.falling) {
@@ -2567,8 +2575,8 @@ export const CandleGame: React.FC<CandleGameProps> = ({
       ctx.fillStyle = theme === 'light' ? '#08795c' : '#55d6ae';
       ctx.font = `bold ${mobile || header ? feedFontSize : 13}px monospace`;
       if (g.currentState === 'boxing') {
-        ctx.fillStyle = '#ffd230';
-        writeCentered('Jeromé', (W) / 2);
+        ctx.fillStyle = bossColors(bossEncounter.current?.boss.kind ?? 'jerome', theme === 'dark').foreground;
+        writeCentered(bossName(bossEncounter.current?.boss.kind ?? 'jerome'), (W) / 2);
       } else {
         ctx.textAlign = 'left';
         // The prefix never wraps; only the trailing R stream repeats.
@@ -2616,8 +2624,9 @@ export const CandleGame: React.FC<CandleGameProps> = ({
       tapeH = 3;
     }
     if (g.currentState === 'boxing' && bossEncounter.current) {
-      ctx.fillStyle = '#422006'; ctx.fillRect(0, tapeH - 3, W, 3);
-      ctx.fillStyle = '#facc15'; ctx.fillRect(0, tapeH - 3, (W) * Math.max(0, Math.min(1, bossEncounter.current.boss.health / 100)), 3);
+      const colors = bossColors(bossEncounter.current.boss.kind, theme === 'dark');
+      ctx.fillStyle = colors.track; ctx.fillRect(0, tapeH - 3, W, 3);
+      ctx.fillStyle = colors.foreground; ctx.fillRect(0, tapeH - 3, (W) * Math.max(0, Math.min(1, bossEncounter.current.boss.health / 100)), 3);
     } else if (g.p && g.p.rocketTimer > 0) {
       ctx.fillStyle = '#064e3b';
       ctx.fillRect(0, tapeH - 3, W, 3);
@@ -2959,7 +2968,8 @@ export const CandleGame: React.FC<CandleGameProps> = ({
       ctx.fillStyle = '#08795c';
       if (encounter) {
         ctx.fillStyle = '#ef4444'; ctx.font = 'bold 25px sans-serif';
-        ctx.fillText('♥'.repeat(encounter.player.lives) + '♡'.repeat(3 - encounter.player.lives), 14, TAPE_HEIGHT + 20);
+        const lives = Math.max(0, Math.min(3, encounter.player.lives));
+        ctx.fillText('♥'.repeat(lives) + '♡'.repeat(3 - lives), 14, TAPE_HEIGHT + 20);
       } else {
         const label = 'PIPS: ';
         const value = totalScoreVal.toLocaleString();
@@ -2984,7 +2994,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
         ctx.textBaseline = 'alphabetic';
         const metrics = ctx.measureText(label);
         const x = paddingX + metrics.actualBoundingBoxLeft;
-        const y = TAPE_HEIGHT + padding / scoreScaleY + metrics.actualBoundingBoxAscent;
+        const y = TAPE_HEIGHT + scoreTopInset.current / scoreScaleY + metrics.actualBoundingBoxAscent;
         ctx.fillStyle = theme === 'light' ? '#08795c' : '#54d3ac';
         ctx.fillText(label, x, y);
         ctx.fillStyle = theme === 'light' ? '#08795c' : '#54d3ac';
@@ -3147,7 +3157,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
         const green = Math.random() < (rising ? 0.72 : 0.28);
         g.C[i] = { ...old, hole: false, top, bot: top + body, o: green ? top + body : top, c: green ? top : top + body, h: top - R(1, 14), l: top + body + R(1, 16), v: R(0.15, 1.4), sp: false, k: 'Sideways' };
       }
-      const encounter = createBossArena();
+      const encounter = createBossArena(bossEncounter.current?.boss.kind ?? randomBossKind());
       encounter.left = left + 25; encounter.right = right;
       const heroIndex = Math.floor(g.p.x / CW);
       const bossIndex = Math.floor(Math.min(right - 60, g.p.x + 550) / CW);
@@ -3216,7 +3226,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
         g.popups = [];
       }
       if (state === 'over') {
-        g.cause = 'Kangaroo knockout';
+        g.cause = 'Bell challenge knockout';
         g.held = false;
         sound.playGameOver();
         const pips = Math.max(0, g.score - g.penalty + g.activityPips);

@@ -5,6 +5,8 @@ import { bossGlovePose } from './boxingRules';
 import { drawBossWeapon } from './bossWeaponRenderer';
 import { briefcaseColors, drawSwanAsset, drawPickupAsset } from './assetRenderer';
 import { drawAnimalCharacter } from './animalRenderer';
+import { drawJanet } from './janetRenderer';
+import { drawPaul } from './paulRenderer';
 
 export function drawBossEncounter(ctx: CanvasRenderingContext2D, a: BossArena, darkMode = false): void {
       ctx.save(); ctx.font = 'bold 16px monospace'; ctx.textAlign = 'center'; ctx.fillStyle = '#facc15';
@@ -29,14 +31,23 @@ export function drawBossEncounter(ctx: CanvasRenderingContext2D, a: BossArena, d
         ctx.save(); ctx.translate(animal.x, animal.feet); drawAnimalCharacter(ctx, animal); ctx.restore();
       }
       for (const drop of a.drops) {
-        if (drop.kind === 'bag' || drop.kind === 'tender') drawPickupAsset(ctx, { type: drop.kind, x: drop.x, y: drop.y, taken: false }, drop.x, drop.y, a.frame);
+        if (drop.kind === 'life') {
+          ctx.save(); ctx.translate(drop.x, drop.y);
+          ctx.fillStyle = '#ef4444'; ctx.strokeStyle = darkMode ? '#fecaca' : '#7f1d1d'; ctx.lineWidth = 1.5;
+          ctx.beginPath(); ctx.moveTo(0, 9); ctx.bezierCurveTo(-19, -2, -10, -17, 0, -8);
+          ctx.bezierCurveTo(10, -17, 19, -2, 0, 9); ctx.fill(); ctx.stroke(); ctx.restore();
+        }
+        else if (drop.kind === 'bag' || drop.kind === 'tender') drawPickupAsset(ctx, { type: drop.kind, x: drop.x, y: drop.y, taken: false }, drop.x, drop.y, a.frame);
         else { ctx.save(); ctx.translate(drop.x, drop.y); ctx.scale(0.65, 0.65); drawBossWeapon(ctx, drop.kind); ctx.restore(); }
       }
-      if (a.swan) {
-        ctx.save(); ctx.translate(a.swan.x, a.swan.y);
-        drawSwanAsset(ctx, { x: a.swan.x, y: a.swan.y, baseY: a.swan.y, phase: a.frame * 0.2, dead: false, lootRolled: a.swan.dropped }); ctx.restore();
+      for (const drop of a.pigeonDrops) {
+        ctx.save(); ctx.fillStyle = '#f8fafc'; ctx.strokeStyle = '#64748b'; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.ellipse(drop.x, drop.y, 4, 7, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); ctx.restore();
       }
       const b = a.boss;
+      if (b.kind === 'janet') drawJanet(ctx, b, a.frame);
+      else if (b.kind === 'paul') drawPaul(ctx, b);
+      else {
       const scale = 0.53; // Bull/Bear-sized body, with the taller kangaroo ears above it.
       ctx.save(); ctx.translate(b.x, b.y); ctx.scale(b.facing * scale, scale);
       const tailLift = b.grounded ? Math.sin(a.frame * 0.08) * 2 : Math.max(-8, Math.min(14, -b.vy * 2));
@@ -86,6 +97,7 @@ export function drawBossEncounter(ctx: CanvasRenderingContext2D, a: BossArena, d
         ctx.fillStyle = '#fff'; ctx.fillRect(handX - 7, handY + 7, 9, 4);
       }
       ctx.restore();
+      }
       const colors = briefcaseColors(darkMode);
       for (const c of a.cases) {
         ctx.save(); ctx.translate(c.x, c.y); ctx.rotate(a.frame * 0.3);

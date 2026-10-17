@@ -1,7 +1,7 @@
 import type { Animal, Candle } from './types';
 import { animalTrackHeightAt, trackHeightAt } from './track';
 
-export const WHALE_MOUNT_CHANCE = 0.30;
+export const WHALE_MOUNT_CHANCE = 0.35;
 export const WHALE_MOUNT_DURATION = 480; // Eight seconds at 60 simulation ticks per second.
 export const WHALE_SEAT_HEIGHT = 40;
 export const WHALE_SPEED_MULTIPLIER = 1.15;

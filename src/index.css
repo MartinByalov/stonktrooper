@@ -2899,6 +2899,24 @@ html[data-theme="light"] .game-app .share-dd-actions > button.share-dd-copy {
   max-width: none;
 }
 
+/* Compact touch edges shared by the logo, canvas score and joystick.
+   Keep each safe-area inset on its own axis (a side notch is not a bottom gap). */
+@media (pointer: coarse) {
+  .game-app {
+    --mobile-edge-gap: 6px;
+  }
+
+  .game-app header {
+    padding-left: max(var(--mobile-edge-gap), env(safe-area-inset-left));
+  }
+
+  .game-app .mobile-joystick,
+  .game-app:fullscreen .mobile-joystick {
+    left: var(--game-hud-inset, max(var(--mobile-edge-gap), env(safe-area-inset-left)));
+    bottom: max(var(--mobile-edge-gap), env(safe-area-inset-bottom));
+  }
+}
+
 /* Portrait information panels have roomier text and desktop-style title placement.
    Keep the existing landscape frame and close-button position unchanged. */
 @media (orientation: portrait) and (pointer: coarse) {

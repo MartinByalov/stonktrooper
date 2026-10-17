@@ -5,6 +5,7 @@ import { MenuHero } from './MenuHero';
 import { MobileDiagnostics } from './MobileDiagnostics';
 import { BoxingGame } from './BoxingGame';
 import type { BossArena } from './boxingRules';
+import { createBossArena } from './boxingRules';
 import { useState, useEffect, useLayoutEffect, useCallback, useRef, type MouseEvent as ReactMouseEvent, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { GameState } from './types';
 import { CandleGame, mobileCanvasZoom } from './CandleGame';
@@ -398,9 +399,10 @@ export default function App() {
             }} className="px-2.5 py-1.5 rounded border border-[var(--line)] bg-[var(--alt)] text-xs text-[var(--green)] disabled:opacity-40">↕ Inverted</button>
             <button type="button" title="Music styles" aria-expanded={soundMenuOpen} onClick={() => { if (state === 'play') setState('paused'); setSoundMenuOpen(true); }} className="px-2.5 py-1.5 rounded border border-[var(--line)] bg-[var(--alt)] text-xs text-[var(--green)]">♫ Music</button>
             </div>
-            <button type="button" title="Kangaroo mode" aria-label="Activate Kangaroo mode" disabled={state === 'boxing'} onClick={() => {
+            <button type="button" title="Test Bell mode with Pául" aria-label="Start Bell challenge against Pául" disabled={state === 'boxing'} onClick={() => {
               sound.unlock(); setSoundMenuOpen(false);
               if (state === 'menu' || state === 'over') { setCurrentResult(0); setGameKey(k => k + 1); }
+              bossEncounter.current = createBossArena('paul');
               boxingActive.current = true; setState('boxing');
             }} className="mobile-header-control px-2.5 py-1.5 rounded border border-[var(--line)] bg-[var(--alt)] text-xs text-[var(--green)] cursor-pointer disabled:opacity-40">🦘<span className="hidden sm:inline"> Kangaroo</span></button>
             <button type="button" title="About" aria-label="Open information about the game" aria-haspopup="dialog" onClick={() => { if (state === 'play') setState('paused'); setSoundMenuOpen(false); setSiteSection('About'); }} className="mobile-header-control mobile-header-about-control px-2.5 py-1.5 rounded border border-[var(--line)] bg-[var(--alt)] hover:border-[var(--green)] text-[var(--green)] transition-colors cursor-pointer">

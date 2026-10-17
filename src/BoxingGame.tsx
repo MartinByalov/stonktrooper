@@ -1,6 +1,6 @@
 // Browser game module for BoxingGame.
 import { useEffect, useRef, useState } from 'react';
-import { createBossArena, jumpBossPlayer, stepBossArena, throwBossCase } from './boxingRules';
+import { createBossArena, jumpBossPlayer, stepBossArena, throwBossCase, bossName } from './boxingRules';
 import type { BossArena } from './boxingRules';
 import { sound } from './audio';
 
@@ -77,7 +77,9 @@ export function BoxingGame({ onComplete, onDefeat, encounter }: { onComplete: ()
           const previousAttack = arena.current.boss.attack;
           stepBossArena(arena.current, Math.abs(arena.current.joystickX) > 0.15 ? arena.current.joystickX : touch.current || Number(right) - Number(left));
           const a = arena.current;
-          if (previousAttack === 30 && a.boss.attack === 29) sound.playKangarooPunch();
+          const punchCue = a.boss.kind === 'paul' ? (a.boss.attackKind === 'hook' ? 29 : a.boss.attackKind === 'tail' ? 37 : -1)
+            : a.boss.kind === 'janet' && a.boss.attackKind === 'punch' ? 24 : 30;
+          if (previousAttack === punchCue && a.boss.attack === punchCue - 1) sound.playKangarooPunch();
           if (a.player.lives < lives) sound.playHit();
           setHealth(h => h.lives === a.player.lives && h.boss === a.boss.health ? h : { lives: a.player.lives, boss: a.boss.health });
           if (a.result !== 'fight') {
@@ -94,9 +96,9 @@ export function BoxingGame({ onComplete, onDefeat, encounter }: { onComplete: ()
     return () => { cancelAnimationFrame(frame); encounter.current = null; };
   }, [encounter]);
 
-  return <div className="absolute inset-0 z-40 flex flex-col items-center justify-center text-white pointer-events-none p-3 overflow-y-auto" role="dialog" aria-modal="true" aria-label="Kangaroo boss challenge">
+  return <div className="absolute inset-0 z-40 flex flex-col items-center justify-center text-white pointer-events-none p-3 overflow-y-auto" role="dialog" aria-modal="true" aria-label="Bell boss challenge">
     <>
-      <span className="sr-only" role="status">{health.lives} lives remaining. Jeromé health {health.boss} percent.</span>
+      <span className="sr-only" role="status">{health.lives} lives remaining. {bossName(arena.current.boss.kind)} health {health.boss} percent.</span>
       <div className="absolute inset-0">
         {fightBanner && round === 'fight' && <div className="absolute inset-0 bg-slate-950/20 flex items-center justify-center font-black text-white pointer-events-none">
           <span className="text-3xl sm:text-5xl text-center">I DID NOT HEAR NO BELL</span>
