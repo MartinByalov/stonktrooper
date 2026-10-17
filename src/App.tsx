@@ -2,6 +2,7 @@ import { MechanicsGuide } from './MechanicsGuide';
 import { useMobileDialogFit } from './useMobileDialogFit';
 import { observeViewportHeight } from './viewportHeight';
 import { MenuHero } from './MenuHero';
+import { MobileDiagnostics } from './MobileDiagnostics';
 import { BoxingGame } from './BoxingGame';
 import type { BossArena } from './boxingRules';
 import { useState, useEffect, useLayoutEffect, useCallback, useRef, type MouseEvent as ReactMouseEvent, type KeyboardEvent as ReactKeyboardEvent } from 'react';
@@ -603,6 +604,7 @@ export default function App() {
 
         {/* Global Footer */}
         <SiteFooter theme={theme} section={siteSection} setSection={setSiteSection} onOpen={() => { if (state === 'play') setState('paused'); }} />
+        <MobileDiagnostics />
 
       </div>
     </div>

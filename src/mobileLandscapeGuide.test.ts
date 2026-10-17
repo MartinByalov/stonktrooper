@@ -5,6 +5,14 @@ import { test } from 'node:test';
 const css = readFileSync(new URL('./index.css', import.meta.url), 'utf8');
 const landscape = css.slice(css.indexOf('/* Landscape mobile uses the portrait guide styling'), css.indexOf('/* Desktop keeps its columns'));
 
+test('landscape descriptions balance side safe areas and scrollbar space', () => {
+  const spacing = css.slice(css.indexOf('/* Keep description cards equally inset'));
+  assert.match(spacing, /@media \(orientation: landscape\) and \(pointer: coarse\)/);
+  assert.match(spacing, /--landscape-guide-side-gap: max\(8px, env\(safe-area-inset-left\), env\(safe-area-inset-right\)\);/);
+  assert.match(spacing, /padding-inline: var\(--landscape-guide-side-gap\);/);
+  assert.match(spacing, /margin-inline: 0;\s*padding-inline: 0;\s*scrollbar-gutter: stable both-edges;/);
+});
+
 test('mobile guide uses measured shell space instead of fixed layout viewport bottom', () => {
   const app = readFileSync(new URL('./App.tsx', import.meta.url), 'utf8');
   assert.match(app, /const guideBottom = footerVisible && footerRect \? footerRect.top : app.getBoundingClientRect\(\).bottom;/);
@@ -56,7 +64,7 @@ test('desktop and landscape landing align the image and heading within equal out
 });
 
 test('Pause guide gutters do not depend on the theme control position or following controls', () => {
-  const spacing = css.slice(css.indexOf('.game-app .mobile-how-to-panel {', css.indexOf('/* Pause guide spacing must not grow')));
+  const spacing = css.slice(css.indexOf('.game-app .mobile-how-to-panel {', css.indexOf('/* Pause guide spacing must not grow')), css.indexOf('/* Keep description cards equally inset'));
   assert.match(spacing, /--pause-guide-gutter: 8px;/);
   assert.doesNotMatch(spacing, /--mobile-theme-control-right|@media/);
   assert.match(spacing, /\.game-app \.mobile-how-to-panel\s*\{[^}]*padding: var\(--pause-guide-gutter\) max\(8px, env\(safe-area-inset-right\)\) max\(8px, env\(safe-area-inset-bottom\)\) max\(8px, env\(safe-area-inset-left\)\);/);

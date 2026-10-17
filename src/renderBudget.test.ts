@@ -1,7 +1,19 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
-import { renderPixelRatio } from './renderBudget';
+import { renderBackingSize, renderPixelRatio } from './renderBudget';
+
+test('touch canvas budgets each backing axis from its displayed size', () => {
+  for (const [width, height] of [[390, 633], [844, 319], [1024, 600]]) {
+    const size = renderBackingSize(width, height, 1920, 840, 3, true);
+    assert.equal(size.width, Math.round(width * 1.5));
+    assert.equal(size.height, Math.round(height * 1.5));
+    const old = renderPixelRatio(width, height, 1920, 840, 3, true);
+    assert(size.width * size.height < Math.round(1920 * old) * Math.round(840 * old));
+  }
+  assert.deepEqual(renderBackingSize(1920, 840, 1920, 840, 3, false), {width:3840,height:1680});
+  assert.deepEqual(renderBackingSize(NaN, 0, 1920, 840, 3, true), {width:2880,height:1260});
+});
 
 test('phone raster budget follows display size in landscape and portrait, regardless of DPR', () => {
   for (const [width, height] of [[844, 318], [390, 525], [1024, 600]]) {

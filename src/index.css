@@ -145,26 +145,6 @@ html:not([data-theme="light"]) .site-info-overlay .site-info-close:focus-visible
   color: #fff;
 }
 
-.preferences-clear-button {
-  background: #fff;
-  color: #000;
-  border-color: #fff;
-}
-
-.preferences-clear-button:hover {
-  background: #f1f5f9;
-}
-
-html[data-theme="light"] .preferences-clear-button {
-  background: #000;
-  color: #fff;
-  border-color: #000;
-}
-
-html[data-theme="light"] .preferences-clear-button:hover {
-  background: #1f2937;
-}
-
 body {
   font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   background-color: var(--bg);
@@ -671,11 +651,11 @@ html[data-theme="light"] .game-app .mobile-joystick {
 }
 
 .game-app .mobile-joystick[data-pressed="true"] {
-  background: #334155;
+  background: #182334;
 }
 
 html[data-theme="light"] .game-app .mobile-joystick[data-pressed="true"] {
-  background: #cbd5e1;
+  background: #e9eff4;
 }
 
 /* Only the mobile portrait layout keeps a footer separator. */
@@ -2242,7 +2222,7 @@ html[data-theme="light"] .game-app .chart-pause-control {
   }
 
   .game-app {
-    --mobile-control-gap: 8px;
+    --mobile-control-gap: max(8px, env(safe-area-inset-top), env(safe-area-inset-right), env(safe-area-inset-bottom), env(safe-area-inset-left));
   }
 
   .game-app header {
@@ -2254,11 +2234,11 @@ html[data-theme="light"] .game-app .chart-pause-control {
 
   .game-app .mobile-joystick,
   .game-app:fullscreen .mobile-joystick {
-    /* Equal visible corner gaps, including asymmetric system/navigation insets. */
-    --joystick-corner-gap: max(var(--mobile-control-gap), env(safe-area-inset-left), env(safe-area-inset-bottom));
+    /* Share the header and pause gutter, including safe areas, on both edges. */
+    --joystick-edge-gap: var(--mobile-control-gap);
     position: absolute;
-    left: var(--joystick-corner-gap);
-    bottom: var(--joystick-corner-gap);
+    left: max(var(--joystick-edge-gap), env(safe-area-inset-left));
+    bottom: max(var(--joystick-edge-gap), env(safe-area-inset-bottom));
   }
 
   /* Margin Call is an intrinsic-height, centered card in either orientation. */
@@ -2456,12 +2436,12 @@ html[data-theme="light"] .game-app .chart-pause-control {
     flex-shrink: 0;
   }
 
-  /* Vertical chrome depends only on its own safe edge, never the opposite edge. */
+  /* Header control gutters match the joystick and pause gutters on touch screens. */
   .game-app header {
-    padding-top: max(8px, env(safe-area-inset-top));
-    padding-bottom: 8px;
+    padding-top: var(--mobile-control-gap, max(8px, env(safe-area-inset-top)));
+    padding-bottom: var(--mobile-control-gap, 8px);
     padding-left: max(20px, env(safe-area-inset-left));
-    padding-right: max(8px, env(safe-area-inset-right));
+    padding-right: var(--mobile-control-gap, max(8px, env(safe-area-inset-right)));
     font-size: 14px;
     line-height: 20px;
   }
@@ -2683,7 +2663,8 @@ html[data-theme="light"] .game-app .chart-pause-control {
   .game-app .desktop-initial-guide {
     flex: 1 1 0;
     min-height: 0;
-    padding: 8px max(8px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
+    --landscape-guide-side-gap: max(8px, env(safe-area-inset-left), env(safe-area-inset-right));
+    padding: 8px var(--landscape-guide-side-gap) max(8px, env(safe-area-inset-bottom));
   }
 }
 
@@ -2705,6 +2686,20 @@ html[data-theme="light"] .game-app .chart-pause-control {
   margin: var(--pause-guide-gutter) 0 0;
   min-width: 0;
   min-height: 0;
+}
+
+/* Keep description cards equally inset when only one landscape edge has a notch. */
+@media (orientation: landscape) and (pointer: coarse) {
+  .game-app :is(.paused-guide-dialog, .mobile-how-to-panel) {
+    --landscape-guide-side-gap: max(8px, env(safe-area-inset-left), env(safe-area-inset-right));
+    padding-inline: var(--landscape-guide-side-gap);
+  }
+
+  .game-app :is(.desktop-initial-guide, .paused-guide-dialog, .mobile-how-to-panel) .mechanics-guide {
+    margin-inline: 0;
+    padding-inline: 0;
+    scrollbar-gutter: stable both-edges;
+  }
 }
 
 /* Share DD is the image itself, with controls inside its corners. */
@@ -2797,7 +2792,7 @@ html[data-theme="light"] {
   --square-control-hover: #ffffff;
 }
 
-html .game-app :is(.header-controls > button, .chart-pause-control, .dialog-close, .share-dd-actions > button) {
+html .game-app :is(.header-controls > button, .chart-pause-control, .dialog-close, .share-dd-actions > button, .site-info-contact-button) {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -2816,12 +2811,20 @@ html .game-app :is(.header-controls > button, .chart-pause-control, .dialog-clos
   border-color: currentColor !important;
 }
 
-html .game-app :is(.header-controls > button, .chart-pause-control, .dialog-close, .share-dd-actions > button):is(:hover, :focus-visible) {
+html .game-app :is(.header-controls > button, .chart-pause-control, .dialog-close, .share-dd-actions > button, .site-info-contact-button, .preferences-clear-button):is(:hover, :focus-visible) {
   background: var(--square-control-hover) !important;
 }
 
-html .game-app :is(.header-controls > button, .chart-pause-control, .dialog-close, .share-dd-actions > button) svg {
+html .game-app :is(.header-controls > button, .chart-pause-control, .dialog-close, .share-dd-actions > button, .site-info-contact-button) svg {
   color: inherit !important;
+}
+
+/* Text actions use the same palette without inheriting square dimensions. */
+html .game-app .preferences-clear-button {
+  color: var(--square-control-ink) !important;
+  border-color: currentColor !important;
+  background: var(--square-control-fill) !important;
+  transition: color 150ms, border-color 150ms, background-color 150ms;
 }
 
 html .game-app .chart-pause-control:not(:hover):not(:focus-visible) {
@@ -2831,4 +2834,31 @@ html .game-app .chart-pause-control:not(:hover):not(:focus-visible) {
 html .game-app .share-dd-actions > button.share-dd-copy {
   color: #ffffff !important;
   background: #08795c !important;
+}
+
+.mobile-diagnostics {
+  position: fixed;
+  z-index: 100;
+  top: max(52px, env(safe-area-inset-top));
+  right: max(8px, env(safe-area-inset-right));
+  max-width: calc(100% - 16px);
+  padding: 4px;
+  background: var(--panel);
+  color: var(--text);
+  border: 1px solid var(--line);
+  font: 11px var(--font-mono);
+}
+
+.mobile-diagnostics button {
+  padding: 4px 6px;
+  border: 1px solid var(--line);
+}
+
+.mobile-diagnostics textarea {
+  display: block;
+  width: min(360px, 80vw);
+  height: min(320px, 45dvh);
+  background: var(--panel);
+  color: var(--text);
+  user-select: text;
 }

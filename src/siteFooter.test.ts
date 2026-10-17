@@ -48,8 +48,9 @@ test('Mode selector and privacy links use sky blue and preference clearing match
   assert(guide[1].includes('how-to-play-action'));
   assert(preferences[1].startsWith('preferences-clear-button block mx-auto'));
   assert(preferences[1].includes('preferences-clear-button'));
-  assert.match(css, /\.preferences-clear-button\s*\{[\s\S]*?background: #fff;[\s\S]*?color: #000;[\s\S]*?border-color: #fff;/);
-  assert.match(css, /html\[data-theme="light"\] \.preferences-clear-button\s*\{[\s\S]*?background: #000;[\s\S]*?color: #fff;[\s\S]*?border-color: #000;/);
+  assert.match(css, /html \.game-app \.preferences-clear-button\s*\{\s*color: var\(--square-control-ink\) !important;\s*border-color: currentColor !important;\s*background: var\(--square-control-fill\) !important;/);
+  assert.match(css, /\.site-info-contact-button, \.preferences-clear-button\):is\(:hover, :focus-visible\)\s*\{\s*background: var\(--square-control-hover\) !important;/);
+  assert.equal((footer.match(/className="site-info-contact-button /g) || []).length, 3);
 });
 
 test('portrait mobile presents How to Play instead of a rotate prompt and keeps only info/theme header controls', () => {

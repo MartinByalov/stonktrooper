@@ -76,15 +76,15 @@ export function SiteFooter({ onOpen, theme, section, setSection }: { onOpen: () 
             <p>The game is completely free to play. There are no purchases, subscriptions, paid upgrades or real-money gameplay. No account is required.</p>
             <p>If you have any idea or a suggestion about the game, feel free to contact me.</p>
             <div className="flex items-center justify-center gap-3" aria-label="Contact links">
-              <a href="mailto:evangelion.conquest@gmail.com" aria-label="Email me" title="evangelion.conquest@gmail.com" className="inline-flex items-center justify-center p-2 rounded border border-[var(--line)] hover:bg-[var(--alt)] focus-visible:outline-2 focus-visible:outline-[var(--green)]">
+              <a href="mailto:evangelion.conquest@gmail.com" aria-label="Email me" title="evangelion.conquest@gmail.com" className="site-info-contact-button inline-flex items-center justify-center p-2 rounded border border-[var(--line)] hover:bg-[var(--alt)] focus-visible:outline-2 focus-visible:outline-[var(--green)]">
                 <Mail className="w-5 h-5" aria-hidden="true" />
               </a>
-              <a href="https://discord.com/users/1560319187526615073" target="_blank" rel="noopener noreferrer" aria-label="Contact me on Discord" title="Discord" className="inline-flex items-center justify-center p-2 rounded border border-[var(--line)] hover:bg-[var(--alt)] focus-visible:outline-2 focus-visible:outline-[var(--green)]">
+              <a href="https://discord.com/users/1560319187526615073" target="_blank" rel="noopener noreferrer" aria-label="Contact me on Discord" title="Discord" className="site-info-contact-button inline-flex items-center justify-center p-2 rounded border border-[var(--line)] hover:bg-[var(--alt)] focus-visible:outline-2 focus-visible:outline-[var(--green)]">
                 <svg viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor" aria-hidden="true">
                   <path d="M20.3 4.4a19.8 19.8 0 0 0-4.9-1.5l-.6 1.2a18.3 18.3 0 0 0-5.6 0l-.6-1.2a19.8 19.8 0 0 0-4.9 1.5C.6 9 .0 13.5.3 17.9a20 20 0 0 0 6 3l1.2-2a12.7 12.7 0 0 1-1.9-.9l.5-.4a14.2 14.2 0 0 0 11.8 0l.5.4a12.7 12.7 0 0 1-1.9.9l1.2 2a20 20 0 0 0 6-3c.4-5.1-.8-9.5-3.4-13.5ZM8 15.3c-1.1 0-1.9-1-1.9-2.2S6.9 10.9 8 10.9s1.9 1 1.9 2.2-.8 2.2-1.9 2.2Zm8 0c-1.1 0-1.9-1-1.9-2.2s.8-2.2 1.9-2.2 1.9 1 1.9 2.2-.8 2.2-1.9 2.2Z" />
                 </svg>
               </a>
-              <a href="https://www.reddit.com/u/NagatoKami/" target="_blank" rel="noopener noreferrer" aria-label="Contact me on Reddit" title="Reddit" className="inline-flex items-center justify-center p-2 rounded border border-[var(--line)] hover:bg-[var(--alt)] focus-visible:outline-2 focus-visible:outline-[var(--green)]">
+              <a href="https://www.reddit.com/u/NagatoKami/" target="_blank" rel="noopener noreferrer" aria-label="Contact me on Reddit" title="Reddit" className="site-info-contact-button inline-flex items-center justify-center p-2 rounded border border-[var(--line)] hover:bg-[var(--alt)] focus-visible:outline-2 focus-visible:outline-[var(--green)]">
                 <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <path d="m12 8 1-5 5 1" />
                   <circle cx="20" cy="4" r="2" />

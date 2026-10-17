@@ -24,8 +24,8 @@ test('joystick uses a plain pressed fill and clears it on pointer and keyboard i
   assert.match(source, /control.current\?\.removeAttribute\('data-pressed'\)/);
   assert.match(source, /onPointerCancel=\{reset\} onLostPointerCapture=\{reset\}/);
   assert.match(source, /onBlur=\{e =>/);
-  assert.match(css, /\.game-app \.mobile-joystick\[data-pressed="true"\]\s*\{\s*background: #334155;/);
-  assert.match(css, /html\[data-theme="light"\] \.game-app \.mobile-joystick\[data-pressed="true"\]\s*\{\s*background: #cbd5e1;/);
+  assert.match(css, /\.game-app \.mobile-joystick\[data-pressed="true"\]\s*\{\s*background: #182334;/);
+  assert.match(css, /html\[data-theme="light"\] \.game-app \.mobile-joystick\[data-pressed="true"\]\s*\{\s*background: #e9eff4;/);
 });
 
 test('footer separator is present only in touch portrait', () => {
@@ -128,11 +128,11 @@ test('pause control is only shown during play and uses transparent theme colors'
   assert.match(css, /html\[data-theme="light"\] \.game-app \.chart-pause-control\s*\{[^}]*border-color: #000;[^}]*background: transparent;[^}]*color: #000;/);
 });
 
-test('mobile pause uses the same safe-area-aware gap below and before the price axis', () => {
+test('mobile joystick pause and fullscreen share one safe-area-aware gutter', () => {
   assert.match(css, /\.game-app \.chart-pause-control\s*\{\s*--pause-control-gap: var\(--mobile-control-gap\);\s*right: max\(calc\(var\(--chart-axis-right, 64px\) \+ var\(--pause-control-gap\)\), env\(safe-area-inset-right\)\);\s*bottom: max\(var\(--pause-control-gap\), env\(safe-area-inset-bottom\)\);/);
-  assert.match(css, /--mobile-control-gap: 8px;/);
+  assert.match(css, /--mobile-control-gap: max\(8px, env\(safe-area-inset-top\), env\(safe-area-inset-right\), env\(safe-area-inset-bottom\), env\(safe-area-inset-left\)\);/);
   assert.match(css, /padding-top: var\(--mobile-control-gap\);\s*padding-right: var\(--mobile-control-gap\);\s*padding-bottom: var\(--mobile-control-gap\);/);
-  assert.match(css, /\.game-app:fullscreen \.mobile-joystick\s*\{[^}]*--joystick-corner-gap: max\(var\(--mobile-control-gap\), env\(safe-area-inset-left\), env\(safe-area-inset-bottom\)\);\s*position: absolute;\s*left: var\(--joystick-corner-gap\);\s*bottom: var\(--joystick-corner-gap\);/);
+  assert.match(css, /\.game-app:fullscreen \.mobile-joystick\s*\{[^}]*--joystick-edge-gap: var\(--mobile-control-gap\);\s*position: absolute;\s*left: max\(var\(--joystick-edge-gap\), env\(safe-area-inset-left\)\);\s*bottom: max\(var\(--joystick-edge-gap\), env\(safe-area-inset-bottom\)\);/);
 });
 
 test('Info is rendered on desktop and hidden during gameplay only on touch layouts', () => {

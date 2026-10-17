@@ -12,7 +12,7 @@ import { applyCandleSurprise, SURPRISE_MIN_GAP, SURPRISE_MAX_GAP, candleSurprise
 import { stepTenderFall, tenderLanding } from './tenderFall';
 import { randomBirdCargo, canReleaseBirdCargo } from './birdCargo';
 import { MobileJoystick } from './MobileJoystick';
-import { renderPixelRatio } from './renderBudget';
+import { renderBackingSize } from './renderBudget';
 import { drawDumpster } from './dumpsterRenderer';
 import { hawkBagThrowPose } from './hawkBagThrow';
 import { swanBagPose } from './swanBag';
@@ -90,10 +90,10 @@ const currentChartViewport = (display?: { width: number; height: number }) => ch
 // High-DPI canvases are disproportionately expensive on phones. Keep desktop
 // capture crisp, but cap the mobile backing store so the game spends its frame
 // budget on gameplay rather than filling millions of mostly invisible pixels.
-const canvasPixelRatio = (display: { width: number; height: number }): number => {
-  if (typeof window === 'undefined') return 1;
+const canvasBackingSize = (display: { width: number; height: number }) => {
+  if (typeof window === 'undefined') return { width: W, height: H };
   const dpr = window.devicePixelRatio || 1;
-  return renderPixelRatio(display.width, display.height, W, H, dpr, window.matchMedia('(pointer: coarse)').matches);
+  return renderBackingSize(display.width, display.height, W, H, dpr, window.matchMedia('(pointer: coarse)').matches);
 };
 
 const zoomCanvasPoint = (client: AimPoint, rect: { left: number; top: number; width: number; height: number }, zoom: number): AimPoint => {
@@ -3044,9 +3044,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     if (!ctx) return;
 
     const resizeCanvas = () => {
-      const ratio = canvasPixelRatio(canvas.getBoundingClientRect());
-      const width = Math.max(1, Math.round(W * ratio));
-      const height = Math.max(1, Math.round(H * ratio));
+      const { width, height } = canvasBackingSize(canvas.getBoundingClientRect());
       if (canvas.width !== width || canvas.height !== height) {
         canvas.width = width;
         canvas.height = height;

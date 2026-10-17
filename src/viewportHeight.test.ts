@@ -80,7 +80,7 @@ test('touch shell bounds the document and reserves header/footer space before si
   assert.match(shell, /\.site-footer\s*\{\s*flex-shrink: 0;/);
   assert.match(shell, /\.game-arena\s*\{\s*flex: 1 1 0;\s*min-height: 0;\s*container-type: size;/);
   assert.match(shell, /body\s*\{\s*position: fixed;\s*inset: 0;/);
-  assert.match(shell, /\.game-app header\s*\{\s*padding-top: max\(8px, env\(safe-area-inset-top\)\);\s*padding-bottom: 8px;/);
+  assert.match(shell, /\.game-app header\s*\{\s*padding-top: var\(--mobile-control-gap, max\(8px, env\(safe-area-inset-top\)\)\);\s*padding-bottom: var\(--mobile-control-gap, 8px\);/);
   assert.match(shell, /\.stonktrooper-logo\s*\{\s*height: 32px;/);
   assert.match(shell, /\.site-footer\s*\{\s*font-size: 10px;\s*line-height: 15px;/);
   assert.match(shell, /\.mobile-portrait-hero\s*\{\s*touch-action: pinch-zoom;/);

@@ -37,10 +37,10 @@ const hitTest = selector => evaluate(`(() => {
 try {
   await send('Network.enable');
   await send('Network.setCacheDisabled', { cacheDisabled: true });
-  for (const [width, height, touch, notch = false] of [[360,560,true],[390,664,true],[768,1024,true],[844,390,true],[844,390,true,true],[896,400,true,true],[1280,800,false]]) {
+  for (const [width, height, touch, notch = false] of [[360,560,true],[390,664,true],[768,1024,true],[844,390,true],[844,390,true,true],[896,400,true,true],[896,400,true,'left'],[896,400,true,'right'],[1280,800,false]]) {
     await send('Emulation.setTouchEmulationEnabled', { enabled: touch, maxTouchPoints: 5 });
     await send('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: touch ? 3 : 1, mobile: touch });
-    await send('Emulation.setSafeAreaInsetsOverride', { insets: notch ? {top:0,left:44,right:44,bottom:21} : {top:0,left:0,right:0,bottom:0} });
+    await send('Emulation.setSafeAreaInsetsOverride', { insets: notch ? {top:0,left:notch === 'right' ? 0 : 44,right:notch === 'left' ? 0 : 44,bottom:21} : {top:0,left:0,right:0,bottom:0} });
     await send('Page.navigate', { url: origin });
     for (let i = 0; i < 100; i++) {
       await wait(100);
@@ -53,6 +53,31 @@ try {
       await evaluate(`Array.from(document.querySelectorAll('.site-footer nav button')).find(b => b.textContent === '${section}').click()`);
       await wait(150);
       assert((await hitTest('.site-info-close'))?.accessible, `${width}: ${section} close inaccessible`);
+      for (const theme of ['dark', 'light']) {
+        const colors = await evaluate(`(() => {
+          document.documentElement.dataset.theme='${theme}';
+          const controls=Array.from(document.querySelectorAll('.site-info-close, .site-info-contact-button, .preferences-clear-button'));
+          controls.forEach(button=>button.style.transition='none');
+          document.activeElement?.blur();
+          const capture=button=>{const s=getComputedStyle(button);return [s.color,s.borderColor,s.backgroundColor].join('|')};
+          const idle=controls.map(capture);
+          const focus=controls.map(button=>{button.focus();return capture(button)});
+          document.activeElement?.blur();
+          return {idle,focus};
+        })()`);
+        const ink=theme==='light'?'rgb(0, 0, 0)':'rgb(255, 255, 255)';
+        const fill=theme==='light'?'rgb(234, 240, 245)':'rgb(24, 35, 52)';
+        const hover=theme==='light'?'rgb(255, 255, 255)':'rgb(0, 0, 0)';
+        assert(colors.idle.every(color=>color===[ink,ink,fill].join('|')), `${section} idle colors: ${JSON.stringify(colors)}`);
+        assert(colors.focus.every(color=>color===[ink,ink,hover].join('|')), `${section} focus colors: ${JSON.stringify(colors)}`);
+        for (const selector of ['.site-info-close', ...(section==='About'?['.site-info-contact-button']:[]), ...(section==='Preferences'?['.preferences-clear-button']:[])]) {
+          const point=await hitTest(selector);
+          await send('Input.dispatchMouseEvent',{type:'mouseMoved',x:point.x+point.width/2,y:point.y+point.height/2});
+          assert.equal(await evaluate(`getComputedStyle(document.querySelector('${selector}')).backgroundColor`), hover, `${section} hover fill`);
+          await send('Input.dispatchMouseEvent',{type:'mouseMoved',x:0,y:0});
+        }
+      }
+      await evaluate("document.documentElement.dataset.theme='dark'");
       const scroll = await evaluate(`(() => {
         const e = document.querySelector('.site-info-content');
         e.scrollTop = 0;
@@ -106,18 +131,32 @@ try {
       if (touch) {
         const joystick = await hitTest('.mobile-joystick');
         assert(joystick?.accessible, 'joystick inaccessible');
-        if (notch) assert(joystick.x >= 44 && joystick.bottom <= height - 21, 'joystick intersects safe area');
+        if (notch) assert(joystick.x >= (notch === 'right' ? 4 : 44) && joystick.bottom <= height - 21, 'joystick intersects safe area');
         const corner = await evaluate(`(() => {
           const control = document.querySelector('.mobile-joystick').getBoundingClientRect();
           const stage = document.querySelector('.game-stage').getBoundingClientRect();
           return {left:control.left-stage.left,bottom:stage.bottom-control.bottom};
         })()`);
-        assert(Math.abs(corner.left-corner.bottom) < 1, 'joystick corner gaps differ');
+        assert(Math.abs(corner.bottom-(notch ? 44 : 8)) < 1, 'unexpected joystick bottom gap');
         assert(Math.abs(corner.left-(notch ? 44 : 8)) < 1, 'unexpected joystick corner gap');
+        const gaps = await evaluate(`(() => {
+          const header = document.querySelector('header').getBoundingClientRect();
+          const fullscreen = document.querySelector('.desktop-fullscreen-control').getBoundingClientRect();
+          const pause = document.querySelector('.chart-pause-control').getBoundingClientRect();
+          const arena = document.querySelector('.game-arena');
+          const bounds = arena.getBoundingClientRect();
+          const axis = parseFloat(getComputedStyle(arena).getPropertyValue('--chart-axis-right'));
+          return [header.right-fullscreen.right, fullscreen.top-header.top, header.bottom-fullscreen.bottom,
+            bounds.bottom-pause.bottom, bounds.right-axis-pause.right];
+        })()`);
+        for (const gap of gaps) assert(Math.abs(gap-corner.left) < 1, `mobile control gutters differ: ${JSON.stringify(gaps)} vs ${corner.left}`);
         console.log(JSON.stringify({width,height,notch,joystickCorner:corner}));
         const x = joystick.x + joystick.width/2, y = joystick.y + joystick.height/2;
         await send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{x,y}] });
-        assert.equal(await evaluate("getComputedStyle(document.querySelector('.mobile-joystick')).backgroundColor"), 'rgb(51, 65, 85)', 'pressed joystick is not filled');
+        assert.equal(await evaluate("getComputedStyle(document.querySelector('.mobile-joystick')).backgroundColor"), 'rgb(24, 35, 52)', 'pressed joystick is not filled');
+        await evaluate("document.documentElement.dataset.theme='light'");
+        assert.equal(await evaluate("getComputedStyle(document.querySelector('.mobile-joystick')).backgroundColor"), 'rgb(233, 239, 244)', 'Day pressed joystick fill incorrect');
+        await evaluate("document.documentElement.dataset.theme='dark'");
         await send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
         assert.equal(await evaluate("document.querySelector('.mobile-joystick').hasAttribute('data-pressed')"), false);
         await send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{x,y}] });
@@ -150,6 +189,13 @@ try {
         assert(Math.abs(guide.top-guide.expectedTop) < 1, 'guide does not start at feed boundary');
         assert(Math.abs(guide.bottom-guide.expectedBottom) < 1, 'guide does not fill shell height');
         assert(Math.abs(guide.panelBottom-guide.bottom) < 1, 'guide panel does not fill overlay');
+        const spacing = await evaluate(`(() => {
+          const panel = document.querySelector('.mobile-how-to-panel').getBoundingClientRect();
+          const cards = [...document.querySelectorAll('.mobile-how-to-panel .mechanics-guide > div')].map(e => e.getBoundingClientRect());
+          return {left:Math.min(...cards.map(r=>r.left))-panel.left,
+            right:panel.right-Math.max(...cards.map(r=>r.right))};
+        })()`);
+        assert(Math.abs(spacing.left-spacing.right) < 1, 'landscape description side gaps differ');
         console.log(JSON.stringify({width,height,notch,guide}));
         await evaluate("document.querySelector('.mobile-how-to-close').click()");
       }

@@ -100,9 +100,8 @@ test('mobile joystick only sends movement in Kangaroo mode', () => {
 
 test('canvas keeps mobile backing resolution bounded and avoids render storms during catch-up', () => {
   const game = readFileSync(new URL('./CandleGame.tsx', import.meta.url), 'utf8');
-  assert.match(game, /renderPixelRatio\(display.width, display.height, W, H, dpr, window.matchMedia\('\(pointer: coarse\)'\).matches\)/);
-  assert.match(game, /Math\.round\(W \* ratio\)/);
-  assert.match(game, /Math\.round\(H \* ratio\)/);
+  assert.match(game, /renderBackingSize\(display.width, display.height, W, H, dpr, window.matchMedia\('\(pointer: coarse\)'\).matches\)/);
+  assert.match(game, /const \{ width, height \} = canvasBackingSize\(canvas.getBoundingClientRect\(\)\)/);
   assert.match(game, /ctx\.setTransform\(width \/ W, 0, 0, height \/ H, 0, 0\)/);
   assert.match(game, /let simulationSteps = 0/);
   assert.match(game, /simulationSteps\+\+/);

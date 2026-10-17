@@ -111,7 +111,7 @@ test('Liquidated and Share DD controls use the requested theme colors', () => {
 test('square header, pause and close controls share the same theme and interaction colors', () => {
   const css = readFileSync(new URL('./index.css', import.meta.url), 'utf8');
   const section = css.slice(css.indexOf('/* Square controls share'));
-  assert.match(section, /:is\(\.header-controls > button, \.chart-pause-control, \.dialog-close, \.share-dd-actions > button\)/);
+  assert.match(section, /:is\(\.header-controls > button, \.chart-pause-control, \.dialog-close, \.share-dd-actions > button, \.site-info-contact-button\)/);
   assert.match(section, /color: var\(--square-control-ink\) !important;/);
   assert.match(section, /background: var\(--square-control-fill\) !important;/);
   assert.match(section, /border-color: currentColor !important;/);
