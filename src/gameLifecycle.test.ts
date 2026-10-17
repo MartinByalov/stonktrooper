@@ -23,7 +23,7 @@ test('How to Play starts below the unblurred Live Feed strip', () => {
   assert.match(css, /\.how-to-play-overlay\s*\{\s*top: calc\(100% \* 48 \/ 840\);/);
   assert.match(css, /\.game-app \.game-overlay\.how-to-play-overlay\s*\{\s*inset: calc\(100% \* 48 \/ 840\) 0 0;/);
   assert.match(app, /relative flex h-10 items-center justify-center border-b[^>]*>[\s\S]*?id="paused-guide-title"[\s\S]*?top-1\/2 -translate-y-1\/2/);
-  assert.match(app, /relative flex h-10 items-center justify-center mb-3[^>]*>[\s\S]*?id="mobile-guide-title"[\s\S]*?top-1\/2 -translate-y-1\/2/);
+  assert.match(app, /relative flex h-10 items-center justify-center mb-3[^>]*>[\s\S]*?id="mobile-guide-title"[\s\S]*?mobile-how-to-close/);
 });
 
 test('paused How to Play stays below Live Feed and inside the header/footer bounds', () => {
@@ -37,10 +37,9 @@ test('paused How to Play stays below Live Feed and inside the header/footer boun
   assert.match(css, /\.paused-guide-dialog\s*\{[\s\S]*?width: 100%;[\s\S]*?height: 100%;[\s\S]*?overflow-y: auto;/);
 });
 
-test('mobile Margin Call How to Play reuses the fullscreen mobile guide', () => {
+test('mobile Margin Call How to Play reuses the fullscreen mobile guide in both orientations', () => {
   const app = readFileSync(new URL('./App.tsx', import.meta.url), 'utf8');
-  assert.match(app, /portraitMobile = window\.matchMedia\('\(max-width: 1024px\) and \(orientation: portrait\) and \(pointer: coarse\)'\)\.matches/);
-  assert.match(app, /portraitMobile\) setMobileGuideOpen\(true\);/);
+  assert.match(app, /setMobileGuideOpen\(true\);/);
   assert.match(app, /mobileGuideOpen && <div className="mobile-how-to-dialog fixed inset-0/);
 });
 
@@ -58,25 +57,18 @@ test('mobile landscape lock is released outside play, pause and Kangaroo', () =>
   assert.match(app, /document\.fullscreenElement === appRef\.current\) void document\.exitFullscreen\(\)/);
 });
 
-test('mobile canvas zoom enlarges the game and keeps pointer aiming inverse-mapped', () => {
+test('mobile preserves relative model sizes with one plot transform and unzoomed UI', () => {
   const game = readFileSync(new URL('./CandleGame.tsx', import.meta.url), 'utf8');
-  const app = readFileSync(new URL('./App.tsx', import.meta.url), 'utf8');
-  assert.match(game, /const mobileCanvasZoom = \(\): number =>/);
-  assert.match(game, /feedLayout\.current = \{ mobile, fontSize: mobile \? Math\.min\(64, Math\.max\(11, 14 \/ scale\)\) : 11, textScaleX \}/);
-  assert.match(game, /const scale = Math\.max\(0\.01, bounds\.height \/ H \* mobileCanvasZoom\(\)\)/);
-  assert.match(game, /const horizontalScale = Math\.max\(0\.01, bounds\.width \/ W \* mobileCanvasZoom\(\)\)/);
-  assert.match(game, /const textScaleX = mobile \? scale \/ horizontalScale : 1/);
-  assert.match(game, /ctx\.scale\(textScaleX, 1\)/);
-  assert.match(app, /rect\.height \* 48 \/ 840 \* mobileCanvasZoom\(\)/);
-  assert.match(game, /window\.matchMedia\('\(max-width: 1024px\) and \(pointer: coarse\)'\)/);
-  assert.match(game, /const shortSide = Math\.min\(window\.innerWidth, window\.innerHeight\)/);
-  assert.match(game, /return Math\.min\(1\.34, orientationBoost \+ 1 \+ sizeBoost\)/);
-  assert.match(game, /const mobileHeroRenderOffset = \(\): number =>/);
-  assert.match(game, /g\.p\.x - g\.cx \+ mobileHeroRenderOffset\(\)/);
-  assert.match(game, /ctx\.translate\(W \/ 2, 0\);\s*ctx\.scale\(zoom, zoom\);\s*ctx\.translate\(-W \/ 2, 0\)/);
-  assert.match(game, /return \{ x: \(x - W \/ 2\) \/ zoom \+ W \/ 2, y: y \/ zoom \}/);
+  assert.match(game, /mobileCanvasZoom = \(\): number => 1;/);
+  assert.doesNotMatch(game, /ctx\.scale\(zoom, zoom\)/);
+  assert.doesNotMatch(game, /modelLayout|modelScale/);
+  assert.match(game, /ctx\.translate\(Math\.round\(sx\), Math\.round\(sy\)\);\s*if \(g\.printerTimer/);
+  assert.match(game, /ctx\.fillRect\(x \+ 1, c\.top - g\.cy, CW - 3, c\.bot - c\.top\);/);
+  assert.match(game, /ctx\.scale\(APE_SCALE, APE_SCALE\);/);
   assert.match(game, /const canvasPoint = zoomCanvasPoint\(/);
-  assert.match(game, /pointerToWorld\(canvasPoint, \{ left: 0, top: 0, width: W, height: H \}/);
+  assert.match(game, /screenToChart\(canvasPoint, currentChartViewport\(\)\)/);
+  assert.match(game, /pointerToWorld\(chartPoint/);
+  assert.match(game, /ctx\.scale\(viewport\.scale, viewport\.scale\);/);
 });
 
 test('mobile joystick scales from the smaller viewport dimension', () => {

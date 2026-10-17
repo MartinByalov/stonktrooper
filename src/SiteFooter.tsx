@@ -1,5 +1,5 @@
 // Browser game module for SiteFooter.
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Mail, X } from 'lucide-react';
 
 const sections = ['About', 'Privacy', 'Disclaimer', 'Preferences'] as const;
@@ -9,6 +9,37 @@ export function SiteFooter({ onOpen, theme, section, setSection }: { onOpen: () 
   const [message, setMessage] = useState('');
   const dialog = useRef<HTMLDivElement>(null);
   const close = useRef<HTMLButtonElement>(null);
+  useLayoutEffect(() => {
+    const panel = dialog.current;
+    const title = panel?.querySelector<HTMLElement>('.site-info-title');
+    if (!panel || !title) return;
+    const syncEndGap = () => {
+      const style = getComputedStyle(panel);
+      const topGap = title.getBoundingClientRect().top - panel.getBoundingClientRect().top;
+      // The panel's bottom padding already contributes to the visible end gap.
+      const endGap = Math.max(0, topGap - parseFloat(style.paddingBottom) - parseFloat(style.borderBottomWidth));
+      panel.style.setProperty('--site-info-end-gap', `${endGap}px`);
+      const leftGap = Math.max(0, topGap - parseFloat(style.paddingLeft) - parseFloat(style.borderLeftWidth));
+      const rightGap = Math.max(0, topGap - parseFloat(style.paddingRight) - parseFloat(style.borderRightWidth));
+      panel.style.setProperty('--site-info-left-gap', `${leftGap}px`);
+      panel.style.setProperty('--site-info-right-gap', `${rightGap}px`);
+      const header = title.parentElement;
+      if (header) {
+        const headerTail = header.getBoundingClientRect().bottom - title.getBoundingClientRect().bottom;
+        const contentGap = Math.max(0, topGap - headerTail);
+        panel.style.setProperty('--site-info-content-gap', `${contentGap}px`);
+      }
+    };
+    const observer = new ResizeObserver(syncEndGap);
+    observer.observe(panel);
+    observer.observe(title);
+    window.addEventListener('resize', syncEndGap);
+    syncEndGap();
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', syncEndGap);
+    };
+  }, [section]);
   useEffect(() => {
     if (!section) return;
     const previous = document.activeElement as HTMLElement | null;
@@ -34,11 +65,11 @@ export function SiteFooter({ onOpen, theme, section, setSection }: { onOpen: () 
           else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
         }
       }}>
-        <div className="relative flex justify-center items-center min-h-10 mb-4 px-10">
+        <div className="site-info-header relative flex justify-center items-center min-h-10 mb-4 px-10">
           <h2 id="site-info-title" className="site-info-title font-bold text-xl">{section}</h2>
-          <button ref={close} type="button" aria-label="Close site information" onClick={() => setSection(null)} className="dialog-close site-info-close absolute right-0 top-0 p-2 border border-[var(--line)] rounded hover:bg-[var(--alt)] cursor-pointer"><X className="w-5 h-5" aria-hidden="true" /></button>
+          <button ref={close} type="button" aria-label="Close site information" onClick={() => setSection(null)} className="dialog-close mobile-dialog-close site-info-close absolute right-0 top-0 p-2 border border-[var(--line)] rounded hover:bg-[var(--alt)] cursor-pointer"><X className="w-5 h-5" aria-hidden="true" /></button>
         </div>
-        <div className="space-y-3 text-sm leading-relaxed">
+        <div className="site-info-content space-y-3 text-sm leading-relaxed">
           {section === 'About' && <>
             <p><img src={`${import.meta.env.BASE_URL}images/${theme === 'dark' ? 'logo-inverted.png' : 'logo.png'}`} alt="Stonktrooper" className="relative -top-[1px] inline-block h-6 w-auto max-w-full align-middle" />{' '}is a game inspired by fictional financial markets, internet memes and experimental game design. It's an amalgamation of the author's experience with the real markets.</p>
             <p>The game is completely free to play. There are no purchases, subscriptions, paid upgrades or real-money gameplay. No account is required.</p>
@@ -64,7 +95,7 @@ export function SiteFooter({ onOpen, theme, section, setSection }: { onOpen: () 
                 </svg>
               </a>
             </div>
-            <div className="space-y-2 pt-2 text-center">
+            <div className="about-support space-y-2 pt-2 text-center">
               <p>Support me at:</p>
               <button id="about-coffee" className="coffee-link" type="button" aria-label="Buy me a Ko-fi! (opens in a new tab)" onClick={() => window.open('https://ko-fi.com/eon', '_blank', 'noopener,noreferrer')}>
                 <span className="coffee-cup" aria-hidden="true">♥</span>

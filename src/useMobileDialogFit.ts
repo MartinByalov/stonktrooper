@@ -5,7 +5,7 @@ export function useMobileDialogFit(root: RefObject<HTMLDivElement | null>): void
   useEffect(() => {
     const app = root.current;
     if (!app) return;
-    const media = window.matchMedia('(max-width: 1024px) and (pointer: coarse)');
+    const media = window.matchMedia('(pointer: coarse)');
     const selector = '.game-result, .fixed.inset-0.z-50 > [role="dialog"]:not(.mobile-how-to-panel)';
     const observed = new Set<Element>();
     let frame = 0;

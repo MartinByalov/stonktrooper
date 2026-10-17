@@ -3,6 +3,10 @@ import type { Candle } from './types';
 
 export const HAWK_DOWN_SLOPE = 8;
 export const HAWK_ROUTE_CANDLES = 200;
+// Cargo weighs down only the dumpster; never persist a penalty on the player.
+export const hawkSpeedMultiplier = (timer: number, bags: number): number =>
+  timer > 0 ? 1.35 * (1 - Math.min(6, Math.max(0, Math.floor(bags))) * 0.1) : 1;
+
 export const hawkDropBudget = (feet: number, zeroY: number): number =>
   Math.max(0, Math.min(HAWK_ROUTE_CANDLES * HAWK_DOWN_SLOPE, (zeroY - feet - 180) * 0.65));
 

@@ -1,6 +1,6 @@
 // Browser game module for AssetPreview.
 import { useEffect, useRef } from 'react';
-import { briefcaseColors, drawPickupAsset, drawSwanAsset, drawApeAsset } from './assetRenderer';
+import { briefcaseColors, drawCharacterHat, drawPickupAsset, drawSwanAsset, drawApeAsset } from './assetRenderer';
 import { drawAnimalCharacter } from './animalRenderer';
 import type { Animal, Swan } from './types';
 import { createBossArena } from './boxingRules';
@@ -82,6 +82,10 @@ export function AssetPreview({ asset, compact = false, theme = 'light' }: { asse
       ctx.save(); ctx.translate(0, -4); ctx.scale(2 * 148 / 156, 2 * 148 / 156);
       drawPickupAsset(ctx, { type: 'diamond', x: 0, y: 0, taken: false }, 0, 0);
       ctx.restore();
+    } else if (asset === 'fedora') {
+      // Mirror the updated hero hat only in the guide preview.
+      ctx.scale(-2.4, 2.4);
+      drawCharacterHat(ctx, false, false, theme === 'dark');
     } else if (asset === 'briefcase') {
       const colors = briefcaseColors(theme === 'dark');
       ctx.strokeStyle = colors.handle;

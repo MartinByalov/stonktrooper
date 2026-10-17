@@ -109,6 +109,7 @@ export interface ScorePopup {
 }
 
 export interface Briefcase {
+  windup?: number; // Hawk bag remains in both hands until the overhead release.
   kind?: 'banana' | 'bag';
   x: number;
   y: number;

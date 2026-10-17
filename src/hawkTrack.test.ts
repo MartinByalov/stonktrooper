@@ -1,10 +1,31 @@
 // Regression checks for hawkTrack.
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { hawkCandle, HAWK_DOWN_SLOPE, HAWK_ROUTE_CANDLES, hawkDropBudget } from './hawkTrack';
+import { hawkCandle, HAWK_DOWN_SLOPE, HAWK_ROUTE_CANDLES, hawkDropBudget, hawkSpeedMultiplier } from './hawkTrack';
 import type { Candle } from './types';
 import { readFileSync } from 'node:fs';
 import { plotViewY } from './aim';
+
+test('Hawk cargo reduces empty-cart speed by ten percent per bag with a sixty percent cap', () => {
+  const empty = hawkSpeedMultiplier(600, 0);
+  assert.equal(empty, 1.35);
+  for (let bags = 1; bags <= 6; bags++) {
+    assert(Math.abs(hawkSpeedMultiplier(600, bags) - empty * (1 - bags * 0.1)) < 1e-12);
+    assert(hawkSpeedMultiplier(600, bags) < hawkSpeedMultiplier(600, bags - 1));
+  }
+  assert.equal(hawkSpeedMultiplier(600, 100), hawkSpeedMultiplier(600, 6));
+  assert(hawkSpeedMultiplier(600, 100) > 0);
+  assert.equal(hawkSpeedMultiplier(600, -1), empty);
+});
+
+test('leaving Hawk restores normal speed even with stale cargo and rocket keeps its own speed', () => {
+  for (const bags of [0, 1, 6, 100]) {
+    assert.equal(hawkSpeedMultiplier(0, bags), 1);
+    assert.equal(hawkSpeedMultiplier(-1, bags), 1);
+  }
+  const game = readFileSync(new URL('./CandleGame.tsx', import.meta.url), 'utf8');
+  assert.match(game, /const sp = speedAt\(currentIdx\) \* \(isRocketMode \? ROCKET_SPEED_MULTIPLIER : hawkSpeedMultiplier\(g\.hawkTimer, g\.hawkBags\)\);/);
+});
 
 test('chicken tender preserves the view or commits the chosen Pigeon exit when interrupting', () => {
   const source = readFileSync(new URL('./CandleGame.tsx', import.meta.url), 'utf8');

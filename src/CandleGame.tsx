@@ -13,16 +13,18 @@ import { stepTenderFall, tenderLanding } from './tenderFall';
 import { randomBirdCargo, canReleaseBirdCargo } from './birdCargo';
 import { MobileJoystick } from './MobileJoystick';
 import { drawDumpster } from './dumpsterRenderer';
+import { hawkBagThrowPose } from './hawkBagThrow';
 import { swanBagPose } from './swanBag';
 import { printerFallRotation } from './printerFall';
 import { aimedVelocity, pointerToWorld, plotViewY, AimPoint } from './aim';
+import { chartViewport, chartToScreen, screenToChart } from './chartViewport';
 import { pigeonDropsPrinter } from './gameRules';
 import { extendPrinterTurns, endingPrinterCandle, printerSourceCandle, printerCrossingPose, printerEnemyPose, printerProfileFlip, rightEdgeSpawnX, PrinterTurn } from './printerTrack';
 import { aimedHitDefeatsEnemy, dismountRider, canCatchBossBell, bellDescentTop } from './gameRules';
 import { GameState, Candle, Player, Pickup, Swan, Animal, Briefcase, MarketEvent, MarketLevel, ActiveNews, ScorePopup } from './types';
 import { sound } from './audio';
 import { activityMultiplier, enemyPips } from './scoring';
-import { hawkCandle, hawkDropBudget } from './hawkTrack';
+import { hawkCandle, hawkDropBudget, hawkSpeedMultiplier } from './hawkTrack';
 import { zeroCrashCamera, zeroCrashComplete } from './zeroCrash';
 import { canSpawnEncounter, shouldPlaceBell, WARMUP_CANDLES, difficultyUnlocked, chartPrice, marketReachedZero } from './pacing';
 import { pigeonFlightY, stepPigeonDrop, PigeonDrop } from './pigeonEffects';
@@ -76,21 +78,12 @@ const TIME_AXIS_HEIGHT = 12;
 const AX = 64;   // Price axis width on right
 const CW = 9;    // Candlestick width in pixels
 
-// Mobile screens render the fixed 1920 × 840 game canvas at a very small
-// physical size. Dynamically enlarge the drawing so the runner, candles,
-// Live Feed and Pips remain readable without changing game physics.
-export const mobileCanvasZoom = (): number => {
-  if (typeof window === 'undefined' || !window.matchMedia('(max-width: 1024px) and (pointer: coarse)').matches) return 1;
-  const shortSide = Math.min(window.innerWidth, window.innerHeight);
-  const orientationBoost = window.innerWidth > window.innerHeight ? 0.16 : 0.12;
-  const sizeBoost = Math.min(0.14, 56 / Math.max(240, shortSide));
-  return Math.min(1.34, orientationBoost + 1 + sizeBoost);
-};
+// UI is never zoomed; the plot has its own shared, invertible world transform.
+export const mobileCanvasZoom = (): number => 1;
 
-const mobileHeroRenderOffset = (): number => {
-  if (typeof window === 'undefined' || !window.matchMedia('(max-width: 1024px) and (pointer: coarse)').matches) return 0;
-  return window.innerWidth > window.innerHeight ? 34 : 24;
-};
+const currentChartViewport = () => chartViewport(
+  typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches, W, H, AX,
+);
 
 // High-DPI canvases are disproportionately expensive on phones. Keep desktop
 // capture crisp, but cap the mobile backing store so the game spends its frame
@@ -113,6 +106,12 @@ const zoomCanvasPoint = (client: AimPoint, rect: { left: number; top: number; wi
 const CAP = 50;
 const LEN = 360; // Candlesticks per market cycle
 const HX = 250;  // Hero camera offset from left
+
+// Move the camera, never the sprite alone: visuals and pickup contact must agree.
+const heroCameraOffset = (): number => {
+  if (typeof window === 'undefined' || !window.matchMedia('(pointer: coarse)').matches) return HX;
+  return currentChartViewport().x;
+};
 
 const GREEN = '#26a69a';
 const RED = '#ef5350';
@@ -159,25 +158,43 @@ export const CandleGame: React.FC<CandleGameProps> = ({
   onHawkActivated
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const feedLayout = useRef({ mobile: false, fontSize: 11, textScaleX: 1 });
+  const headerFeedRef = useRef<HTMLCanvasElement | null>(null);
+  const headerFeedActive = useRef(false);
+  const headerFeedLayout = useRef({ height: 32, width: W, mainHeight: H });
+  const feedLayout = useRef({ mobile: false, fontSize: 11, textScaleX: 1, tapeHeight: TAPE_HEIGHT });
   const feedTextCache = useRef(new WeakMap<MarketNews, { message: string; font: string; width: number; textScaleX: number }>());
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const refresh = () => {
-      const mobile = window.matchMedia('(max-width: 1024px) and (pointer: coarse)').matches;
+      const mobile = window.matchMedia('(pointer: coarse)').matches;
       const bounds = canvas.getBoundingClientRect();
       const scale = Math.max(0.01, bounds.height / H * mobileCanvasZoom());
       const horizontalScale = Math.max(0.01, bounds.width / W * mobileCanvasZoom());
+      const axisLeft = bounds.width / 2 + (W / 2 - AX) * horizontalScale;
+      canvas.closest<HTMLElement>('.game-arena')?.style.setProperty('--chart-axis-right', `${Math.max(0, bounds.width - axisLeft)}px`);
       const textScaleX = mobile ? scale / horizontalScale : 1;
-      feedLayout.current = { mobile, fontSize: mobile ? Math.min(64, Math.max(11, 14 / scale)) : 11, textScaleX };
+      const headerHeight = canvas.closest('.game-app')?.querySelector('header')?.getBoundingClientRect().height ?? 0;
+      headerFeedRef.current = canvas.closest('.game-app')?.querySelector<HTMLCanvasElement>('.mobile-header-feed') ?? null;
+      headerFeedActive.current = mobile && (state === 'play' || state === 'boxing');
+      const headerFeed = headerFeedRef.current;
+      if (headerFeed && headerFeedActive.current) {
+        const rect = headerFeed.getBoundingClientRect();
+        headerFeedLayout.current = { height: rect.height, width: rect.width, mainHeight: bounds.height };
+        headerFeed.width = Math.max(1, Math.round(rect.width * Math.min(window.devicePixelRatio || 1, 1.5)));
+        headerFeed.height = Math.max(1, Math.round(rect.height * Math.min(window.devicePixelRatio || 1, 1.5)));
+      }
+      const tapeHeight = headerFeedActive.current ? 3 / scale : headerHeight > 0 ? headerHeight / scale : TAPE_HEIGHT;
+      feedLayout.current = { mobile, fontSize: mobile ? Math.min(64, Math.max(11, 14 / scale)) : 11, textScaleX, tapeHeight };
     };
     const observer = new ResizeObserver(refresh);
     observer.observe(canvas);
+    const header = canvas.closest('.game-app')?.querySelector('header');
+    if (header) observer.observe(header);
     window.addEventListener('resize', refresh);
     refresh();
     return () => { observer.disconnect(); window.removeEventListener('resize', refresh); };
-  }, []);
+  }, [state]);
   const tickerHoverPausedRef = useRef(false);
   const aimRef = useRef<AimPoint | null>(null);
   const bossTrack = useRef<{ candles: Candle[]; length: number } | null>(null);
@@ -223,6 +240,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     fedoraCount: 0,
     fedoraWindup: 0,
     bagThrowAnimTimer: 0,
+    bagThrowDirection: 1,
     flyingFedora: null as FlyingFedora | null,
     nextWhale: 200,
     coins: 0,
@@ -592,7 +610,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
       previousY: g.C[startIndex].top
     };
 
-    g.cx = g.p.x - HX;
+    g.cx = g.p.x - heroCameraOffset();
     g.cy = g.p.y - H * 0.62;
     g.score = 0;
     g.activityPips = 0; g.hawkTimer = 0; g.nextHawk = randomDelay(140, 550); g.spits = []; g.hatSoiled = false; g.pigeonDrops = [];
@@ -687,7 +705,8 @@ export const CandleGame: React.FC<CandleGameProps> = ({
       const x = g.p.x + 18;
       const y = g.p.y - 20;
       const velocity = aimedVelocity({ x, y }, aimRef.current ?? { x: x + 100, y }, 11.5 + speedAt(g.score));
-      g.cases.push({ x, y, vx: velocity.x, vy: velocity.y, life: 70, angle: 0, kind: 'bag' });
+      g.cases.push({ x, y, vx: velocity.x, vy: velocity.y, life: 70, angle: 0, kind: 'bag', windup: 8 });
+      g.bagThrowDirection = velocity.x < 0 ? -1 : 1;
       g.hawkBags--;
       g.p.carry = 0;
       g.p.shieldKind = undefined;
@@ -1176,6 +1195,15 @@ export const CandleGame: React.FC<CandleGameProps> = ({
       }
     }
     for (const b of g.cases) {
+      if (b.kind === 'bag' && (b.windup ?? 0) > 0) {
+        const pose = hawkBagThrowPose(g.bagThrowAnimTimer, g.bagThrowDirection,
+          weaponHatCount(g.fedoraTimer, g.fedoraWindup, !!g.flyingFedora));
+        b.x = g.p.x + pose.bagX;
+        b.y = g.p.y + pose.bagY;
+        b.windup = (b.windup ?? 0) - 1;
+        // No movement, lifetime loss or enemy hits while still held overhead.
+        continue;
+      }
       const prevX = b.x;
       const prevY = b.y;
       b.x += b.vx;
@@ -1476,7 +1504,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
       return;
     }
     const isRocketMode = g.p.rocketTimer > 0;
-    const sp = speedAt(currentIdx) * (isRocketMode ? ROCKET_SPEED_MULTIPLIER : g.hawkTimer > 0 ? 1.35 : 1);
+    const sp = speedAt(currentIdx) * (isRocketMode ? ROCKET_SPEED_MULTIPLIER : hawkSpeedMultiplier(g.hawkTimer, g.hawkBags));
 
     g.p.x += sp;
     g.p.ph += 0.28;
@@ -1651,7 +1679,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     }
 
     if (g.currentState !== 'play') return;
-    g.cx = (g.printerTimer > 0 ? g.printerProgress : g.p.x) - HX;
+    g.cx = (g.printerTimer > 0 ? g.printerProgress : g.p.x) - heroCameraOffset();
     if (g.printerTimer <= 0 && g.cx > g.printerEndX + 60) g.printerSaved = null;
     // Never rebase a temporary boss arena: its callbacks capture chart indices.
     if (!bossTrack.current) {
@@ -1703,7 +1731,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     if (!g.p) return;
     const stride = g.p.air ? Math.sin(g.p.ph) * 0.45 + Math.max(-0.6, Math.min(0.6, -g.p.vy / 14)) : Math.sin(g.p.ph);
     // Offset only the crash sprite; keep the market anchor on its final candle.
-    const sx = g.p.x - g.cx + mobileHeroRenderOffset() + (g.zeroCrash ? 32 : 0);
+    const sx = g.p.x - g.cx + (g.zeroCrash ? 32 : 0);
     const sy = g.p.y - g.cy;
 
     ctx.save();
@@ -1726,7 +1754,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
 
     if (g.hawkTimer > 0 && g.p.rocketTimer <= 0) {
       drawDumpster(ctx, g.apes.length, g.p.ph, weaponHatCount(g.fedoraTimer, g.fedoraWindup, !!g.flyingFedora), theme === 'dark',
-        g.p.carry > 0 && g.p.shieldKind === 'diamond', g.hawkBags, g.globalFrame, g.hatSoiled);
+        g.p.carry > 0 && g.p.shieldKind === 'diamond', g.hawkBags, g.globalFrame, g.hatSoiled, g.bagThrowAnimTimer, g.bagThrowDirection);
       ctx.restore(); return;
     }
 
@@ -2193,7 +2221,10 @@ export const CandleGame: React.FC<CandleGameProps> = ({
       const x = d.x - g.cx;
       const y = d.y - g.cy;
 
-      drawPickupAsset(ctx, d, x, y, g.globalFrame, theme === 'dark');
+      ctx.save();
+      ctx.translate(x, y);
+      drawPickupAsset(ctx, d, 0, 0, g.globalFrame, theme === 'dark');
+      ctx.restore();
     }
   }, [theme]);
 
@@ -2205,7 +2236,6 @@ export const CandleGame: React.FC<CandleGameProps> = ({
 
       ctx.save();
       ctx.translate(x, y);
-
       if (s.dying) {
         ctx.rotate(s.dieAngle || 0);
         ctx.globalAlpha = Math.max(0, (s.dieTimer || 0) / 25);
@@ -2251,31 +2281,48 @@ export const CandleGame: React.FC<CandleGameProps> = ({
   // 5. TOP SCROLLING NEWS WIRE TICKER & DIAMOND / ROCKET COUNTDOWN STRIP
   const drawTopTickerTape = useCallback((ctx: CanvasRenderingContext2D) => {
     const g = gameRef.current;
-    const tapeH = TAPE_HEIGHT;
-    const { mobile, fontSize: feedFontSize, textScaleX } = feedLayout.current;
+    const plotCtx = ctx;
+    const header = headerFeedActive.current ? headerFeedRef.current : null;
+    const headerCtx = header?.getContext('2d');
+    const mainHeight = headerFeedLayout.current.mainHeight;
+    let tapeH = feedLayout.current.tapeHeight;
+    if (header && headerCtx) {
+      tapeH = headerFeedLayout.current.height / Math.max(0.01, mainHeight / H);
+      ctx = headerCtx;
+      ctx.setTransform(header.width / W, 0, 0, header.height / tapeH, 0, 0);
+    }
+    const borderHeight = H / Math.max(1, canvasRef.current?.getBoundingClientRect().height ?? H);
+    const { mobile, fontSize: feedFontSize } = feedLayout.current;
+    const textScaleX = header ? (headerFeedLayout.current.height / tapeH) / Math.max(0.01, headerFeedLayout.current.width / W) : feedLayout.current.textScaleX;
 
     ctx.save();
     ctx.textBaseline = 'alphabetic';
     const writeCentered = (text: string, x: number) => {
-      // Stable visible-letter metrics; do not reserve timer space or change
-      // the baseline for headlines with different ascenders/descenders.
-      const metrics = ctx.measureText('Hg');
+      // Center the visible glyph bounds between the Live Feed's top and
+      // bottom borders, independent of glyph ascenders/descenders.
+      const metrics = ctx.measureText(text);
       const ascent = metrics.actualBoundingBoxAscent ?? 9;
       const descent = metrics.actualBoundingBoxDescent ?? 2;
       ctx.save();
-      ctx.translate(x, tapeH / 2 + (ascent - descent) / 2);
+      const feedCenterY = (1 + tapeH - 1) / 2;
+      ctx.translate(x, feedCenterY + (ascent - descent) / 2);
       ctx.scale(textScaleX, 1);
       ctx.fillText(text, 0, 0);
       ctx.restore();
     };
 
     // NORMAL WIRE TICKER
-    ctx.fillStyle = theme === 'light' ? '#eaf0f5' : '#131c29';
-    ctx.fillRect(0, 0, W, tapeH);
-    const tickerBorder = theme === 'light' ? '#ffffff' : '#000000';
-    ctx.fillStyle = tickerBorder;
-    ctx.fillRect(0, 0, W, 1);
-    ctx.fillRect(0, tapeH - 1, W, 1);
+    const tickerBorder = theme === 'light' ? '#000000' : '#ffffff';
+    if (header) {
+      // Transparent header canvas: inherit the real header background, no frame.
+      ctx.clearRect(0, 0, W, tapeH);
+    } else {
+      ctx.fillStyle = theme === 'light' ? '#eaf0f5' : '#131c29';
+      ctx.fillRect(0, 0, W, tapeH);
+      ctx.fillStyle = tickerBorder;
+      ctx.fillRect(0, 0, W, borderHeight);
+      ctx.fillRect(0, tapeH - borderHeight, W, borderHeight);
+    }
 
     ctx.textAlign = 'left';
 
@@ -2330,6 +2377,17 @@ export const CandleGame: React.FC<CandleGameProps> = ({
 
     ctx.restore();
     // Carry effects only tint the thin timer strip; news remains uninterrupted.
+    ctx.restore();
+    ctx = plotCtx;
+    ctx.save();
+    tapeH = feedLayout.current.tapeHeight;
+    if (headerFeedActive.current) {
+      // The old feed's top edge becomes a three-CSS-pixel countdown strip.
+      ctx.fillStyle = tickerBorder;
+      ctx.fillRect(0, 0, W, tapeH);
+      ctx.scale(1, tapeH / 3);
+      tapeH = 3;
+    }
     if (g.currentState === 'boxing' && bossEncounter.current) {
       ctx.fillStyle = '#422006'; ctx.fillRect(0, tapeH - 3, W, 3);
       ctx.fillStyle = '#facc15'; ctx.fillRect(0, tapeH - 3, (W) * Math.max(0, Math.min(1, bossEncounter.current.boss.health / 100)), 3);
@@ -2359,12 +2417,13 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     // Redraw the bottom border after the status strip using the same exact
     // one-pixel fill as the top border.
     ctx.fillStyle = tickerBorder;
-    ctx.fillRect(0, tapeH - 1, W, 1);
+    if (!headerFeedActive.current) ctx.fillRect(0, tapeH - borderHeight, W, borderHeight);
     ctx.restore();
   }, [bossEncounter, theme]);
 
   const draw = useCallback((ctx: CanvasRenderingContext2D) => {
     const g = gameRef.current;
+    const TAPE_HEIGHT = feedLayout.current.tapeHeight;
     const darkPalette = {
       bg: '#131722',
       grid: '#2a2e3970',
@@ -2386,11 +2445,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     ctx.fillStyle = palette.bg;
     ctx.fillRect(0, 0, W, H);
 
-    const zoom = mobileCanvasZoom();
     ctx.save();
-    ctx.translate(W / 2, 0);
-    ctx.scale(zoom, zoom);
-    ctx.translate(-W / 2, 0);
 
     if (g.currentState === 'menu') {
       // Decorative only: the initial screen never advances physics or spawns.
@@ -2413,6 +2468,10 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     ctx.beginPath();
     ctx.rect(0, TAPE_HEIGHT, W - AX, H - TAPE_HEIGHT - TIME_AXIS_HEIGHT);
     ctx.clip();
+
+    const viewport = currentChartViewport();
+    ctx.translate(viewport.x * (1 - viewport.scale), viewport.y * (1 - viewport.scale));
+    ctx.scale(viewport.scale, viewport.scale);
 
     if (g.invertedView && g.currentState !== 'boxing') {
       ctx.translate(0, TAPE_HEIGHT + H - TIME_AXIS_HEIGHT);
@@ -2518,6 +2577,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
 
     // Spinning briefcases use the same theme palette as the carried case.
     for (const bCase of encounter ? [] : g.cases) {
+      if (bCase.kind === 'bag' && (bCase.windup ?? 0) > 0) continue;
       ctx.save();
       ctx.translate(bCase.x - g.cx, bCase.y - g.cy);
       ctx.rotate(bCase.angle); // Smooth rapid spin around center!
@@ -2617,6 +2677,8 @@ export const CandleGame: React.FC<CandleGameProps> = ({
 
     if (g.zeroCrash && g.p) {
       ctx.save();
+      ctx.translate(viewport.x * (1 - viewport.scale), viewport.y * (1 - viewport.scale));
+      ctx.scale(viewport.scale, viewport.scale);
       const x = g.zeroCrashIndex * CW - g.cx + 1;
       if (g.invertedView && !encounter) {
         ctx.translate(0, TAPE_HEIGHT + H - TIME_AXIS_HEIGHT);
@@ -2651,18 +2713,26 @@ export const CandleGame: React.FC<CandleGameProps> = ({
         const value = totalScoreVal.toLocaleString();
         const text = `${label}${value}`;
         const padding = 14;
+        const bounds = canvasRef.current?.getBoundingClientRect() ?? { width: W, height: H };
+        const scoreZoom = mobileCanvasZoom();
+        const scoreScaleX = Math.max(0.01, bounds.width / W * scoreZoom);
+        const scoreScaleY = Math.max(0.01, bounds.height / H * scoreZoom);
+        const mobileScore = feedLayout.current.mobile;
+        const textScaleX = mobileScore ? scoreScaleY / scoreScaleX : 1;
+        const paddingX = (padding - bounds.width / 2 * (1 - scoreZoom)) / (scoreScaleX * textScaleX);
         ctx.save();
+        ctx.scale(textScaleX, 1);
         const scoreFontFamily = '"JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace';
-        const maxScoreWidth = W - AX - padding * 2;
-        const baseFontSize = 15;
+        const maxScoreWidth = mobileScore ? (W - AX) / textScaleX - padding * 2 / (scoreScaleX * textScaleX) : W - AX - padding * 2;
+        const baseFontSize = mobileScore ? 16 / scoreScaleY : 15;
         ctx.font = `900 ${baseFontSize}px ${scoreFontFamily}`;
         const baseWidth = ctx.measureText(text).width;
         const fontSize = Math.min(baseFontSize, baseFontSize * maxScoreWidth / Math.max(1, baseWidth));
         ctx.font = `900 ${Math.max(10, fontSize)}px ${scoreFontFamily}`;
         ctx.textBaseline = 'alphabetic';
         const metrics = ctx.measureText(text);
-        const x = padding + metrics.actualBoundingBoxLeft;
-        const y = TAPE_HEIGHT + padding + metrics.actualBoundingBoxAscent;
+        const x = paddingX + metrics.actualBoundingBoxLeft;
+        const y = TAPE_HEIGHT + padding / scoreScaleY + metrics.actualBoundingBoxAscent;
         ctx.fillStyle = theme === 'light' ? '#08795c' : '#54d3ac';
         ctx.fillText(label, x, y);
         ctx.fillStyle = theme === 'light' ? '#08795c' : '#54d3ac';
@@ -2681,7 +2751,8 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     ctx.textAlign = 'center';
     for (let i = a; i <= b; i++) {
       if (i % 10 === 0) {
-        ctx.fillText('T+' + pad(i), i * CW - g.cx, H - 3);
+        const labelX = chartToScreen({ x: i * CW - g.cx, y: 0 }, viewport).x;
+        if (labelX >= 0 && labelX < W - AX) ctx.fillText('T+' + pad(i), labelX, H - 3);
       }
     }
 
@@ -2698,13 +2769,13 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     ctx.font = 'bold 11px system-ui, monospace';
     ctx.fillStyle = palette.muted;
     for (let gridY = Math.floor(g.cy / 50) * 50; gridY < g.cy + H - TIME_AXIS_HEIGHT; gridY += 50) {
-      const labelY = plotViewY(gridY - g.cy, g.invertedView && !encounter, TAPE_HEIGHT, H - TIME_AXIS_HEIGHT);
+      const labelY = chartToScreen({ x: 0, y: plotViewY(gridY - g.cy, g.invertedView && !encounter, TAPE_HEIGHT, H - TIME_AXIS_HEIGHT) }, viewport).y;
       if (labelY >= TAPE_HEIGHT + 8 && labelY < H - TIME_AXIS_HEIGHT) ctx.fillText(price(gridY), W - AX + 6, labelY + 4);
     }
 
     if (hc) {
       const col = hc.c < hc.o ? GREEN : RED;
-      const y = plotViewY(hc.c - g.cy, g.invertedView && !encounter, TAPE_HEIGHT, H - TIME_AXIS_HEIGHT);
+      const y = chartToScreen({ x: 0, y: plotViewY(hc.c - g.cy, g.invertedView && !encounter, TAPE_HEIGHT, H - TIME_AXIS_HEIGHT) }, viewport).y;
       ctx.fillStyle = col;
       ctx.fillRect(W - AX, y - 9, AX, 18);
       ctx.fillStyle = '#fff';
@@ -3028,7 +3099,8 @@ export const CandleGame: React.FC<CandleGameProps> = ({
           const canvasPoint = zoomCanvasPoint({ x: e.clientX, y: e.clientY }, bounds, zoom);
           const canvasY = canvasPoint.y;
           tickerHoverPausedRef.current = canvasY >= 0 && canvasY <= TAPE_HEIGHT;
-          aimRef.current = pointerToWorld(canvasPoint, { left: 0, top: 0, width: W, height: H }, W, H, { x: g.cx, y: g.cy });
+          const chartPoint = screenToChart(canvasPoint, currentChartViewport());
+          aimRef.current = pointerToWorld(chartPoint, { left: 0, top: 0, width: W, height: H }, W, H, { x: g.cx, y: g.cy });
           aimRef.current.y = g.cy + plotViewY(aimRef.current.y - g.cy, g.invertedView && g.currentState !== 'boxing', TAPE_HEIGHT, H - TIME_AXIS_HEIGHT);
           if (bossEncounter.current) bossEncounter.current.aim = aimRef.current;
         }}
@@ -3039,7 +3111,8 @@ export const CandleGame: React.FC<CandleGameProps> = ({
           const g = gameRef.current;
           const bounds = e.currentTarget.getBoundingClientRect();
           const canvasPoint = zoomCanvasPoint({ x: e.clientX, y: e.clientY }, bounds, mobileCanvasZoom());
-          aimRef.current = pointerToWorld(canvasPoint, { left: 0, top: 0, width: W, height: H }, W, H, { x: g.cx, y: g.cy });
+          const chartPoint = screenToChart(canvasPoint, currentChartViewport());
+          aimRef.current = pointerToWorld(chartPoint, { left: 0, top: 0, width: W, height: H }, W, H, { x: g.cx, y: g.cy });
           aimRef.current.y = g.cy + plotViewY(aimRef.current.y - g.cy, g.invertedView && g.currentState !== 'boxing', TAPE_HEIGHT, H - TIME_AXIS_HEIGHT);
           if (g.currentState === 'boxing' && bossEncounter.current) {
             bossEncounter.current.aim = aimRef.current;

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
-import { drawPickupAsset } from './assetRenderer';
+import { drawCharacterHat } from './assetRenderer';
 import { drawAnimalCharacter } from './animalRenderer';
 import type { Animal } from './types';
 
@@ -10,9 +10,9 @@ test('guide descriptions preserve explicit newlines', () => {
   assert.match(guide, /<p className="m-0 whitespace-pre-line">/);
 });
 
-test('Fedora guide preview uses the chart pickup orientation', () => {
+test('Fedora guide preview mirrors the updated hero hat instead of the spinning pickup', () => {
   const preview = readFileSync(new URL('./AssetPreview.tsx', import.meta.url), 'utf8');
-  assert.doesNotMatch(preview, /if \(asset === 'fedora'\) ctx\.scale\(-1, 1\)/);
+  assert.match(preview, /else if \(asset === 'fedora'\) \{\s*\/\/[^\n]*\n\s*ctx\.scale\(-2\.4, 2\.4\);\s*drawCharacterHat\(ctx, false, false, theme === 'dark'\);\s*\}/);
 });
 
 test('guide titles occupy a separate top row above descriptions', () => {
@@ -36,7 +36,7 @@ test('Shoot guide shows theme-aware fedora above briefcase and explains current 
       get: (_, key) => key === 'fill' ? () => { fills.push(color); } : () => {},
       set: (_, key, value) => { if (key === 'fillStyle') color = value as string; return true; },
     }) as CanvasRenderingContext2D;
-    drawPickupAsset(ctx, { type: 'fedora', x: 0, y: 0, taken: false }, 0, 0, 0, darkMode);
+    drawCharacterHat(ctx, false, false, darkMode);
     assert(fills.includes(darkMode ? '#f8fafc' : '#111318'));
   }
 });

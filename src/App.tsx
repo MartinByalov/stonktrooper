@@ -38,11 +38,15 @@ export default function App() {
     const arena = app?.querySelector('.game-arena');
     if (!app || !arena) return;
     const footer = app.querySelector<HTMLElement>('.site-footer');
+    const fullscreenControl = app.querySelector<HTMLElement>('.desktop-fullscreen-control');
+    const themeControl = app.querySelector<HTMLElement>('.mobile-header-theme-control');
+    const header = app.querySelector('header');
     const updateFeedBoundary = () => {
       const canvas = app.querySelector('.game-stage > canvas');
       if (!canvas) return;
       const rect = canvas.getBoundingClientRect();
-      const feedHeight = rect.height * 48 / 840 * mobileCanvasZoom();
+      const headerHeight = header?.getBoundingClientRect().height ?? 0;
+      const feedHeight = headerHeight > 0 ? headerHeight : rect.height * 48 / 840 * mobileCanvasZoom();
       app.style.setProperty('--live-feed-bottom', `${rect.top + feedHeight}px`);
       app.style.setProperty('--live-feed-height', `${feedHeight}px`);
       const footerRect = footer?.getBoundingClientRect();
@@ -51,16 +55,33 @@ export default function App() {
         && footerRect.top < window.innerHeight;
       const footerInsetBottom = footerVisible && footerRect ? Math.max(0, window.innerHeight - footerRect.top) : 0;
       app.style.setProperty('--footer-inset-bottom', `${footerInsetBottom}px`);
+      const fullscreenRect = fullscreenControl?.getBoundingClientRect();
+      if (fullscreenRect && fullscreenRect.width > 0 && fullscreenRect.height > 0) {
+        app.style.setProperty('--fullscreen-control-width', `${fullscreenRect.width}px`);
+        app.style.setProperty('--fullscreen-control-height', `${fullscreenRect.height}px`);
+        app.style.setProperty('--fullscreen-control-right', `${Math.max(0, window.innerWidth - fullscreenRect.right)}px`);
+        app.style.setProperty('--fullscreen-control-bottom', `${fullscreenRect.bottom}px`);
+      }
+      const themeRect = themeControl?.getBoundingClientRect();
+      if (themeRect && themeRect.width > 0 && themeRect.height > 0) {
+        app.style.setProperty('--mobile-theme-control-right', `${Math.max(0, window.innerWidth - themeRect.right)}px`);
+      }
     };
     const observer = new ResizeObserver(updateFeedBoundary);
     observer.observe(arena);
     observer.observe(app);
     if (footer) observer.observe(footer);
+    if (fullscreenControl) observer.observe(fullscreenControl);
+    if (themeControl) observer.observe(themeControl);
+    if (header) observer.observe(header);
+    const mutationObserver = new MutationObserver(updateFeedBoundary);
+    mutationObserver.observe(app, { childList: true, subtree: true });
     window.addEventListener('resize', updateFeedBoundary);
     window.addEventListener('scroll', updateFeedBoundary, true);
     updateFeedBoundary();
     return () => {
       observer.disconnect();
+      mutationObserver.disconnect();
       window.removeEventListener('resize', updateFeedBoundary);
       window.removeEventListener('scroll', updateFeedBoundary, true);
     };
@@ -303,6 +324,7 @@ export default function App() {
             </div>
           </div>
 
+          <canvas className="mobile-header-feed" aria-label="Live Feed" />
           <div className="header-controls flex items-center gap-2 ml-auto">
             {/* Retain manual testing controls without exposing them on the site. */}
             <div hidden style={{ display: 'none' }} data-testid="hidden-mode-controls">
@@ -335,9 +357,9 @@ export default function App() {
             }} className="px-2.5 py-1.5 rounded border border-[var(--line)] bg-[var(--alt)] text-xs text-[var(--green)] disabled:opacity-40">🦘 Kangaroo</button>
             <button type="button" title="Music styles" aria-expanded={soundMenuOpen} onClick={() => { if (state === 'play') setState('paused'); setSoundMenuOpen(true); }} className="px-2.5 py-1.5 rounded border border-[var(--line)] bg-[var(--alt)] text-xs text-[var(--green)]">♫ Music</button>
             </div>
-            {state !== 'play' && state !== 'boxing' && <button type="button" title="About" aria-label="Open information about the game" aria-haspopup="dialog" onClick={() => { setSoundMenuOpen(false); setSiteSection('About'); }} className="mobile-header-control mobile-header-about-control px-2.5 py-1.5 rounded border border-[var(--line)] bg-[var(--alt)] hover:border-[var(--green)] text-[var(--green)] transition-colors cursor-pointer">
+            <button type="button" title="About" aria-label="Open information about the game" aria-haspopup="dialog" onClick={() => { if (state === 'play') setState('paused'); setSoundMenuOpen(false); setSiteSection('About'); }} className="mobile-header-control mobile-header-about-control px-2.5 py-1.5 rounded border border-[var(--line)] bg-[var(--alt)] hover:border-[var(--green)] text-[var(--green)] transition-colors cursor-pointer">
               <span className="mobile-header-info-icon flex w-3 h-3 items-center justify-center font-serif text-lg font-bold leading-none" aria-hidden="true">i</span>
-            </button>}
+            </button>
             <button
               type="button"
               onClick={() => setTheme(current => current === 'dark' ? 'light' : 'dark')}
@@ -347,20 +369,10 @@ export default function App() {
             >
               {theme === 'dark' ? <Sun className="mobile-header-theme-icon w-5 h-5" /> : <Moon className="mobile-header-theme-icon w-5 h-5" />}
             </button>
-            {(state === 'play' || state === 'paused') && <button
-              type="button"
-              onClick={() => setState(current => current === 'play' ? 'paused' : current === 'paused' ? 'play' : current)}
-              title={state === 'paused' ? 'Play (P)' : 'HODL (P)'}
-              aria-label={state === 'paused' ? 'Resume game' : 'Pause game'}
-              aria-pressed={state === 'paused'}
-              className="mobile-header-control mobile-header-pause-control px-2.5 py-1.5 rounded border border-[var(--line)] bg-[var(--alt)] hover:border-[var(--green)] text-[var(--green)] transition-colors cursor-pointer"
-            >
-              {state === 'paused' ? <Play className="w-3.5 h-3.5" /> : <Pause className="w-3.5 h-3.5" />}
-            </button>}
             <button
               type="button"
               onClick={toggleSound}
-              className="px-2.5 py-1.5 rounded border border-[var(--line)] bg-[var(--alt)] hover:border-[var(--green)] text-xs font-mono-term flex items-center gap-1 transition-colors cursor-pointer"
+              className="header-sound-control px-2.5 py-1.5 rounded border border-[var(--line)] bg-[var(--alt)] hover:border-[var(--green)] text-xs font-mono-term flex items-center gap-1 transition-colors cursor-pointer"
               title={soundEnabled ? 'Sound Off (M)' : 'Sound On (M)'}
               aria-label={soundEnabled ? 'Mute sound' : 'Enable sound'}
               aria-pressed={soundEnabled}
@@ -370,7 +382,7 @@ export default function App() {
             <button
               type="button"
               onClick={toggleFullscreen}
-              className="px-2.5 py-1.5 rounded border border-[var(--line)] bg-[var(--alt)] hover:border-[var(--green)] text-[var(--green)] transition-colors cursor-pointer"
+              className="desktop-fullscreen-control px-2.5 py-1.5 rounded border border-[var(--line)] bg-[var(--alt)] hover:border-[var(--green)] text-[var(--green)] transition-colors cursor-pointer"
               title={isFullscreen ? 'Exit fullscreen (F)' : 'Fullscreen (F)'}
               aria-label={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
               aria-pressed={isFullscreen}
@@ -404,6 +416,16 @@ export default function App() {
             onPrinterActivated={() => setPrinterRequest(0)}
           />
 
+            {state === 'play' && <button
+              type="button"
+              onClick={() => setState('paused')}
+              title="HODL (P)"
+              aria-label="Pause game"
+              className="chart-pause-control"
+            >
+              <Pause className="w-3.5 h-3.5" />
+            </button>}
+
           {/* OVERLAYS: START MENU / PAUSE / MARGIN CALL */}
           {state === 'boxing' && <BoxingGame encounter={bossEncounter} onDefeat={() => { boxingActive.current = false; setState('over'); }} onComplete={() => { bossEncounter.current = null; boxingActive.current = false; setState('play'); }} />}
           {state !== 'play' && state !== 'boxing' && (
@@ -412,14 +434,6 @@ export default function App() {
               {/* INITIAL START BRIEFING MODAL (state === 'menu') */}
               {state === 'menu' && (
                 <div style={{ backgroundColor: 'color-mix(in srgb, var(--panel) 88%, transparent)' }} className="initial-guide desktop-initial-guide max-w-[1640px] w-full border border-[var(--line)] rounded-xl p-3 sm:p-5 shadow-2xl text-left">
-                  <div className="flex items-center justify-center pb-2 border-b border-[var(--line)] mb-3">
-                    <h2 className="menu-action-button how-to-play-heading text-xl sm:text-2xl font-black font-mono-term tracking-tight">
-                      How to Play
-                    </h2>
-
-                  </div>
-
-
                   <div className="how-to-layout flex flex-col items-stretch gap-3">
                     <aside className="how-to-aside w-full max-w-[320px] mx-auto lg:mx-0 lg:w-[280px] xl:w-[320px] shrink-0 flex flex-col items-stretch gap-3"><div className="how-to-hero w-full overflow-hidden rounded-xl"><MenuHero theme={theme} /></div>                  {/* Launch Button */}
                       <div className="how-to-controls w-full mt-auto flex flex-col gap-2">
@@ -447,7 +461,12 @@ export default function App() {
                         </button>
                       </div>
                     </aside>
-                    <MechanicsGuide theme={theme} />
+                    <section className="landing-guide-section" aria-labelledby="landing-guide-title">
+                      <div className="how-to-guide-header landing-guide-heading rounded border border-[var(--line)] bg-[var(--alt)]">
+                        <h2 id="landing-guide-title" className="menu-action-button how-to-play-heading text-xl sm:text-2xl font-black font-mono-term tracking-tight">How to Play</h2>
+                      </div>
+                      <MechanicsGuide theme={theme} />
+                    </section>
                   </div>
                 </div>
               )}
@@ -512,9 +531,7 @@ export default function App() {
                         <span>{state === 'paused' ? 'Continue' : 'New Game'}</span>
                       </button>
                       {state === 'paused' && <button type="button" onClick={() => {
-                        const portraitMobile = window.matchMedia('(max-width: 1024px) and (orientation: portrait) and (pointer: coarse)').matches;
-                        if (portraitMobile) setMobileGuideOpen(true);
-                        else setPausedGuideOpen(true);
+                        setMobileGuideOpen(true);
                       }} className="margin-call-action mobile-portrait-how-to-play how-to-play-action w-full rounded-lg font-bold font-mono-term">How to Play</button>}
 
                       {state === 'over' && <button type="button" onClick={() => setShareDDOpen(true)} className="share-dd-open w-full py-2.5 px-3 rounded-lg border border-[#38bdf8] bg-slate-900/85 text-[#38bdf8] hover:bg-slate-800 font-bold text-xs font-mono-term transition-colors cursor-pointer">Share DD</button>}
@@ -534,9 +551,9 @@ export default function App() {
 
               {pausedGuideOpen && <div className="paused-guide-overlay absolute z-40" onPointerDown={e => e.stopPropagation()}>
                 <div role="dialog" aria-modal="true" aria-labelledby="paused-guide-title" className="paused-guide-dialog bg-[var(--panel)] border border-[var(--line)] rounded-xl p-4" onKeyDown={e => { e.stopPropagation(); if (e.key === 'Escape') setPausedGuideOpen(false); }}>
-                  <div className="relative flex h-10 items-center justify-center border-b border-[var(--line)] mb-3 px-10">
+                  <div className="how-to-guide-header relative flex h-10 items-center justify-center border-b border-[var(--line)] mb-3 px-10">
                     <h2 id="paused-guide-title" className="how-to-play-label text-xl sm:text-2xl font-black font-mono-term tracking-tight text-center">How to Play</h2>
-                    <button type="button" autoFocus title="Close How to Play" aria-label="Close How to Play and return to pause" onClick={() => setPausedGuideOpen(false)} className="dialog-close absolute right-0 top-1/2 -translate-y-1/2 p-2 rounded border border-[var(--line)] text-[var(--text)] hover:bg-[var(--alt)] transition-colors cursor-pointer"><X className="w-5 h-5" aria-hidden="true" /></button>
+                    <button type="button" autoFocus title="Close How to Play" aria-label="Close How to Play and return to pause" onClick={() => setPausedGuideOpen(false)} className="dialog-close mobile-dialog-close absolute right-0 top-1/2 -translate-y-1/2 p-2 rounded border border-[var(--line)] text-[var(--text)] hover:bg-[var(--alt)] transition-colors cursor-pointer"><X className="w-5 h-5" aria-hidden="true" /></button>
                   </div>
                   <MechanicsGuide theme={theme} />
                 </div>
@@ -549,9 +566,9 @@ export default function App() {
 
         {mobileGuideOpen && <div className="mobile-how-to-dialog fixed inset-0 z-50 flex items-center justify-center p-3" onPointerDown={e => e.stopPropagation()}>
           <div role="dialog" aria-modal="true" aria-labelledby="mobile-guide-title" className="mobile-how-to-panel w-full h-full overflow-hidden bg-[var(--panel)] border border-[var(--line)] rounded-xl p-3">
-            <div className="relative flex h-10 items-center justify-center mb-3 px-10">
+            <div className="mobile-how-to-header relative flex h-10 items-center justify-center mb-3 px-10">
               <h2 id="mobile-guide-title" className="how-to-play-label text-xl font-black font-mono-term tracking-tight text-center">How to Play</h2>
-              <button type="button" autoFocus title="Close How to Play" aria-label="Close How to Play" onClick={() => setMobileGuideOpen(false)} className="dialog-close absolute right-0 top-1/2 -translate-y-1/2 p-2 rounded border border-[var(--line)] text-[var(--text)] hover:bg-[var(--alt)] transition-colors cursor-pointer"><X className="w-5 h-5" aria-hidden="true" /></button>
+              <button type="button" autoFocus title="Close How to Play" aria-label="Close How to Play" onClick={() => setMobileGuideOpen(false)} className="dialog-close mobile-dialog-close mobile-how-to-close p-2 rounded border border-[var(--line)] text-[var(--text)] hover:bg-[var(--alt)] transition-colors cursor-pointer"><X className="w-5 h-5" aria-hidden="true" /></button>
             </div>
             <MechanicsGuide theme={theme} />
           </div>

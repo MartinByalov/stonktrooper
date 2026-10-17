@@ -89,9 +89,10 @@ export function ShareDD({ score, theme, scoreTheme = theme, demo = false, onClos
         else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
       }
     }}>
-      <div className="relative flex justify-end items-center min-h-10 mb-3">
-        <button ref={closeButton} type="button" aria-label="Close Share DD" title="Close" onClick={onClose} className="dialog-close share-dd-close p-2 rounded border border-[var(--line)] hover:bg-[var(--alt)] cursor-pointer"><X className="w-5 h-5" aria-hidden="true" /></button>
+      <div className="share-dd-header relative flex justify-end items-center min-h-10 mb-3">
+        <button ref={closeButton} type="button" aria-label="Close Share DD" title="Close" onClick={onClose} className="dialog-close mobile-dialog-close share-dd-close p-2 rounded border border-[var(--line)] hover:bg-[var(--alt)] cursor-pointer"><X className="w-5 h-5" aria-hidden="true" /></button>
       </div>
+      <div className="share-dd-content">
       {demo && <p className="mb-3 text-center text-xs font-bold text-[var(--muted)]">DEMO — simulated score, not a game result</p>}
       <canvas ref={canvas} width={SHARE_CARD_WIDTH} height={SHARE_CARD_HEIGHT} role="img" aria-label={`Stonktrooper best score: ${formatShareScore(score)}`} className="share-dd-canvas block w-full h-auto rounded-lg" />
       <div className="share-dd-actions flex flex-wrap justify-center gap-3 mt-4">
@@ -102,6 +103,7 @@ export function ShareDD({ score, theme, scoreTheme = theme, demo = false, onClos
       </div>
       {message && <p role="status" className="share-dd-status mt-3 text-center text-sm text-[var(--green)]">{message}</p>}
       {error && <p role="status" className="share-dd-status mt-3 text-center text-sm text-[var(--red)]">{error}</p>}
+      </div>
     </div>
   </div>;
 }

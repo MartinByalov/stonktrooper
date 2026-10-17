@@ -113,12 +113,29 @@ test('Liquidated and Share DD controls use the requested theme colors', () => {
 test('header actions and Liquidated buttons follow the requested order', () => {
   const app = readFileSync(new URL('./App.tsx', import.meta.url), 'utf8');
   const header = app.slice(app.indexOf('title="Music styles"'), app.indexOf('</header>'));
-  assert(header.indexOf('Day mode (N)') < header.indexOf('HODL (P)'));
-  assert(header.indexOf('HODL (P)') < header.indexOf('Sound Off (M)'));
+  assert(header.indexOf('Day mode (N)') < header.indexOf('Sound Off (M)'));
+  assert.doesNotMatch(header, /HODL \(P\)|chart-pause-control/);
   assert(header.indexOf('Sound Off (M)') < header.indexOf('Fullscreen (F)'));
   const actions = app.slice(app.indexOf('space-y-2.5 mt-5'));
   assert(actions.indexOf("'New Game'") < actions.indexOf('>Share DD</button>'));
   assert(actions.indexOf('>Share DD</button>') < actions.indexOf('onClick={handleReturnMenu}'));
+});
+
+test('mobile Share DD fills the feed-to-footer space with an unscaled panel and a fixed close row', () => {
+  const component = readFileSync(new URL('./ShareDD.tsx', import.meta.url), 'utf8');
+  const css = readFileSync(new URL('./index.css', import.meta.url), 'utf8');
+  const section = css.slice(css.indexOf('/* Mobile sharing reuses Liquidated'), css.indexOf('/* Information headings sit below'));
+  assert.match(section, /@media \(pointer: coarse\)/);
+  assert.match(section, /\.share-dd-overlay\.fixed\.inset-0\.z-50\s*\{\s*top: var\(--live-feed-bottom, 0px\);\s*bottom: var\(--footer-inset-bottom, 0px\);\s*padding: 0;\s*overflow: hidden;\s*background: transparent;/);
+  assert.match(section, /\.share-dd-dialog\[role="dialog"\]\s*\{[^}]*width: 100%;[^}]*height: 100%;[^}]*padding: var\(--share-dd-gutter\);[^}]*background: transparent;[^}]*transform: none;/);
+  assert.match(section, /--share-dd-gutter: max\(8px, var\(--mobile-theme-control-right, 1rem\), env\(safe-area-inset-top\), env\(safe-area-inset-right\), env\(safe-area-inset-bottom\), env\(safe-area-inset-left\)\);/);
+  assert.match(section, /\.share-dd-header\s*\{[^}]*flex: 0 0 2rem;[^}]*height: 2rem;/);
+  assert.match(section, /\.share-dd-close\s*\{[^}]*top: 50%;\s*right: 0;\s*transform: translateY\(-50%\);[^}]*width: 2rem;[^}]*height: 2rem;/);
+  assert.match(section, /:has\(\.share-dd-overlay\) \.game-over-overlay > \.game-result-over\s*\{\s*visibility: hidden;/);
+  assert.match(section, /\.share-dd-content\s*\{[^}]*min-height: 0;[^}]*overflow-y: auto;/);
+  assert.match(component, /className="share-dd-header /);
+  assert.match(component, /className="dialog-close mobile-dialog-close share-dd-close /);
+  assert.match(component, /className="share-dd-content"/);
 });
 
 test('game-over score sharing opens with the final result', () => {

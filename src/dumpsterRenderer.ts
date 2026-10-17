@@ -1,9 +1,10 @@
 // Browser game module for dumpsterRenderer.
 import { drawHumanHead, drawApeHead, drawCharacterHat, drawPickupAsset } from './assetRenderer';
 import { drawPigeonStain } from './pigeonStain';
+import { hawkBagThrowPose } from './hawkBagThrow';
 
 // Feet at origin; passengers are drawn before the near wall to hide their bodies.
-export function drawDumpster(ctx: CanvasRenderingContext2D, monkeys: number, phase: number, fedoraHats = 0, darkMode = false, diamondShield = false, bags = 0, frame = 0, hatSoiled = false): void {
+export function drawDumpster(ctx: CanvasRenderingContext2D, monkeys: number, phase: number, fedoraHats = 0, darkMode = false, diamondShield = false, bags = 0, frame = 0, hatSoiled = false, bagThrowTimer = 0, bagThrowDirection = 1): void {
   ctx.save();
   const rear = -8 - monkeys * 22;
   if (diamondShield) {
@@ -35,6 +36,26 @@ export function drawDumpster(ctx: CanvasRenderingContext2D, monkeys: number, pha
       if (hatSoiled) {
         drawPigeonStain(ctx, fedoraHats > 0 ? -2 : 1, fedoraHats > 0 ? -17 - (fedoraHats - 1) * 10 : -8, fedoraHats > 0 && !darkMode);
       }
+    }
+    ctx.restore();
+  }
+  if (bagThrowTimer > 0) {
+    const pose = hawkBagThrowPose(bagThrowTimer, bagThrowDirection, fedoraHats);
+    ctx.save();
+    ctx.lineCap = 'round';
+    // Both arms emerge from the cart; the near wall still hides the shoulders.
+    for (const near of [false, true]) {
+      const handX = near ? pose.nearHandX : pose.farHandX;
+      ctx.strokeStyle = near ? '#334155' : '#18212f';
+      ctx.lineWidth = near ? 5 : 4;
+      ctx.beginPath(); ctx.moveTo(near ? 12 : 4, -33);
+      ctx.lineTo(pose.elbowX + (near ? 4 : -4), pose.elbowY);
+      ctx.lineTo(handX, pose.handY); ctx.stroke();
+      ctx.fillStyle = '#fed7aa';
+      ctx.beginPath(); ctx.arc(handX, pose.handY, 3, 0, Math.PI * 2); ctx.fill();
+    }
+    if (pose.holding) {
+      drawPickupAsset(ctx, { type: 'bag', x: 0, y: 0, taken: false }, pose.bagX, pose.bagY);
     }
     ctx.restore();
   }
