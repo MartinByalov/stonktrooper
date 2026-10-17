@@ -1,9 +1,10 @@
 import { MechanicsGuide } from './MechanicsGuide';
 import { useMobileDialogFit } from './useMobileDialogFit';
+import { observeViewportHeight } from './viewportHeight';
 import { MenuHero } from './MenuHero';
 import { BoxingGame } from './BoxingGame';
 import type { BossArena } from './boxingRules';
-import { useState, useEffect, useCallback, useRef, type MouseEvent as ReactMouseEvent, type KeyboardEvent as ReactKeyboardEvent } from 'react';
+import { useState, useEffect, useLayoutEffect, useCallback, useRef, type MouseEvent as ReactMouseEvent, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { GameState } from './types';
 import { CandleGame, mobileCanvasZoom } from './CandleGame';
 import { AssetPreview } from './AssetPreview';
@@ -32,6 +33,9 @@ export default function App() {
   const [shareDDOpen, setShareDDOpen] = useState(false);
   const [siteSection, setSiteSection] = useState<SiteSection | null>(null);
   const appRef = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    if (appRef.current) return observeViewportHeight(appRef.current);
+  }, []);
   useMobileDialogFit(appRef);
   useEffect(() => {
     const app = appRef.current;
@@ -123,7 +127,7 @@ export default function App() {
   const [awaitingLandscape, setAwaitingLandscape] = useState(false);
   useEffect(() => {
     if (!window.matchMedia('(max-width: 1024px) and (pointer: coarse)').matches
-      || state === 'play' || state === 'paused' || state === 'boxing' || awaitingLandscape) return;
+      || state !== 'menu' || awaitingLandscape) return;
     try {
       const orientation = screen.orientation as ScreenOrientation & { unlock?: () => void };
       orientation?.unlock?.();

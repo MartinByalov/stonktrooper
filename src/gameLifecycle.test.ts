@@ -50,9 +50,9 @@ test('mobile landscape to portrait rotation pauses an active game', () => {
   assert.match(app, /window\.addEventListener\('orientationchange', syncOrientation\)/);
 });
 
-test('mobile landscape lock is released outside play, pause and Kangaroo', () => {
+test('mobile landscape lock is released only in the menu, not on Liquidated', () => {
   const app = readFileSync(new URL('./App.tsx', import.meta.url), 'utf8');
-  assert.match(app, /state === 'play' \|\| state === 'paused' \|\| state === 'boxing' \|\| awaitingLandscape/);
+  assert.match(app, /state !== 'menu' \|\| awaitingLandscape/);
   assert.match(app, /orientation\?\.unlock\?\.\(\)/);
   assert.match(app, /document\.fullscreenElement === appRef\.current\) void document\.exitFullscreen\(\)/);
 });
