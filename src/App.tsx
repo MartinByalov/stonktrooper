@@ -50,7 +50,9 @@ export default function App() {
       if (!canvas) return;
       const rect = canvas.getBoundingClientRect();
       const headerHeight = header?.getBoundingClientRect().height ?? 0;
-      const feedHeight = headerHeight > 0 ? headerHeight : rect.height * 48 / 840 * mobileCanvasZoom();
+      const headerFeed = app.querySelector('.mobile-header-feed');
+      const feedInHeader = !!headerFeed && headerFeed.getBoundingClientRect().width > 0;
+      const feedHeight = feedInHeader ? 0 : headerHeight > 0 ? headerHeight : rect.height * 48 / 840 * mobileCanvasZoom();
       app.style.setProperty('--live-feed-bottom', `${rect.top + feedHeight}px`);
       app.style.setProperty('--live-feed-height', `${feedHeight}px`);
       const footerRect = footer?.getBoundingClientRect();
@@ -315,11 +317,6 @@ export default function App() {
     };
   }, [awaitingLandscape, state]);
 
-  const handleReturnMenu = () => {
-    setGameKey((k) => k + 1);
-    setState('menu');
-  };
-
   return (
     <div ref={appRef} data-state={state} className="game-app min-h-screen bg-[var(--bg)] text-[var(--text)] transition-colors duration-200">
       <div className="w-full pt-2">
@@ -552,7 +549,7 @@ export default function App() {
 
                       {state === 'over' && <button
                         type="button"
-                        onClick={handleReturnMenu}
+                        onClick={() => setMobileGuideOpen(true)}
                         className="how-to-play-action liquidated-how-to-play w-full py-2.5 px-3 rounded-lg bg-slate-900/85 hover:bg-slate-800 font-bold text-xs font-mono-term transition-colors cursor-pointer"
                       >
                         How to Play

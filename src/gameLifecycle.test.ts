@@ -43,6 +43,18 @@ test('mobile Margin Call How to Play reuses the fullscreen mobile guide in both 
   assert.match(app, /mobileGuideOpen && <div className="mobile-how-to-dialog fixed inset-0/);
 });
 
+test('Liquidated opens the initial-page How to Play panel without returning to the menu or leaving fullscreen', () => {
+  const app = readFileSync(new URL('./App.tsx', import.meta.url), 'utf8');
+  const action = app.match(/\{state === 'over' && <button\s+type="button"[^]*?liquidated-how-to-play[^]*?<\/button>\}/)?.[0];
+  assert.ok(action);
+  assert.match(action, /onClick=\{\(\) => setMobileGuideOpen\(true\)\}/);
+  assert.doesNotMatch(action, /handleReturnMenu|setState|setGameKey|exitFullscreen|unlock/);
+  const initial = app.slice(app.indexOf('className="mobile-portrait-guide'), app.indexOf('/* PAUSE & GAME OVER WINDOWS */'));
+  assert.match(initial, /onClick=\{\(\) => setMobileGuideOpen\(true\)\}/);
+  assert.match(app, /mobileGuideOpen && <div className="mobile-how-to-dialog fixed inset-0/);
+  assert.match(app, /onClick=\{\(\) => setMobileGuideOpen\(false\)\}/);
+});
+
 test('mobile landscape to portrait rotation pauses an active game', () => {
   const app = readFileSync(new URL('./App.tsx', import.meta.url), 'utf8');
   assert.match(app, /const previousMobilePortrait = useRef<boolean \| null>\(null\);/);

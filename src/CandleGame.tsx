@@ -176,7 +176,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
       const textScaleX = mobile ? scale / horizontalScale : 1;
       const headerHeight = canvas.closest('.game-app')?.querySelector('header')?.getBoundingClientRect().height ?? 0;
       headerFeedRef.current = canvas.closest('.game-app')?.querySelector<HTMLCanvasElement>('.mobile-header-feed') ?? null;
-      headerFeedActive.current = mobile && (state === 'play' || state === 'boxing');
+      headerFeedActive.current = mobile && (state === 'play' || state === 'boxing' || window.matchMedia('(orientation: landscape)').matches);
       const headerFeed = headerFeedRef.current;
       if (headerFeed && headerFeedActive.current) {
         const rect = headerFeed.getBoundingClientRect();

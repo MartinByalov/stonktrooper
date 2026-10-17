@@ -118,7 +118,7 @@ test('header actions and Liquidated buttons follow the requested order', () => {
   assert(header.indexOf('Sound Off (M)') < header.indexOf('Fullscreen (F)'));
   const actions = app.slice(app.indexOf('space-y-2.5 mt-5'));
   assert(actions.indexOf("'New Game'") < actions.indexOf('>Share DD</button>'));
-  assert(actions.indexOf('>Share DD</button>') < actions.indexOf('onClick={handleReturnMenu}'));
+  assert(actions.indexOf('>Share DD</button>') < actions.indexOf('className="how-to-play-action liquidated-how-to-play'));
 });
 
 test('mobile Share DD fills the feed-to-footer space with an unscaled panel and a fixed close row', () => {
@@ -132,6 +132,7 @@ test('mobile Share DD fills the feed-to-footer space with an unscaled panel and 
   assert.doesNotMatch(section, /--mobile-theme-control-right/);
   assert.match(section, /\.share-dd-header\s*\{[^}]*flex: 0 0 2rem;[^}]*height: 2rem;/);
   assert.match(section, /\.share-dd-close\s*\{[^}]*top: 50%;\s*right: 0;\s*transform: translateY\(-50%\);[^}]*width: 2rem;[^}]*height: 2rem;/);
+  assert.match(section, /\.share-dd-close\s*\{[^}]*display: inline-flex;\s*align-items: center;\s*justify-content: center;\s*box-sizing: border-box;[^}]*border-color: currentColor;/);
   assert.match(section, /:has\(\.share-dd-overlay\) \.game-over-overlay > \.game-result-over\s*\{\s*visibility: hidden;/);
   assert.match(section, /\.share-dd-content\s*\{[^}]*min-height: 0;[^}]*overflow-y: auto;/);
   assert.match(component, /className="share-dd-header /);

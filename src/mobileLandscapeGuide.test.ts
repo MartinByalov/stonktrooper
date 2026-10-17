@@ -68,7 +68,7 @@ test('wide touch tablets retain the mobile guide and Live Feed instead of deskto
   const game = readFileSync(new URL('./CandleGame.tsx', import.meta.url), 'utf8');
   assert.doesNotMatch(css, /max-width: 1024px\) and[^\{]*pointer: coarse/);
   assert.doesNotMatch(css, /\(pointer: fine\), \(min-width: 1025px\)/);
-  assert.match(app, /const feedHeight = headerHeight > 0 \? headerHeight/);
+  assert.match(app, /const feedHeight = feedInHeader \? 0 : headerHeight > 0 \? headerHeight/);
   assert.match(game, /const mobile = window\.matchMedia\('\(pointer: coarse\)'\)\.matches;/);
   assert.match(app, /setMobileGuideOpen\(true\);/);
 });
@@ -96,7 +96,7 @@ test('both mobile orientations share header geometry and measured Live Feed heig
   assert.match(header, /\.mobile-header-control\s*\{[^}]*width: 2rem;[^}]*height: 2rem;[^}]*padding: 0;/);
   assert.doesNotMatch(header, /:not\(\.mobile-header-control\)/);
   assert.match(css, /@media \(orientation: portrait\) and \(pointer: coarse\)\s*\{\s*\.game-app \.header-controls > :not\(\.mobile-header-control\)\s*\{\s*display: none;/);
-  assert.match(app, /const feedHeight = headerHeight > 0 \? headerHeight :/);
+  assert.match(app, /const feedHeight = feedInHeader \? 0 : headerHeight > 0 \? headerHeight :/);
   assert.match(app, /if \(header\) observer\.observe\(header\);/);
 });
 

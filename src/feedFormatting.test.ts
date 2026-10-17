@@ -58,7 +58,7 @@ test('mobile Live Feed uses the measured header height in canvas and overlay coo
   assert.match(game, /let tapeH = feedLayout\.current\.tapeHeight;/);
   assert.match(game, /const TAPE_HEIGHT = feedLayout\.current\.tapeHeight;/);
   assert.match(game, /const tapeHeight = headerFeedActive\.current \? 3 \/ scale : headerHeight > 0 \? headerHeight \/ scale : TAPE_HEIGHT;/);
-  assert.match(app, /const feedHeight = headerHeight > 0 \? headerHeight :/);
+  assert.match(app, /const feedHeight = feedInHeader \? 0 : headerHeight > 0 \? headerHeight :/);
   assert.match(app, /if \(header\) observer\.observe\(header\);/);
   for (const headerHeight of [44, 60, 80]) {
     for (const scale of [0.4, 0.8, 1.2]) {

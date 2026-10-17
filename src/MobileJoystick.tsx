@@ -16,7 +16,7 @@ export function MobileJoystick({ onMove, onPress, onRelease, movementEnabled }: 
   };
   return <div
     role="button" aria-label={movementEnabled ? 'Joystick: tap to jump, drag to move' : 'Joystick: tap to jump'} tabIndex={0}
-    className="mobile-joystick absolute bottom-4 left-4 z-50 flex items-center justify-center rounded-full touch-none select-none pointer-events-auto min-[1025px]:hidden"
+    className="mobile-joystick absolute bottom-4 left-4 z-50 flex items-center justify-center rounded-full touch-none select-none pointer-events-auto"
     onPointerDown={e => {
       e.preventDefault(); e.stopPropagation();
       if (pointer.current !== null) return;

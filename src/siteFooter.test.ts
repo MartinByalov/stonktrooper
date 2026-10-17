@@ -178,17 +178,20 @@ test('desktop site information titles align with header-sized close controls', (
   assert.match(css, /html\[data-theme="light"\] \.game-app \.site-info-header > \.site-info-close\s*\{[^}]*color: #333a4b;[^}]*border-color: #333a4b;/);
 });
 
-test('information headings are lowered and both mobile orientations fill the How to Play bounds', () => {
+test('desktop headings stay lowered while mobile information titles share the close-control row', () => {
   const css = readFileSync(new URL('./index.css', import.meta.url), 'utf8');
-  const section = css.slice(css.indexOf('/* Information headings sit below'), css.indexOf('/* Mobile landscape landing uses'));
-  assert.match(section, /@media \(pointer: fine\), \(pointer: coarse\)/);
+  const section = css.slice(css.indexOf('/* Information headings sit below'), css.indexOf('/* Touch layouts are viewport-sized shells'));
+  assert.match(section, /@media \(pointer: fine\)/);
   assert.match(section, /min-height: 4\.5rem;[\s\S]*?align-items: flex-end;/);
   assert.match(section, /\.site-info-header > \.site-info-title\s*\{\s*transform: translateY\(-4px\);/);
   assert.match(section, /@media \(pointer: coarse\)/);
   assert.doesNotMatch(section, /orientation:/);
   assert.match(section, /\.site-info-overlay\.fixed\.inset-0\.z-50\s*\{\s*padding: 0;/);
   assert.match(section, /height: 100%;\s*max-height: 100%;\s*max-width: none;/);
-  assert.match(section, /top: var\(--site-info-mobile-gutter\);\s*right: var\(--site-info-mobile-gutter\);\s*transform: none;\s*display: inline-flex;/);
+  const mobile = section.slice(section.indexOf('/* Both mobile orientations share'));
+  assert.match(mobile, /> \.site-info-header\s*\{\s*position: relative;\s*display: flex;\s*align-items: center;\s*justify-content: center;\s*flex: 0 0 2rem;\s*height: 2rem;\s*min-height: 2rem;\s*padding: 0 2\.5rem;/);
+  assert.match(mobile, /\.site-info-title\s*\{\s*margin: 0;\s*line-height: 1;\s*transform: none;/);
+  assert.match(mobile, /top: 50%;\s*right: 0;\s*transform: translateY\(-50%\);\s*display: inline-flex;/);
   assert.match(section, /> \.site-info-content\s*\{[^}]*display: block;[^}]*min-height: 0;[^}]*overflow-y: auto;/);
   assert.match(section, /background: transparent;\s*color: inherit;\s*border-color: currentColor;/);
 });
@@ -255,7 +258,7 @@ test('About offers supplied email, Discord and Reddit contacts with keyboard-acc
 
 test('mobile information content has extra side padding and About support has balanced end spacing', () => {
   const css = readFileSync(new URL('./index.css', import.meta.url), 'utf8');
-  const mobile = css.slice(css.indexOf('/* Both mobile orientations share'), css.indexOf('/* Mobile landscape landing uses'));
+  const mobile = css.slice(css.indexOf('/* Both mobile orientations share'), css.indexOf('/* Touch layouts are viewport-sized shells'));
   const footer = readFileSync(new URL('./SiteFooter.tsx', import.meta.url), 'utf8');
   assert.match(mobile, /@media \(pointer: coarse\)/);
   assert.doesNotMatch(mobile, /orientation:/);

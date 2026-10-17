@@ -628,12 +628,20 @@ html[data-theme="light"] .share-dd-social-button {
 }
 
 .game-app .mobile-joystick {
+  display: none;
   color: #fff;
   border: 1px solid currentColor;
   background: transparent;
   opacity: 1;
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
+}
+
+/* Touch controls follow the primary pointer, not phone-sized breakpoints. */
+@media (pointer: coarse) {
+  .game-app .mobile-joystick {
+    display: flex;
+  }
 }
 
 html[data-theme="light"] .game-app .mobile-joystick {
@@ -2304,6 +2312,13 @@ html[data-theme="light"] .game-app .chart-pause-control {
     height: 2rem;
     min-height: 2rem;
     padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    color: var(--text);
+    border-color: currentColor;
+    background: var(--alt);
   }
 
   .game-app .share-dd-dialog > .share-dd-content {
@@ -2317,7 +2332,7 @@ html[data-theme="light"] .game-app .chart-pause-control {
 }
 
 /* Information headings sit below the close-control row. */
-@media (pointer: fine), (pointer: coarse) {
+@media (pointer: fine) {
   .game-app .site-info-overlay.fixed.inset-0.z-50 > .site-info-dialog > .site-info-header {
     height: auto;
     min-height: 4.5rem;
@@ -2351,7 +2366,20 @@ html[data-theme="light"] .game-app .chart-pause-control {
   }
 
   .game-app .site-info-overlay.fixed.inset-0.z-50 > .site-info-dialog > .site-info-header {
-    position: static;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 2rem;
+    height: 2rem;
+    min-height: 2rem;
+    padding: 0 2.5rem;
+  }
+
+  .game-app .site-info-overlay .site-info-header > .site-info-title {
+    margin: 0;
+    line-height: 1;
+    transform: none;
   }
 
   .game-app .site-info-overlay.fixed.inset-0.z-50 > .site-info-dialog > .site-info-content {
@@ -2366,9 +2394,9 @@ html[data-theme="light"] .game-app .chart-pause-control {
   }
 
   .game-app .site-info-overlay.fixed.inset-0.z-50 > .site-info-dialog > .site-info-header > .site-info-close {
-    top: var(--site-info-mobile-gutter);
-    right: var(--site-info-mobile-gutter);
-    transform: none;
+    top: 50%;
+    right: 0;
+    transform: translateY(-50%);
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -2505,6 +2533,30 @@ html[data-theme="light"] .game-app .chart-pause-control {
     flex: 1 1 0;
     min-height: 0;
     container-type: size;
+  }
+}
+
+/* Landscape touch keeps the wire in the header even while dialogs are open. */
+@media (orientation: landscape) and (pointer: coarse) {
+  .game-app header {
+    gap: 16px;
+  }
+
+  .game-app header > div:first-child,
+  .game-app .header-controls {
+    flex: 0 0 auto;
+    margin-left: 0;
+  }
+
+  .game-app .mobile-header-feed {
+    display: block;
+    flex: 1 1 0;
+    width: 0;
+    min-width: 0;
+    height: 32px;
+    align-self: center;
+    -webkit-mask-image: linear-gradient(to right, transparent, #000 15%, #000 85%, transparent);
+    mask-image: linear-gradient(to right, transparent, #000 15%, #000 85%, transparent);
   }
 }
 

@@ -8,7 +8,7 @@ test('active mobile gameplay moves the existing wire to the header and leaves a 
   const app = readFileSync(new URL('./App.tsx', import.meta.url), 'utf8');
   const game = readFileSync(new URL('./CandleGame.tsx', import.meta.url), 'utf8');
   assert.match(app, /<canvas className="mobile-header-feed" aria-label="Live Feed"/);
-  assert.match(game, /headerFeedActive\.current = mobile && \(state === 'play' \|\| state === 'boxing'\)/);
+  assert.match(game, /headerFeedActive\.current = mobile && \(state === 'play' \|\| state === 'boxing' \|\| window.matchMedia\('\(orientation: landscape\)'\).matches\)/);
   assert.match(game, /headerFeedActive\.current \? 3 \/ scale/);
   assert.match(game, /ctx = headerCtx;/);
   assert.match(game, /ctx = plotCtx;/);
@@ -33,6 +33,23 @@ test('mobile header feed fades into transparency at both ends without an opaque 
   assert.match(feed, /-webkit-mask-image: linear-gradient\(to right, transparent, #000 15%, #000 85%, transparent\);/);
   assert.match(feed, /\n\s*mask-image: linear-gradient\(to right, transparent, #000 15%, #000 85%, transparent\);/);
   assert.doesNotMatch(feed, /background\s*:/);
+});
+
+test('landscape touch keeps header Live Feed visible for pause, guides and score sharing', () => {
+  const app = readFileSync(new URL('./App.tsx', import.meta.url), 'utf8');
+  const landscape = css.slice(css.indexOf('/* Landscape touch keeps the wire'), css.indexOf('/* Mobile landscape landing uses'));
+  assert.match(landscape, /@media \(orientation: landscape\) and \(pointer: coarse\)/);
+  assert.match(landscape, /\.game-app \.mobile-header-feed\s*\{\s*display: block;\s*flex: 1 1 0;/);
+  assert.doesNotMatch(landscape, /data-state/);
+  assert.match(app, /const feedInHeader = !!headerFeed && headerFeed.getBoundingClientRect\(\).width > 0;/);
+  assert.match(app, /const feedHeight = feedInHeader \? 0 :/);
+});
+
+test('joystick visibility follows touch input rather than tablet viewport width', () => {
+  const joystick = readFileSync(new URL('./MobileJoystick.tsx', import.meta.url), 'utf8');
+  assert.doesNotMatch(joystick, /min-\[1025px\]:hidden|(?:min|max)-\[[^\]]+\]:hidden/);
+  assert.match(css, /\.game-app \.mobile-joystick\s*\{\s*display: none;/);
+  assert.match(css, /@media \(pointer: coarse\)\s*\{\s*\.game-app \.mobile-joystick\s*\{\s*display: flex;/);
 });
 
 test('joystick uses monochrome button borders in both themes without a blur layer', () => {
