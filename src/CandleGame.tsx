@@ -81,8 +81,9 @@ const CW = 9;    // Candlestick width in pixels
 // UI is never zoomed; the plot has its own shared, invertible world transform.
 export const mobileCanvasZoom = (): number => 1;
 
-const currentChartViewport = () => chartViewport(
+const currentChartViewport = (display?: { width: number; height: number }) => chartViewport(
   typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches, W, H, AX,
+  display,
 );
 
 // High-DPI canvases are disproportionately expensive on phones. Keep desktop
@@ -2469,9 +2470,9 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     ctx.rect(0, TAPE_HEIGHT, W - AX, H - TAPE_HEIGHT - TIME_AXIS_HEIGHT);
     ctx.clip();
 
-    const viewport = currentChartViewport();
-    ctx.translate(viewport.x * (1 - viewport.scale), viewport.y * (1 - viewport.scale));
-    ctx.scale(viewport.scale, viewport.scale);
+    const viewport = currentChartViewport(ctx.canvas.getBoundingClientRect());
+    ctx.translate(viewport.x * (1 - viewport.scaleX), viewport.y * (1 - viewport.scale));
+    ctx.scale(viewport.scaleX, viewport.scale);
 
     if (g.invertedView && g.currentState !== 'boxing') {
       ctx.translate(0, TAPE_HEIGHT + H - TIME_AXIS_HEIGHT);
@@ -2490,8 +2491,10 @@ export const CandleGame: React.FC<CandleGameProps> = ({
       ctx.stroke();
     }
 
-    const a = Math.max(0, Math.floor(g.cx / CW) - 1);
-    const b = Math.ceil((g.cx + W - AX) / CW) + 2;
+    const visibleLeft = screenToChart({ x: 0, y: 0 }, viewport).x;
+    const visibleRight = screenToChart({ x: W - AX, y: 0 }, viewport).x;
+    const a = Math.max(0, Math.floor((g.cx + visibleLeft) / CW) - 1);
+    const b = Math.ceil((g.cx + visibleRight) / CW) + 2;
 
     // Temporarily project the boss encounter onto this chart, retaining the run.
     const encounter = g.currentState === 'boxing' ? bossEncounter.current : null;
@@ -2677,8 +2680,8 @@ export const CandleGame: React.FC<CandleGameProps> = ({
 
     if (g.zeroCrash && g.p) {
       ctx.save();
-      ctx.translate(viewport.x * (1 - viewport.scale), viewport.y * (1 - viewport.scale));
-      ctx.scale(viewport.scale, viewport.scale);
+      ctx.translate(viewport.x * (1 - viewport.scaleX), viewport.y * (1 - viewport.scale));
+      ctx.scale(viewport.scaleX, viewport.scale);
       const x = g.zeroCrashIndex * CW - g.cx + 1;
       if (g.invertedView && !encounter) {
         ctx.translate(0, TAPE_HEIGHT + H - TIME_AXIS_HEIGHT);
@@ -3099,7 +3102,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
           const canvasPoint = zoomCanvasPoint({ x: e.clientX, y: e.clientY }, bounds, zoom);
           const canvasY = canvasPoint.y;
           tickerHoverPausedRef.current = canvasY >= 0 && canvasY <= TAPE_HEIGHT;
-          const chartPoint = screenToChart(canvasPoint, currentChartViewport());
+          const chartPoint = screenToChart(canvasPoint, currentChartViewport(bounds));
           aimRef.current = pointerToWorld(chartPoint, { left: 0, top: 0, width: W, height: H }, W, H, { x: g.cx, y: g.cy });
           aimRef.current.y = g.cy + plotViewY(aimRef.current.y - g.cy, g.invertedView && g.currentState !== 'boxing', TAPE_HEIGHT, H - TIME_AXIS_HEIGHT);
           if (bossEncounter.current) bossEncounter.current.aim = aimRef.current;
@@ -3111,7 +3114,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
           const g = gameRef.current;
           const bounds = e.currentTarget.getBoundingClientRect();
           const canvasPoint = zoomCanvasPoint({ x: e.clientX, y: e.clientY }, bounds, mobileCanvasZoom());
-          const chartPoint = screenToChart(canvasPoint, currentChartViewport());
+          const chartPoint = screenToChart(canvasPoint, currentChartViewport(bounds));
           aimRef.current = pointerToWorld(chartPoint, { left: 0, top: 0, width: W, height: H }, W, H, { x: g.cx, y: g.cy });
           aimRef.current.y = g.cy + plotViewY(aimRef.current.y - g.cy, g.invertedView && g.currentState !== 'boxing', TAPE_HEIGHT, H - TIME_AXIS_HEIGHT);
           if (g.currentState === 'boxing' && bossEncounter.current) {

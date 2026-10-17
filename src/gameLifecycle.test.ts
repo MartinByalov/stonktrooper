@@ -78,9 +78,10 @@ test('mobile preserves relative model sizes with one plot transform and unzoomed
   assert.match(game, /ctx\.fillRect\(x \+ 1, c\.top - g\.cy, CW - 3, c\.bot - c\.top\);/);
   assert.match(game, /ctx\.scale\(APE_SCALE, APE_SCALE\);/);
   assert.match(game, /const canvasPoint = zoomCanvasPoint\(/);
-  assert.match(game, /screenToChart\(canvasPoint, currentChartViewport\(\)\)/);
+  assert.match(game, /screenToChart\(canvasPoint, currentChartViewport\(bounds\)\)/);
   assert.match(game, /pointerToWorld\(chartPoint/);
-  assert.match(game, /ctx\.scale\(viewport\.scale, viewport\.scale\);/);
+  assert.match(game, /const viewport = currentChartViewport\(ctx\.canvas\.getBoundingClientRect\(\)\);/);
+  assert.match(game, /ctx\.scale\(viewport\.scaleX, viewport\.scale\);/);
 });
 
 test('mobile joystick scales from the smaller viewport dimension', () => {

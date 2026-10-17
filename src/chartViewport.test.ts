@@ -6,6 +6,27 @@ import { plotViewY } from './aim';
 
 const close = (actual: number, expected: number) => assert.ok(Math.abs(actual - expected) < 1e-8, `${actual} != ${expected}`);
 
+test('coin diameters and all world distances stay isotropic in CSS pixels across screen shapes', () => {
+  for (const mobile of [false, true]) {
+    for (const [width, height] of [[390, 700], [844, 300], [800, 1280], [1280, 800], [1920, 840]]) {
+      const view = chartViewport(mobile, 1920, 840, 64, { width, height });
+      const origin = chartToScreen({ x: 500, y: 400 }, view);
+      for (const diameter of [9, 24, 40, 150]) {
+        const end = chartToScreen({ x: 500 + diameter, y: 400 + diameter }, view);
+        close((end.x - origin.x) * width / 1920, (end.y - origin.y) * height / 840);
+        const restored = screenToChart(end, view);
+        close(restored.x, 500 + diameter);
+        close(restored.y, 400 + diameter);
+      }
+    }
+  }
+});
+
+test('hidden canvas bounds do not produce invalid world transforms', () => {
+  const view = chartViewport(true, 1920, 840, 64, { width: 0, height: 0 });
+  close(view.scaleX, view.scale);
+});
+
 test('mobile uniformly enlarges world distances and preserves relative sizes', () => {
   const view = chartViewport(true, 1920, 840, 64);
   const origin = chartToScreen({ x: 400, y: 300 }, view);
