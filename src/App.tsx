@@ -105,7 +105,17 @@ export default function App() {
   };
 
   useEffect(() => {
-    const syncFullscreen = () => setIsFullscreen(document.fullscreenElement === appRef.current);
+    let wasFullscreen = document.fullscreenElement === appRef.current;
+    const syncFullscreen = () => {
+      const fullscreen = document.fullscreenElement === appRef.current;
+      setIsFullscreen(fullscreen);
+      if (wasFullscreen && !fullscreen && window.matchMedia('(pointer: coarse)').matches) {
+        const orientation = screen.orientation as ScreenOrientation & { unlock?: () => void };
+        try { orientation?.unlock?.(); } catch { }
+        setState(current => current === 'play' ? 'paused' : current);
+      }
+      wasFullscreen = fullscreen;
+    };
     document.addEventListener('fullscreenchange', syncFullscreen);
     return () => document.removeEventListener('fullscreenchange', syncFullscreen);
   }, []);

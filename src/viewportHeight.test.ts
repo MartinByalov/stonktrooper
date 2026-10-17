@@ -79,6 +79,11 @@ test('touch shell bounds the document and reserves header/footer space before si
   assert.match(shell, /\.game-app > div\s*\{\s*height: 100%;\s*min-height: 0;/);
   assert.match(shell, /\.site-footer\s*\{\s*flex-shrink: 0;/);
   assert.match(shell, /\.game-arena\s*\{\s*flex: 1 1 0;\s*min-height: 0;\s*container-type: size;/);
+  assert.match(shell, /body\s*\{\s*position: fixed;\s*inset: 0;/);
+  assert.match(shell, /\.game-app header\s*\{\s*padding-top: max\(8px, env\(safe-area-inset-top\)\);\s*padding-bottom: 8px;/);
+  assert.match(shell, /\.stonktrooper-logo\s*\{\s*height: 32px;/);
+  assert.match(shell, /\.site-footer\s*\{\s*font-size: 10px;\s*line-height: 15px;/);
+  assert.match(shell, /\.mobile-portrait-hero\s*\{\s*touch-action: pinch-zoom;/);
 });
 
 test('only returning to the menu releases mobile fullscreen and orientation, not Liquidated', () => {
@@ -88,5 +93,15 @@ test('only returning to the menu releases mobile fullscreen and orientation, not
   assert.match(release, /orientation\?\.unlock\?\.\(\)/);
   assert.match(release, /document\.exitFullscreen\(\)/);
   assert.doesNotMatch(release, /state === 'over'/);
+  assert.doesNotMatch(release, /state === 'paused'/);
   assert.match(app, /useLayoutEffect\(\(\) => \{\s*if \(appRef.current\) return observeViewportHeight\(appRef.current\);/);
+});
+
+test('manual mobile fullscreen exit pauses play without requesting fullscreen again', () => {
+  const app = readFileSync(new URL('./App.tsx', import.meta.url), 'utf8');
+  const sync = app.slice(app.indexOf('let wasFullscreen ='), app.indexOf('const toggleFullscreen ='));
+  assert.match(sync, /if \(wasFullscreen && !fullscreen && window.matchMedia\('\(pointer: coarse\)'\).matches\)/);
+  assert.match(sync, /orientation\?\.unlock\?\.\(\)/);
+  assert.match(sync, /setState\(current => current === 'play' \? 'paused' : current\)/);
+  assert.doesNotMatch(sync, /requestFullscreen|requestMobileLandscape|exitFullscreen/);
 });

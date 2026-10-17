@@ -2423,6 +2423,12 @@ html[data-theme="light"] .game-app .chart-pause-control {
     text-size-adjust: 100%;
   }
 
+  body {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+  }
+
   .game-app,
   .game-app:fullscreen {
     height: var(--app-viewport-height, 100dvh);
@@ -2439,6 +2445,60 @@ html[data-theme="light"] .game-app .chart-pause-control {
   .game-app header,
   .game-app .site-footer {
     flex-shrink: 0;
+  }
+
+  /* Vertical chrome depends only on its own safe edge, never the opposite edge. */
+  .game-app header {
+    padding-top: max(8px, env(safe-area-inset-top));
+    padding-bottom: 8px;
+    padding-left: max(20px, env(safe-area-inset-left));
+    padding-right: max(8px, env(safe-area-inset-right));
+    font-size: 14px;
+    line-height: 20px;
+  }
+
+  .game-app .stonktrooper-logo {
+    height: 32px;
+  }
+
+  .game-app .header-controls > button,
+  .game-app .header-controls > .mobile-header-control {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    min-height: 32px;
+    flex: 0 0 32px;
+  }
+
+  .game-app .header-controls > button > svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .game-app .site-footer {
+    font-size: 10px;
+    line-height: 15px;
+    padding-top: 4px;
+    padding-bottom: max(4px, env(safe-area-inset-bottom));
+    padding-left: max(8px, env(safe-area-inset-left));
+    padding-right: max(8px, env(safe-area-inset-right));
+  }
+
+  .game-app .site-footer > nav,
+  .game-app .site-footer > .site-footer-copyright,
+  .game-app .site-footer button {
+    font-size: inherit;
+    line-height: inherit;
+  }
+
+  .game-app .mobile-portrait-hero {
+    touch-action: pinch-zoom;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  .game-app .mobile-portrait-hero img {
+    -webkit-user-drag: none;
   }
 
   .game-app .game-arena {
