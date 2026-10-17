@@ -65,6 +65,21 @@ For on-device evidence, open the tested build with `?debug=mobile`. Capture the 
 
 The supplied Firefox Android screenshots still show a tall portrait footer background and an inset landscape joystick; no device root cause or smooth-gameplay fix is established. Diagnostics now include all control bounds, computed edge offsets, footer child bounds and stylesheet URLs. Opt-in canvasDrawCpuMs records synchronous canvas draw CPU duration by game state separately from rAF scheduling. It excludes asynchronous GPU/compositing work and simulation time. Normal sessions do not collect timings. Local validation: 335 tests, TypeScript, production build and Chromium audit passed, including a live diagnostic capture with CPU samples. The added instrumentation is local and must be deployed before requesting these new fields from the phone. No layout or performance tuning was applied in this follow-up.
 
+### Render isolation experiment
+
+Opt in with `?debug=render`. The in-stage selector offers Normal, Chart only,
+Actors only and No canvas. Chart/Actors modes retain background, text, axes and
+the news feed; No canvas suppresses both main drawing and feed drawing after a
+one-time clear. Simulation, collisions, audio and scoring remain active in every
+mode, so invisible hazards can still end a run. No invulnerability or comparable
+random seed is introduced. Use new runs and repeat Normal between comparisons.
+The panel reports gameplay-only rAF callback frequency and p95 intervals over up
+to 300 samples, refreshing once per second. Samples reset on mode changes,
+visibility changes and game-state transitions. These are not display FPS or GPU
+timings. Normal sessions do not mount the panel or collect these samples.
+The experiment is diagnostic, not an Android performance fix; deployment and
+same-phone comparison are still required.
+
 ### Confirmed Firefox Android portrait landing spacing
 
 USB inspection on Android 14 / Firefox 158 measured visualViewport.height = app height = 758.77px and safe-area-inset-bottom = 47.6px. The footer applied that inset as bottom padding (86.17px total height). After temporarily setting footer bottom padding to 4px, the footer shrank to 42.57px; a separate 47.6px bottom padding remained on the landing overlay. The user confirmed that setting that overlay bottom padding to 8px also corrected the Start-to-footer gap. Permanent overrides are limited to coarse-pointer portrait menu state: footer 4px, landing overlay 8px. Other states, landscape, header and dialog safe areas are unchanged. This deliberately adopts the device-confirmed spacing; other devices with actual overlapping system UI still require validation. Chromium regression uses a simulated 48px bottom inset and asserts the actual 8px Start-to-footer gap and 4px footer padding. Validation: 337 tests, TypeScript, production build and Chromium audit passed. No Android gameplay performance fix is claimed.

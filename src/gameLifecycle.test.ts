@@ -105,7 +105,7 @@ test('canvas keeps mobile backing resolution bounded and avoids render storms du
   assert.match(game, /ctx\.setTransform\(width \/ W, 0, 0, height \/ H, 0, 0\)/);
   assert.match(game, /let simulationSteps = 0/);
   assert.match(game, /simulationSteps\+\+/);
-  assert.match(game, /if \(simulationSteps > 0 \|\| needsDraw\)\s*\{\s*loopCallbacks\.current\.draw\(ctx\)/);
+  assert.match(game, /if \(renderMode !== 'none' && \(simulationSteps > 0 \|\| needsDraw\)\)\s*\{\s*loopCallbacks\.current\.draw\(ctx\)/);
   assert.match(game, /if \(document.hidden\)/);
   assert.match(game, /document.removeEventListener\('visibilitychange', resetClock\)/);
   const draw = game.slice(game.indexOf('const draw ='), game.indexOf('// Fresh callbacks'));

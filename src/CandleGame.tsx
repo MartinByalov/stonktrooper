@@ -21,6 +21,8 @@ import { printerFallRotation } from './printerFall';
 import { aimedVelocity, pointerToWorld, plotViewY, AimPoint } from './aim';
 import { chartViewport, chartToScreen, screenToChart } from './chartViewport';
 import { pickupInRenderBounds, pickupRenderBounds } from './pickupVisibility';
+import { RenderExperimentPanel } from './RenderExperimentPanel';
+import { getRenderMode, renderExperimentEnabled, renderLayers } from './renderExperiment';
 import { pigeonDropsPrinter } from './gameRules';
 import { extendPrinterTurns, endingPrinterCandle, printerSourceCandle, printerCrossingPose, printerEnemyPose, printerProfileFlip, rightEdgeSpawnX, PrinterTurn } from './printerTrack';
 import { aimedHitDefeatsEnemy, dismountRider, canCatchBossBell, bellDescentTop } from './gameRules';
@@ -80,6 +82,7 @@ const TAPE_HEIGHT = 48;
 const TIME_AXIS_HEIGHT = 12;
 const AX = 64;   // Price axis width on right
 const CW = 9;    // Candlestick width in pixels
+const renderTestEnabled = typeof window !== 'undefined' && renderExperimentEnabled(window.location.search);
 
 // UI is never zoomed; the plot has its own shared, invertible world transform.
 export const mobileCanvasZoom = (): number => 1;
@@ -2491,6 +2494,8 @@ export const CandleGame: React.FC<CandleGameProps> = ({
 
 
 
+    const layers = renderLayers(renderTestEnabled ? getRenderMode() : 'full');
+    if (layers.chart) {
     ctx.strokeStyle = palette.grid;
     ctx.lineWidth = 1;
     for (let gridY = Math.floor(g.cy / 50) * 50; gridY < g.cy + H; gridY += 50) {
@@ -2501,6 +2506,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
       ctx.stroke();
     }
 
+    }
     const visibleLeft = screenToChart({ x: 0, y: 0 }, viewport).x;
     const visibleRight = screenToChart({ x: W - AX, y: 0 }, viewport).x;
     const a = Math.max(0, Math.floor((g.cx + visibleLeft) / CW) - 1);
@@ -2509,6 +2515,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     // Temporarily project the boss encounter onto this chart, retaining the run.
     const encounter = g.currentState === 'boxing' ? bossEncounter.current : null;
 
+    if (layers.chart) {
     for (let i = a; i <= b; i++) {
       if (i % 10 === 0) {
         const x = i * CW - g.cx;
@@ -2576,6 +2583,8 @@ export const CandleGame: React.FC<CandleGameProps> = ({
         }
       }
     }
+    }
+    if (layers.actors) {
     if (!encounter) {
       drawPickups(ctx);
       drawSwans(ctx);
@@ -2686,9 +2695,10 @@ export const CandleGame: React.FC<CandleGameProps> = ({
       ctx.restore(); }
     }
 
+    }
     ctx.restore();
 
-    if (g.zeroCrash && g.p) {
+    if (layers.chart && g.zeroCrash && g.p) {
       ctx.save();
       ctx.translate(viewport.x * (1 - viewport.scaleX), viewport.y * (1 - viewport.scale));
       ctx.scale(viewport.scaleX, viewport.scale);
@@ -3062,6 +3072,8 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     window.addEventListener('resize', resizeCanvas);
     resizeCanvas();
     let needsDraw = true;
+    const experiment = renderTestEnabled;
+    let previousRenderMode = getRenderMode();
     const resetClock = () => {
       gameRef.current.previousTime = 0;
       gameRef.current.accumulator = 0;
@@ -3077,6 +3089,15 @@ export const CandleGame: React.FC<CandleGameProps> = ({
         return;
       }
       const g = gameRef.current;
+      const renderMode = experiment ? getRenderMode() : 'full';
+      if (experiment && renderMode !== previousRenderMode) {
+        // Clear once on transition, including the separate mobile feed canvas.
+        ctx.clearRect(0, 0, W, H);
+        const feed = headerFeedRef.current;
+        if (feed) feed.getContext('2d')?.clearRect(0, 0, W, H);
+        needsDraw = true;
+        previousRenderMode = renderMode;
+      }
       if (g.currentState === 'play' || g.currentState === 'boxing') {
         sound.setMusicMode(g.currentState === 'boxing' ? 'kangaroo' : g.printerTimer > 0 ? 'pigeon' : g.hawkTimer > 0 ? 'hawk' : 'normal');
       }
@@ -3108,7 +3129,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
       // every overloaded frame can otherwise starve rendering indefinitely.
       // High-refresh displays do not need duplicate 120/144 Hz canvas paints.
       const drawStarted = drawDiagnosticsEnabled ? performance.now() : 0;
-      if (simulationSteps > 0 || needsDraw) {
+      if (renderMode !== 'none' && (simulationSteps > 0 || needsDraw)) {
         loopCallbacks.current.draw(ctx);
         if (drawDiagnosticsEnabled) recordDrawDuration(g.currentState, performance.now() - drawStarted);
         needsDraw = false;
@@ -3128,6 +3149,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
 
   return (
     <div className="game-stage relative w-full aspect-[1920/840] overflow-hidden select-none bg-[#0c111b] shadow-2xl">
+      {renderTestEnabled && <RenderExperimentPanel />}
       <canvas
         ref={canvasRef}
         width={W}
