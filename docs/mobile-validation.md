@@ -34,9 +34,13 @@ At 844 × 390 without safe-area overrides, backing resolution changed from 3840 
 
 ## Required real-device follow-up
 
+### Equal joystick corner gaps
+
+The moto g24 report clarifies that Firefox stutters rather than fully freezing, and that joystick placement differs from the intended equal left/bottom gaps in both Firefox and Brave. The joystick now uses one shared gap: the maximum of 8px, the left safe inset and the bottom safe inset. Thus asymmetric system insets cannot produce unequal visible corner spacing. With 44px left/21px bottom insets both gaps are 44px; without insets both are 8px. This intentionally differs from the earlier independent-edge placement. The Chromium audit checks the rendered gaps against the game stage. Device performance and the other reported visual defects remain unverified; this positioning change is not a Firefox performance fix.
+
 ### Browser-dependent guide bounds
 
-Phone testing reports smooth play in Brave but freezing in Mozilla, with layout differences in both. The Mozilla freeze remains unprofiled and unresolved. How to Play now uses a height measured between the feed boundary and the visible footer (or app bottom when the footer is hidden), rather than relying on a fixed-position viewport bottom derived from `innerHeight`. Landscape guide gutters use each safe-area edge separately. The Chromium audit checks the paused landscape guide's top, bottom, panel fill and close hit testing; this does not validate Firefox Android or native fullscreen.
+Phone testing reports smooth play in Brave but stuttering in Mozilla, with layout differences in both. The Mozilla stutter remains unprofiled and unresolved. How to Play now uses a height measured between the feed boundary and the visible footer (or app bottom when the footer is hidden), rather than relying on a fixed-position viewport bottom derived from `innerHeight`. Landscape guide gutters use each safe-area edge separately. The Chromium audit checks the paused landscape guide's top, bottom, panel fill and close hit testing; this does not validate Firefox Android or native fullscreen.
 
 ### Screenshot follow-up
 

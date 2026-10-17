@@ -97,6 +97,14 @@ try {
         const joystick = await hitTest('.mobile-joystick');
         assert(joystick?.accessible, 'joystick inaccessible');
         if (notch) assert(joystick.x >= 44 && joystick.bottom <= height - 21, 'joystick intersects safe area');
+        const corner = await evaluate(`(() => {
+          const control = document.querySelector('.mobile-joystick').getBoundingClientRect();
+          const stage = document.querySelector('.game-stage').getBoundingClientRect();
+          return {left:control.left-stage.left,bottom:stage.bottom-control.bottom};
+        })()`);
+        assert(Math.abs(corner.left-corner.bottom) < 1, 'joystick corner gaps differ');
+        assert(Math.abs(corner.left-(notch ? 44 : 8)) < 1, 'unexpected joystick corner gap');
+        console.log(JSON.stringify({width,height,notch,joystickCorner:corner}));
         const x = joystick.x + joystick.width/2, y = joystick.y + joystick.height/2;
         await send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{x,y}] });
         await send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });

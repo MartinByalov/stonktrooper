@@ -114,7 +114,7 @@ test('mobile pause uses the same safe-area-aware gap below and before the price 
   assert.match(css, /\.game-app \.chart-pause-control\s*\{\s*--pause-control-gap: var\(--mobile-control-gap\);\s*right: max\(calc\(var\(--chart-axis-right, 64px\) \+ var\(--pause-control-gap\)\), env\(safe-area-inset-right\)\);\s*bottom: max\(var\(--pause-control-gap\), env\(safe-area-inset-bottom\)\);/);
   assert.match(css, /--mobile-control-gap: 8px;/);
   assert.match(css, /padding-top: var\(--mobile-control-gap\);\s*padding-right: var\(--mobile-control-gap\);\s*padding-bottom: var\(--mobile-control-gap\);/);
-  assert.match(css, /\.game-app:fullscreen \.mobile-joystick\s*\{\s*position: absolute;\s*left: max\(var\(--mobile-control-gap\), env\(safe-area-inset-left\)\);\s*bottom: max\(var\(--mobile-control-gap\), env\(safe-area-inset-bottom\)\);/);
+  assert.match(css, /\.game-app:fullscreen \.mobile-joystick\s*\{[^}]*--joystick-corner-gap: max\(var\(--mobile-control-gap\), env\(safe-area-inset-left\), env\(safe-area-inset-bottom\)\);\s*position: absolute;\s*left: var\(--joystick-corner-gap\);\s*bottom: var\(--joystick-corner-gap\);/);
 });
 
 test('Info is rendered on desktop and hidden during gameplay only on touch layouts', () => {
