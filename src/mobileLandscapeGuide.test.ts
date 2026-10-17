@@ -29,6 +29,22 @@ test('desktop landing keeps its original one-to-three sidebar and instructions p
   assert.doesNotMatch(proportions, /pointer: coarse/);
 });
 
+test('portrait landing anchors nonshrinking actions below an image that fills the remainder', () => {
+  const portrait = css.slice(css.indexOf('@media (orientation: portrait) and (pointer: coarse) {'), css.indexOf('/* Portrait menu controls'));
+  assert.match(portrait, /\.mobile-portrait-guide\s*\{[^}]*justify-content: flex-end;[^}]*gap: 8px;\s*padding: 0;/);
+  assert.match(portrait, /\.mobile-portrait-guide > \.mobile-portrait-action-button\s*\{\s*flex: 0 0 clamp\(44px, 6dvh, 64px\);/);
+  assert.match(portrait, /\.mobile-portrait-hero\s*\{\s*flex: 1 1 0;\s*min-height: 0;/);
+  assert.match(portrait, /\.game-overlay\.how-to-play-overlay\s*\{[^}]*padding: max\(8px, env\(safe-area-inset-top\), env\(safe-area-inset-right\), env\(safe-area-inset-bottom\), env\(safe-area-inset-left\)\);/);
+});
+
+test('desktop and landscape landing align the image and heading within equal outer insets', () => {
+  const shared = css.slice(css.indexOf('/* The title belongs to the description column'), css.indexOf('/* Preserve the desktop'));
+  assert.match(shared, /\.desktop-initial-guide\s*\{\s*padding: max\(8px, env\(safe-area-inset-top\), env\(safe-area-inset-right\), env\(safe-area-inset-bottom\), env\(safe-area-inset-left\)\);/);
+  assert.match(shared, /\.how-to-aside > \.how-to-controls\s*\{\s*gap: 8px;\s*margin: 0;/);
+  assert.match(shared, /\.landing-guide-section\s*\{\s*align-self: stretch;\s*box-sizing: border-box;/);
+  assert.match(shared, /\.landing-guide-heading\s*\{[^}]*margin: 0;/);
+});
+
 test('Pause guide gutters do not depend on the theme control position or following controls', () => {
   const spacing = css.slice(css.indexOf('/* Pause guide spacing must not grow'));
   assert.match(spacing, /--pause-guide-gutter: max\(8px, env\(safe-area-inset-top\), env\(safe-area-inset-right\), env\(safe-area-inset-bottom\), env\(safe-area-inset-left\)\);/);

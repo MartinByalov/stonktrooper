@@ -107,9 +107,9 @@ test('portrait mobile separates the hero and controls from a fullscreen scrollab
   assert.match(app, /className="mobile-how-to-panel/);
   assert.match(css, /\.game-app \.desktop-initial-guide\s*\{\s*display: none;/);
   assert.match(css, /\.mobile-portrait-guide\s*\{\s*display: flex;/);
-  assert.match(css, /\.mobile-portrait-guide\s*\{[\s\S]*?justify-content: flex-end;[\s\S]*?gap: clamp\(8px, 2vh, 16px\);[\s\S]*?padding: 12px;/);
+  assert.match(css, /\.mobile-portrait-guide\s*\{[^}]*justify-content: flex-end;[^}]*gap: 8px;[^}]*padding: 0;/);
   assert.match(css, /\.mobile-portrait-action-button\s*\{[\s\S]*?display: flex;[\s\S]*?align-items: center;[\s\S]*?justify-content: center;[\s\S]*?text-align: center;[\s\S]*?font-size: 0\.875rem;[\s\S]*?font-weight: 700;/);
-  assert.match(css, /\.mobile-portrait-hero\s*\{[\s\S]*?flex: 1 1 auto;[\s\S]*?max-height: none;/);
+  assert.match(css, /\.mobile-portrait-hero\s*\{[^}]*flex: 1 1 0;[^}]*max-height: none;/);
   assert.match(css, /\.how-to-mode-selector\s*\{[\s\S]*?font-family: var\(--font-mono\);[\s\S]*?font-size: 0\.875rem;[\s\S]*?font-weight: 700;[\s\S]*?line-height: 1\.25;/);
   assert.match(css, /\.menu-action-button\s*\{[\s\S]*?height: 2\.75rem;[\s\S]*?min-height: 2\.75rem;[\s\S]*?padding-top: 0;[\s\S]*?padding-bottom: 0;/);
   assert.match(css, /\.mobile-how-to-panel > \.mechanics-guide\s*\{[\s\S]*?overflow-y: auto;/);

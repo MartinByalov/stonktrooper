@@ -1270,6 +1270,7 @@ kbd {
      the portrait How to Play overlay starts beneath it. */
   .game-app .game-overlay.how-to-play-overlay {
     inset: calc(100% * 48 / 840) 0 0;
+    padding: max(8px, env(safe-area-inset-top), env(safe-area-inset-right), env(safe-area-inset-bottom), env(safe-area-inset-left));
   }
 
   .game-app .desktop-initial-guide {
@@ -1281,13 +1282,21 @@ kbd {
     flex-direction: column;
     align-items: stretch;
     justify-content: flex-end;
-    gap: clamp(8px, 2vh, 16px);
-    padding: 12px;
+    gap: 8px;
+    padding: 0;
+    min-height: 0;
     box-sizing: border-box;
   }
 
+  .mobile-portrait-guide > .mobile-portrait-action-button {
+    flex: 0 0 clamp(44px, 6dvh, 64px);
+    height: clamp(44px, 6dvh, 64px);
+    min-height: 44px;
+    margin: 0;
+  }
+
   .mobile-portrait-hero {
-    flex: 1 1 auto;
+    flex: 1 1 0;
     min-height: 0;
     max-height: none;
   }
@@ -2444,6 +2453,22 @@ html[data-theme="light"] .game-app .chart-pause-control {
 
 /* The title belongs to the description column on desktop and touch landscape. */
 @media (pointer: fine), (orientation: landscape) and (pointer: coarse) {
+  .game-app .desktop-initial-guide {
+    padding: max(8px, env(safe-area-inset-top), env(safe-area-inset-right), env(safe-area-inset-bottom), env(safe-area-inset-left));
+  }
+
+  .game-app .desktop-initial-guide .how-to-layout > .how-to-aside,
+  .game-app .desktop-initial-guide .how-to-aside > .how-to-controls {
+    gap: 8px;
+    margin: 0;
+  }
+
+  .game-app .desktop-initial-guide .how-to-layout > .how-to-aside,
+  .game-app .how-to-layout > .landing-guide-section {
+    align-self: stretch;
+    box-sizing: border-box;
+  }
+
   .game-app .desktop-initial-guide > .how-to-layout {
     display: flex;
     flex-direction: row !important;
