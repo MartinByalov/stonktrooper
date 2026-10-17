@@ -577,8 +577,8 @@ html[data-theme="light"] .game-result-over .liquidated-how-to-play:hover,
     min-width: 0;
     height: 2rem;
     align-self: center;
-    -webkit-mask-image: linear-gradient(to right, transparent, #000 15%, #000 85%, transparent);
-    mask-image: linear-gradient(to right, transparent, #000 15%, #000 85%, transparent);
+    -webkit-mask-image: linear-gradient(to right, transparent 12px, #000 calc(12px + 15%), #000 calc(85% - 12px), transparent calc(100% - 12px));
+    mask-image: linear-gradient(to right, transparent 12px, #000 calc(12px + 15%), #000 calc(85% - 12px), transparent calc(100% - 12px));
   }
 }
 
@@ -600,8 +600,8 @@ html[data-theme="light"] .game-result-over .liquidated-how-to-play:hover,
     height: 2rem;
     align-self: center;
     /* Fade the canvas itself, keeping the header visible through both ends. */
-    -webkit-mask-image: linear-gradient(to right, transparent, #000 15%, #000 85%, transparent);
-    mask-image: linear-gradient(to right, transparent, #000 15%, #000 85%, transparent);
+    -webkit-mask-image: linear-gradient(to right, transparent 12px, #000 calc(12px + 15%), #000 calc(85% - 12px), transparent calc(100% - 12px));
+    mask-image: linear-gradient(to right, transparent 12px, #000 calc(12px + 15%), #000 calc(85% - 12px), transparent calc(100% - 12px));
   }
 
   .game-app .header-controls {
@@ -2437,6 +2437,11 @@ kbd {
   .game-app .site-footer {
     font-size: 10px;
     line-height: 15px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
     padding-top: 4px;
     padding-bottom: max(4px, env(safe-area-inset-bottom));
     padding-left: max(8px, env(safe-area-inset-left));
@@ -2448,6 +2453,18 @@ kbd {
   .game-app .site-footer button {
     font-size: inherit;
     line-height: inherit;
+  }
+
+  .game-app .site-footer > nav,
+  .game-app .site-footer > .site-footer-copyright {
+    width: auto;
+    align-self: center;
+    text-align: center;
+  }
+
+  .game-app .site-footer > nav {
+    justify-content: center;
+    flex-wrap: wrap;
   }
 
   .game-app .mobile-portrait-hero {
@@ -2486,8 +2503,8 @@ kbd {
     min-width: 0;
     height: 32px;
     align-self: center;
-    -webkit-mask-image: linear-gradient(to right, transparent, #000 15%, #000 85%, transparent);
-    mask-image: linear-gradient(to right, transparent, #000 15%, #000 85%, transparent);
+    -webkit-mask-image: linear-gradient(to right, transparent 12px, #000 calc(12px + 15%), #000 calc(85% - 12px), transparent calc(100% - 12px));
+    mask-image: linear-gradient(to right, transparent 12px, #000 calc(12px + 15%), #000 calc(85% - 12px), transparent calc(100% - 12px));
   }
 }
 
@@ -2675,7 +2692,7 @@ kbd {
 /* Device-validated portrait landing gaps: Firefox Android reports a bottom
    inset even when its navigation bar is already outside the visible shell. */
 @media (orientation: portrait) and (pointer: coarse) {
-  .game-app[data-state="menu"] .site-footer {
+  .game-app .site-footer {
     padding-bottom: 4px;
   }
 
@@ -2880,18 +2897,49 @@ html[data-theme="light"] .game-app .share-dd-actions > button.share-dd-copy {
 
   .game-app .site-info-overlay.fixed.inset-0.z-50 > .site-info-dialog > .site-info-header {
     height: auto;
-    min-height: 4.5rem;
-    flex: 0 0 4.5rem;
+    min-height: 5.5rem;
+    flex: 0 0 5.5rem;
     align-items: flex-end;
     padding-bottom: 0.5rem;
   }
 
   .game-app .site-info-overlay .site-info-header > .site-info-title {
-    transform: translateY(-4px);
+    transform: none;
   }
 
   .game-app .site-info-overlay.fixed.inset-0.z-50 > .site-info-dialog > .site-info-header > .site-info-close {
     top: 0;
+    transform: none;
+  }
+}
+
+/* Balance text around safe areas and classic scrollbars in both touch orientations. */
+@media (pointer: coarse) {
+  .game-app .site-info-overlay.fixed.inset-0.z-50 > .site-info-dialog {
+    --site-info-side-gutter: max(8px, env(safe-area-inset-left), env(safe-area-inset-right));
+    padding-inline: var(--site-info-side-gutter);
+  }
+
+  .game-app .site-info-overlay.fixed.inset-0.z-50 > .site-info-dialog > .site-info-content {
+    padding-inline: 24px;
+    scrollbar-gutter: stable both-edges;
+  }
+}
+
+/* Keep the pause guide close control on the Fullscreen control's vertical axis,
+   independently of the symmetric description-card gutters and side notches. */
+@media (orientation: landscape) and (pointer: coarse) {
+  .game-app .mobile-how-to-panel {
+    position: relative;
+  }
+
+  .game-app .mobile-how-to-panel > .mobile-how-to-header {
+    position: static;
+  }
+
+  .game-app .mobile-how-to-panel .mobile-how-to-header > .mobile-how-to-close {
+    top: var(--pause-guide-gutter);
+    right: var(--fullscreen-control-right, 8px);
     transform: none;
   }
 }

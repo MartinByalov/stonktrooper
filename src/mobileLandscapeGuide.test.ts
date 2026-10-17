@@ -18,7 +18,7 @@ test('mobile guide uses measured shell space instead of fixed layout viewport bo
   assert.match(app, /const guideBottom = footerVisible && footerRect \? footerRect.top : app.getBoundingClientRect\(\).bottom;/);
   assert.match(app, /setProperty\('--guide-available-height', `\$\{Math.max\(0, guideBottom - rect.top - feedHeight\)\}px`\)/);
   assert.match(css, /\.mobile-how-to-dialog\.fixed\.inset-0\.z-50\s*\{[^}]*bottom: auto;[^}]*height: var\(--guide-available-height,/);
-  const spacing = css.slice(css.lastIndexOf('.game-app .mobile-how-to-panel {'));
+  const spacing = css.slice(css.indexOf('.game-app .mobile-how-to-panel {', css.indexOf('/* Pause guide spacing must not grow')));
   assert.match(spacing, /--pause-guide-gutter: 8px;/);
   assert.match(spacing, /padding: var\(--pause-guide-gutter\) max\(8px, env\(safe-area-inset-right\)\) max\(8px, env\(safe-area-inset-bottom\)\) max\(8px, env\(safe-area-inset-left\)\);/);
 });

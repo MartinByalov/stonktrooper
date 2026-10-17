@@ -109,7 +109,7 @@ try {
         if (width < height) {
           assert.equal(layout.left, 24);
           assert.equal(layout.right, 24);
-          assert.equal(layout.height, 72);
+          assert.equal(layout.height, 88);
           assert(layout.titleTop >= layout.closeBottom, `${section} title overlaps close row`);
         } else assert.equal(layout.height, 32, 'landscape title placement changed');
       }
@@ -237,6 +237,12 @@ try {
         await evaluate("document.querySelector('.pause-overlay .how-to-play-action').click()");
         await wait(150);
         assert((await hitTest('.mobile-how-to-close'))?.accessible, 'landscape guide close inaccessible');
+        const closeAxis = await evaluate(`(() => {
+          const close = document.querySelector('.mobile-how-to-close').getBoundingClientRect();
+          const fullscreen = document.querySelector('.desktop-fullscreen-control').getBoundingClientRect();
+          return {close:close.left+close.width/2,fullscreen:fullscreen.left+fullscreen.width/2};
+        })()`);
+        assert(Math.abs(closeAxis.close-closeAxis.fullscreen) < 1, 'guide close does not align vertically with Fullscreen');
         const guide = await evaluate(`(() => {
           const bounds = document.querySelector('.mobile-how-to-dialog').getBoundingClientRect();
           const panel = document.querySelector('.mobile-how-to-panel').getBoundingClientRect();

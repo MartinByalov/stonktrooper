@@ -57,11 +57,11 @@ test('mobile header news is frameless between the visible logo and controls', ()
   assert.match(game, /if \(header\) \{\s*\/\/[^\n]*\n\s*ctx\.clearRect\(0, 0, W, tapeH\);\s*\} else \{/);
 });
 
-test('mobile header feed fades into transparency at both ends without an opaque cover', () => {
+test('header feed keeps a transparent inset before fading at both ends without an opaque cover', () => {
   const feed = css.match(/\.game-app \.mobile-header-feed\s*\{([^}]+)\}/)?.[1];
   assert.ok(feed);
-  assert.match(feed, /-webkit-mask-image: linear-gradient\(to right, transparent, #000 15%, #000 85%, transparent\);/);
-  assert.match(feed, /\n\s*mask-image: linear-gradient\(to right, transparent, #000 15%, #000 85%, transparent\);/);
+  assert.match(feed, /-webkit-mask-image: linear-gradient\(to right, transparent 12px, #000 calc\(12px \+ 15%\), #000 calc\(85% - 12px\), transparent calc\(100% - 12px\)\);/);
+  assert.match(feed, /\n\s*mask-image: linear-gradient\(to right, transparent 12px, #000 calc\(12px \+ 15%\), #000 calc\(85% - 12px\), transparent calc\(100% - 12px\)\);/);
   assert.doesNotMatch(feed, /background\s*:/);
 });
 
@@ -120,8 +120,34 @@ test('portrait information spacing and title placement do not change landscape',
   const section = css.slice(css.indexOf('/* Portrait information panels have roomier text'));
   assert.match(section, /@media \(orientation: portrait\) and \(pointer: coarse\)/);
   assert.match(section, /padding-inline: 24px;/);
-  assert.match(section, /min-height: 4\.5rem;\s*flex: 0 0 4\.5rem;\s*align-items: flex-end;\s*padding-bottom: 0\.5rem;/);
-  assert.match(section, /transform: translateY\(-4px\);/);
+  assert.match(section, /min-height: 5\.5rem;\s*flex: 0 0 5\.5rem;\s*align-items: flex-end;\s*padding-bottom: 0\.5rem;/);
+  assert.match(section, /\.site-info-title\s*\{\s*transform: none;/);
+});
+
+test('touch information text balances safe-area gutters and scrollbar space', () => {
+  const section = css.slice(css.indexOf('/* Balance text around safe areas'));
+  assert.match(section, /@media \(pointer: coarse\)/);
+  assert.match(section, /--site-info-side-gutter: max\(8px, env\(safe-area-inset-left\), env\(safe-area-inset-right\)\);/);
+  assert.match(section, /padding-inline: var\(--site-info-side-gutter\);/);
+  assert.match(section, /padding-inline: 24px;\s*scrollbar-gutter: stable both-edges;/);
+});
+
+test('landscape pause guide close follows Fullscreen rather than description-card gutters', () => {
+  const section = css.slice(css.indexOf('/* Keep the pause guide close control'));
+  assert.match(section, /@media \(orientation: landscape\) and \(pointer: coarse\)/);
+  assert.match(section, /\.mobile-how-to-panel\s*\{\s*position: relative;/);
+  assert.match(section, /\.mobile-how-to-header\s*\{\s*position: static;/);
+  assert.match(section, /right: var\(--fullscreen-control-right, 8px\);/);
+  assert.match(section, /top: var\(--pause-guide-gutter\);[^}]*transform: none;/);
+});
+
+test('touch footer keeps its centered layout beyond desktop width breakpoints and all portrait states use one bottom inset', () => {
+  const section = css.slice(css.indexOf('/* Touch layouts are viewport-sized shells'));
+  assert.match(section, /\.game-app \.site-footer\s*\{\s*font-size: 10px;\s*line-height: 15px;\s*display: flex;\s*flex-direction: column;\s*align-items: center;/);
+  assert.match(section, /\.site-footer > nav\s*\{\s*justify-content: center;\s*flex-wrap: wrap;/);
+  const inset = css.slice(css.indexOf('/* Device-validated portrait landing gaps'), css.indexOf('/* Share DD is the image itself'));
+  assert.match(inset, /\.game-app \.site-footer\s*\{\s*padding-bottom: 4px;/);
+  assert.doesNotMatch(inset, /data-state="menu"\] \.site-footer/);
 });
 
 test('Kangaroo knob uses the joystick theme ink and day Share has a black border', () => {
