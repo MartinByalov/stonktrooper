@@ -13,7 +13,6 @@ export function ShareDD({ score, theme, scoreTheme = theme, demo = false, onClos
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState('');
   const [sharing, setSharing] = useState(false);
-  const [message, setMessage] = useState('');
   const [copied, setCopied] = useState(false);
   const url = resultUrl(score);
   useEffect(() => {
@@ -53,7 +52,6 @@ export function ShareDD({ score, theme, scoreTheme = theme, demo = false, onClos
   const share = async () => {
     if (sharing) return;
     setError('');
-    setMessage('');
     setCopied(false);
     setSharing(true);
     try {
@@ -67,18 +65,15 @@ export function ShareDD({ score, theme, scoreTheme = theme, demo = false, onClos
     const destination = socialLinks(score).find(item => item.name === platform);
     if (!destination || sharing) return;
     setError('');
-    setMessage('');
     setSharing(true);
     try {
       window.open(destination.href, '_blank', 'noopener,noreferrer');
-      setMessage(`${platform} opened with your score link.`);
     } catch {
-      setMessage('');
       setError(`Unable to open the ${platform} share link.`);
     } finally { setSharing(false); }
   };
   return <div className="share-dd-overlay fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4" onPointerDown={event => event.stopPropagation()}>
-    <div ref={dialog} role="dialog" aria-modal="true" aria-label="Share score" className="share-dd-dialog w-full max-w-3xl max-h-[90dvh] overflow-y-auto rounded-xl border border-[var(--line)] bg-[var(--panel)] p-4 shadow-2xl" onKeyDown={event => {
+    <div ref={dialog} role="dialog" aria-modal="true" aria-label={demo ? 'Share score demo — simulated result' : 'Share score'} className="share-dd-dialog" onKeyDown={event => {
       event.stopPropagation();
       if (event.key === 'Escape') { onClose(); return; }
       if (event.key === 'Tab') {
@@ -89,22 +84,13 @@ export function ShareDD({ score, theme, scoreTheme = theme, demo = false, onClos
         else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
       }
     }}>
-      <div className="share-dd-header relative flex justify-end items-center min-h-10 mb-3">
-        <button ref={closeButton} type="button" aria-label="Close Share DD" title="Close" onClick={onClose} className="dialog-close mobile-dialog-close share-dd-close p-2 rounded border border-[var(--line)] hover:bg-[var(--alt)] cursor-pointer"><X className="w-5 h-5" aria-hidden="true" /></button>
-      </div>
-      <div className="share-dd-content">
-      <div className="share-dd-group">
-      {demo && <p className="mb-3 text-center text-xs font-bold text-[var(--muted)]">DEMO — simulated score, not a game result</p>}
+      <button ref={closeButton} type="button" aria-label="Close Share DD" title="Close" onClick={onClose} className="dialog-close mobile-dialog-close share-dd-close p-2 rounded border border-[var(--line)] hover:bg-[var(--alt)] cursor-pointer"><X className="w-5 h-5" aria-hidden="true" /></button>
       <canvas ref={canvas} width={SHARE_CARD_WIDTH} height={SHARE_CARD_HEIGHT} role="img" aria-label={`Stonktrooper best score: ${formatShareScore(score)}`} className="share-dd-canvas block w-full h-auto rounded-lg" />
-      <div className="share-dd-actions flex flex-wrap justify-center gap-3 mt-4">
-        <button type="button" aria-label={copied ? 'Score link copied' : 'Copy score link'} title={copied ? 'Copied!' : 'Copy score link'} disabled={sharing} onClick={() => { void share(); }} className="flex items-center justify-center gap-2 rounded-lg bg-[#08795c] text-white p-3 font-bold disabled:opacity-40">
+      <div className="share-dd-actions">
+        {socialLinks(score).map(platform => <button key={platform.name} type="button" disabled={sharing} onClick={() => { void shareSocial(platform.name); }} aria-label={`Share score link to ${platform.name}`} title={`Share score on ${platform.name}`} className="share-dd-social-button flex items-center justify-center rounded-lg border border-[var(--line)] bg-[var(--alt)] p-3 disabled:opacity-40 cursor-pointer"><SocialIcon name={platform.name} /></button>)}
+        <button type="button" aria-label={error || (copied ? 'Score link copied' : 'Copy score link')} title={error || (copied ? 'Copied!' : 'Copy score link')} disabled={sharing} onClick={() => { void share(); }} className="share-dd-copy flex items-center justify-center gap-2 rounded-lg bg-[#08795c] text-white p-3 font-bold disabled:opacity-40">
           {copied ? <Check className="w-5 h-5" aria-hidden="true" /> : <Share2 className="w-5 h-5" aria-hidden="true" />}
         </button>
-        {socialLinks(score).map(platform => <button key={platform.name} type="button" disabled={sharing} onClick={() => { void shareSocial(platform.name); }} aria-label={`Share score link to ${platform.name}`} title={`Share score on ${platform.name}`} className="share-dd-social-button flex items-center justify-center rounded-lg border border-[var(--line)] bg-[var(--alt)] hover:brightness-125 p-3 disabled:opacity-40 cursor-pointer"><SocialIcon name={platform.name} /></button>)}
-      </div>
-      {message && <p role="status" className="share-dd-status mt-3 text-center text-sm text-[var(--green)]">{message}</p>}
-      {error && <p role="status" className="share-dd-status mt-3 text-center text-sm text-[var(--red)]">{error}</p>}
-      </div>
       </div>
     </div>
   </div>;

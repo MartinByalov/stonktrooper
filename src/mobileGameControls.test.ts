@@ -4,7 +4,7 @@ import { test } from 'node:test';
 
 const css = readFileSync(new URL('./index.css', import.meta.url), 'utf8');
 
-test('visible header wire uses a thin idle divider and hidden header wire falls back to the chart', () => {
+test('visible header wire has no idle divider and hidden header wire falls back to the chart', () => {
   const app = readFileSync(new URL('./App.tsx', import.meta.url), 'utf8');
   const game = readFileSync(new URL('./CandleGame.tsx', import.meta.url), 'utf8');
   assert.match(app, /<canvas className="mobile-header-feed" aria-label="Live Feed"/);
@@ -13,7 +13,25 @@ test('visible header wire uses a thin idle divider and hidden header wire falls 
   assert.match(game, /ctx = headerCtx;/);
   assert.match(game, /ctx = plotCtx;/);
   assert.match(game, /ctx\.scale\(1, tapeH\);\s*tapeH = 3;/);
+  const strip = game.slice(game.indexOf('if (headerFeedActive.current) {', game.indexOf('// Carry effects only tint')), game.indexOf("if (g.currentState === 'boxing'", game.indexOf('// Carry effects only tint')));
+  assert.doesNotMatch(strip, /fillRect|fillStyle/);
   assert.match(css, /\.mobile-header-feed\s*\{\s*display: none;/);
+});
+
+test('joystick uses a plain pressed fill and clears it on pointer and keyboard interruption', () => {
+  const source = readFileSync(new URL('./MobileJoystick.tsx', import.meta.url), 'utf8');
+  assert.match(source, /setAttribute\('data-pressed', 'true'\)/);
+  assert.match(source, /control.current\?\.removeAttribute\('data-pressed'\)/);
+  assert.match(source, /onPointerCancel=\{reset\} onLostPointerCapture=\{reset\}/);
+  assert.match(source, /onBlur=\{e =>/);
+  assert.match(css, /\.game-app \.mobile-joystick\[data-pressed="true"\]\s*\{\s*background: #334155;/);
+  assert.match(css, /html\[data-theme="light"\] \.game-app \.mobile-joystick\[data-pressed="true"\]\s*\{\s*background: #cbd5e1;/);
+});
+
+test('footer separator is present only in touch portrait', () => {
+  const section = css.slice(css.indexOf('/* Only the mobile portrait layout keeps a footer separator. */'), css.indexOf('.game-app .mobile-joystick:focus-visible'));
+  assert.match(section, /\.game-app \.site-footer\s*\{\s*border: 0;/);
+  assert.match(section, /@media \(orientation: portrait\) and \(pointer: coarse\)\s*\{\s*\.game-app \.site-footer\s*\{\s*border-top: 1px solid var\(--line\);/);
 });
 
 test('touch header wire is state-independent except for the portrait phone layout', () => {

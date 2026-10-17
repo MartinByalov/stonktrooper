@@ -2393,9 +2393,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     ctx.save();
     tapeH = feedLayout.current.tapeHeight;
     if (headerFeedActive.current) {
-      // Idle divider is one CSS pixel; active statuses extend to three pixels.
-      ctx.fillStyle = theme === 'light' ? '#000000' : '#ffffff';
-      ctx.fillRect(0, 0, W, tapeH);
+      // No idle divider beneath the header wire; only active status strips.
       ctx.scale(1, tapeH);
       tapeH = 3;
     }

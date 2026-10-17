@@ -21,10 +21,11 @@ test('desktop header wire replaces the chart row and preserves hover pause', () 
   assert.match(game, /headerFeed\?\.removeEventListener\('pointerleave', resumeTicker\)/);
 });
 
-test('idle header divider is one CSS pixel while active countdowns occupy three', () => {
+test('header has no idle divider while active countdowns occupy three CSS pixels', () => {
   const game = readFileSync(new URL('./CandleGame.tsx', import.meta.url), 'utf8');
   assert.match(game, /headerFeedActive\.current \? 1 \/ scale/);
-  assert.match(game, /ctx\.fillRect\(0, 0, W, tapeH\);\s*ctx\.scale\(1, tapeH\);\s*tapeH = 3;/);
+  assert.match(game, /ctx\.scale\(1, tapeH\);\s*tapeH = 3;/);
+  assert.doesNotMatch(game, /ctx\.fillRect\(0, 0, W, tapeH\);\s*ctx\.scale\(1, tapeH\)/);
   for (const scale of [0.3, 0.7, 1, 1.5]) {
     const tapeHeight = 1 / scale;
     assert.ok(Math.abs(tapeHeight * scale - 1) < 1e-8);

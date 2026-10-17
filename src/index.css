@@ -551,14 +551,6 @@ html[data-theme="light"] .game-result-over .liquidated-how-to-play:hover,
   border-color: #facc15 !important;
 }
 
-html[data-theme="dark"] .share-dd-social-button {
-  background: #131c29 !important;
-}
-
-html[data-theme="light"] .share-dd-social-button {
-  background: #eaf0f5 !important;
-}
-
 .how-to-grid > div {
   padding: 0.25rem;
   gap: 0.5rem;
@@ -676,6 +668,25 @@ html[data-theme="light"] .share-dd-social-button {
 
 html[data-theme="light"] .game-app .mobile-joystick {
   color: #000;
+}
+
+.game-app .mobile-joystick[data-pressed="true"] {
+  background: #334155;
+}
+
+html[data-theme="light"] .game-app .mobile-joystick[data-pressed="true"] {
+  background: #cbd5e1;
+}
+
+/* Only the mobile portrait layout keeps a footer separator. */
+.game-app .site-footer {
+  border: 0;
+}
+
+@media (orientation: portrait) and (pointer: coarse) {
+  .game-app .site-footer {
+    border-top: 1px solid var(--line);
+  }
 }
 
 .game-app .mobile-joystick:focus-visible {
@@ -2301,95 +2312,6 @@ html[data-theme="light"] .game-app .chart-pause-control {
   }
 }
 
-/* Mobile sharing reuses Liquidated's blurred chart, not another opaque card. */
-@media (pointer: coarse) {
-  .game-app:has(.share-dd-overlay) .game-over-overlay > .game-result-over {
-    visibility: hidden;
-  }
-
-  .game-app .share-dd-overlay.fixed.inset-0.z-50 {
-    top: var(--live-feed-bottom, 0px);
-    bottom: var(--footer-inset-bottom, 0px);
-    padding: 0;
-    overflow: hidden;
-    background: transparent;
-  }
-
-  .game-app .share-dd-overlay.fixed.inset-0.z-50 > .share-dd-dialog[role="dialog"] {
-    --share-dd-gutter: 8px;
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-    max-width: none;
-    height: 100%;
-    max-height: 100%;
-    min-height: 0;
-    margin: 0;
-    padding: var(--share-dd-gutter) max(var(--share-dd-gutter), env(safe-area-inset-right)) var(--share-dd-gutter) max(var(--share-dd-gutter), env(safe-area-inset-left));
-    border: 0;
-    border-radius: 0;
-    background: transparent;
-    box-shadow: none;
-    transform: none;
-    overflow: hidden;
-  }
-
-  .game-app .share-dd-dialog > .share-dd-header {
-    flex: 0 0 2rem;
-    width: 100%;
-    height: 2rem;
-    min-height: 2rem;
-    margin-bottom: 0;
-  }
-
-  .game-app .share-dd-header > .share-dd-close {
-    position: absolute;
-    top: 50%;
-    right: 0;
-    transform: translateY(-50%);
-    width: 2rem;
-    min-width: 2rem;
-    height: 2rem;
-    min-height: 2rem;
-    padding: 0;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    box-sizing: border-box;
-    color: var(--text);
-    border-color: currentColor;
-    background: var(--alt);
-  }
-
-  .game-app .share-dd-dialog > .share-dd-content {
-    flex: 1 1 auto;
-    min-height: 0;
-    margin-top: var(--share-dd-gutter);
-    margin-bottom: calc(2rem + var(--share-dd-gutter));
-    display: flex;
-    flex-direction: column;
-    container-type: size;
-    overflow-x: hidden;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-  }
-
-  .game-app .share-dd-content > .share-dd-group {
-    flex: 0 0 auto;
-    width: 100%;
-    margin-block: auto;
-  }
-
-  .game-app .share-dd-group > .share-dd-canvas {
-    /* Keep the 4:3 card intact; a short viewport scrolls rather than hiding it.
-       The 64px budget includes the 44px actions and their top margin. */
-    width: min(100%, max(128px, calc((100cqh - 64px) * 4 / 3)));
-    height: auto;
-    max-height: none;
-    margin-inline: auto;
-  }
-}
-
 /* Information headings sit below the close-control row. */
 @media (pointer: fine) {
   .game-app .site-info-overlay.fixed.inset-0.z-50 > .site-info-dialog > .site-info-header {
@@ -2783,4 +2705,120 @@ html[data-theme="light"] .game-app .chart-pause-control {
   margin: var(--pause-guide-gutter) 0 0;
   min-width: 0;
   min-height: 0;
+}
+
+/* Share DD is the image itself, with controls inside its corners. */
+.game-app:has(.share-dd-overlay) .game-over-overlay > .game-result-over {
+  visibility: hidden;
+}
+
+.game-app .share-dd-overlay.fixed.inset-0.z-50 {
+  top: var(--live-feed-bottom, 0px);
+  bottom: auto;
+  height: var(--guide-available-height, calc(100dvh - var(--live-feed-bottom, 0px) - var(--footer-inset-bottom, 0px)));
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  container-type: size;
+  overflow: auto;
+  background: transparent;
+}
+
+.game-app .share-dd-overlay.fixed.inset-0.z-50 > .share-dd-dialog[role="dialog"] {
+  position: relative;
+  display: block;
+  flex: 0 0 auto;
+  width: min(768px, calc(100cqw - 16px - env(safe-area-inset-left) - env(safe-area-inset-right)), calc((100cqh - 16px) * 4 / 3));
+  height: auto;
+  aspect-ratio: 4 / 3;
+  min-width: 0;
+  min-height: 0;
+  max-width: none;
+  max-height: none;
+  margin: auto;
+  padding: 0;
+  border: 0;
+  border-radius: 0.5rem;
+  background: transparent;
+  box-shadow: none;
+  transform: none;
+  overflow: visible;
+}
+
+.game-app .share-dd-dialog > .share-dd-canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: none;
+  margin: 0;
+}
+
+.game-app .share-dd-dialog > .share-dd-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  transform: none;
+  z-index: 1;
+}
+
+.game-app .share-dd-dialog > .share-dd-actions {
+  position: absolute;
+  /* The painted inner rectangle starts at 4.4% from the left and ends
+     7.3% above the bottom in both share-card backgrounds. */
+  left: calc(4.4% + 8px);
+  bottom: calc(7.3% + 8px);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+}
+
+.game-app .share-dd-actions > button {
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  min-height: 32px;
+  padding: 6px;
+  border-radius: 0.25rem;
+}
+
+/* Square controls share Share DD's X colors and hover/focus treatment. */
+:root {
+  --square-control-ink: #ffffff;
+  --square-control-fill: #182334;
+  --square-control-hover: #000000;
+}
+
+html[data-theme="light"] {
+  --square-control-ink: #000000;
+  --square-control-fill: #eaf0f5;
+  --square-control-hover: #ffffff;
+}
+
+html .game-app :is(.header-controls > button, .chart-pause-control, .dialog-close, .share-dd-actions > button) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 2rem;
+  height: 2rem;
+  min-width: 2rem;
+  min-height: 2rem;
+  padding: 0;
+  border: 1px solid currentColor;
+  border-radius: 0.25rem;
+  color: var(--square-control-ink) !important;
+  background: var(--square-control-fill) !important;
+  cursor: pointer;
+  transition: color 150ms, border-color 150ms, background-color 150ms;
+  border-color: currentColor !important;
+}
+
+html .game-app :is(.header-controls > button, .chart-pause-control, .dialog-close, .share-dd-actions > button):is(:hover, :focus-visible) {
+  background: var(--square-control-hover) !important;
+}
+
+html .game-app :is(.header-controls > button, .chart-pause-control, .dialog-close, .share-dd-actions > button) svg {
+  color: inherit !important;
 }

@@ -48,6 +48,7 @@ try {
     }
     await wait(300);
     assert.equal(await evaluate("matchMedia('(pointer: coarse)').matches"), touch);
+    assert.equal(await evaluate("getComputedStyle(document.querySelector('.site-footer')).borderTopWidth"), touch && width < height ? '1px' : '0px', 'unexpected footer separator');
     for (const section of ['About', 'Privacy', 'Disclaimer', 'Preferences']) {
       await evaluate(`Array.from(document.querySelectorAll('.site-footer nav button')).find(b => b.textContent === '${section}').click()`);
       await wait(150);
@@ -107,7 +108,17 @@ try {
         console.log(JSON.stringify({width,height,notch,joystickCorner:corner}));
         const x = joystick.x + joystick.width/2, y = joystick.y + joystick.height/2;
         await send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{x,y}] });
+        assert.equal(await evaluate("getComputedStyle(document.querySelector('.mobile-joystick')).backgroundColor"), 'rgb(51, 65, 85)', 'pressed joystick is not filled');
         await send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+        assert.equal(await evaluate("document.querySelector('.mobile-joystick').hasAttribute('data-pressed')"), false);
+        await send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{x,y}] });
+        await send('Input.dispatchTouchEvent', { type: 'touchCancel', touchPoints: [] });
+        assert.equal(await evaluate("document.querySelector('.mobile-joystick').hasAttribute('data-pressed')"), false, 'cancel leaves joystick filled');
+        await evaluate("document.querySelector('.mobile-joystick').focus()");
+        await send('Input.dispatchKeyEvent', { type: 'keyDown', key: ' ', code: 'Space', windowsVirtualKeyCode: 32 });
+        assert.equal(await evaluate("document.querySelector('.mobile-joystick').dataset.pressed"), 'true');
+        await send('Input.dispatchKeyEvent', { type: 'keyUp', key: ' ', code: 'Space', windowsVirtualKeyCode: 32 });
+        assert.equal(await evaluate("document.querySelector('.mobile-joystick').hasAttribute('data-pressed')"), false);
       } else {
         assert.equal((await hitTest('.mobile-joystick'))?.width, 0);
       }
@@ -155,10 +166,57 @@ try {
       const image = document.querySelector('.share-dd-canvas').getBoundingClientRect();
       const dialog = document.querySelector('.share-dd-dialog').getBoundingClientRect();
       const actions = document.querySelector('.share-dd-actions').getBoundingClientRect();
-      return {imageWidth:image.width,imageHeight:image.height,dialogHeight:dialog.height,actionsBottom:actions.bottom,dialogBottom:dialog.bottom};
+      const close = document.querySelector('.share-dd-close').getBoundingClientRect();
+      const buttons = Array.from(document.querySelectorAll('.share-dd-actions > button'));
+      const style = getComputedStyle(document.querySelector('.share-dd-dialog'));
+      return {imageWidth:image.width,imageHeight:image.height,dialogHeight:dialog.height,actionsBottom:actions.bottom,dialogBottom:dialog.bottom,
+        sameBounds:Math.abs(image.top-dialog.top)<1 && Math.abs(image.left-dialog.left)<1 && Math.abs(image.bottom-dialog.bottom)<1,
+        closeTop:close.top-image.top,closeRight:image.right-close.right,
+        actionsLeft:actions.left-image.left,actionsBottomGap:image.bottom-actions.bottom,
+        vertical:buttons.every((b,i)=>!i || b.getBoundingClientRect().top >= buttons[i-1].getBoundingClientRect().bottom),
+        shareLast:buttons[buttons.length-1].classList.contains('share-dd-copy'),text:document.querySelector('.share-dd-dialog').innerText,
+        border:style.borderTopWidth,padding:style.padding,background:style.backgroundColor};
     })()`);
     console.log(JSON.stringify({width,height,notch,share}));
     assert((await hitTest('.share-dd-close'))?.accessible, 'Share DD close inaccessible');
+    assert(share.sameBounds && share.vertical && share.shareLast, 'share card structure incorrect');
+    assert.equal(share.text, '');
+    assert.equal(share.border, '0px');
+    assert.equal(share.padding, '0px');
+    for (const gap of [share.closeTop,share.closeRight]) assert(Math.abs(gap-8)<1, 'share close not at image corner');
+    assert(Math.abs(share.actionsLeft-(share.imageWidth*0.044+8))<1, 'share actions not inside inner left boundary');
+    assert(Math.abs(share.actionsBottomGap-(share.imageHeight*0.073+8))<1, 'share actions not inside inner bottom boundary');
+    for (const selector of ['.share-dd-actions > button:first-child', '.share-dd-actions > button:last-child']) assert((await hitTest(selector))?.accessible, 'share action inaccessible');
+    for (const theme of ['dark', 'light']) {
+      const styles = await evaluate(`(() => {
+        document.documentElement.dataset.theme = '${theme}';
+        const controls = [document.querySelector('.share-dd-close'), ...document.querySelectorAll('.header-controls > button, .share-dd-actions > button')].filter(e=>e.getBoundingClientRect().width>0);
+        controls.forEach(e => e.style.transition = 'none');
+        const capture = e => {const s=getComputedStyle(e);return [s.color,s.borderColor,s.backgroundColor].join('|')};
+        document.activeElement?.blur();
+        const idle=controls.map(capture);
+        const focus=controls.map(e=>{e.focus();return capture(e)});
+        return {idle,focus};
+      })()`);
+      assert(styles.idle.every(s=>s===styles.idle[0]), 'square control idle styles differ: '+JSON.stringify(styles));
+      assert(styles.focus.every(s=>s===styles.focus[0]), 'square control focus styles differ: '+JSON.stringify(styles));
+      const ink = theme === 'light' ? 'rgb(0, 0, 0)' : 'rgb(255, 255, 255)';
+      const fill = theme === 'light' ? 'rgb(234, 240, 245)' : 'rgb(24, 35, 52)';
+      const hover = theme === 'light' ? 'rgb(255, 255, 255)' : 'rgb(0, 0, 0)';
+      assert.equal(styles.idle[0], [ink,ink,fill].join('|'));
+      assert.equal(styles.focus[0], [ink,ink,hover].join('|'));
+      await evaluate('document.activeElement?.blur()');
+      const closePoint = await hitTest('.share-dd-close');
+      await send('Input.dispatchMouseEvent', {type:'mouseMoved', x:closePoint.x+closePoint.width/2, y:closePoint.y+closePoint.height/2});
+      const hovered = await evaluate(`(() => {
+        const button=document.querySelector('.share-dd-close');
+        const style=getComputedStyle(button);
+        return {hovered:button.matches(':hover'),colors:[style.color,style.borderColor,style.backgroundColor].join('|')};
+      })()`);
+      assert(hovered.hovered, 'close button did not receive mouse hover');
+      assert.equal(hovered.colors, [ink,ink,hover].join('|'));
+      await send('Input.dispatchMouseEvent', {type:'mouseMoved', x:0, y:0});
+    }
     if (touch && width > height) {
       assert(share.imageHeight >= share.dialogHeight * 0.4, 'landscape share preview wastes available height');
       assert(share.actionsBottom <= share.dialogBottom + 1, 'share actions outside dialog');

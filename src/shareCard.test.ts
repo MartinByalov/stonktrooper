@@ -83,19 +83,19 @@ test('share card uses theme-specific backgrounds and preview/export use the same
   assert.match(component, /disabled=\{sharing\}/);
 });
 
-test('score dialog keeps its image and actions usable on mobile landscape screens', () => {
+test('Share DD uses only the image dialog and overlays its controls without visible status text', () => {
   const component = readFileSync(new URL('./ShareDD.tsx', import.meta.url), 'utf8');
   const css = readFileSync(new URL('./index.css', import.meta.url), 'utf8');
-  assert.match(component, /className="share-dd-overlay fixed inset-0/);
-  assert.match(component, /className="share-dd-dialog w-full/);
-  assert.match(component, /className="share-dd-canvas block/);
-  assert.match(component, /className="share-dd-actions flex/);
-  assert.match(css, /\.share-dd-overlay \{[\s\S]*?overflow-y: auto;/);
-  assert.match(css, /\.share-dd-canvas \{[\s\S]*?max-width: 100%;[\s\S]*?height: auto;/);
-  assert.match(css, /\.share-dd-dialog \{[\s\S]*?max-height: calc\(100dvh/);
-  assert.match(css, /\.share-dd-canvas \{[\s\S]*?max-height: min\(58dvh, 62vw\);/);
+  assert.match(component, /className="share-dd-dialog"/);
+  assert.doesNotMatch(component, /share-dd-header|share-dd-content|share-dd-group|share-dd-status|<p\b|setMessage/);
+  assert.match(component, /className="share-dd-actions"/);
+  assert(component.indexOf('className="share-dd-copy ') > component.indexOf('{socialLinks(score).map'));
+  const section = css.slice(css.indexOf('/* Share DD is the image itself'));
+  assert.match(section, /aspect-ratio: 4 \/ 3;/);
+  assert.match(section, /\.share-dd-close\s*\{[^}]*top: 8px;[^}]*right: 8px;/);
+  assert.match(section, /\.share-dd-actions\s*\{[^}]*left: calc\(4\.4% \+ 8px\);[^}]*bottom: calc\(7\.3% \+ 8px\);[^}]*flex-direction: column;/);
+  assert.match(section, /padding: 0;[^}]*border: 0;[^}]*background: transparent;[^}]*box-shadow: none;/);
 });
-
 test('Liquidated and Share DD controls use the requested theme colors', () => {
   const app = readFileSync(new URL('./App.tsx', import.meta.url), 'utf8');
   const component = readFileSync(new URL('./ShareDD.tsx', import.meta.url), 'utf8');
@@ -104,10 +104,21 @@ test('Liquidated and Share DD controls use the requested theme colors', () => {
   assert.match(app, /className="how-to-play-action liquidated-how-to-play[^>]*>\s*How to Play\s*<\/button>/);
   assert.match(css, /\.game-result-over \.liquidated-how-to-play\s*\{[\s\S]*?border-color: #ffffff !important;/);
   assert.match(css, /\.game-result-over \.share-dd-open\s*\{[\s\S]*?color: #facc15 !important;[\s\S]*?border-color: #facc15 !important;/);
-  assert.match(css, /html\[data-theme="dark"\] \.share-dd-social-button\s*\{\s*background: #131c29 !important;/);
-  assert.match(css, /html\[data-theme="light"\] \.share-dd-social-button\s*\{\s*background: #eaf0f5 !important;/);
   assert.doesNotMatch(css, /\.share-dd-close:hover/);
   assert.doesNotMatch(component, />SCORE<\/h2>/);
+});
+
+test('square header, pause and close controls share the same theme and interaction colors', () => {
+  const css = readFileSync(new URL('./index.css', import.meta.url), 'utf8');
+  const section = css.slice(css.indexOf('/* Square controls share'));
+  assert.match(section, /:is\(\.header-controls > button, \.chart-pause-control, \.dialog-close, \.share-dd-actions > button\)/);
+  assert.match(section, /color: var\(--square-control-ink\) !important;/);
+  assert.match(section, /background: var\(--square-control-fill\) !important;/);
+  assert.match(section, /border-color: currentColor !important;/);
+  assert.match(section, /:is\(:hover, :focus-visible\)\s*\{\s*background: var\(--square-control-hover\) !important;/);
+  assert.match(section, /:root\s*\{\s*--square-control-ink: #ffffff;\s*--square-control-fill: #182334;\s*--square-control-hover: #000000;/);
+  assert.match(section, /html\[data-theme="light"\]\s*\{\s*--square-control-ink: #000000;\s*--square-control-fill: #eaf0f5;\s*--square-control-hover: #ffffff;/);
+  assert.match(section, /svg\s*\{\s*color: inherit !important;/);
 });
 
 test('header actions and Liquidated buttons follow the requested order', () => {
@@ -119,35 +130,6 @@ test('header actions and Liquidated buttons follow the requested order', () => {
   const actions = app.slice(app.indexOf('space-y-2.5 mt-5'));
   assert(actions.indexOf("'New Game'") < actions.indexOf('>Share DD</button>'));
   assert(actions.indexOf('>Share DD</button>') < actions.indexOf('className="how-to-play-action liquidated-how-to-play'));
-});
-
-test('mobile Share DD fills the feed-to-footer space with an unscaled panel and a fixed close row', () => {
-  const component = readFileSync(new URL('./ShareDD.tsx', import.meta.url), 'utf8');
-  const css = readFileSync(new URL('./index.css', import.meta.url), 'utf8');
-  const section = css.slice(css.indexOf('/* Mobile sharing reuses Liquidated'), css.indexOf('/* Information headings sit below'));
-  assert.match(section, /@media \(pointer: coarse\)/);
-  assert.match(section, /\.share-dd-overlay\.fixed\.inset-0\.z-50\s*\{\s*top: var\(--live-feed-bottom, 0px\);\s*bottom: var\(--footer-inset-bottom, 0px\);\s*padding: 0;\s*overflow: hidden;\s*background: transparent;/);
-  assert.match(section, /\.share-dd-dialog\[role="dialog"\]\s*\{[^}]*width: 100%;[^}]*height: 100%;[^}]*padding: var\(--share-dd-gutter\) max\(var\(--share-dd-gutter\), env\(safe-area-inset-right\)\) var\(--share-dd-gutter\) max\(var\(--share-dd-gutter\), env\(safe-area-inset-left\)\);[^}]*background: transparent;[^}]*transform: none;/);
-  assert.match(section, /--share-dd-gutter: 8px;/);
-  assert.doesNotMatch(section, /--mobile-theme-control-right/);
-  assert.match(section, /\.share-dd-header\s*\{[^}]*flex: 0 0 2rem;[^}]*height: 2rem;/);
-  assert.match(section, /\.share-dd-close\s*\{[^}]*top: 50%;\s*right: 0;\s*transform: translateY\(-50%\);[^}]*width: 2rem;[^}]*height: 2rem;/);
-  assert.match(section, /\.share-dd-close\s*\{[^}]*display: inline-flex;\s*align-items: center;\s*justify-content: center;\s*box-sizing: border-box;[^}]*border-color: currentColor;/);
-  assert.match(section, /:has\(\.share-dd-overlay\) \.game-over-overlay > \.game-result-over\s*\{\s*visibility: hidden;/);
-  assert.match(section, /\.share-dd-content\s*\{[^}]*min-height: 0;[^}]*overflow-y: auto;/);
-  assert.match(component, /className="share-dd-header /);
-  assert.match(component, /className="dialog-close mobile-dialog-close share-dd-close /);
-  assert.match(component, /className="share-dd-content"/);
-});
-
-test('Share DD centers the card and actions together and sizes the image from available arena space', () => {
-  const component = readFileSync(new URL('./ShareDD.tsx', import.meta.url), 'utf8');
-  const css = readFileSync(new URL('./index.css', import.meta.url), 'utf8');
-  assert.match(component, /className="share-dd-content">\s*<div className="share-dd-group">/);
-  assert.match(css, /\.game-app \.share-dd-overlay\.fixed\.inset-0\.z-50\s*\{\s*top: var\(--live-feed-bottom, 0px\);\s*bottom: var\(--footer-inset-bottom, 0px\);/);
-  assert.match(css, /\.share-dd-dialog > \.share-dd-content\s*\{[^}]*margin-bottom: calc\(2rem \+ var\(--share-dd-gutter\)\);[^}]*container-type: size;/);
-  assert.match(css, /\.share-dd-content > \.share-dd-group\s*\{[^}]*margin-block: auto;/);
-  assert.match(css, /\.share-dd-group > \.share-dd-canvas\s*\{[^}]*width: min\(100%, max\(128px, calc\(\(100cqh - 64px\) \* 4 \/ 3\)\)\);[^}]*height: auto;[^}]*max-height: none;/);
 });
 
 test('game-over score sharing opens with the final result', () => {
