@@ -625,7 +625,7 @@ html[data-theme="light"] .game-result-over .liquidated-how-to-play:hover,
   width: var(--joystick-knob-size);
   height: var(--joystick-knob-size);
   border: 1px solid currentColor;
-  background: var(--alt);
+  background: currentColor;
   box-shadow: none;
 }
 
@@ -2185,41 +2185,11 @@ kbd {
   }
 }
 
-.game-app .chart-pause-control {
-  position: absolute;
-  z-index: 40;
-  right: calc(var(--chart-axis-right, 64px) + 8px);
-  bottom: max(16px, env(safe-area-inset-bottom));
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 2rem;
-  height: 2rem;
-  padding: 0;
-  border: 1px solid #fff;
-  border-radius: 0.25rem;
-  background: transparent;
-  color: #fff;
-  cursor: pointer;
-  touch-action: manipulation;
-}
-
-html[data-theme="light"] .game-app .chart-pause-control {
-  border-color: #000;
-  background: transparent;
-  color: #000;
-}
-
 @media (pointer: coarse) {
   .game-app:is([data-state="play"], [data-state="boxing"]) .header-controls > .mobile-header-about-control {
     display: none;
   }
 
-  .game-app .chart-pause-control {
-    --pause-control-gap: var(--mobile-control-gap);
-    right: max(calc(var(--chart-axis-right, 64px) + var(--pause-control-gap)), env(safe-area-inset-right));
-    bottom: max(var(--pause-control-gap), env(safe-area-inset-bottom));
-  }
 
   .game-app {
     --mobile-control-gap: 8px;
@@ -2234,11 +2204,11 @@ html[data-theme="light"] .game-app .chart-pause-control {
 
   .game-app .mobile-joystick,
   .game-app:fullscreen .mobile-joystick {
-    /* Share the base gutter; safe areas protect only their own edge. */
-    --joystick-edge-gap: var(--mobile-control-gap);
+    /* Match the rendered PIPS inset, including its safe-area adjustment. */
+    --joystick-edge-gap: var(--game-hud-inset, 16px);
     position: absolute;
-    left: max(var(--joystick-edge-gap), env(safe-area-inset-left));
-    bottom: max(var(--joystick-edge-gap), env(safe-area-inset-bottom));
+    left: var(--joystick-edge-gap);
+    bottom: var(--joystick-edge-gap);
   }
 
   /* Margin Call is an intrinsic-height, centered card in either orientation. */
@@ -2258,7 +2228,7 @@ html[data-theme="light"] .game-app .chart-pause-control {
 
   .game-app .pause-overlay > .game-result > div > h2 {
     margin: 0;
-    padding-block: calc(var(--margin-call-gap) + 6px);
+    padding-block: calc(var(--margin-call-gap) + 10px);
     text-align: center;
   }
 
@@ -2714,21 +2684,6 @@ html[data-theme="light"] .game-app .chart-pause-control {
   }
 }
 
-/* Landscape gameplay follows the compact edge-aligned control reference.
-   Keep portrait and header safe-area protection independent of game controls. */
-@media (orientation: landscape) and (pointer: coarse) {
-  .game-app .mobile-joystick,
-  .game-app:fullscreen .mobile-joystick {
-    left: var(--mobile-control-gap);
-    bottom: var(--mobile-control-gap);
-  }
-
-  .game-app .chart-pause-control {
-    right: calc(var(--chart-axis-right, 64px) + var(--mobile-control-gap));
-    bottom: var(--mobile-control-gap);
-  }
-}
-
 /* Share DD is the image itself, with controls inside its corners. */
 .game-app:has(.share-dd-overlay) .game-over-overlay > .game-result-over {
   visibility: hidden;
@@ -2819,7 +2774,7 @@ html[data-theme="light"] {
   --square-control-hover: #ffffff;
 }
 
-html .game-app :is(.header-controls > button, .chart-pause-control, .dialog-close, .share-dd-actions > button, .site-info-contact-button) {
+html .game-app :is(.header-controls > button, .dialog-close, .share-dd-actions > button, .site-info-contact-button) {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -2838,11 +2793,11 @@ html .game-app :is(.header-controls > button, .chart-pause-control, .dialog-clos
   border-color: currentColor !important;
 }
 
-html .game-app :is(.header-controls > button, .chart-pause-control, .dialog-close, .share-dd-actions > button, .site-info-contact-button, .preferences-clear-button):is(:hover, :focus-visible) {
+html .game-app :is(.header-controls > button, .dialog-close, .share-dd-actions > button, .site-info-contact-button, .preferences-clear-button):is(:hover, :focus-visible) {
   background: var(--square-control-hover) !important;
 }
 
-html .game-app :is(.header-controls > button, .chart-pause-control, .dialog-close, .share-dd-actions > button, .site-info-contact-button) svg {
+html .game-app :is(.header-controls > button, .dialog-close, .share-dd-actions > button, .site-info-contact-button) svg {
   color: inherit !important;
 }
 
@@ -2854,13 +2809,14 @@ html .game-app .preferences-clear-button {
   transition: color 150ms, border-color 150ms, background-color 150ms;
 }
 
-html .game-app .chart-pause-control:not(:hover):not(:focus-visible) {
-  background: transparent !important;
-}
 
 html .game-app .share-dd-actions > button.share-dd-copy {
   color: #ffffff !important;
   background: #08795c !important;
+}
+
+html[data-theme="light"] .game-app .share-dd-actions > button.share-dd-copy {
+  border-color: #000000 !important;
 }
 
 .mobile-diagnostics {
@@ -2888,4 +2844,54 @@ html .game-app .share-dd-actions > button.share-dd-copy {
   background: var(--panel);
   color: var(--text);
   user-select: text;
+}
+/* Header logo PNGs are 864x289; visible artwork occupies (4,42)-(858,230).
+   Crop only the header presentation, retaining the existing 32px image scale. */
+.game-app header {
+  --logo-art-height: calc(188px * 32 / 289);
+  --logo-edge-gap: calc(8px + (32px - var(--logo-art-height)) / 2);
+  padding-left: max(var(--logo-edge-gap), env(safe-area-inset-left));
+}
+
+.game-app .header-logo-frame {
+  position: relative;
+  flex: 0 0 auto;
+  width: calc(854px * 32 / 289);
+  height: var(--logo-art-height);
+  margin: 0;
+  overflow: hidden;
+}
+
+.game-app .header-logo-frame .stonktrooper-logo {
+  position: absolute;
+  top: calc(-42px * 32 / 289);
+  left: calc(-4px * 32 / 289);
+  width: auto;
+  height: 32px;
+  max-width: none;
+}
+
+/* Portrait information panels have roomier text and desktop-style title placement.
+   Keep the existing landscape frame and close-button position unchanged. */
+@media (orientation: portrait) and (pointer: coarse) {
+  .game-app .site-info-overlay.fixed.inset-0.z-50 > .site-info-dialog > .site-info-content {
+    padding-inline: 24px;
+  }
+
+  .game-app .site-info-overlay.fixed.inset-0.z-50 > .site-info-dialog > .site-info-header {
+    height: auto;
+    min-height: 4.5rem;
+    flex: 0 0 4.5rem;
+    align-items: flex-end;
+    padding-bottom: 0.5rem;
+  }
+
+  .game-app .site-info-overlay .site-info-header > .site-info-title {
+    transform: translateY(-4px);
+  }
+
+  .game-app .site-info-overlay.fixed.inset-0.z-50 > .site-info-dialog > .site-info-header > .site-info-close {
+    top: 0;
+    transform: none;
+  }
 }

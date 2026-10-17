@@ -97,6 +97,22 @@ try {
         return {start, end:e.scrollTop + e.clientHeight >= e.scrollHeight-1, scrollTop:e.scrollTop, clientHeight:e.clientHeight, scrollHeight:e.scrollHeight, top:e.getBoundingClientRect().top, childTop:e.firstElementChild.getBoundingClientRect().top};
       })()`);
       assert(scroll.start && scroll.end, `${width}: ${section}: clipped scroll content ${JSON.stringify(scroll)}`);
+      if (touch) {
+        const layout = await evaluate(`(() => {
+          const content = getComputedStyle(document.querySelector('.site-info-content'));
+          const header = document.querySelector('.site-info-header').getBoundingClientRect();
+          const title = document.querySelector('.site-info-title').getBoundingClientRect();
+          const close = document.querySelector('.site-info-close').getBoundingClientRect();
+          return {left:parseFloat(content.paddingLeft),right:parseFloat(content.paddingRight),
+            height:header.height,titleTop:title.top,closeBottom:close.bottom};
+        })()`);
+        if (width < height) {
+          assert.equal(layout.left, 24);
+          assert.equal(layout.right, 24);
+          assert.equal(layout.height, 72);
+          assert(layout.titleTop >= layout.closeBottom, `${section} title overlaps close row`);
+        } else assert.equal(layout.height, 32, 'landscape title placement changed');
+      }
       await evaluate("document.querySelector('.site-info-close').click()");
     }
     const canvas = await evaluate(`(() => {
@@ -125,17 +141,47 @@ try {
         screen.orientation.lock = async () => {};
         document.querySelector('.desktop-initial-guide .how-to-mode-selector').dispatchEvent(new KeyboardEvent('keydown', {key:'ArrowRight',bubbles:true}))`);
       await wait(100);
+      await evaluate(`(() => {
+        const original = CanvasRenderingContext2D.prototype.fillText;
+        CanvasRenderingContext2D.prototype.fillText = function(text, x, y, ...args) {
+          if (text === 'PIPS: ') {
+            const metrics = this.measureText(text), transform = this.getTransform();
+            const canvas = this.canvas.getBoundingClientRect();
+            window.scoreGlyph = {
+              left: canvas.left + ((x-metrics.actualBoundingBoxLeft)*transform.a+transform.e)*canvas.width/this.canvas.width,
+              top: canvas.top + ((y-metrics.actualBoundingBoxAscent)*transform.d+transform.f)*canvas.height/this.canvas.height
+            };
+          }
+          return original.call(this, text, x, y, ...args);
+        };
+      })()`);
       await evaluate(`Array.from(document.querySelectorAll('.desktop-initial-guide button')).find(b => b.textContent.trim() === 'Start').click()`);
       await wait(100);
       assert.equal(await evaluate("document.querySelector('.game-app').dataset.state"), 'play');
-      const pause = await hitTest('.chart-pause-control');
+      // Canvas coordinates include the existing one-pixel arena border.
+      const alignment = await evaluate(`(() => {
+        const logo = document.querySelector('.header-logo-frame').getBoundingClientRect();
+        const header = document.querySelector('header').getBoundingClientRect();
+        const canvas = document.querySelector('.game-stage canvas').getBoundingClientRect();
+        const sound = document.querySelector('.header-sound-control');
+        return { logoLeft:logo.left-header.left, logoTop:logo.top-header.top,
+          scoreLeft:window.scoreGlyph.left-canvas.left,
+          scoreTop:window.scoreGlyph.top-canvas.top,
+          pauseBeforeSound:sound.previousElementSibling.classList.contains('header-pause-control') };
+      })()`);
+      assert(alignment.pauseBeforeSound, 'pause is not immediately before sound');
+      assert(Math.abs(alignment.scoreLeft-alignment.logoLeft-2)<1, JSON.stringify(alignment));
+      assert(Math.abs(alignment.scoreTop-alignment.scoreLeft)<=1.1, JSON.stringify(alignment));
+      if (!notch || notch === 'right') assert(Math.abs(alignment.logoLeft-alignment.logoTop)<1, JSON.stringify(alignment));
+      console.log(JSON.stringify({width,height,notch,alignment}));
+      const pause = await hitTest('.header-pause-control');
       assert(pause?.accessible, 'pause inaccessible');
       for (const theme of ['dark', 'light']) {
-        await evaluate(`document.documentElement.dataset.theme='${theme}'; document.activeElement?.blur(); document.querySelector('.chart-pause-control').style.transition='none'`);
+        await evaluate(`document.documentElement.dataset.theme='${theme}'; document.activeElement?.blur(); document.querySelector('.header-pause-control').style.transition='none'`);
         await send('Input.dispatchMouseEvent', {type:'mouseMoved',x:0,y:0});
-        assert.equal(await evaluate("getComputedStyle(document.querySelector('.chart-pause-control')).backgroundColor"), 'rgba(0, 0, 0, 0)', 'pause idle should be transparent');
+        assert.equal(await evaluate("getComputedStyle(document.querySelector('.header-pause-control')).backgroundColor"), theme==='light'?'rgb(234, 240, 245)':'rgb(24, 35, 52)', 'pause idle should match header controls');
         await send('Input.dispatchMouseEvent', {type:'mouseMoved',x:pause.x+pause.width/2,y:pause.y+pause.height/2});
-        assert.equal(await evaluate("getComputedStyle(document.querySelector('.chart-pause-control')).backgroundColor"), theme==='light'?'rgb(255, 255, 255)':'rgb(0, 0, 0)', 'pause hover fill incorrect');
+        assert.equal(await evaluate("getComputedStyle(document.querySelector('.header-pause-control')).backgroundColor"), theme==='light'?'rgb(255, 255, 255)':'rgb(0, 0, 0)', 'pause hover fill incorrect');
       }
       await send('Input.dispatchMouseEvent', {type:'mouseMoved',x:0,y:0});
       await evaluate("document.documentElement.dataset.theme='dark'");
@@ -147,20 +193,20 @@ try {
           const stage = document.querySelector('.game-stage').getBoundingClientRect();
           return {left:control.left-stage.left,bottom:stage.bottom-control.bottom};
         })()`);
-        assert(Math.abs(corner.bottom-8) < 1, 'unexpected joystick bottom gap');
-        assert(Math.abs(corner.left-8) < 1, 'unexpected joystick corner gap');
+        assert(Math.abs(corner.bottom-alignment.scoreLeft) < 1, 'joystick bottom gap differs from PIPS');
+        assert(Math.abs(corner.left-alignment.scoreLeft) < 1, 'joystick left gap differs from PIPS');
         const gaps = await evaluate(`(() => {
           const header = document.querySelector('header').getBoundingClientRect();
           if (Math.abs(header.height - 48) > 1) throw new Error('Side notch enlarged the header: ' + header.height);
           const fullscreen = document.querySelector('.desktop-fullscreen-control').getBoundingClientRect();
-          const pause = document.querySelector('.chart-pause-control').getBoundingClientRect();
+          const pause = document.querySelector('.header-pause-control').getBoundingClientRect();
           const arena = document.querySelector('.game-arena');
           const bounds = arena.getBoundingClientRect();
           const axis = parseFloat(getComputedStyle(arena).getPropertyValue('--chart-axis-right'));
           return [header.right-fullscreen.right, fullscreen.top-header.top, header.bottom-fullscreen.bottom,
-            bounds.bottom-pause.bottom, bounds.right-axis-pause.right];
+            pause.top-fullscreen.top, pause.height-fullscreen.height];
         })()`);
-        const expectedGaps = [notch && notch !== 'left' ? 44 : 8, 8, 8, 8, 8];
+        const expectedGaps = [notch && notch !== 'left' ? 44 : 8, 8, 8, 0, 0];
         gaps.forEach((gap, index) => assert(Math.abs(gap-expectedGaps[index]) < 1, `mobile control gutters differ: ${JSON.stringify(gaps)} vs ${JSON.stringify(expectedGaps)}`));
         console.log(JSON.stringify({width,height,notch,joystickCorner:corner}));
         const x = joystick.x + joystick.width/2, y = joystick.y + joystick.height/2;
@@ -182,10 +228,12 @@ try {
       } else {
         assert.equal((await hitTest('.mobile-joystick'))?.width, 0);
       }
-      await evaluate("document.querySelector('.chart-pause-control').click()");
+      await evaluate("document.querySelector('.header-pause-control').click()");
       assert.equal(await evaluate("document.querySelector('.game-app').dataset.state"), 'paused');
       console.log(JSON.stringify({width,height,controls:'passed'}));
       if (touch) {
+        const titlePadding = await evaluate(`getComputedStyle(document.querySelector('.pause-overlay h2')).paddingTop`);
+        assert(parseFloat(titlePadding) >= 18, 'Margin Call title needs roomier vertical spacing');
         await evaluate("document.querySelector('.pause-overlay .how-to-play-action').click()");
         await wait(150);
         assert((await hitTest('.mobile-how-to-close'))?.accessible, 'landscape guide close inaccessible');
@@ -281,6 +329,7 @@ try {
       })()`);
       assert.equal(copyColors.idle, 'rgb(255, 255, 255)|rgb(8, 121, 92)');
       assert.equal(copyColors.focus, copyColors.idle);
+      if (theme === 'light') assert.equal(await evaluate("getComputedStyle(document.querySelector('.share-dd-copy')).borderColor"), 'rgb(0, 0, 0)', 'Day Share border must be black');
       await evaluate('document.activeElement?.blur()');
       const copyPoint = await hitTest('.share-dd-copy');
       await send('Input.dispatchMouseEvent', {type:'mouseMoved',x:copyPoint.x+copyPoint.width/2,y:copyPoint.y+copyPoint.height/2});

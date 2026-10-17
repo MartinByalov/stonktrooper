@@ -11,7 +11,7 @@ export function MobileJoystick({ onMove, onPress, onRelease, movementEnabled }: 
   const pointer = useRef<number | null>(null);
   const control = useRef<HTMLDivElement>(null);
   const keyboardPressed = useRef(false);
-  const gesture = useRef({ startY: 0, latched: false });
+  const gesture = useRef({ startX: 0, startY: 0, latched: false });
   const knob = useRef<HTMLSpanElement>(null);
   const callbacks = useRef({ onMove, onRelease });
   useLayoutEffect(() => { callbacks.current = { onMove, onRelease }; });
@@ -52,7 +52,7 @@ export function MobileJoystick({ onMove, onPress, onRelease, movementEnabled }: 
       if (pointer.current !== null) return;
       pointer.current = e.pointerId;
       e.currentTarget.setAttribute('data-pressed', 'true');
-      gesture.current = { startY: e.clientY, latched: false };
+      gesture.current = { startX: e.clientX, startY: e.clientY, latched: false };
       e.currentTarget.setPointerCapture(e.pointerId); onPress();
     }}
     onPointerMove={e => {
@@ -63,7 +63,7 @@ export function MobileJoystick({ onMove, onPress, onRelease, movementEnabled }: 
       const dx = e.clientX - rect.left - rect.width / 2;
       const dy = e.clientY - rect.top - rect.height / 2;
       const radius = rect.width * 0.29, length = Math.hypot(dx, dy);
-      const swipe = joystickSwipe(gesture.current.startY - e.clientY, radius, gesture.current.latched);
+      const swipe = joystickSwipe(gesture.current.startY - e.clientY, radius, gesture.current.latched, e.clientX - gesture.current.startX);
       gesture.current.latched = swipe.latched;
       if (swipe.jump) onPress();
       const scale = length > radius ? radius / length : 1;

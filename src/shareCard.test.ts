@@ -111,7 +111,7 @@ test('Liquidated and Share DD controls use the requested theme colors', () => {
 test('square header, pause and close controls share the same theme and interaction colors', () => {
   const css = readFileSync(new URL('./index.css', import.meta.url), 'utf8');
   const section = css.slice(css.indexOf('/* Square controls share'));
-  assert.match(section, /:is\(\.header-controls > button, \.chart-pause-control, \.dialog-close, \.share-dd-actions > button, \.site-info-contact-button\)/);
+  assert.match(section, /:is\(\.header-controls > button, \.dialog-close, \.share-dd-actions > button, \.site-info-contact-button\)/);
   assert.match(section, /color: var\(--square-control-ink\) !important;/);
   assert.match(section, /background: var\(--square-control-fill\) !important;/);
   assert.match(section, /border-color: currentColor !important;/);
@@ -119,7 +119,6 @@ test('square header, pause and close controls share the same theme and interacti
   assert.match(section, /:root\s*\{\s*--square-control-ink: #ffffff;\s*--square-control-fill: #182334;\s*--square-control-hover: #000000;/);
   assert.match(section, /html\[data-theme="light"\]\s*\{\s*--square-control-ink: #000000;\s*--square-control-fill: #eaf0f5;\s*--square-control-hover: #ffffff;/);
   assert.match(section, /svg\s*\{\s*color: inherit !important;/);
-  assert.match(section, /\.chart-pause-control:not\(:hover\):not\(:focus-visible\)\s*\{\s*background: transparent !important;/);
   assert.match(section, /\.share-dd-actions > button\.share-dd-copy\s*\{\s*color: #ffffff !important;\s*background: #08795c !important;/);
 });
 
@@ -127,7 +126,7 @@ test('header actions and Liquidated buttons follow the requested order', () => {
   const app = readFileSync(new URL('./App.tsx', import.meta.url), 'utf8');
   const header = app.slice(app.indexOf('title="Music styles"'), app.indexOf('</header>'));
   assert(header.indexOf('Day mode (N)') < header.indexOf('Sound Off (M)'));
-  assert.doesNotMatch(header, /HODL \(P\)|chart-pause-control/);
+  assert(header.indexOf('HODL (P)') < header.indexOf('Sound Off (M)'));
   assert(header.indexOf('Sound Off (M)') < header.indexOf('Fullscreen (F)'));
   const actions = app.slice(app.indexOf('space-y-2.5 mt-5'));
   assert(actions.indexOf("'New Game'") < actions.indexOf('>Share DD</button>'));

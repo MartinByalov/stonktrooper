@@ -70,7 +70,7 @@ test('portrait mobile presents How to Play instead of a rotate prompt and keeps 
   assert.match(css, /\.game-app header\s*\{\s*--mobile-header-gutter: max\(8px, env\(safe-area-inset-top\), env\(safe-area-inset-right\)\);/);
   assert.match(css, /\.game-app header\s*\{[^}]*padding: var\(--mobile-header-gutter\) var\(--mobile-header-gutter\) var\(--mobile-header-gutter\)/);
   assert.match(app, /<button type="button" title="About"[\s\S]*?className="mobile-header-control mobile-header-about-control/);
-  assert.match(app, /\{state === 'play' && <button[\s\S]*?chart-pause-control/);
+  assert.match(app, /\{state === 'play' && <button[\s\S]*?header-pause-control/);
   assert.match(css, /\.how-to-layout > \.mechanics-guide \{[\s\S]*?grid-template-columns: 1fr;/);
 });
 

@@ -2,7 +2,6 @@
 import type { Pickup, Swan } from './types';
 import { drawChickenTender } from './tenderRenderer';
 import { drawSpinningFedora } from './fedoraRenderer';
-import { drawCoinReflection } from './coinReflection';
 
 export const APE_SCALE = 0.6;
 
@@ -389,7 +388,12 @@ export const drawPickupAsset = (ctx: CanvasRenderingContext2D, d: Pickup, x: num
         ctx.fillText('M', 0, 0.5);
         // Moving reflection across the face, without rotating or scaling the coin.
         const sweep = ((frame * 0.35 + d.x * 0.15) % 40) - 20;
-        drawCoinReflection(ctx, sweep);
+        ctx.save(); ctx.beginPath(); ctx.arc(0, 0, 10, 0, Math.PI * 2); ctx.clip();
+        const reflection = ctx.createLinearGradient(sweep - 4, 0, sweep + 4, 0);
+        reflection.addColorStop(0, 'rgba(255,255,255,0)');
+        reflection.addColorStop(0.5, 'rgba(255,255,255,0.45)');
+        reflection.addColorStop(1, 'rgba(255,255,255,0)');
+        ctx.fillStyle = reflection; ctx.fillRect(sweep - 4, -11, 8, 22); ctx.restore();
 
         ctx.restore();
 

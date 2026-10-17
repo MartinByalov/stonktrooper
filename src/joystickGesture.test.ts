@@ -32,4 +32,15 @@ test('only Kangaroo renders the knob and enables swipe detection while horizonta
   assert.match(source, /if \(swipe\.jump\) onPress\(\);[\s\S]*?onMove\(x \/ radius, y \/ radius\);/);
   assert.match(source, /startY: e\.clientY, latched: false/);
   assert.match(source, /onPointerCancel=\{reset\} onLostPointerCapture=\{reset\}/);
+  assert.match(source, /gesture\.current\.latched, e\.clientX - gesture\.current\.startX/);
+});
+
+test('upper diagonals trigger jumps while shallow sideways drags do not', () => {
+  for (const direction of [-1, 1]) {
+    assert.equal(joystickSwipe(10, 20, false, direction * 10).jump, true);
+    assert.equal(joystickSwipe(10, 20, true, direction * 10).jump, false);
+    assert.deepEqual(joystickSwipe(2, 20, false, direction * 20), { jump: false, latched: false });
+    assert.deepEqual(joystickSwipe(-10, 20, false, direction * 20), { jump: false, latched: false });
+    assert.equal(joystickSwipe(0, 20, true, direction * 20).latched, false);
+  }
 });

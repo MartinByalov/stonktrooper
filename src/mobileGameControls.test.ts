@@ -85,7 +85,7 @@ test('joystick visibility follows touch input rather than tablet viewport width'
 test('joystick uses monochrome button borders in both themes without a blur layer', () => {
   assert.match(css, /\.game-app \.mobile-joystick\s*\{[^}]*color: #fff;[^}]*border: 1px solid currentColor;[^}]*background: transparent;[^}]*backdrop-filter: none;/);
   assert.match(css, /html\[data-theme="light"\] \.game-app \.mobile-joystick\s*\{\s*color: #000;/);
-  assert.match(css, /\.mobile-joystick-knob\s*\{[^}]*border: 1px solid currentColor;[^}]*background: var\(--alt\);/);
+  assert.match(css, /\.mobile-joystick-knob\s*\{[^}]*border: 1px solid currentColor;[^}]*background: currentColor;/);
 });
 
 test('Liquidated scales as a whole on all touch sizes without internal scrolling', () => {
@@ -98,7 +98,7 @@ test('Liquidated scales as a whole on all touch sizes without internal scrolling
 });
 
 test('Liquidated overrides portrait overlay stretching and remains an intrinsic-height card after rotation', () => {
-  const mobile = css.slice(css.indexOf('@media (pointer: coarse) {', css.indexOf('.game-app .chart-pause-control {')));
+  const mobile = css.slice(css.indexOf('@media (pointer: coarse) {', css.indexOf('/* Keep the mobile description area')));
   assert.match(mobile, /\.game-app \.game-arena > \.game-overlay\.game-over-overlay\s*\{\s*align-items: center;\s*justify-content: center;\s*overflow: hidden;/);
   assert.match(mobile, /\.game-app \.game-over-overlay > \.game-result-over\s*\{[^}]*height: auto;\s*min-height: 0;\s*max-height: none;[^}]*flex: 0 0 auto;/);
   // The later rule must beat the equally specific generic portrait selector.
@@ -108,39 +108,42 @@ test('Liquidated overrides portrait overlay stretching and remains an intrinsic-
   assert.match(fit, /resize\.observe\(element\)/);
 });
 
-test('mobile Margin Call centers its card and gives its title six extra pixels on both sides', () => {
+test('mobile Margin Call centers its card and gives its title ten extra pixels on both sides', () => {
   const section = css.slice(css.indexOf('/* Margin Call is an intrinsic-height'), css.indexOf('/* Override portrait\'s generic arena-overlay stretch'));
   assert.match(section, /\.game-app \.game-arena > \.game-overlay\.pause-overlay\s*\{\s*align-items: center;\s*justify-content: center;/);
   assert.match(section, /height: auto;\s*align-self: center;\s*padding: 0 var\(--margin-call-gap\) var\(--margin-call-gap\) !important;/);
-  assert.match(section, /> h2\s*\{\s*margin: 0;\s*padding-block: calc\(var\(--margin-call-gap\) \+ 6px\);\s*text-align: center;/);
+  assert.match(section, /> h2\s*\{\s*margin: 0;\s*padding-block: calc\(var\(--margin-call-gap\) \+ 10px\);\s*text-align: center;/);
   assert.match(section, /> \.space-y-2\\\.5\s*\{\s*margin-top: 0;/);
 });
 
-test('pause control is only shown during play and uses transparent theme colors', () => {
+test('portrait information spacing and title placement do not change landscape', () => {
+  const section = css.slice(css.indexOf('/* Portrait information panels have roomier text'));
+  assert.match(section, /@media \(orientation: portrait\) and \(pointer: coarse\)/);
+  assert.match(section, /padding-inline: 24px;/);
+  assert.match(section, /min-height: 4\.5rem;\s*flex: 0 0 4\.5rem;\s*align-items: flex-end;\s*padding-bottom: 0\.5rem;/);
+  assert.match(section, /transform: translateY\(-4px\);/);
+});
+
+test('Kangaroo knob uses the joystick theme ink and day Share has a black border', () => {
+  assert.match(css, /\.mobile-joystick-knob\s*\{[^}]*background: currentColor;/);
+  assert.match(css, /html\[data-theme="light"\] \.game-app \.share-dd-actions > button\.share-dd-copy\s*\{\s*border-color: #000000 !important;/);
+});
+
+test('pause control lives in the header immediately before sound during play', () => {
   const app = readFileSync(new URL('./App.tsx', import.meta.url), 'utf8');
+  const header = app.slice(app.indexOf('<header'), app.indexOf('</header>'));
+  assert.match(header, /\{state === 'play' && <button[^]*?aria-label="Pause game"[^]*?className="mobile-header-control header-pause-control"/);
+  assert.match(header, /header-pause-control"[^]*?<\/button>\}\s*<button\s+type="button"\s+onClick=\{toggleSound\}/);
+  assert.doesNotMatch(app, /chart-pause-control/);
+  assert.doesNotMatch(css, /chart-pause-control/);
+});
+
+test('joystick shares the rendered PIPS inset on both edges and in fullscreen', () => {
   const game = readFileSync(new URL('./CandleGame.tsx', import.meta.url), 'utf8');
-  assert.doesNotMatch(app.slice(0, app.indexOf('</header>')), /chart-pause-control|mobile-header-pause-control/);
-  assert.match(app, /\{state === 'play' && <button[^]*?onClick=\{\(\) => setState\('paused'\)\}[^]*?aria-label="Pause game"[^]*?className="chart-pause-control"/);
-  const pause = app.slice(app.indexOf("{state === 'play' && <button"), app.indexOf('/* OVERLAYS:'));
-  assert.doesNotMatch(pause, /<Play\b|Resume game/);
-  assert.match(game, /const axisLeft = bounds.width \/ 2 \+ \(W \/ 2 - AX\) \* horizontalScale;/);
-  assert.match(css, /\.game-app \.chart-pause-control\s*\{[^}]*right: calc\(var\(--chart-axis-right, 64px\) \+ 8px\);[^}]*border: 1px solid #fff;[^}]*background: transparent;[^}]*color: #fff;/);
-  assert.match(css, /html\[data-theme="light"\] \.game-app \.chart-pause-control\s*\{[^}]*border-color: #000;[^}]*background: transparent;[^}]*color: #000;/);
-});
-
-test('mobile controls share a base gutter without coupling opposite safe areas', () => {
-  assert.match(css, /\.game-app \.chart-pause-control\s*\{\s*--pause-control-gap: var\(--mobile-control-gap\);\s*right: max\(calc\(var\(--chart-axis-right, 64px\) \+ var\(--pause-control-gap\)\), env\(safe-area-inset-right\)\);\s*bottom: max\(var\(--pause-control-gap\), env\(safe-area-inset-bottom\)\);/);
-  assert.match(css, /--mobile-control-gap: 8px;/);
-  assert.match(css, /padding-top: var\(--mobile-control-gap\);\s*padding-right: var\(--mobile-control-gap\);\s*padding-bottom: var\(--mobile-control-gap\);/);
-  assert.match(css, /\.game-app:fullscreen \.mobile-joystick\s*\{[^}]*--joystick-edge-gap: var\(--mobile-control-gap\);\s*position: absolute;\s*left: max\(var\(--joystick-edge-gap\), env\(safe-area-inset-left\)\);\s*bottom: max\(var\(--joystick-edge-gap\), env\(safe-area-inset-bottom\)\);/);
-});
-
-test('landscape gameplay keeps reference edge gaps without importing system insets', () => {
-  const section = css.slice(css.indexOf('/* Landscape gameplay follows'), css.indexOf('/* Share DD is the image itself'));
-  assert.match(section, /@media \(orientation: landscape\) and \(pointer: coarse\)/);
-  assert.match(section, /\.game-app:fullscreen \.mobile-joystick\s*\{\s*left: var\(--mobile-control-gap\);\s*bottom: var\(--mobile-control-gap\);/);
-  assert.match(section, /right: calc\(var\(--chart-axis-right, 64px\) \+ var\(--mobile-control-gap\)\);\s*bottom: var\(--mobile-control-gap\);/);
-  assert.doesNotMatch(section, /env\(/);
+  assert.match(game, /logo\.getBoundingClientRect\(\)\.left - bounds\.left\) \+ 2;/);
+  assert.match(game, /closest<HTMLElement>\('\.game-stage'\)\?\.style\.setProperty\('--game-hud-inset', `\$\{scoreInset\.current\}px`\)/);
+  assert.match(css, /\.game-app \.mobile-joystick,\s*\.game-app:fullscreen \.mobile-joystick\s*\{[^}]*--joystick-edge-gap: var\(--game-hud-inset, 16px\);\s*position: absolute;\s*left: var\(--joystick-edge-gap\);\s*bottom: var\(--joystick-edge-gap\);/);
+  assert.doesNotMatch(css, /left: var\(--mobile-control-gap\);\s*bottom: var\(--mobile-control-gap\);/);
 });
 
 test('Info is rendered on desktop and hidden during gameplay only on touch layouts', () => {

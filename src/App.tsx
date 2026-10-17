@@ -342,7 +342,7 @@ export default function App() {
         <header className="flex flex-wrap items-center justify-between gap-4 px-4 sm:px-6 pb-2">
           <div className="flex items-center gap-3">
             <div className="flex items-baseline gap-2">
-              <h1 className="leading-none">
+              <h1 className="header-logo-frame leading-none">
                 <img
                   src={`${import.meta.env.BASE_URL}images/${theme === 'dark' ? 'logo-inverted.png' : 'logo.png'}`}
                   alt="Stonktrooper"
@@ -397,6 +397,15 @@ export default function App() {
             >
               {theme === 'dark' ? <Sun className="mobile-header-theme-icon w-5 h-5" /> : <Moon className="mobile-header-theme-icon w-5 h-5" />}
             </button>
+            {state === 'play' && <button
+              type="button"
+              onClick={() => setState('paused')}
+              title="HODL (P)"
+              aria-label="Pause game"
+              className="mobile-header-control header-pause-control"
+            >
+              <Pause className="w-3.5 h-3.5" />
+            </button>}
             <button
               type="button"
               onClick={toggleSound}
@@ -443,16 +452,6 @@ export default function App() {
             onHawkActivated={() => setHawkRequest(0)}
             onPrinterActivated={() => setPrinterRequest(0)}
           />
-
-            {state === 'play' && <button
-              type="button"
-              onClick={() => setState('paused')}
-              title="HODL (P)"
-              aria-label="Pause game"
-              className="chart-pause-control"
-            >
-              <Pause className="w-3.5 h-3.5" />
-            </button>}
 
           {/* OVERLAYS: START MENU / PAUSE / MARGIN CALL */}
           {state === 'boxing' && <BoxingGame encounter={bossEncounter} onDefeat={() => { boxingActive.current = false; setState('over'); }} onComplete={() => { bossEncounter.current = null; boxingActive.current = false; setState('play'); }} />}
