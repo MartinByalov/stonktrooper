@@ -2,6 +2,7 @@
 import { drawHumanHead, drawApeHead, drawCharacterHat, drawPickupAsset } from './assetRenderer';
 import { drawPigeonStain } from './pigeonStain';
 import { hawkBagThrowPose } from './hawkBagThrow';
+import { drawClownMakeup } from './clownRenderer';
 
 // Feet at origin; passengers are drawn before the near wall to hide their bodies.
 export function drawDumpster(ctx: CanvasRenderingContext2D, monkeys: number, phase: number, fedoraHats = 0, darkMode = false, diamondShield = false, bags = 0, frame = 0, hatSoiled = false, bagThrowTimer = 0, bagThrowDirection = 1, standardHat = false): void {
@@ -20,12 +21,7 @@ export function drawDumpster(ctx: CanvasRenderingContext2D, monkeys: number, pha
   for (let i = 0; i <= monkeys; i++) {
     ctx.save(); ctx.translate(8 - i * 22, -45 + Math.sin(phase + i) * 0.7);
     if (i === 0) drawHumanHead(ctx, false); else { ctx.scale(0.7, 0.7); drawApeHead(ctx, false); }
-    ctx.fillStyle = '#fff7ed'; ctx.beginPath(); ctx.ellipse(2, 2, 6, 5, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = '#dc2626'; ctx.beginPath(); ctx.arc(8, 0, 2.5, 0, Math.PI * 2); ctx.fill();
-    ctx.strokeStyle = '#be123c'; ctx.lineWidth = 1.2;
-    ctx.beginPath(); ctx.moveTo(0, 4); ctx.quadraticCurveTo(3, 7, 6, 4); ctx.stroke();
-    ctx.fillStyle = '#fb923c'; ctx.beginPath(); ctx.arc(-6, -2, 4, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = '#111827'; ctx.beginPath(); ctx.arc(4, -3, 1, 0, Math.PI * 2); ctx.fill();
+    drawClownMakeup(ctx);
     if (i === 0) {
       if (standardHat && fedoraHats === 0) {
         ctx.save(); ctx.translate(-2, -5); ctx.scale(0.65, 0.65);

@@ -719,6 +719,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     g.hawkFrontier = g.hawkStartIndex - 1;
     g.hawkBudget = hawkDropBudget(g.p.y, MARKET_BASELINE + 1600);
     g.hawkTimer = 600;
+    g.popups.push({ x: g.p.x, y: g.p.y - 75, text: 'KEK', color: '#fb923c', life: 70 });
     g.hawkBags = 0;
     g.cases = []; g.throwAnimTimer = 0; g.bagThrowAnimTimer = 0;
   }, []);

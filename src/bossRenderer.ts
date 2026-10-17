@@ -7,6 +7,7 @@ import { briefcaseColors, drawSwanAsset, drawPickupAsset } from './assetRenderer
 import { drawAnimalCharacter } from './animalRenderer';
 import { drawJanet } from './janetRenderer';
 import { drawPaul } from './paulRenderer';
+import { drawBellBlood } from './bellBlood';
 
 export function drawBossEncounter(ctx: CanvasRenderingContext2D, a: BossArena, darkMode = false): void {
       ctx.save(); ctx.font = 'bold 16px monospace'; ctx.textAlign = 'center'; ctx.fillStyle = '#facc15';
@@ -99,6 +100,7 @@ export function drawBossEncounter(ctx: CanvasRenderingContext2D, a: BossArena, d
       ctx.restore();
       }
       const colors = briefcaseColors(darkMode);
+      drawBellBlood(ctx, a.blood);
       for (const c of a.cases) {
         ctx.save(); ctx.translate(c.x, c.y); ctx.rotate(a.frame * 0.3);
         ctx.fillStyle = colors.body; ctx.fillRect(-10, -7, 20, 14);

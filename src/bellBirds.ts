@@ -43,9 +43,13 @@ export function stepBellBirds(arena: BossArena, random: () => number): void {
       const target = bird.baseY + Math.sin(bird.phase) * 5;
       bird.y += Math.max(-5, Math.min(5, target - bird.y));
     }
-    if (bird.kind === 'hawk' && !bird.shieldPassed && lethalBirdContact(bird, p)) {
+    const contact = lethalBirdContact(bird, p);
+    if (contact && p.invulnerable === 0) {
+      p.lives = Math.max(0, p.lives - 1); p.invulnerable = 90;
+    }
+    if (bird.kind === 'hawk' && !bird.shieldPassed && contact) {
       bird.shieldPassed = true; p.clownHead = true;
-      arena.popups.push({ x: p.x, y: p.y - 75, text: 'CLOWNED!', life: 70 });
+      arena.popups.push({ x: p.x, y: p.y - 75, text: 'KEK', life: 70 });
     }
     if (bird.kind === 'pigeon' && !bird.soiledHat && Math.abs(bird.x - p.x) < 18) {
       bird.soiledHat = true;

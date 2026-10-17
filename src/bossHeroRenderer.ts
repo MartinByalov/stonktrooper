@@ -3,6 +3,7 @@ import { briefcaseColors, drawHumanHead, drawPickupAsset } from './assetRenderer
 import { drawBossWeapon } from './bossWeaponRenderer';
 import { briefcaseArmPose } from './characterPose';
 import { drawJointedArm } from './armRenderer';
+import { drawClownHead } from './clownRenderer';
 
 // Local right profile, feet at origin. The scene mirrors this entire model to face left.
 export function drawBossHero(ctx: CanvasRenderingContext2D, stride: number, airborne: boolean, velocity: number, throwTimer: number, caseFlying = false, weapon: 'bat' | 'chainsaw' | null = null, swing = 0, bagTimer = 0, darkMode = false, clownHead = false, soiledHead = false): void {
@@ -35,19 +36,7 @@ export function drawBossHero(ctx: CanvasRenderingContext2D, stride: number, airb
   ctx.strokeStyle = '#fed7aa'; ctx.lineWidth = 4.5;
   ctx.beginPath(); ctx.moveTo(3, -17); ctx.quadraticCurveTo(3 + frontFoot * 0.5, -9, frontFoot + 2, feetY); ctx.lineTo(frontFoot + 7, feetY); ctx.stroke();
   ctx.save(); ctx.translate(2, -47); ctx.scale(0.8, 0.8);
-  if (clownHead) {
-    ctx.fillStyle = '#f97316';
-    for (const [x, y] of [[-8, -5], [-9, 0], [-6, -10]]) {
-      ctx.beginPath(); ctx.arc(x, y, 4.5, 0, Math.PI * 2); ctx.fill();
-    }
-    ctx.fillStyle = '#fff7ed'; ctx.strokeStyle = '#64748b'; ctx.lineWidth = 0.8;
-    ctx.beginPath(); ctx.ellipse(0, -1, 8, 11, -0.12, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-    ctx.fillStyle = '#2563eb'; ctx.beginPath(); ctx.moveTo(2, -7); ctx.lineTo(6, -7); ctx.lineTo(4, -2); ctx.fill();
-    ctx.fillStyle = '#17202c'; ctx.beginPath(); ctx.arc(4, -4, 1.1, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = '#ef4444'; ctx.beginPath(); ctx.arc(8, 0, 4, 0, Math.PI * 2); ctx.fill();
-    ctx.strokeStyle = '#dc2626'; ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.moveTo(1, 5); ctx.quadraticCurveTo(5, 10, 7, 4); ctx.stroke();
-  } else drawHumanHead(ctx, false);
+  if (clownHead) drawClownHead(ctx); else drawHumanHead(ctx, false);
   if (soiledHead) {
     ctx.fillStyle = '#f8fafc'; ctx.strokeStyle = '#64748b'; ctx.lineWidth = 0.7;
     ctx.beginPath(); ctx.ellipse(0, -11, 7, 3, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();

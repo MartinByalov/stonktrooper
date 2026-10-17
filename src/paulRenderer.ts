@@ -27,15 +27,25 @@ export function drawPaul(ctx: CanvasRenderingContext2D, b: BossArena['boss']): v
     const rootX = root.x, rootY = root.y;
     const dx = tail.x - rootX, dy = tail.y - rootY;
     const length = Math.hypot(dx, dy) || 1, nx = -dy / length, ny = dx / length;
-    ctx.fillStyle = paulSurface(ctx, (rootX + tail.x) / 2, (rootY + tail.y) / 2, length * 0.7);
-    ctx.beginPath(); ctx.moveTo(rootX + nx * 9, rootY + ny * 9);
-    ctx.bezierCurveTo(rootX + dx * 0.3 + nx * 11, rootY + dy * 0.3 + ny * 11,
-      tail.x - dx * 0.15 + nx * 8, tail.y - dy * 0.15 + ny * 8, tail.x, tail.y);
-    ctx.bezierCurveTo(tail.x - dx * 0.15 - nx * 9, tail.y - dy * 0.15 - ny * 9,
-      rootX + dx * 0.3 - nx * 10, rootY + dy * 0.3 - ny * 10, rootX - nx * 9, rootY - ny * 9);
+    // Shade across the thickness, not along the length: a rounded, furry tail
+    // with a heavy base and tapered tip rather than a constant-width ribbon.
+    const midX = rootX + dx * 0.42, midY = rootY + dy * 0.42;
+    const fur = ctx.createLinearGradient(midX + nx * 15, midY + ny * 15, midX - nx * 15, midY - ny * 15);
+    fur.addColorStop(0, '#b1bec9'); fur.addColorStop(0.3, '#8d9faf');
+    fur.addColorStop(0.65, '#576e83'); fur.addColorStop(1, '#293b50');
+    ctx.fillStyle = fur;
+    ctx.beginPath(); ctx.moveTo(rootX + nx * 11, rootY + ny * 11);
+    ctx.bezierCurveTo(rootX + dx * 0.2 + nx * 17, rootY + dy * 0.2 + ny * 17,
+      rootX + dx * 0.62 + nx * 13, rootY + dy * 0.62 + ny * 13,
+      rootX + dx * 0.76 + nx * 6, rootY + dy * 0.76 + ny * 6);
+    ctx.lineTo(rootX + dx * 0.72 + nx * 9, rootY + dy * 0.72 + ny * 9);
+    ctx.quadraticCurveTo(rootX + dx * 0.91 + nx * 5, rootY + dy * 0.91 + ny * 5, tail.x, tail.y);
+    ctx.quadraticCurveTo(rootX + dx * 0.83 - nx * 7, rootY + dy * 0.83 - ny * 7,
+      rootX + dx * 0.69 - nx * 10, rootY + dy * 0.69 - ny * 10);
+    ctx.lineTo(rootX + dx * 0.75 - nx * 5, rootY + dy * 0.75 - ny * 5);
+    ctx.bezierCurveTo(rootX + dx * 0.51 - nx * 15, rootY + dy * 0.51 - ny * 15,
+      rootX + dx * 0.2 - nx * 16, rootY + dy * 0.2 - ny * 16, rootX - nx * 11, rootY - ny * 11);
     ctx.closePath(); ctx.fill();
-    ctx.strokeStyle = '#a5b4bf'; ctx.lineWidth = 3;
-    ctx.beginPath(); ctx.moveTo(tail.x - dx * 0.15, tail.y - dy * 0.15 - 1); ctx.lineTo(tail.x, tail.y); ctx.stroke();
   };
   const limb = (near: boolean, root: { x: number; y: number }, joint: { x: number; y: number }, end: { x: number; y: number }, upper: number, lower: number) => {
     drawJointedArm(ctx, root, joint, end, paulSurface(ctx, root.x, root.y, 34, near), upper, lower);
@@ -134,7 +144,12 @@ export function drawPaul(ctx: CanvasRenderingContext2D, b: BossArena['boss']): v
     ctx.strokeStyle = '#41556b'; ctx.lineWidth = 0.8;
     ctx.beginPath(); ctx.moveTo(11, -42); ctx.quadraticCurveTo(7, -38, 9, -29);
     ctx.moveTo(1, -33); ctx.quadraticCurveTo(5, -35, 8, -33); ctx.stroke();
-    drawPaulHead(ctx, 8 + shoulderShift * 0.5, -76);
+    ctx.restore();
+    // Head follows the waist but keeps its skull volume while the chest turns.
+    // Project the muzzle/ears independently instead of flattening the profile.
+    const head = upperPoint((8 + shoulderShift * 0.5) * (1 - Math.abs(twist) * 0.18), -76);
+    ctx.save(); ctx.translate(head.x, head.y); ctx.rotate(hook.lean);
+    drawPaulHead(ctx, 0, 0, twist * 0.85 - hook.load * 0.42 + hook.drive * 0.28);
     ctx.restore();
     leg(true); arm(true);
     if (tailAttack && tail.sweep > 0) {

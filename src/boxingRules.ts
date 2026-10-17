@@ -9,6 +9,7 @@ import { randomDelay } from './randomTiming';
 import { stepJanet, janetAttackPose } from './janetRules';
 import { stepPaul, paulHookPose, paulAttackContact } from './paulRules';
 import { bellAnimalBounds, bellSegmentHit } from './bellCombat';
+import { emitBellBlood, stepBellBlood, type BellBlood } from './bellBlood';
 export const BELL_MAX_LIVES = 3;
 export type BossKind = 'jerome' | 'janet' | 'paul';
 export const bossName = (kind: BossKind): string => kind === 'paul' ? 'Pául' : kind === 'janet' ? 'Janét' : 'Jeromé';
@@ -55,6 +56,7 @@ export const createBossArena = (kind: BossKind = 'jerome') => ({
   triggerCandleSurprise: (_random: () => number): boolean => false,
   nextCandleSurprise: candleSurpriseDelay(),
   popups: [] as { x: number; y: number; text: string; life: number }[],
+  blood: [] as BellBlood[],
   player: { x: 180, y: arenaHeightAt(180), vy: 0, grounded: true, facing: 1, lives: 3, invulnerable: 0, throwTimer: 0, walkPhase: 0, moving: false, coyote: 6, jumpBuffer: 0, jumps: 0, doubleReady: false, fallFrames: 0, clownHead: false, soiledHead: false },
   boss: { kind, attackKind: 'punch' as 'punch' | 'neck' | 'spin' | 'hook' | 'tail' | 'chase', attackCount: 0, spinAngle: 0, moving: false, walkPhase: 0, jumps: 0, chaseJump: false,
     x: 900, y: arenaHeightAt(900), vy: 0, grounded: true, hopTimer: 45, facing: -1, health: 100, attack: 0, cooldown: 80, hit: false, arm: 0, uppercut: false, aimY: arenaHeightAt(900) - 60 },
@@ -109,11 +111,15 @@ export const throwBossCase = (arena: BossArena): boolean => {
       const right = p.facing > 0 ? p.x + 85 : p.x + 10;
       if (bounds.right >= left && bounds.left <= right && bounds.bottom >= p.y - 65 && bounds.top <= p.y + 5) {
         animal.dead = true;
+        emitBellBlood(arena.blood, animal.x, Math.max(bounds.top, Math.min(bounds.bottom, p.y - 35)),
+          p.facing, arena.weapon === 'chainsaw' ? 2.5 : 1.7);
       }
     }
     const b = arena.boss;
     if ((b.x - p.x) * p.facing >= -10 && Math.abs(b.x - p.x) < 85 && Math.abs((b.y - 35) - (p.y - 30)) < 65) {
       b.health = Math.max(0, b.health - 16);
+      emitBellBlood(arena.blood, b.x - p.facing * 12, b.y - 45, p.facing,
+        arena.weapon === 'chainsaw' ? 2.5 : 1.7);
       if (b.health === 0) arena.result = 'win';
     }
     return true;
@@ -130,6 +136,7 @@ export const stepBossArena = (arena: BossArena, direction: number, random = Math
   const p = arena.player, b = arena.boss;
   p.lives = Math.min(BELL_MAX_LIVES, p.lives);
   arena.frame++;
+  stepBellBlood(arena.blood, arena.heightAt);
   for (const popup of arena.popups) { popup.y -= 0.5; popup.life--; }
   arena.popups = arena.popups.filter(popup => popup.life > 0);
   if (arena.frame >= arena.nextCandleSurprise) {
@@ -292,6 +299,8 @@ export const stepBossArena = (arena: BossArena, direction: number, random = Math
       if (hit !== null && (firstHit === null || hit < firstHit)) { firstHit = hit; target = animal; }
     }
     if (firstHit !== null) {
+      emitBellBlood(arena.blood, previousX + (c.x - previousX) * firstHit,
+        previousY + (c.y - previousY) * firstHit, c.vx, target ? 1.4 : 1);
       if (target) target.dead = true;
       else b.health = Math.max(0, b.health - 8);
       c.life = 0;
