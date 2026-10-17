@@ -34,6 +34,12 @@ At 844 × 390 without safe-area overrides, backing resolution changed from 3840 
 
 ## Required real-device follow-up
 
+### Screenshot follow-up
+
+The landscape sharing screenshot prompted an additional production-browser regression check. With 44px side insets and a 21px bottom inset at 844 × 390, the old common gutter reduced the preview to 0 × 0. Share DD now keeps its vertical gutter independent of side insets and provides a 128px minimum preview width (bounded by available width), scrolling when necessary. The same case now produces an approximately 188 × 141 preview. The audit also checks Share DD aspect ratio, close hit testing and landscape preview height, plus the portrait How to Play scroll/close row. A 896 × 400 notched case is included.
+
+The portrait screenshot's large footer background has not been attributed to a confirmed cause. A screenshot alone cannot distinguish reported safe-area padding from viewport/browser chrome behavior; do not remove bottom safe-area protection without device measurements.
+
 No physical Android/iOS device was available for this audit. Browser emulation does not certify mobile browser-engine behavior, GPU performance, thermal throttling, browser chrome animation or native fullscreen/orientation transitions.
 
 Record device model, OS/browser version, deployed revision and URL. Test a production build with browser bars expanded/collapsed, portrait/landscape rotation, notch/home indicator, fullscreen entry/exit, background/foreground, multi-touch joystick plus attack, pointer cancellation, repeated pause/resume, all close controls, and both ends of long-panel scrolling. Measure frame-time percentiles during normal play and Kangaroo on the device, with sound on/off. Do not claim sustained 60 FPS without those measurements.

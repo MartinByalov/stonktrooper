@@ -127,8 +127,8 @@ test('mobile Share DD fills the feed-to-footer space with an unscaled panel and 
   const section = css.slice(css.indexOf('/* Mobile sharing reuses Liquidated'), css.indexOf('/* Information headings sit below'));
   assert.match(section, /@media \(pointer: coarse\)/);
   assert.match(section, /\.share-dd-overlay\.fixed\.inset-0\.z-50\s*\{\s*top: var\(--live-feed-bottom, 0px\);\s*bottom: var\(--footer-inset-bottom, 0px\);\s*padding: 0;\s*overflow: hidden;\s*background: transparent;/);
-  assert.match(section, /\.share-dd-dialog\[role="dialog"\]\s*\{[^}]*width: 100%;[^}]*height: 100%;[^}]*padding: var\(--share-dd-gutter\);[^}]*background: transparent;[^}]*transform: none;/);
-  assert.match(section, /--share-dd-gutter: max\(8px, env\(safe-area-inset-top\), env\(safe-area-inset-right\), env\(safe-area-inset-bottom\), env\(safe-area-inset-left\)\);/);
+  assert.match(section, /\.share-dd-dialog\[role="dialog"\]\s*\{[^}]*width: 100%;[^}]*height: 100%;[^}]*padding: var\(--share-dd-gutter\) max\(var\(--share-dd-gutter\), env\(safe-area-inset-right\)\) var\(--share-dd-gutter\) max\(var\(--share-dd-gutter\), env\(safe-area-inset-left\)\);[^}]*background: transparent;[^}]*transform: none;/);
+  assert.match(section, /--share-dd-gutter: 8px;/);
   assert.doesNotMatch(section, /--mobile-theme-control-right/);
   assert.match(section, /\.share-dd-header\s*\{[^}]*flex: 0 0 2rem;[^}]*height: 2rem;/);
   assert.match(section, /\.share-dd-close\s*\{[^}]*top: 50%;\s*right: 0;\s*transform: translateY\(-50%\);[^}]*width: 2rem;[^}]*height: 2rem;/);
@@ -147,7 +147,7 @@ test('Share DD centers the card and actions together and sizes the image from av
   assert.match(css, /\.game-app \.share-dd-overlay\.fixed\.inset-0\.z-50\s*\{\s*top: var\(--live-feed-bottom, 0px\);\s*bottom: var\(--footer-inset-bottom, 0px\);/);
   assert.match(css, /\.share-dd-dialog > \.share-dd-content\s*\{[^}]*margin-bottom: calc\(2rem \+ var\(--share-dd-gutter\)\);[^}]*container-type: size;/);
   assert.match(css, /\.share-dd-content > \.share-dd-group\s*\{[^}]*margin-block: auto;/);
-  assert.match(css, /\.share-dd-group > \.share-dd-canvas\s*\{[^}]*width: min\(100%, max\(0px, calc\(\(100cqh - 76px\) \* 4 \/ 3\)\)\);[^}]*height: auto;[^}]*max-height: none;/);
+  assert.match(css, /\.share-dd-group > \.share-dd-canvas\s*\{[^}]*width: min\(100%, max\(128px, calc\(\(100cqh - 64px\) \* 4 \/ 3\)\)\);[^}]*height: auto;[^}]*max-height: none;/);
 });
 
 test('game-over score sharing opens with the final result', () => {

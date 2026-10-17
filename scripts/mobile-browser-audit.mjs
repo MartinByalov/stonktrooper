@@ -37,7 +37,7 @@ const hitTest = selector => evaluate(`(() => {
 try {
   await send('Network.enable');
   await send('Network.setCacheDisabled', { cacheDisabled: true });
-  for (const [width, height, touch, notch = false] of [[360,560,true],[390,664,true],[768,1024,true],[844,390,true],[844,390,true,true],[1280,800,false]]) {
+  for (const [width, height, touch, notch = false] of [[360,560,true],[390,664,true],[768,1024,true],[844,390,true],[844,390,true,true],[896,400,true,true],[1280,800,false]]) {
     await send('Emulation.setTouchEmulationEnabled', { enabled: touch, maxTouchPoints: 5 });
     await send('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: touch ? 3 : 1, mobile: touch });
     await send('Emulation.setSafeAreaInsetsOverride', { insets: notch ? {top:0,left:44,right:44,bottom:21} : {top:0,left:0,right:0,bottom:0} });
@@ -68,7 +68,21 @@ try {
     })()`);
     if (touch) assert(canvas.documentHeight <= height + 1);
     console.log(JSON.stringify({width,height,touch,notch,panels:'passed',canvas}));
-    if (width === 844 || !touch) {
+    if (touch && width < height) {
+      await evaluate("document.querySelector('.mobile-portrait-how-to-play').click()");
+      await wait(150);
+      assert((await hitTest('.mobile-how-to-close'))?.accessible, 'How to Play close inaccessible');
+      const guide = await evaluate(`(() => {
+        const e = document.querySelector('.mobile-how-to-panel > .mechanics-guide');
+        const before = document.querySelector('.mobile-how-to-close').getBoundingClientRect().top;
+        e.scrollTop = e.scrollHeight;
+        return {end:e.scrollTop + e.clientHeight >= e.scrollHeight - 1,
+          headerFixed:Math.abs(before-document.querySelector('.mobile-how-to-close').getBoundingClientRect().top)<1};
+      })()`);
+      assert(guide.end && guide.headerFixed, 'How to Play scroll moves its close control');
+      await evaluate("document.querySelector('.mobile-how-to-close').click()");
+    }
+    if (width > height || !touch) {
       // Avoid fullscreen/orientation transitions here so viewport dimensions stay deterministic.
       await evaluate(`document.querySelector('.game-app').requestFullscreen = async () => {};
         screen.orientation.lock = async () => {};
@@ -104,5 +118,24 @@ try {
         console.log(JSON.stringify({width,height,fullscreen:'passed'}));
       }
     }
+    await send('Page.navigate', { url: `${origin}/?score=12345` });
+    for (let i = 0; i < 100; i++) {
+      await wait(100);
+      if (await evaluate("!!document.querySelector('.share-dd-canvas')")) break;
+    }
+    await wait(250);
+    const share = await evaluate(`(() => {
+      const image = document.querySelector('.share-dd-canvas').getBoundingClientRect();
+      const dialog = document.querySelector('.share-dd-dialog').getBoundingClientRect();
+      const actions = document.querySelector('.share-dd-actions').getBoundingClientRect();
+      return {imageWidth:image.width,imageHeight:image.height,dialogHeight:dialog.height,actionsBottom:actions.bottom,dialogBottom:dialog.bottom};
+    })()`);
+    console.log(JSON.stringify({width,height,notch,share}));
+    assert((await hitTest('.share-dd-close'))?.accessible, 'Share DD close inaccessible');
+    if (touch && width > height) {
+      assert(share.imageHeight >= share.dialogHeight * 0.4, 'landscape share preview wastes available height');
+      assert(share.actionsBottom <= share.dialogBottom + 1, 'share actions outside dialog');
+    }
+    assert(Math.abs(share.imageWidth / share.imageHeight - 4/3) < 0.01, 'share image distorted');
   }
 } finally { socket.close(); }

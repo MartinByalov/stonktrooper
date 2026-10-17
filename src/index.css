@@ -2312,7 +2312,7 @@ html[data-theme="light"] .game-app .chart-pause-control {
   }
 
   .game-app .share-dd-overlay.fixed.inset-0.z-50 > .share-dd-dialog[role="dialog"] {
-    --share-dd-gutter: max(8px, env(safe-area-inset-top), env(safe-area-inset-right), env(safe-area-inset-bottom), env(safe-area-inset-left));
+    --share-dd-gutter: 8px;
     display: flex;
     flex-direction: column;
     width: 100%;
@@ -2321,7 +2321,7 @@ html[data-theme="light"] .game-app .chart-pause-control {
     max-height: 100%;
     min-height: 0;
     margin: 0;
-    padding: var(--share-dd-gutter);
+    padding: var(--share-dd-gutter) max(var(--share-dd-gutter), env(safe-area-inset-right)) var(--share-dd-gutter) max(var(--share-dd-gutter), env(safe-area-inset-left));
     border: 0;
     border-radius: 0;
     background: transparent;
@@ -2377,8 +2377,9 @@ html[data-theme="light"] .game-app .chart-pause-control {
   }
 
   .game-app .share-dd-group > .share-dd-canvas {
-    /* Keep the 4:3 card intact and reserve room for the action row. */
-    width: min(100%, max(0px, calc((100cqh - 76px) * 4 / 3)));
+    /* Keep the 4:3 card intact; a short viewport scrolls rather than hiding it.
+       The 64px budget includes the 44px actions and their top margin. */
+    width: min(100%, max(128px, calc((100cqh - 64px) * 4 / 3)));
     height: auto;
     max-height: none;
     margin-inline: auto;
