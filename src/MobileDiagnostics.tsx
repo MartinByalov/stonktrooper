@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { copyText } from './copyText';
+import { drawDurationReport } from './drawDiagnostics';
 
 // Opt in with ?debug=mobile. Nothing is uploaded and normal sessions do no sampling.
 export function MobileDiagnostics() {
@@ -31,7 +32,11 @@ export function MobileDiagnostics() {
       const element = document.querySelector<HTMLElement>(selector);
       if (!element) return null;
       const rect = element.getBoundingClientRect(), style = getComputedStyle(element);
-      return { top: rect.top, bottom: rect.bottom, width: rect.width, height: rect.height, paddingBottom: style.paddingBottom, display: style.display };
+      return { top: rect.top, bottom: rect.bottom, left: rect.left, right: rect.right,
+        width: rect.width, height: rect.height, paddingTop: style.paddingTop,
+        paddingRight: style.paddingRight, paddingBottom: style.paddingBottom, paddingLeft: style.paddingLeft,
+        cssLeft: style.left, cssRight: style.right, cssBottom: style.bottom,
+        position: style.position, display: style.display };
     };
     const probe = document.createElement('div');
     probe.style.cssText = 'position:fixed;visibility:hidden;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)';
@@ -49,15 +54,20 @@ export function MobileDiagnostics() {
     setReport(JSON.stringify({
       capturedAt: new Date().toISOString(), userAgent: navigator.userAgent,
       assets: Array.from(document.scripts).map(script => script.src).filter(Boolean),
+      stylesheets: Array.from(document.querySelectorAll<HTMLLinkElement>('link[rel="stylesheet"]')).map(link => link.href),
       innerWidth, innerHeight, dpr: devicePixelRatio, fullscreen: !!document.fullscreenElement,
       visualViewport: window.visualViewport ? { height: visualViewport!.height, width: visualViewport!.width, scale: visualViewport!.scale, offsetTop: visualViewport!.offsetTop } : null,
       coarsePointer: matchMedia('(pointer: coarse)').matches, safeArea,
       app: bounds('.game-app'), shell: bounds('.game-app > div'), footer: bounds('.site-footer'),
+      footerNav: bounds('.site-footer > nav'), footerCopyright: bounds('.site-footer-copyright'),
+      header: bounds('.game-app header'), joystick: bounds('.mobile-joystick'), pause: bounds('.chart-pause-control'),
+      fullscreenControl: bounds('.desktop-fullscreen-control'), stage: bounds('.game-stage'),
       arena: bounds('.game-arena'), guide: bounds('.mobile-portrait-guide'), hero: bounds('.mobile-portrait-hero'),
       documentHeight: document.scrollingElement?.scrollHeight,
       canvas: canvas ? { width: canvas.width, height: canvas.height, display: bounds('.game-stage > canvas') } : null,
       // rAF intervals include scheduling/compositing delays; these are not canvas draw durations.
       rafFrameTimesMs: frameTimes,
+      canvasDrawCpuMs: drawDurationReport(),
     }, null, 2));
   };
   return <aside className="mobile-diagnostics" aria-label="Local mobile diagnostics" onPointerDown={event => event.stopPropagation()} onKeyDown={event => event.stopPropagation()}>

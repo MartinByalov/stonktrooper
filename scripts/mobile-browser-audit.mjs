@@ -295,4 +295,19 @@ try {
     }
     assert(Math.abs(share.imageWidth / share.imageHeight - 4/3) < 0.01, 'share image distorted');
   }
+  await send('Page.navigate', { url: `${origin}/?debug=mobile` });
+  for (let attempt = 0; attempt < 100; attempt++) {
+    await wait(100);
+    if (await evaluate("!!document.querySelector('.mobile-diagnostics button')")) break;
+  }
+  await wait(500);
+  const diagnostics = await evaluate(`(() => {
+    document.querySelector('.mobile-diagnostics button').click();
+    return true;
+  })()`);
+  await wait(100);
+  const report = await evaluate("JSON.parse(document.querySelector('.mobile-diagnostics textarea').value)");
+  assert(diagnostics && report.footerNav && report.fullscreenControl && report.stylesheets.length);
+  assert(report.canvasDrawCpuMs.menu.samples > 0, 'opt-in CPU draw timing missing');
+  console.log(JSON.stringify({ diagnostics: 'passed', drawCpu: report.canvasDrawCpuMs.menu }));
 } finally { socket.close(); }

@@ -11,6 +11,10 @@ test('mobile diagnostics are opt-in, local and distinguish frame samples by game
   assert.match(source, /sample.state === state/);
   assert.match(source, /safeArea/);
   assert.match(source, /rafFrameTimesMs/);
+  assert.match(source, /canvasDrawCpuMs: drawDurationReport\(\)/);
+  for (const field of ['joystick', 'pause', 'fullscreenControl', 'footerNav', 'footerCopyright', 'stylesheets']) {
+    assert.ok(source.includes(field), `missing diagnostic field: ${field}`);
+  }
   assert.match(source, /copyText\(report, navigator, document\)/);
   assert.doesNotMatch(source, /fetch\(|sendBeacon|localStorage/);
 });

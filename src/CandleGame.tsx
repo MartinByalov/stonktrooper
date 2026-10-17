@@ -13,6 +13,7 @@ import { stepTenderFall, tenderLanding } from './tenderFall';
 import { randomBirdCargo, canReleaseBirdCargo } from './birdCargo';
 import { MobileJoystick } from './MobileJoystick';
 import { renderBackingSize } from './renderBudget';
+import { drawDiagnosticsEnabled, recordDrawDuration } from './drawDiagnostics';
 import { drawDumpster } from './dumpsterRenderer';
 import { hawkBagThrowPose } from './hawkBagThrow';
 import { swanBagPose } from './swanBag';
@@ -3101,8 +3102,10 @@ export const CandleGame: React.FC<CandleGameProps> = ({
       // Draw once per simulation tick, including after a slow frame. Skipping
       // every overloaded frame can otherwise starve rendering indefinitely.
       // High-refresh displays do not need duplicate 120/144 Hz canvas paints.
+      const drawStarted = drawDiagnosticsEnabled ? performance.now() : 0;
       if (simulationSteps > 0 || needsDraw) {
         loopCallbacks.current.draw(ctx);
+        if (drawDiagnosticsEnabled) recordDrawDuration(g.currentState, performance.now() - drawStarted);
         needsDraw = false;
       }
       animationFrameId = requestAnimationFrame(renderLoop);
