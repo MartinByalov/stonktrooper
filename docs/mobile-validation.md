@@ -68,7 +68,8 @@ The supplied Firefox Android screenshots still show a tall portrait footer backg
 ### Render isolation experiment
 
 Opt in with `?debug=render`. The in-stage selector offers Normal, Chart only,
-Actors only and No canvas. Chart/Actors modes retain background, text, axes and
+Actors only, UI only, Hero + companions, Pickups only, Enemies only, Effects only
+and No canvas. All drawing modes retain background, text, axes and
 the news feed; No canvas suppresses both main drawing and feed drawing after a
 one-time clear. Simulation, collisions, audio and scoring remain active in every
 mode, so invisible hazards can still end a run. No invulnerability or comparable
@@ -79,6 +80,18 @@ visibility changes and game-state transitions. These are not display FPS or GPU
 timings. Normal sessions do not mount the panel or collect these samples.
 The experiment is diagnostic, not an Android performance fix; deployment and
 same-phone comparison are still required.
+
+Device screenshots supplied in the follow-up show No canvas at 90.2 callbacks/s
+(p95 11.0 ms, n=300), Chart only at 72.6 (22.0 ms, n=300), and Actors only at
+20.9 (88.1 ms, n=193). These are different gameplay scenes, not a fixed-seed
+benchmark or proof of a driver defect. They prioritize actor drawing for further
+isolation. Compare UI only against Hero + companions, Pickups only, Enemies only
+and Effects only, repeating Actors only between runs. UI only provides the shared
+background/text/axes/feed baseline with no chart or actors. Hero includes carried
+equipment, mounts and companions drawn by the hero renderer; enemies includes
+swans, animals and the entire boss renderer (including boss effects). Effects
+includes thrown objects, pigeon drops, flying fedora and score popups. These are
+render-only gates; simulation and layout are unchanged.
 
 ### Confirmed Firefox Android portrait landing spacing
 

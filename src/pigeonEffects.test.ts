@@ -36,7 +36,9 @@ test('pigeon stains contrast with the topmost hat or white clown head', () => {
     drawPigeonStain(ctx, 3, -65, white);
     assert.deepEqual(colors, [white ? '#ffffff' : '#000000']);
   }
-  const drops = game.slice(game.indexOf('for (const drop of g.pigeonDrops) {', game.indexOf('const draw =')));
+  const dropStart = game.indexOf('for (const drop of actors.effects ? g.pigeonDrops : []) {', game.indexOf('const draw ='));
+  assert.ok(dropStart >= 0, 'pigeon drop rendering is gated by the effects experiment');
+  const drops = game.slice(dropStart);
   assert.match(drops, /ctx\.strokeStyle = theme === 'dark' \? 'rgba\(255,255,255,0\.45\)' : 'rgba\(0,0,0,0\.45\)'/);
   assert.match(drops, /ctx\.fillStyle = theme === 'dark' \? '#ffffff' : '#000000'; ctx\.beginPath\(\); ctx\.ellipse\(x, y, 3\.5, 6/);
 });

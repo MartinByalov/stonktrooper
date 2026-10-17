@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { frameIntervalSummary, getRenderMode, renderModes, setRenderMode, type RenderMode } from './renderExperiment';
 
-const labels = { full: 'Normal', chart: 'Chart only', actors: 'Actors only', none: 'No canvas' };
+const labels = { full: 'Normal', chart: 'Chart only', actors: 'Actors only', ui: 'UI only', hero: 'Hero + companions', pickups: 'Pickups only', enemies: 'Enemies only', effects: 'Effects only', none: 'No canvas' };
 
 // Mounted only for ?debug=render. No measurements or UI in normal sessions.
 export function RenderExperimentPanel() {
@@ -34,7 +34,7 @@ export function RenderExperimentPanel() {
     }}>{renderModes.map(value => <option key={value} value={value}>{labels[value]}</option>)}</select></label>
     <div aria-live="off">{summary}</div>
     <div>Gameplay samples · not display FPS</div>
-    <div>Chart/Actors modes keep text and axes.</div>
+    <div>All drawing modes keep text and axes.</div>
     <div>Physics stays active; hidden hazards still apply.</div>
   </aside>;
 }

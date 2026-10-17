@@ -22,7 +22,7 @@ import { aimedVelocity, pointerToWorld, plotViewY, AimPoint } from './aim';
 import { chartViewport, chartToScreen, screenToChart } from './chartViewport';
 import { pickupInRenderBounds, pickupRenderBounds } from './pickupVisibility';
 import { RenderExperimentPanel } from './RenderExperimentPanel';
-import { getRenderMode, renderExperimentEnabled, renderLayers } from './renderExperiment';
+import { actorLayers, getRenderMode, renderExperimentEnabled, renderLayers } from './renderExperiment';
 import { pigeonDropsPrinter } from './gameRules';
 import { extendPrinterTurns, endingPrinterCandle, printerSourceCandle, printerCrossingPose, printerEnemyPose, printerProfileFlip, rightEdgeSpawnX, PrinterTurn } from './printerTrack';
 import { aimedHitDefeatsEnemy, dismountRider, canCatchBossBell, bellDescentTop } from './gameRules';
@@ -2494,7 +2494,9 @@ export const CandleGame: React.FC<CandleGameProps> = ({
 
 
 
-    const layers = renderLayers(renderTestEnabled ? getRenderMode() : 'full');
+    const renderMode = renderTestEnabled ? getRenderMode() : 'full';
+    const layers = renderLayers(renderMode);
+    const actors = actorLayers(renderMode);
     if (layers.chart) {
     ctx.strokeStyle = palette.grid;
     ctx.lineWidth = 1;
@@ -2586,10 +2588,12 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     }
     if (layers.actors) {
     if (!encounter) {
-      drawPickups(ctx);
-      drawSwans(ctx);
-      drawAnimals(ctx);
-      for (const drop of g.pigeonDrops) {
+      if (actors.pickups) drawPickups(ctx);
+      if (actors.enemies) {
+        drawSwans(ctx);
+        drawAnimals(ctx);
+      }
+      for (const drop of actors.effects ? g.pigeonDrops : []) {
         const x = drop.x - g.cx, y = drop.y - g.cy;
         ctx.strokeStyle = theme === 'dark' ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.45)'; ctx.lineWidth = 2;
         ctx.beginPath(); ctx.moveTo(x, y - 16); ctx.lineTo(x, y - 5); ctx.stroke();
@@ -2598,7 +2602,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     }
 
     // Spinning briefcases use the same theme palette as the carried case.
-    for (const bCase of encounter ? [] : g.cases) {
+    for (const bCase of encounter || !actors.effects ? [] : g.cases) {
       if (bCase.kind === 'bag' && (bCase.windup ?? 0) > 0) continue;
       ctx.save();
       ctx.translate(bCase.x - g.cx, bCase.y - g.cy);
@@ -2644,7 +2648,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
 
       ctx.restore();
     }
-    if (!encounter && g.flyingFedora) {
+    if (actors.effects && !encounter && g.flyingFedora) {
       ctx.save();
       ctx.translate(g.flyingFedora.x - g.cx, g.flyingFedora.y - g.cy);
       ctx.scale(0.7, 0.7);
@@ -2652,7 +2656,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
       ctx.restore();
     }
 
-    for (const pop of encounter ? [] : g.popups) {
+    for (const pop of encounter || !actors.effects ? [] : g.popups) {
       ctx.save();
       ctx.fillStyle = pop.color;
       ctx.font = 'bold 13px monospace';
@@ -2668,7 +2672,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
       const originalThrow = g.throwAnimTimer;
       const originalApes = g.apeTimer;
       const p = encounter.player;
-      if (originalPlayer) {
+      if (actors.hero && originalPlayer) {
         g.p = { ...originalPlayer, x: p.x, y: p.y, vy: p.vy, air: !p.grounded, ph: p.walkPhase, carry: 0, rocketTimer: 0 };
         g.throwAnimTimer = p.throwTimer; g.apeTimer = 0;
         ctx.save();
@@ -2678,10 +2682,13 @@ export const CandleGame: React.FC<CandleGameProps> = ({
         drawHero(ctx); ctx.restore();
         g.p = originalPlayer; g.throwAnimTimer = originalThrow; g.apeTimer = originalApes;
       }
-      ctx.save(); ctx.translate(-g.cx, -g.cy);
-      drawBossEncounter(ctx, encounter, theme === 'dark'); ctx.restore();
-    } else drawHero(ctx);
-    if (!encounter && g.p && g.apeTimer > 0 && g.p.rocketTimer <= 0 && (g.hawkTimer <= 0 || g.falling)) {
+      if (actors.enemies) {
+        // Boss renderer includes its projectiles and effects as one group.
+        ctx.save(); ctx.translate(-g.cx, -g.cy);
+        drawBossEncounter(ctx, encounter, theme === 'dark'); ctx.restore();
+      }
+    } else if (actors.hero) drawHero(ctx);
+    if (actors.hero && !encounter && g.p && g.apeTimer > 0 && g.p.rocketTimer <= 0 && (g.hawkTimer <= 0 || g.falling)) {
       for (const [apeIndex, ape] of g.apes.entries()) {
       ctx.save();
       const apeX = g.p.x - 45 - apeIndex * 32;
