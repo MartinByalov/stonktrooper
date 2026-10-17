@@ -2702,6 +2702,21 @@ html[data-theme="light"] .game-app .chart-pause-control {
   }
 }
 
+/* Landscape gameplay follows the compact edge-aligned control reference.
+   Keep portrait and header safe-area protection independent of game controls. */
+@media (orientation: landscape) and (pointer: coarse) {
+  .game-app .mobile-joystick,
+  .game-app:fullscreen .mobile-joystick {
+    left: var(--mobile-control-gap);
+    bottom: var(--mobile-control-gap);
+  }
+
+  .game-app .chart-pause-control {
+    right: calc(var(--chart-axis-right, 64px) + var(--mobile-control-gap));
+    bottom: var(--mobile-control-gap);
+  }
+}
+
 /* Share DD is the image itself, with controls inside its corners. */
 .game-app:has(.share-dd-overlay) .game-over-overlay > .game-result-over {
   visibility: hidden;

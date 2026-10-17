@@ -135,6 +135,14 @@ test('mobile controls share a base gutter without coupling opposite safe areas',
   assert.match(css, /\.game-app:fullscreen \.mobile-joystick\s*\{[^}]*--joystick-edge-gap: var\(--mobile-control-gap\);\s*position: absolute;\s*left: max\(var\(--joystick-edge-gap\), env\(safe-area-inset-left\)\);\s*bottom: max\(var\(--joystick-edge-gap\), env\(safe-area-inset-bottom\)\);/);
 });
 
+test('landscape gameplay keeps reference edge gaps without importing system insets', () => {
+  const section = css.slice(css.indexOf('/* Landscape gameplay follows'), css.indexOf('/* Share DD is the image itself'));
+  assert.match(section, /@media \(orientation: landscape\) and \(pointer: coarse\)/);
+  assert.match(section, /\.game-app:fullscreen \.mobile-joystick\s*\{\s*left: var\(--mobile-control-gap\);\s*bottom: var\(--mobile-control-gap\);/);
+  assert.match(section, /right: calc\(var\(--chart-axis-right, 64px\) \+ var\(--mobile-control-gap\)\);\s*bottom: var\(--mobile-control-gap\);/);
+  assert.doesNotMatch(section, /env\(/);
+});
+
 test('Info is rendered on desktop and hidden during gameplay only on touch layouts', () => {
   const app = readFileSync(new URL('./App.tsx', import.meta.url), 'utf8');
   assert.match(app, /<button type="button" title="About"[\s\S]*?className="mobile-header-control mobile-header-about-control/);
