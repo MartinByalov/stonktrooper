@@ -128,7 +128,8 @@ test('mobile Share DD fills the feed-to-footer space with an unscaled panel and 
   assert.match(section, /@media \(pointer: coarse\)/);
   assert.match(section, /\.share-dd-overlay\.fixed\.inset-0\.z-50\s*\{\s*top: var\(--live-feed-bottom, 0px\);\s*bottom: var\(--footer-inset-bottom, 0px\);\s*padding: 0;\s*overflow: hidden;\s*background: transparent;/);
   assert.match(section, /\.share-dd-dialog\[role="dialog"\]\s*\{[^}]*width: 100%;[^}]*height: 100%;[^}]*padding: var\(--share-dd-gutter\);[^}]*background: transparent;[^}]*transform: none;/);
-  assert.match(section, /--share-dd-gutter: max\(8px, var\(--mobile-theme-control-right, 1rem\), env\(safe-area-inset-top\), env\(safe-area-inset-right\), env\(safe-area-inset-bottom\), env\(safe-area-inset-left\)\);/);
+  assert.match(section, /--share-dd-gutter: max\(8px, env\(safe-area-inset-top\), env\(safe-area-inset-right\), env\(safe-area-inset-bottom\), env\(safe-area-inset-left\)\);/);
+  assert.doesNotMatch(section, /--mobile-theme-control-right/);
   assert.match(section, /\.share-dd-header\s*\{[^}]*flex: 0 0 2rem;[^}]*height: 2rem;/);
   assert.match(section, /\.share-dd-close\s*\{[^}]*top: 50%;\s*right: 0;\s*transform: translateY\(-50%\);[^}]*width: 2rem;[^}]*height: 2rem;/);
   assert.match(section, /:has\(\.share-dd-overlay\) \.game-over-overlay > \.game-result-over\s*\{\s*visibility: hidden;/);

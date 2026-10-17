@@ -2268,7 +2268,7 @@ html[data-theme="light"] .game-app .chart-pause-control {
   }
 
   .game-app .share-dd-overlay.fixed.inset-0.z-50 > .share-dd-dialog[role="dialog"] {
-    --share-dd-gutter: max(8px, var(--mobile-theme-control-right, 1rem), env(safe-area-inset-top), env(safe-area-inset-right), env(safe-area-inset-bottom), env(safe-area-inset-left));
+    --share-dd-gutter: max(8px, env(safe-area-inset-top), env(safe-area-inset-right), env(safe-area-inset-bottom), env(safe-area-inset-left));
     display: flex;
     flex-direction: column;
     width: 100%;
