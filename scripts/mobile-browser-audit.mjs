@@ -131,16 +131,17 @@ try {
       if (touch) {
         const joystick = await hitTest('.mobile-joystick');
         assert(joystick?.accessible, 'joystick inaccessible');
-        if (notch) assert(joystick.x >= (notch === 'right' ? 4 : 44) && joystick.bottom <= height - 21, 'joystick intersects safe area');
+        if (notch) assert(joystick.x >= (notch === 'right' ? 8 : 44) && joystick.bottom <= height - 21, 'joystick intersects safe area');
         const corner = await evaluate(`(() => {
           const control = document.querySelector('.mobile-joystick').getBoundingClientRect();
           const stage = document.querySelector('.game-stage').getBoundingClientRect();
           return {left:control.left-stage.left,bottom:stage.bottom-control.bottom};
         })()`);
-        assert(Math.abs(corner.bottom-(notch ? 44 : 8)) < 1, 'unexpected joystick bottom gap');
-        assert(Math.abs(corner.left-(notch ? 44 : 8)) < 1, 'unexpected joystick corner gap');
+        assert(Math.abs(corner.bottom-(notch ? 21 : 8)) < 1, 'unexpected joystick bottom gap');
+        assert(Math.abs(corner.left-(notch && notch !== 'right' ? 44 : 8)) < 1, 'unexpected joystick corner gap');
         const gaps = await evaluate(`(() => {
           const header = document.querySelector('header').getBoundingClientRect();
+          if (Math.abs(header.height - 48) > 1) throw new Error('Side notch enlarged the header: ' + header.height);
           const fullscreen = document.querySelector('.desktop-fullscreen-control').getBoundingClientRect();
           const pause = document.querySelector('.chart-pause-control').getBoundingClientRect();
           const arena = document.querySelector('.game-arena');
@@ -149,7 +150,10 @@ try {
           return [header.right-fullscreen.right, fullscreen.top-header.top, header.bottom-fullscreen.bottom,
             bounds.bottom-pause.bottom, bounds.right-axis-pause.right];
         })()`);
-        for (const gap of gaps) assert(Math.abs(gap-corner.left) < 1, `mobile control gutters differ: ${JSON.stringify(gaps)} vs ${corner.left}`);
+        const expectedGaps = [notch && notch !== 'left' ? 44 : 8, 8, 8, notch ? 21 : 8, 8];
+        const axisInset = await evaluate("parseFloat(getComputedStyle(document.querySelector('.game-arena')).getPropertyValue('--chart-axis-right'))");
+        expectedGaps[4] = Math.max(8, (notch && notch !== 'left' ? 44 : 0) - axisInset);
+        gaps.forEach((gap, index) => assert(Math.abs(gap-expectedGaps[index]) < 1, `mobile control gutters differ: ${JSON.stringify(gaps)} vs ${JSON.stringify(expectedGaps)}`));
         console.log(JSON.stringify({width,height,notch,joystickCorner:corner}));
         const x = joystick.x + joystick.width/2, y = joystick.y + joystick.height/2;
         await send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{x,y}] });

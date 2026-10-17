@@ -2222,7 +2222,7 @@ html[data-theme="light"] .game-app .chart-pause-control {
   }
 
   .game-app {
-    --mobile-control-gap: max(8px, env(safe-area-inset-top), env(safe-area-inset-right), env(safe-area-inset-bottom), env(safe-area-inset-left));
+    --mobile-control-gap: 8px;
   }
 
   .game-app header {
@@ -2234,7 +2234,7 @@ html[data-theme="light"] .game-app .chart-pause-control {
 
   .game-app .mobile-joystick,
   .game-app:fullscreen .mobile-joystick {
-    /* Share the header and pause gutter, including safe areas, on both edges. */
+    /* Share the base gutter; safe areas protect only their own edge. */
     --joystick-edge-gap: var(--mobile-control-gap);
     position: absolute;
     left: max(var(--joystick-edge-gap), env(safe-area-inset-left));
@@ -2436,12 +2436,12 @@ html[data-theme="light"] .game-app .chart-pause-control {
     flex-shrink: 0;
   }
 
-  /* Header control gutters match the joystick and pause gutters on touch screens. */
+  /* Side notches must not enlarge vertical header gutters. */
   .game-app header {
-    padding-top: var(--mobile-control-gap, max(8px, env(safe-area-inset-top)));
+    padding-top: max(var(--mobile-control-gap, 8px), env(safe-area-inset-top));
     padding-bottom: var(--mobile-control-gap, 8px);
     padding-left: max(20px, env(safe-area-inset-left));
-    padding-right: var(--mobile-control-gap, max(8px, env(safe-area-inset-right)));
+    padding-right: max(var(--mobile-control-gap, 8px), env(safe-area-inset-right));
     font-size: 14px;
     line-height: 20px;
   }

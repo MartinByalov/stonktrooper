@@ -128,9 +128,9 @@ test('pause control is only shown during play and uses transparent theme colors'
   assert.match(css, /html\[data-theme="light"\] \.game-app \.chart-pause-control\s*\{[^}]*border-color: #000;[^}]*background: transparent;[^}]*color: #000;/);
 });
 
-test('mobile joystick pause and fullscreen share one safe-area-aware gutter', () => {
+test('mobile controls share a base gutter without coupling opposite safe areas', () => {
   assert.match(css, /\.game-app \.chart-pause-control\s*\{\s*--pause-control-gap: var\(--mobile-control-gap\);\s*right: max\(calc\(var\(--chart-axis-right, 64px\) \+ var\(--pause-control-gap\)\), env\(safe-area-inset-right\)\);\s*bottom: max\(var\(--pause-control-gap\), env\(safe-area-inset-bottom\)\);/);
-  assert.match(css, /--mobile-control-gap: max\(8px, env\(safe-area-inset-top\), env\(safe-area-inset-right\), env\(safe-area-inset-bottom\), env\(safe-area-inset-left\)\);/);
+  assert.match(css, /--mobile-control-gap: 8px;/);
   assert.match(css, /padding-top: var\(--mobile-control-gap\);\s*padding-right: var\(--mobile-control-gap\);\s*padding-bottom: var\(--mobile-control-gap\);/);
   assert.match(css, /\.game-app:fullscreen \.mobile-joystick\s*\{[^}]*--joystick-edge-gap: var\(--mobile-control-gap\);\s*position: absolute;\s*left: max\(var\(--joystick-edge-gap\), env\(safe-area-inset-left\)\);\s*bottom: max\(var\(--joystick-edge-gap\), env\(safe-area-inset-bottom\)\);/);
 });
