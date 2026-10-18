@@ -18,8 +18,8 @@ button:disabled {
   padding: 0.65rem 1rem;
   border: 1px solid var(--line);
   border-radius: 0.5rem;
-  background: var(--text);
-  color: var(--bg);
+  background: #ffffff;
+  color: #000000;
   font-weight: 700;
   cursor: pointer;
 }
@@ -63,12 +63,22 @@ button:disabled {
 }
 
 html:not([data-theme="light"]) .coffee-cup {
-  --coffee-cup-color: var(--bg);
+  --coffee-cup-color: #ffffff;
+}
+
+html[data-theme="light"] .coffee-link {
+  background: #000000;
+  color: #ffffff;
+}
+
+html[data-theme="light"] .coffee-cup {
+  --coffee-cup-color: #000000;
 }
 
 :root {
   color-scheme: dark;
-  --bg: #0c111b;
+  --ui-radius: 0.25rem;
+  --bg: #253044;
   --panel: #000000;
   --alt: #192435;
   --line: #29364a;
@@ -85,13 +95,11 @@ html:not([data-theme="light"]) .coffee-cup {
   --header-gutter: 1rem;
 }
 
-html:not([data-theme="light"]) .game-app header,
-html:not([data-theme="light"]) .game-app .site-footer {
-  background: #131c29;
-}
-
-html[data-theme="light"] .game-app .site-footer {
-  background: #eaf0f5;
+.game-app header,
+.game-app .site-footer,
+.game-app .game-arena,
+.game-app .game-stage {
+  background: var(--bg);
 }
 
 html[data-theme="light"] .mechanics-guide > div,
@@ -107,10 +115,10 @@ html[data-theme="light"] .mechanics-guide .mechanics-guide-visuals {
 
 html[data-theme="light"] {
   color-scheme: light;
-  --bg: #eaf0f5;
+  --bg: #ebebeb;
   --panel: #ffffff;
   --alt: #f1f5f9;
-  --line: #d2dce7;
+  --line: #eaf0f5;
   --text: #21364c;
   --muted: #586f86;
   --green: #08795c;
@@ -218,7 +226,7 @@ body {
   top: calc(100% * 48 / 840);
 }
 
-@media (pointer: fine) {
+@media (pointer: fine), (orientation: landscape) and (pointer: coarse) {
   .game-app .game-overlay {
     top: calc(100% * 48 / 840);
   }
@@ -438,8 +446,8 @@ html[data-theme="dark"] .mobile-portrait-how-to-play {
 
 html[data-theme="light"] .mobile-portrait-how-to-play {
   color: #ffffff !important;
-  background: #131c29 !important;
-  border-color: #131c29 !important;
+  background: #3d3d3d !important;
+  border-color: #3d3d3d !important;
 }
 
 .game-app header {
@@ -476,10 +484,6 @@ html[data-theme="dark"] .game-result-over .liquidated-how-to-play {
   border-color: #ffffff !important;
 }
 
-html[data-theme="dark"] .game-result:not(.game-result-over) .how-to-play-action:hover {
-  background: #e5edf6 !important;
-}
-
 html[data-theme="light"] .game-app .header-controls button {
   color: #333a4b;
   border-color: #333a4b;
@@ -498,11 +502,11 @@ html[data-theme="light"] .game-app .mobile-header-theme-icon {
 }
 
 html[data-theme="dark"] .mechanics-guide > div {
-  background: #131c29 !important;
+  background: #000000 !important;
 }
 
 html[data-theme="dark"] .mechanics-guide .mechanics-guide-visuals {
-  background: #131c29 !important;
+  background: #000000 !important;
 }
 
 html[data-theme="light"] .mechanics-guide > div {
@@ -526,8 +530,17 @@ html[data-theme="light"] .game-result-over .liquidated-how-to-play:hover,
   background: #1e293b !important;
 }
 
+.liquidated-backdrop {
+  filter: none;
+}
+
+html:not([data-theme="light"]) .liquidated-backdrop {
+  filter: invert(1);
+}
+
 .game-result-over .share-dd-open {
-  color: #38bdf8 !important;
+  background: #38bdf8 !important;
+  color: #ffffff !important;
   border-color: #38bdf8 !important;
 }
 
@@ -559,10 +572,20 @@ html[data-theme="light"] .game-result-over .liquidated-how-to-play:hover,
   display: none;
 }
 
-/* Desktop shares the header wire instead of reserving another chart row. */
-@media (pointer: fine) {
-  .game-app header {
+.desktop-live-feed-bar {
+  display: none;
+}
+
+/* Shared landscape Live Feed is a sibling of the header, not a navigation row. */
+@media (pointer: fine), (orientation: landscape) and (pointer: coarse) {
+  .game-app {
+    --desktop-bar-height: 40px;
+  }
+
+  html .game-app header {
     flex-wrap: nowrap;
+    height: var(--desktop-bar-height);
+    padding-block: 4px;
   }
 
   .game-app header > div:first-child,
@@ -571,14 +594,24 @@ html[data-theme="light"] .game-result-over .liquidated-how-to-play:hover,
   }
 
   .game-app .mobile-header-feed {
+    display: none;
+  }
+
+  .game-app .desktop-live-feed-bar {
     display: block;
-    flex: 1 1 0;
-    width: 0;
+    flex: 0 0 auto;
     min-width: 0;
-    height: 2rem;
+    background: var(--bg);
+  }
+
+  .game-app .desktop-live-feed {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    height: var(--desktop-bar-height);
     align-self: center;
-    -webkit-mask-image: linear-gradient(to right, transparent 12px, #000 calc(12px + 15%), #000 calc(85% - 12px), transparent calc(100% - 12px));
-    mask-image: linear-gradient(to right, transparent 12px, #000 calc(12px + 15%), #000 calc(85% - 12px), transparent calc(100% - 12px));
+    -webkit-mask-image: linear-gradient(to right, transparent, #000 12px, #000 calc(100% - 12px), transparent);
+    mask-image: linear-gradient(to right, transparent, #000 12px, #000 calc(100% - 12px), transparent);
   }
 }
 
@@ -698,7 +731,7 @@ html[data-theme="light"] .game-app .mobile-joystick[data-pressed="true"] {
   padding-bottom: clamp(4px, 2vh, 16px) !important;
 }
 
-.game-result-over .game-result-content > .space-y-2\.5 {
+.game-result-over .game-result-content > .game-result-actions {
   margin-top: clamp(10px, 2vh, 20px);
 }
 
@@ -1241,6 +1274,7 @@ kbd {
   }
 }
 
+.landscape-required,
 .mobile-portrait-guide {
   display: none;
 }
@@ -1925,7 +1959,7 @@ kbd {
 }
 
 /* Desktop keeps its columns, but uses the same guide chrome as mobile. */
-@media (pointer: fine) {
+@media (pointer: fine), (orientation: landscape) and (pointer: coarse) {
   .game-app .mobile-dialog-close {
     width: var(--fullscreen-control-width, 2rem);
     height: var(--fullscreen-control-height, 2rem);
@@ -2139,7 +2173,7 @@ kbd {
 }
 
 /* Anchor desktop information close controls to equal panel-edge insets. */
-@media (pointer: fine) {
+@media (pointer: fine), (orientation: landscape) and (pointer: coarse) {
   .game-app .site-info-overlay.fixed.inset-0.z-50 > .site-info-dialog {
     position: relative;
     --site-info-close-inset: 1.25rem;
@@ -2157,7 +2191,7 @@ kbd {
 }
 
 /* The desktop landing guide fills the arena below Live Feed, up to the footer. */
-@media (pointer: fine) {
+@media (pointer: fine), (orientation: landscape) and (pointer: coarse) {
   .game-app[data-state="menu"] .game-arena > .game-overlay.how-to-play-overlay {
     inset: var(--live-feed-height, calc(100% * 48 / 840)) 0 0;
     padding: 0;
@@ -2180,7 +2214,7 @@ kbd {
 }
 
 /* Desktop close feedback stays monochrome in every dialog. */
-@media (pointer: fine) {
+@media (pointer: fine), (orientation: landscape) and (pointer: coarse) {
   html:not([data-theme="light"]) .game-app .dialog-close:is(:hover, :focus-visible) {
     color: #fff;
     border-color: #fff;
@@ -2274,7 +2308,7 @@ kbd {
 }
 
 /* Information headings sit below the close-control row. */
-@media (pointer: fine) {
+@media (pointer: fine), (orientation: landscape) and (pointer: coarse) {
   .game-app .site-info-overlay.fixed.inset-0.z-50 > .site-info-dialog > .site-info-header {
     height: auto;
     min-height: 4.5rem;
@@ -2970,5 +3004,798 @@ html[data-theme="light"] .game-app .share-dd-actions > button.share-dd-copy {
     top: var(--pause-guide-gutter);
     right: var(--fullscreen-control-right, 8px);
     transform: none;
+  }
+}
+
+/* The landing screen is the page surface, not a separate black/white panel.
+   Override legacy opaque guide backgrounds and the translucent menu veil. */
+html .game-app .game-arena > .game-overlay.how-to-play-overlay,
+html .game-app .how-to-play-overlay > .desktop-initial-guide,
+html .game-app .how-to-play-overlay .mechanics-guide > div,
+html .game-app .how-to-play-overlay .mechanics-guide-visuals,
+html .game-app .how-to-play-overlay .landing-guide-heading {
+  background: var(--bg) !important;
+}
+
+html .game-app .game-arena > .game-overlay.how-to-play-overlay {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+/* Reserve an invisible border so hover feedback never changes icon placement. */
+html[data-theme="light"] .game-app .header-controls > button,
+html[data-theme="light"] .game-app :is(.dialog-close, .site-info-contact-button) {
+  border: 1px solid transparent !important;
+  border-radius: 0.25rem;
+  background: transparent !important;
+  box-shadow: none;
+}
+
+html[data-theme="light"] .game-app .header-controls > button:hover,
+html[data-theme="light"] .game-app :is(.dialog-close, .site-info-contact-button):hover {
+  border-color: #ebebeb !important;
+  background: #ebebeb !important;
+}
+
+html[data-theme="light"] .game-app .header-controls > .header-sound-control[aria-pressed="false"],
+html[data-theme="light"] .game-app .header-controls > .header-pause-control[aria-pressed="true"] {
+  border-color: #dbdbdb !important;
+  background: #dbdbdb !important;
+}
+
+html[data-theme="light"] .game-app .header-controls > button:focus-visible,
+html[data-theme="light"] .game-app :is(.dialog-close, .site-info-contact-button):focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: 2px;
+}
+
+html[data-theme="light"] .game-app .mobile-how-to-dialog > .mobile-how-to-panel {
+  background: #ebebeb;
+}
+
+html[data-theme="light"] .game-app .mobile-how-to-panel > .mobile-how-to-header {
+  background: #ffffff !important;
+  border: 1px solid #dbdbdb !important;
+  border-radius: var(--ui-radius);
+}
+
+/* Keep the close control clear even while autofocus or pressed. */
+html .game-app :is(.mobile-how-to-panel, .paused-guide-dialog) .dialog-close:not(:hover) {
+  background: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none;
+}
+
+html[data-theme="light"] .game-app .mobile-how-to-panel .mobile-how-to-header > .how-to-play-label {
+  background: transparent !important;
+  color: #000000 !important;
+}
+
+.game-app .mobile-how-to-close > svg {
+  width: 14px;
+  height: 14px;
+}
+
+.game-app .mobile-how-to-panel .mechanics-guide {
+  --line: #dbdbdb;
+}
+
+html .game-app .site-info-dialog .preferences-clear-button,
+html .game-app .site-info-dialog .preferences-clear-button:is(:hover, :focus-visible, :active) {
+  background: #000000 !important;
+  color: #ffffff !important;
+  border-color: #000000 !important;
+}
+
+html .game-app :is(.dialog-close, .site-info-contact-button) > svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* The description grid uses the full available width on every device. */
+.game-app .how-to-dialog-content {
+  display: contents;
+}
+
+.game-app .how-to-dialog-hero {
+  display: none;
+}
+
+@media (pointer: coarse) {
+  .game-app .how-to-dialog-content > .mechanics-guide {
+    margin-top: var(--mobile-guide-gutter, var(--pause-guide-gutter, 8px));
+  }
+}
+
+html[data-theme="light"] .game-app header,
+html[data-theme="light"] .game-app .mobile-header-feed,
+html[data-theme="light"] .game-app .desktop-live-feed-bar,
+html[data-theme="light"] .game-app .site-footer {
+  background: #ffffff;
+}
+
+@media (pointer: fine), (orientation: landscape) and (pointer: coarse) {
+  html[data-theme="light"] .game-app .desktop-live-feed-bar {
+    margin-top: 4px;
+  }
+
+  html[data-theme="light"] .game-app .site-footer {
+    margin-top: 0;
+  }
+
+  /* These inner insets are the entire visible gap, not extra outer margins. */
+  html[data-theme="light"] .game-app .how-to-play-overlay > .desktop-initial-guide {
+    padding-block: 4px 8px;
+    border-block-width: 0;
+  }
+}
+
+/* The arena's outer shadow paints over the following white footer. */
+html[data-theme="light"] .game-app .game-arena,
+html[data-theme="light"] .game-app .game-stage {
+  box-shadow: none;
+}
+
+/* Day layout has no separators between the page, navigation and footer. */
+html[data-theme="light"] .game-app .site-footer {
+  border-top: 0;
+  color: #000000;
+}
+
+html[data-theme="light"] .game-app .site-footer button {
+  color: #000000;
+}
+
+html[data-theme="light"] .game-app .how-to-play-overlay .landing-guide-heading,
+html[data-theme="light"] .game-app .mechanics-guide > div,
+html[data-theme="light"] .game-app .mechanics-guide .mechanics-guide-visuals {
+  background: #ffffff !important;
+}
+
+/* Use the header buttons' corner radius across UI surfaces and controls.
+   Circular touch controls and edge-to-edge page containers keep their shape. */
+html .game-app :is(
+  button:not(.mobile-joystick):not([class~="rounded-full"]),
+  select,
+  input,
+  textarea,
+  kbd,
+  [class~="rounded-sm"],
+  [class~="rounded-md"],
+  [class~="rounded"],
+  [class~="rounded-lg"],
+  [class~="rounded-xl"],
+  [class~="rounded-2xl"],
+  [class~="rounded-3xl"],
+  .coffee-link,
+  .share-dd-dialog
+) {
+  border-radius: var(--ui-radius) !important;
+}
+
+/* Night surfaces mirror the day layout without changing its spacing. */
+html:not([data-theme="light"]) .game-app {
+  --bg: #253044;
+  --menu-chart-bg: #000000;
+  --menu-chart-grid: #2a2e3970;
+  --menu-chart-text: #969dab;
+}
+
+html:not([data-theme="light"]) .game-app header,
+html:not([data-theme="light"]) .game-app .desktop-live-feed-bar,
+html:not([data-theme="light"]) .game-app .mobile-header-feed,
+html:not([data-theme="light"]) .game-app .site-footer {
+  background: #000000;
+}
+
+html:not([data-theme="light"]) .game-app .site-footer {
+  border-top: 0;
+  color: #ffffff;
+}
+
+html:not([data-theme="light"]) .game-app .site-footer button {
+  color: #ffffff;
+}
+
+html:not([data-theme="light"]) .game-app :is(.header-controls > button, .dialog-close, .site-info-contact-button) {
+  color: #ffffff !important;
+  border: 1px solid transparent !important;
+  background: transparent !important;
+  box-shadow: none;
+}
+
+html:not([data-theme="light"]) .game-app :is(.header-controls > button, .dialog-close, .site-info-contact-button):hover {
+  border-color: #253044 !important;
+  background: #253044 !important;
+}
+
+html:not([data-theme="light"]) .game-app .header-controls > .header-sound-control[aria-pressed="false"],
+html:not([data-theme="light"]) .game-app .header-controls > .header-pause-control[aria-pressed="true"] {
+  border-color: #131c29 !important;
+  background: #131c29 !important;
+}
+
+html:not([data-theme="light"]) .game-app :is(.header-controls > button, .dialog-close, .site-info-contact-button):focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 2px;
+}
+
+html:not([data-theme="light"]) .game-app .landing-menu-actions > .landing-menu-guide-button,
+html:not([data-theme="light"]) .game-app :is(.how-to-play-action, .mobile-portrait-how-to-play),
+html:not([data-theme="light"]) .game-app .site-info-dialog .preferences-clear-button {
+  background: #ffffff !important;
+  color: #000000 !important;
+  border-color: #ffffff !important;
+}
+
+html:not([data-theme="light"]) .game-app .mobile-how-to-dialog {
+  background: #253044 !important;
+}
+
+html:not([data-theme="light"]) .game-app .mobile-how-to-dialog > .mobile-how-to-panel {
+  background: #000000 !important;
+}
+
+html:not([data-theme="light"]) .game-app .mobile-how-to-panel > .mobile-how-to-header {
+  background: #000000 !important;
+  border: 1px solid #dbdbdb !important;
+  border-radius: var(--ui-radius);
+}
+
+html:not([data-theme="light"]) .game-app .mobile-how-to-panel .how-to-play-label {
+  color: #ffffff !important;
+  background: transparent !important;
+}
+
+html:not([data-theme="light"]) .game-app .mechanics-guide > div,
+html:not([data-theme="light"]) .game-app .mechanics-guide .mechanics-guide-visuals {
+  background: #000000;
+}
+
+html:not([data-theme="light"]) .game-app .game-arena,
+html:not([data-theme="light"]) .game-app .game-stage {
+  box-shadow: none;
+}
+
+@media (pointer: fine), (orientation: landscape) and (pointer: coarse) {
+  html:not([data-theme="light"]) .game-app .desktop-live-feed-bar {
+    margin-top: 4px;
+  }
+
+  html:not([data-theme="light"]) .game-app .site-footer {
+    margin-top: 0;
+  }
+
+  html:not([data-theme="light"]) .game-app .how-to-play-overlay > .desktop-initial-guide {
+    padding-block: 4px 8px;
+    border-block-width: 0;
+  }
+}
+
+/* Landing spacing: 8px outer edges, 4px between every content section. */
+.game-app .landing-menu-panel {
+  position: relative;
+  background: var(--menu-chart-bg, #ffffff);
+  isolation: isolate;
+  display: flex;
+  flex: 3 1 0;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  align-self: stretch;
+  min-width: 0;
+  min-height: 0;
+  padding: 8px;
+  gap: 4px;
+  overflow: hidden;
+}
+
+.game-app .landing-menu-chart {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+html .game-app {
+  --menu-action-width: min(100%, 320px);
+  --menu-action-gap: 4px;
+}
+
+.game-app .landing-menu-panel > .landing-menu-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  flex: 0 0 auto;
+  width: var(--menu-action-width);
+  margin: 0;
+  gap: var(--menu-action-gap);
+  transform: translateY(clamp(-24px, -3vh, -8px));
+}
+
+.game-app .landing-menu-actions > .landing-menu-guide-button {
+  background: #000000;
+  border-color: #000000;
+  color: #ffffff;
+}
+
+.game-app .landing-menu-actions > .how-to-mode-buttons {
+  margin: 0;
+}
+
+.game-app .landing-menu-panel button {
+  min-height: 40px;
+  padding: 8px 12px;
+}
+
+@media (pointer: fine), (orientation: landscape) and (pointer: coarse) {
+  html .game-app header {
+    /* Match the dialog's 8px outer gap + 1px border + 8px inner inset. */
+    padding-inline: 17px;
+  }
+
+  html .game-app .mobile-how-to-dialog.fixed.inset-0.z-50 {
+    top: var(--desktop-feed-bottom, var(--live-feed-bottom, 0px));
+    bottom: var(--footer-inset-bottom, 0px);
+    height: auto;
+    padding: 4px 8px 8px;
+    box-sizing: border-box;
+    background: var(--bg);
+  }
+
+  html[data-theme="light"] .game-app .mobile-how-to-dialog.fixed.inset-0.z-50 {
+    background: #ebebeb;
+  }
+
+  html .game-app .mobile-how-to-dialog > .mobile-how-to-panel {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 3fr);
+    grid-template-rows: 2rem minmax(0, 1fr);
+    gap: 8px;
+    min-height: 0;
+    box-sizing: border-box;
+    padding-right: 8px;
+    border-width: 1px;
+  }
+
+  html .game-app .mobile-how-to-panel > .mobile-how-to-header {
+    position: relative;
+    grid-column: 2;
+    grid-row: 1;
+    width: 100%;
+    padding: 0 40px;
+    z-index: 2;
+  }
+
+  html .game-app .mobile-how-to-panel > .mobile-how-to-header > .mobile-how-to-close {
+    position: absolute;
+    top: 50%;
+    right: 0;
+    transform: translateY(-50%);
+  }
+
+  html .game-app .mobile-how-to-panel > .how-to-dialog-content {
+    display: contents;
+  }
+
+  html .game-app .how-to-dialog-content > .mechanics-guide {
+    grid-column: 2;
+    grid-row: 2;
+    min-width: 0;
+    min-height: 0;
+    margin: 0;
+    overflow-y: auto;
+  }
+
+  html .game-app .how-to-dialog-content > .how-to-dialog-hero {
+    display: block;
+    grid-column: 1;
+    grid-row: 1 / -1;
+    min-width: 0;
+    min-height: 0;
+  }
+
+  html .game-app .how-to-dialog-hero > img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center 38%;
+  }
+
+  html .game-app .how-to-play-overlay > .desktop-initial-guide {
+    padding-inline: 8px;
+    padding-top: 4px;
+    border-inline-width: 0;
+    border-top-width: 0;
+  }
+
+  html .game-app .desktop-initial-guide > .how-to-layout {
+    gap: 8px;
+  }
+
+  html .game-app .desktop-initial-guide .how-to-layout > .how-to-aside,
+  html .game-app .desktop-initial-guide .how-to-aside > .how-to-controls,
+  html .game-app .desktop-initial-guide .landing-guide-section,
+  html .game-app .desktop-initial-guide .mechanics-guide {
+    gap: 4px;
+  }
+}
+
+/* One landscape UI for mouse and touch; only game input remains pointer-specific. */
+@media (pointer: fine), (orientation: landscape) and (pointer: coarse) {
+  html .game-app {
+    --desktop-bar-height: 40px;
+  }
+
+  html .game-app header {
+    height: var(--desktop-bar-height);
+    min-height: var(--desktop-bar-height);
+    padding-block: 4px;
+    padding-inline: max(17px, env(safe-area-inset-left), env(safe-area-inset-right));
+    gap: 16px;
+  }
+
+  html .game-app .mobile-header-feed {
+    display: none;
+  }
+
+  html .game-app .desktop-live-feed-bar {
+    display: block;
+    margin-top: 4px;
+  }
+
+  html .game-app .header-controls {
+    gap: 8px;
+    margin-left: auto;
+  }
+
+  html .game-app .header-controls > button {
+    order: 0;
+  }
+
+  html .game-app .header-controls > .mobile-header-about-control {
+    display: inline-flex;
+  }
+
+  html .game-app .site-footer {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 4px 16px;
+    padding: 4px max(12px, env(safe-area-inset-right)) max(4px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+  }
+
+  html .game-app .site-footer > nav {
+    grid-column: 1;
+    grid-row: 1;
+    justify-self: center;
+    flex-wrap: nowrap;
+    justify-content: center;
+  }
+
+  html .game-app .mobile-how-to-dialog > .mobile-how-to-panel {
+    padding: 8px;
+  }
+
+  html .game-app .how-to-dialog-content > .mechanics-guide {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    scrollbar-gutter: auto;
+    padding: 0;
+  }
+
+  html .game-app .mobile-how-to-panel .mobile-how-to-header > .mobile-how-to-close {
+    top: 50%;
+    right: 0;
+    transform: translateY(-50%);
+  }
+
+  html .game-app .site-info-overlay.fixed.inset-0.z-50 {
+    padding: 8px;
+  }
+
+  html .game-app .site-info-overlay.fixed.inset-0.z-50 > .site-info-dialog {
+    --site-info-close-inset: 1.25rem;
+    width: 100%;
+    max-width: 36rem;
+    height: auto;
+    max-height: 100%;
+    padding: 1.25rem clamp(32px, 4vw, 48px);
+    border: 1px solid var(--line);
+  }
+}
+
+/* Home, pause and game-over actions share the same hit area and width. */
+html .game-app .landing-menu-panel button,
+html .game-app .game-result :is(.margin-call-action, .share-dd-open, .liquidated-how-to-play) {
+  height: 44px;
+  min-height: 44px;
+  padding: 8px 12px;
+  font-size: 14px;
+}
+
+html .game-app .game-result :is(.game-result-actions, .game-result-summary) {
+  width: var(--menu-action-width);
+  margin-inline: auto;
+}
+
+html .game-app .game-result-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--menu-action-gap);
+}
+
+html .game-app .game-result-actions > button {
+  border-radius: var(--ui-radius);
+}
+
+html .game-app[data-live-feed="false"] :is(.desktop-live-feed-bar, .mobile-header-feed) {
+  display: none !important;
+  height: 0 !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+}
+
+/* Scale touch chrome and Home actions to the available landscape viewport. */
+@media (orientation: landscape) and (pointer: coarse) {
+  html .game-app {
+    --menu-action-width: min(34vw, 320px);
+    --menu-action-gap: clamp(3px, 1dvh, 6px);
+    --desktop-bar-height: clamp(28px, 9dvh, 44px);
+    --touch-action-height: clamp(28px, 9dvh, 48px);
+    --touch-font-size: clamp(11px, 3.3dvh, 16px);
+  }
+
+  html .game-app header {
+    height: var(--desktop-bar-height);
+    min-height: var(--desktop-bar-height);
+    padding-block: clamp(2px, 0.8dvh, 4px);
+    gap: clamp(4px, 1.5vw, 16px);
+  }
+
+  html .game-app header .stonktrooper-logo {
+    height: clamp(22px, 7dvh, 36px);
+    width: auto;
+  }
+
+  html .game-app .header-controls > button {
+    height: clamp(24px, 7.5dvh, 36px);
+    min-height: 0;
+    padding: 2px clamp(5px, 1vw, 10px);
+  }
+
+  html .game-app .desktop-live-feed {
+    height: clamp(24px, 7dvh, 36px);
+  }
+
+  html .game-app .landing-menu-panel > .landing-menu-actions {
+    transform: translateY(clamp(-20px, -3dvh, -6px));
+  }
+
+  html .game-app .game-over-overlay > .game-result-over {
+    padding: clamp(6px, 2dvh, 16px) !important;
+  }
+
+  html .game-app .game-result-over > .game-result-content {
+    padding-top: clamp(8px, 3dvh, 24px) !important;
+    padding-bottom: 0 !important;
+  }
+
+  html .game-app .game-result-summary {
+    margin-block: clamp(4px, 1dvh, 8px);
+    padding-block: clamp(4px, 1dvh, 8px);
+  }
+
+  html .game-app .game-result-summary h2 {
+    margin-bottom: 2px;
+    font-size: clamp(14px, 4dvh, 20px);
+  }
+
+  html .game-app .game-result-summary span {
+    font-size: clamp(14px, 4dvh, 20px);
+  }
+
+  html .game-app .game-result-summary strong {
+    margin-top: 2px;
+    font-size: clamp(20px, 6dvh, 30px);
+  }
+
+  html .game-app .game-result-over .game-result-actions {
+    margin-top: var(--menu-action-gap);
+  }
+
+  html .game-app .landing-menu-actions .menu-action-button,
+  html .game-app .game-result :is(.margin-call-action, .share-dd-open, .liquidated-how-to-play) {
+    height: var(--touch-action-height);
+    min-height: var(--touch-action-height);
+    padding: 3px 8px;
+    font-size: var(--touch-font-size);
+    line-height: 1.15;
+  }
+
+  html .game-app .site-footer {
+    font-size: clamp(9px, 2.7dvh, 12px);
+    line-height: 1.3;
+    padding-top: clamp(2px, 0.8dvh, 5px);
+    padding-bottom: max(clamp(2px, 0.8dvh, 5px), env(safe-area-inset-bottom));
+  }
+
+  html .game-app .site-footer > nav {
+    gap: clamp(8px, 2vw, 20px);
+  }
+}
+
+html .game-app .settings-toggle {
+  background: var(--panel);
+  color: var(--text);
+}
+
+html[data-theme="light"] .game-app .settings-toggle[aria-checked="false"] {
+  background: #dbdbdb;
+}
+
+html:not([data-theme="light"]) .game-app .settings-toggle[aria-checked="false"] {
+  background: #131c29;
+}
+
+/* Anchor support inside the chart, above its 18px time axis. */
+html .game-app .landing-menu-panel .home-coffee-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  position: absolute;
+  z-index: 1;
+  left: var(--home-logo-inset, 24px);
+  bottom: calc(18px + var(--home-logo-inset, 24px));
+  width: var(--home-logo-width, 200px);
+  height: 36px;
+  min-height: 36px;
+  padding: 4px 8px;
+  background: #72a4f2;
+  color: #000;
+  border-color: #72a4f2;
+  font-size: 13px;
+}
+
+html:not([data-theme="light"]) .game-app .landing-menu-panel .home-coffee-link {
+  color: #fff;
+}
+
+html[data-theme="light"] .game-app .landing-menu-panel .home-coffee-link:hover {
+  color: #fff;
+}
+
+html[data-theme="light"] .home-coffee-link:hover .coffee-cup {
+  --coffee-cup-color: #fff;
+}
+
+html:not([data-theme="light"]) .game-app .landing-menu-panel .home-coffee-link:hover {
+  color: #000;
+}
+
+html:not([data-theme="light"]) .home-coffee-link:hover .coffee-cup {
+  --coffee-cup-color: #000;
+}
+
+html .game-app .landing-menu-actions > .landing-menu-settings-button {
+  background: #000;
+  color: #fff;
+  border-color: #000;
+}
+
+html:not([data-theme="light"]) .game-app .landing-menu-actions > .landing-menu-settings-button {
+  background: #fff;
+  color: #000;
+  border-color: #fff;
+}
+
+html .game-app :is(.landing-menu-guide-button, .landing-menu-settings-button, .margin-call-home, .margin-call-settings, .liquidated-home) {
+  transition: background-color 150ms ease, border-color 150ms ease;
+}
+
+html[data-theme="light"] .game-app :is(.landing-menu-guide-button, .landing-menu-settings-button, .margin-call-home, .margin-call-settings, .liquidated-home):is(:hover, :focus-visible) {
+  background: #262626 !important;
+  border-color: #262626 !important;
+}
+
+/* Pure white cannot brighten further; a light grey tint makes hover visible. */
+html:not([data-theme="light"]) .game-app :is(.landing-menu-guide-button, .landing-menu-settings-button, .margin-call-home, .margin-call-settings, .liquidated-home):is(:hover, :focus-visible) {
+  background: #e5edf6 !important;
+  border-color: #e5edf6 !important;
+}
+
+.settings-options { display: grid; gap: 8px; }
+.settings-label, .settings-switch-state { display: flex; align-items: center; gap: 10px; }
+.settings-label svg { width: 18px; height: 18px; flex: 0 0 auto; color: #38bdf8; }
+html .game-app .settings-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--panel);
+}
+.settings-volume-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+}
+.settings-volume-row output, .settings-switch-state { font-size: 12px; font-variant-numeric: tabular-nums; }
+.settings-volume-row input { grid-column: 1 / -1; width: 100%; min-height: 24px; accent-color: #38bdf8; cursor: pointer; }
+.settings-switch-track { position: relative; width: 32px; height: 18px; border-radius: 20px; background: var(--muted); flex: 0 0 auto; }
+.settings-switch-track::after { content: ''; position: absolute; top: 3px; left: 3px; width: 12px; height: 12px; background: white; border-radius: 50%; transition: transform 120ms; }
+[aria-checked="true"] .settings-switch-track { background: #38bdf8; }
+[aria-checked="true"] .settings-switch-track::after { transform: translateX(14px); }
+
+html .game-app[data-animations="false"],
+html .game-app[data-animations="false"] *,
+html .game-app[data-animations="false"] *::before,
+html .game-app[data-animations="false"] *::after {
+  animation: none !important;
+  transition: none !important;
+  backdrop-filter: none !important;
+  scroll-behavior: auto !important;
+}
+
+/* Mobile entry gate also covers landscape when fullscreen needs a user gesture. */
+@media (pointer: coarse) {
+  .game-app[data-mobile-entry="true"] > div > :not(.landscape-required) {
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  .game-app[data-mobile-entry="true"] .landscape-required {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 24px;
+    background: var(--bg);
+    color: var(--text);
+  }
+
+  html .game-app:is([data-state="play"], [data-state="boxing"]) :is(.site-footer, .desktop-live-feed-bar, .mobile-header-feed) {
+    display: none !important;
+  }
+}
+
+/* No separate portrait menu: ask for a physical rotation when locking is unavailable. */
+@media (orientation: portrait) and (pointer: coarse) {
+  .game-app > div > :not(.landscape-required) {
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  .game-app .landscape-required {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 24px;
+    background: var(--bg);
+    color: var(--text);
+  }
+
+  .game-app .mobile-browser-fallback {
+    display: none;
   }
 }

@@ -4,6 +4,17 @@ import { loadSoundSettings, SoundCategory, SoundVariant } from './soundSettings'
 import { MusicMode, MusicPlaylist } from './musicBank';
 
 export class SoundController {
+  private masterGain: GainNode | null = null;
+  private masterVolume = 1;
+
+  public setVolume(value: number) {
+    this.masterVolume = Number.isFinite(value) ? Math.max(0, Math.min(1, value)) : 1;
+    if (this.ctx && this.masterGain) {
+      this.masterGain.gain.cancelScheduledValues(this.ctx.currentTime);
+      this.masterGain.gain.setTargetAtTime(this.masterVolume, this.ctx.currentTime, 0.015);
+    }
+  }
+
   private musicPlaylist = new MusicPlaylist();
   private musicMode: MusicMode = 'normal';
   private musicTrack = this.musicPlaylist.next('normal');
@@ -161,7 +172,7 @@ export class SoundController {
     gain.gain.setValueAtTime(0.0001, now);
     gain.gain.linearRampToValueAtTime(volume, now + 0.012);
     gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
-    osc.connect(gain); gain.connect(this.ctx.destination);
+    osc.connect(gain); gain.connect(this.masterGain ?? this.ctx.destination);
     this.trackVoice(osc);
     osc.start(now); osc.stop(now + duration + 0.01);
   }
@@ -182,7 +193,7 @@ export class SoundController {
     gain.gain.setValueAtTime(0.0001, now);
     gain.gain.linearRampToValueAtTime(volume, now + 0.015);
     gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
-    source.connect(filter); filter.connect(gain); gain.connect(this.ctx.destination);
+    source.connect(filter); filter.connect(gain); gain.connect(this.masterGain ?? this.ctx.destination);
     this.trackVoice(source);
     source.start(now); source.stop(now + duration);
   }
@@ -230,6 +241,9 @@ export class SoundController {
       const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
       if (AudioContextClass) {
         this.ctx = new AudioContextClass();
+        this.masterGain = this.ctx.createGain();
+        this.masterGain.gain.value = this.masterVolume;
+        this.masterGain.connect(this.ctx.destination);
       }
     }
     if (this.ctx && this.ctx.state === 'suspended') {
@@ -258,7 +272,7 @@ export class SoundController {
       gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
 
       osc.connect(gain);
-      gain.connect(this.ctx.destination);
+      gain.connect(this.masterGain ?? this.ctx.destination);
 
       osc.start(now);
       osc.stop(now + 0.13);
@@ -289,7 +303,7 @@ export class SoundController {
         gain.gain.exponentialRampToValueAtTime(0.001, start + 0.08);
 
         osc.connect(gain);
-        gain.connect(this.ctx.destination);
+        gain.connect(this.masterGain ?? this.ctx.destination);
 
         osc.start(start);
         osc.stop(start + 0.09);
@@ -373,7 +387,7 @@ export class SoundController {
 
       noise.connect(filter);
       filter.connect(gain);
-      gain.connect(this.ctx.destination);
+      gain.connect(this.masterGain ?? this.ctx.destination);
 
       noise.start(now);
       noise.stop(now + 0.13);
@@ -399,7 +413,7 @@ export class SoundController {
       gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
 
       osc.connect(gain);
-      gain.connect(this.ctx.destination);
+      gain.connect(this.masterGain ?? this.ctx.destination);
 
       osc.start(now);
       osc.stop(now + 0.23);
@@ -428,7 +442,7 @@ export class SoundController {
         gain.gain.exponentialRampToValueAtTime(0.001, start + 0.25);
 
         osc.connect(gain);
-        gain.connect(this.ctx.destination);
+        gain.connect(this.masterGain ?? this.ctx.destination);
 
         osc.start(start);
         osc.stop(start + 0.26);
@@ -454,7 +468,7 @@ export class SoundController {
       gain.gain.exponentialRampToValueAtTime(0.001, now + 0.16);
 
       osc.connect(gain);
-      gain.connect(this.ctx.destination);
+      gain.connect(this.masterGain ?? this.ctx.destination);
 
       osc.start(now);
       osc.stop(now + 0.17);
@@ -483,7 +497,7 @@ export class SoundController {
         gain.gain.exponentialRampToValueAtTime(0.001, start + 0.3);
 
         osc.connect(gain);
-        gain.connect(this.ctx.destination);
+        gain.connect(this.masterGain ?? this.ctx.destination);
 
         osc.start(start);
         osc.stop(start + 0.32);
@@ -498,7 +512,7 @@ export class SoundController {
       gain.gain.setValueAtTime(0.08, now);
       gain.gain.exponentialRampToValueAtTime(0.001, now + 0.75);
       osc.connect(gain);
-      gain.connect(this.ctx.destination);
+      gain.connect(this.masterGain ?? this.ctx.destination);
       osc.start(now);
       osc.stop(now + 0.76);
     } catch {}
@@ -601,7 +615,7 @@ export class SoundController {
         gain.gain.exponentialRampToValueAtTime(0.001, start + 0.45);
 
         osc.connect(gain);
-        gain.connect(this.ctx.destination);
+        gain.connect(this.masterGain ?? this.ctx.destination);
         this.endingVoices.add(osc);
         osc.onended = () => { this.endingVoices.delete(osc); osc.disconnect(); };
 
@@ -663,7 +677,7 @@ export class SoundController {
     gain.gain.setValueAtTime(0.0001, now);
     gain.gain.linearRampToValueAtTime(volume, now + 0.018);
     gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
-    osc.connect(filter); filter.connect(gain); gain.connect(this.ctx.destination);
+    osc.connect(filter); filter.connect(gain); gain.connect(this.masterGain ?? this.ctx.destination);
     this.trackVoice(osc);
     osc.start(now); osc.stop(now + duration);
   }

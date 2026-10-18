@@ -2,6 +2,7 @@ import { MechanicsGuide } from './MechanicsGuide';
 import { useMobileDialogFit } from './useMobileDialogFit';
 import { observeViewportHeight } from './viewportHeight';
 import { MenuHero } from './MenuHero';
+import { MenuChart } from './MenuChart';
 import { MobileDiagnostics } from './MobileDiagnostics';
 import { BoxingGame } from './BoxingGame';
 import type { BossArena } from './boxingRules';
@@ -17,9 +18,13 @@ import { ShareDD } from './ShareDD';
 import { SiteFooter } from './SiteFooter';
 import type { SiteSection } from './SiteFooter';
 import { sharedScore } from './shareLinks';
-import { Volume2, VolumeX, Maximize, Minimize, Sun, Moon, Pause, Play, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Maximize, Minimize, Pause, Play, X, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export default function App() {
+  const [mobileDevice, setMobileDevice] = useState(() => window.matchMedia('(pointer: coarse)').matches);
+  const [mobileEntryRequired, setMobileEntryRequired] = useState(false);
+  const [state, setState] = useState<GameState>('menu');
+  const mobilePlaying = mobileDevice && (state === 'play' || state === 'boxing');
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
     try {
       return localStorage.getItem('cr_theme') === 'light' ? 'light' : 'dark';
@@ -28,7 +33,44 @@ export default function App() {
     }
   });
 
-  const [soundEnabled, setSoundEnabled] = useState(true);
+  const [soundEnabled, setSoundEnabled] = useState(() => {
+    try { return localStorage.getItem('cr_sound_enabled') !== 'false'; } catch { return true; }
+  });
+  const [volume, setVolume] = useState(() => {
+    try {
+      const saved = localStorage.getItem('cr_volume');
+      const value = saved === null ? 100 : Number(saved);
+      return Number.isFinite(value) ? Math.max(0, Math.min(100, value)) : 100;
+    } catch { return 100; }
+  });
+  const [animationsEnabled, setAnimationsEnabled] = useState(() => {
+    try { return localStorage.getItem('cr_animations') !== 'false'; } catch { return true; }
+  });
+  useEffect(() => {
+    sound.setVolume(volume / 100);
+    try { localStorage.setItem('cr_volume', String(volume)); } catch { }
+  }, [volume]);
+  useEffect(() => {
+    try { localStorage.setItem('cr_animations', String(animationsEnabled)); } catch { }
+  }, [animationsEnabled]);
+  const changeVolume = (value: number) => {
+    setVolume(value);
+    setSoundEnabled(value > 0);
+    sound.setVolume(value / 100);
+    sound.enabled = value > 0;
+    if (value > 0) sound.unlock();
+  };
+  const [liveFeedEnabled, setLiveFeedEnabled] = useState(() => {
+    try { return localStorage.getItem('cr_live_feed') !== 'false'; } catch { return true; }
+  });
+  const liveFeedVisible = liveFeedEnabled && !mobilePlaying;
+  useEffect(() => {
+    sound.enabled = soundEnabled;
+    try { localStorage.setItem('cr_sound_enabled', String(soundEnabled)); } catch { }
+  }, [soundEnabled]);
+  useEffect(() => {
+    try { localStorage.setItem('cr_live_feed', String(liveFeedEnabled)); } catch { }
+  }, [liveFeedEnabled]);
   const [soundMenuOpen, setSoundMenuOpen] = useState(false);
   const [pausedGuideOpen, setPausedGuideOpen] = useState(false);
   const [mobileGuideOpen, setMobileGuideOpen] = useState(false);
@@ -39,6 +81,22 @@ export default function App() {
     if (appRef.current) return observeViewportHeight(appRef.current);
   }, []);
   useMobileDialogFit(appRef);
+  useLayoutEffect(() => {
+    const app = appRef.current;
+    const logo = app?.querySelector('.stonktrooper-logo');
+    if (!app || !logo) return;
+    const sync = () => {
+      const rect = logo.getBoundingClientRect();
+      const inset = Math.max(0, rect.left - app.getBoundingClientRect().left);
+      app.style.setProperty('--home-logo-width', `${rect.width}px`);
+      app.style.setProperty('--home-logo-inset', `${inset}px`);
+    };
+    const observer = new ResizeObserver(sync);
+    observer.observe(logo);
+    window.addEventListener('resize', sync);
+    sync();
+    return () => { observer.disconnect(); window.removeEventListener('resize', sync); };
+  }, []);
   useEffect(() => {
     const app = appRef.current;
     const arena = app?.querySelector('.game-arena');
@@ -52,9 +110,11 @@ export default function App() {
       if (!canvas) return;
       const rect = canvas.getBoundingClientRect();
       const headerHeight = header?.getBoundingClientRect().height ?? 0;
-      const headerFeed = app.querySelector('.mobile-header-feed');
+      const headerFeed = Array.from(app.querySelectorAll('.mobile-header-feed, .desktop-live-feed')).find(feed => feed.getBoundingClientRect().width > 0);
+      const desktopFeed = app.querySelector('.desktop-live-feed-bar');
+      app.style.setProperty('--desktop-feed-bottom', `${desktopFeed && desktopFeed.getBoundingClientRect().height > 0 ? desktopFeed.getBoundingClientRect().bottom : rect.top}px`);
       const feedInHeader = !!headerFeed && headerFeed.getBoundingClientRect().width > 0;
-      const feedHeight = feedInHeader ? 0 : headerHeight > 0 ? headerHeight : rect.height * 48 / 840 * mobileCanvasZoom();
+      const feedHeight = !liveFeedVisible || feedInHeader ? 0 : headerHeight > 0 ? headerHeight : rect.height * 48 / 840 * mobileCanvasZoom();
       app.style.setProperty('--live-feed-bottom', `${rect.top + feedHeight}px`);
       app.style.setProperty('--live-feed-height', `${feedHeight}px`);
       const footerRect = footer?.getBoundingClientRect();
@@ -109,26 +169,45 @@ export default function App() {
       window.visualViewport?.removeEventListener('resize', scheduleBoundary);
       window.visualViewport?.removeEventListener('scroll', scheduleBoundary);
     };
-  }, []);
+  }, [liveFeedVisible, mobilePlaying]);
   const previousMobilePortrait = useRef<boolean | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [fullscreenError, setFullscreenError] = useState('');
-  const requestMobileLandscape = async () => {
-    if (!window.matchMedia('(max-width: 1024px) and (pointer: coarse)').matches) return;
+  const requestMobileLandscape = useCallback(async () => {
+    if (!window.matchMedia('(pointer: coarse)').matches) return;
+    if (!appRef.current?.requestFullscreen && !document.fullscreenElement) {
+      setMobileEntryRequired(true);
+      return;
+    }
     try {
       if (!document.fullscreenElement && appRef.current?.requestFullscreen) await appRef.current.requestFullscreen();
+    } catch {
+      setMobileEntryRequired(true);
+      return;
+    }
+    try {
       const orientation = screen.orientation as ScreenOrientation & { lock?: (orientation: 'landscape') => Promise<void> };
       await orientation?.lock?.('landscape');
     } catch {
-      // Unsupported browsers use the portrait rotate prompt instead.
+      // Orientation locking is optional; do not show rotation instructions.
     }
-  };
+    setMobileEntryRequired(false);
+  }, []);
+
+  useEffect(() => {
+    const media = window.matchMedia('(pointer: coarse)');
+    const sync = () => setMobileDevice(media.matches);
+    media.addEventListener('change', sync);
+    if (media.matches) void requestMobileLandscape();
+    return () => media.removeEventListener('change', sync);
+  }, [requestMobileLandscape]);
 
   useEffect(() => {
     let wasFullscreen = document.fullscreenElement === appRef.current;
     const syncFullscreen = () => {
       const fullscreen = document.fullscreenElement === appRef.current;
       setIsFullscreen(fullscreen);
+      if (fullscreen) setMobileEntryRequired(false);
       if (wasFullscreen && !fullscreen && window.matchMedia('(pointer: coarse)').matches) {
         const orientation = screen.orientation as ScreenOrientation & { unlock?: () => void };
         try { orientation?.unlock?.(); } catch { }
@@ -142,6 +221,10 @@ export default function App() {
 
   const toggleFullscreen = async () => {
     setFullscreenError('');
+    if (mobileDevice && !document.fullscreenElement) {
+      await requestMobileLandscape();
+      return;
+    }
     try {
       if (document.fullscreenElement) await document.exitFullscreen();
       else if (appRef.current?.requestFullscreen) await appRef.current.requestFullscreen();
@@ -151,19 +234,9 @@ export default function App() {
     }
   };
 
-  const [state, setState] = useState<GameState>('menu');
   useEffect(() => { if (state !== 'over') setShareDDOpen(false); }, [state]);
   const [selectedMode, setSelectedMode] = useState<'easy' | 'hard'>('hard');
   const [awaitingLandscape, setAwaitingLandscape] = useState(false);
-  useEffect(() => {
-    if (!window.matchMedia('(max-width: 1024px) and (pointer: coarse)').matches
-      || state !== 'menu' || awaitingLandscape) return;
-    try {
-      const orientation = screen.orientation as ScreenOrientation & { unlock?: () => void };
-      orientation?.unlock?.();
-      if (document.fullscreenElement === appRef.current) void document.exitFullscreen().catch(() => {});
-    } catch { }
-  }, [state, awaitingLandscape]);
   const [gameKey, setGameKey] = useState<number>(0);
   const [printerRequest, setPrinterRequest] = useState(0);
   const [invertedRequest, setInvertedRequest] = useState(0);
@@ -220,7 +293,8 @@ export default function App() {
   }, [theme]);
 
   const toggleSound = () => {
-    const next = !soundEnabled;
+    const next = !soundEnabled || volume === 0;
+    if (next && volume === 0) setVolume(100);
     setSoundEnabled(next);
     sound.enabled = next;
     if (next) sound.unlock();
@@ -274,7 +348,7 @@ export default function App() {
     if (state === 'menu' && selectedMode !== 'hard') return;
     void requestMobileLandscape();
     sound.unlock();
-    if (window.matchMedia('(max-width: 1024px) and (pointer: coarse)').matches && window.innerHeight > window.innerWidth) {
+    if (mobileDevice && window.innerHeight > window.innerWidth) {
       setAwaitingLandscape(true);
       return;
     }
@@ -305,7 +379,7 @@ export default function App() {
 
   useEffect(() => {
     const syncOrientation = () => {
-      const portrait = window.matchMedia('(max-width: 1024px) and (pointer: coarse)').matches && window.innerHeight > window.innerWidth;
+      const portrait = mobileDevice && window.innerHeight > window.innerWidth;
       const wasPortrait = previousMobilePortrait.current;
       if (wasPortrait === false && portrait && state === 'play') setState('paused');
       previousMobilePortrait.current = portrait;
@@ -334,10 +408,10 @@ export default function App() {
       screen.orientation?.removeEventListener('change', syncOrientation);
       window.visualViewport?.removeEventListener('resize', syncOrientation);
     };
-  }, [awaitingLandscape, state]);
+  }, [awaitingLandscape, state, mobileDevice, requestMobileLandscape]);
 
   return (
-    <div ref={appRef} data-state={state} className="game-app min-h-screen bg-[var(--bg)] text-[var(--text)] transition-colors duration-200">
+    <div ref={appRef} data-state={state} data-live-feed={liveFeedVisible} data-mobile-entry={mobileEntryRequired} data-animations={animationsEnabled} className="game-app min-h-screen bg-[var(--bg)] text-[var(--text)] transition-colors duration-200">
       <div className="w-full pt-2">
 
         {/* Sleek Top Utility & Navigation Bar */}
@@ -398,44 +472,23 @@ export default function App() {
               setInvertedRequest(1); setState('play');
             }} className="px-2.5 py-1.5 rounded border border-[var(--line)] bg-[var(--alt)] text-xs text-[var(--green)] disabled:opacity-40">↕ Inverted</button>
             <button type="button" title="Music styles" aria-expanded={soundMenuOpen} onClick={() => { if (state === 'play') setState('paused'); setSoundMenuOpen(true); }} className="px-2.5 py-1.5 rounded border border-[var(--line)] bg-[var(--alt)] text-xs text-[var(--green)]">♫ Music</button>
-            </div>
             <button type="button" title="Test Bell mode with Pául" aria-label="Start Bell challenge against Pául" disabled={state === 'boxing'} onClick={() => {
               sound.unlock(); setSoundMenuOpen(false);
               if (state === 'menu' || state === 'over') { setCurrentResult(0); setGameKey(k => k + 1); }
               bossEncounter.current = createBossArena('paul');
               boxingActive.current = true; setState('boxing');
             }} className="mobile-header-control px-2.5 py-1.5 rounded border border-[var(--line)] bg-[var(--alt)] text-xs text-[var(--green)] cursor-pointer disabled:opacity-40">🦘<span className="hidden sm:inline"> Kangaroo</span></button>
-            <button type="button" title="About" aria-label="Open information about the game" aria-haspopup="dialog" onClick={() => { if (state === 'play') setState('paused'); setSoundMenuOpen(false); setSiteSection('About'); }} className="mobile-header-control mobile-header-about-control px-2.5 py-1.5 rounded border border-[var(--line)] bg-[var(--alt)] hover:border-[var(--green)] text-[var(--green)] transition-colors cursor-pointer">
-              <span className="mobile-header-info-icon flex w-3 h-3 items-center justify-center font-serif text-lg font-bold leading-none" aria-hidden="true">i</span>
-            </button>
-            <button
+            </div>
+            {(state === 'play' || state === 'paused') && <button
               type="button"
-              onClick={() => setTheme(current => current === 'dark' ? 'light' : 'dark')}
-              className="mobile-header-control mobile-header-theme-control px-2.5 py-1.5 rounded border border-[var(--line)] bg-[var(--alt)] hover:border-[var(--green)] text-[var(--green)] transition-colors cursor-pointer"
-              title={theme === 'dark' ? 'Day mode (N)' : 'Night mode (N)'}
-              aria-label={theme === 'dark' ? 'Switch to day mode' : 'Switch to night mode'}
-            >
-              {theme === 'dark' ? <Sun className="mobile-header-theme-icon w-5 h-5" /> : <Moon className="mobile-header-theme-icon w-5 h-5" />}
-            </button>
-            {state === 'play' && <button
-              type="button"
-              onClick={() => setState('paused')}
+              onClick={() => setState(current => current === 'play' ? 'paused' : 'play')}
               title="HODL (P)"
-              aria-label="Pause game"
+              aria-label={state === 'paused' ? 'Resume game' : 'Pause game'}
+              aria-pressed={state === 'paused'}
               className="mobile-header-control header-pause-control"
             >
               <Pause className="w-3.5 h-3.5" />
             </button>}
-            <button
-              type="button"
-              onClick={toggleSound}
-              className="header-sound-control px-2.5 py-1.5 rounded border border-[var(--line)] bg-[var(--alt)] hover:border-[var(--green)] text-xs font-mono-term flex items-center gap-1 transition-colors cursor-pointer"
-              title={soundEnabled ? 'Sound Off (M)' : 'Sound On (M)'}
-              aria-label={soundEnabled ? 'Mute sound' : 'Enable sound'}
-              aria-pressed={soundEnabled}
-            >
-              {soundEnabled ? <Volume2 className="w-3.5 h-3.5 text-[var(--green)]" /> : <VolumeX className="w-3.5 h-3.5 text-[var(--muted)]" />}
-            </button>
             <button
               type="button"
               onClick={toggleFullscreen}
@@ -448,6 +501,9 @@ export default function App() {
             </button>
           </div>
         </header>
+        <div className="desktop-live-feed-bar" hidden={!liveFeedVisible}>
+          <canvas className="desktop-live-feed" aria-label="Live Feed" />
+        </div>
         {soundMenuOpen && <SoundMenu onClose={() => setSoundMenuOpen(false)} />}
         {fullscreenError && <p role="status" className="px-4 text-xs text-[var(--red)]">{fullscreenError}</p>}
 
@@ -457,6 +513,7 @@ export default function App() {
           aria-label="Main Game View"
         >
           <CandleGame
+            liveFeedEnabled={liveFeedVisible}
             key={gameKey}
             theme={theme}
             state={state}
@@ -483,8 +540,15 @@ export default function App() {
               {state === 'menu' && (
                 <div style={{ backgroundColor: 'color-mix(in srgb, var(--panel) 88%, transparent)' }} className="initial-guide desktop-initial-guide max-w-[1640px] w-full border border-[var(--line)] rounded-xl p-3 sm:p-5 shadow-2xl text-left">
                   <div className="how-to-layout flex flex-col items-stretch gap-3">
-                    <aside className="how-to-aside w-full max-w-[320px] mx-auto lg:mx-0 lg:w-[280px] xl:w-[320px] shrink-0 flex flex-col items-stretch gap-3"><div className="how-to-hero w-full overflow-hidden rounded-xl"><MenuHero theme={theme} /></div>                  {/* Launch Button */}
-                      <div className="how-to-controls w-full mt-auto flex flex-col gap-2">
+                    <section className="landing-menu-panel rounded border border-[var(--line)]" aria-label="Game menu">
+                      <MenuChart />
+                      <button className="coffee-link home-coffee-link" type="button" aria-label="Donate (opens in a new tab)" onClick={() => window.open('https://ko-fi.com/eon', '_blank', 'noopener,noreferrer')}>
+                        <span className="coffee-cup" aria-hidden="true">♥</span>
+                        <span className="donate-label">Donate</span>
+                      </button>
+                      <div className="landing-menu-actions how-to-controls w-full flex flex-col gap-1">
+                        <button type="button" onClick={() => setMobileGuideOpen(true)} aria-haspopup="dialog" className="landing-menu-guide-button menu-action-button w-full rounded border border-black bg-black text-white font-bold font-mono-term cursor-pointer">How to Play</button>
+                        <button type="button" onClick={() => setSiteSection('Settings')} aria-haspopup="dialog" className="landing-menu-settings-button menu-action-button w-full rounded border border-[var(--line)] bg-[var(--panel)] text-[var(--text)] font-bold font-mono-term cursor-pointer">Settings</button>
                         <div className="how-to-mode-buttons">
                           <button
                             type="button"
@@ -495,7 +559,7 @@ export default function App() {
                             className={`menu-action-button mobile-portrait-action-button how-to-mode-selector w-full rounded-lg border-0 text-white transition-all hover:brightness-105 ${selectedMode === 'easy' ? 'bg-[#38bdf8]' : 'bg-[#ef5350]'}`}
                           >
                             {selectedMode === 'hard' && <ChevronLeft className="how-to-mode-selector-arrow how-to-mode-selector-arrow-left" aria-hidden="true" />}
-                            {selectedMode === 'easy' ? 'There is no Easy Mode' : 'Hard Mode'}
+                            {selectedMode === 'easy' ? 'Git Gud' : 'Hard Mode'}
                             {selectedMode === 'easy' && <ChevronRight className="how-to-mode-selector-arrow how-to-mode-selector-arrow-right" aria-hidden="true" />}
                           </button>
                         </div>
@@ -508,52 +572,15 @@ export default function App() {
                           Start
                         </button>
                       </div>
-                    </aside>
-                    <section className="landing-guide-section" aria-labelledby="landing-guide-title">
-                      <div className="how-to-guide-header landing-guide-heading rounded border border-[var(--line)] bg-[var(--alt)]">
-                        <h2 id="landing-guide-title" className="menu-action-button how-to-play-heading text-xl sm:text-2xl font-black font-mono-term tracking-tight">How to Play</h2>
-                      </div>
-                      <MechanicsGuide theme={theme} />
                     </section>
                   </div>
-                </div>
-              )}
-
-              {state === 'menu' && (
-                <div className="mobile-portrait-guide w-full h-full text-center">
-                  <div className="mobile-portrait-hero w-full rounded-xl overflow-hidden">
-                    <MenuHero theme={theme} />
-                  </div>
-                  <button type="button" onClick={() => setMobileGuideOpen(true)} className="menu-action-button mobile-portrait-action-button mobile-portrait-how-to-play w-full rounded-lg border border-[#ffd230] bg-slate-900/85 text-[#ffd230] hover:bg-slate-800">
-                    How to Play
-                  </button>
-                  <button
-                    type="button"
-                    aria-label="Change game mode"
-                    aria-live="polite"
-                    onClick={handleModeSelectorClick}
-                    onKeyDown={handleModeSelectorKeyDown}
-                    className={`menu-action-button mobile-portrait-action-button how-to-mode-selector w-full rounded-lg border-0 text-white transition-all hover:brightness-105 ${selectedMode === 'easy' ? 'bg-[#38bdf8]' : 'bg-[#ef5350]'}`}
-                  >
-                    {selectedMode === 'hard' && <ChevronLeft className="how-to-mode-selector-arrow how-to-mode-selector-arrow-left" aria-hidden="true" />}
-                    {selectedMode === 'easy' ? 'There is no Easy Mode' : 'Hard Mode'}
-                    {selectedMode === 'easy' && <ChevronRight className="how-to-mode-selector-arrow how-to-mode-selector-arrow-right" aria-hidden="true" />}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleStartOrResume}
-                    disabled={selectedMode !== 'hard'}
-                    className="menu-action-button mobile-portrait-action-button w-full rounded-lg bg-[#08795c] hover:brightness-110 active:brightness-95 text-white transition-all shadow-lg cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-                  >
-                    Start
-                  </button>
                 </div>
               )}
 
               {/* PAUSE & GAME OVER WINDOWS */}
               {state !== 'menu' && (
                 <div className={`game-result ${state === 'over' ? 'game-result-over' : ''} relative isolate overflow-hidden max-w-md w-full text-center bg-[var(--panel)] border border-[var(--line)] rounded-xl p-6 sm:p-7 shadow-2xl`}>
-                  {state === 'over' && <><LiquidatedBackdrop day={theme === 'light'} /><div className="absolute inset-0 bg-slate-950/15 pointer-events-none" aria-hidden="true" /></>}
+                  {state === 'over' && <><LiquidatedBackdrop /><div className="absolute inset-0 bg-slate-950/15 pointer-events-none" aria-hidden="true" /></>}
                   <div className={`relative z-10 ${state === 'over' ? 'game-result-content pt-28 pb-4' : ''}`}>
 
                     {state === 'paused' && <h2 className="font-black tracking-tight mb-2 font-mono-term text-3xl sm:text-4xl" style={{ color: theme === 'dark' ? '#54d3ac' : '#08795c' }}>Margin Call</h2>}
@@ -561,7 +588,7 @@ export default function App() {
 
                     {/* Score summary on game over */}
                     {state === 'over' && (
-                      <div className="py-3 my-4 bg-[var(--alt)] border border-[var(--line)] rounded-lg font-mono-term text-xs">
+                      <div className="game-result-summary py-3 my-4 bg-[var(--alt)] border border-[var(--line)] rounded-lg font-mono-term text-xs">
                         <h2 className="font-black text-lg sm:text-xl text-red-400 mb-2">LIQUIDATED</h2>
                         <div>
                           <span className="text-xl sm:text-2xl font-bold text-[var(--text)] block">All-time High</span>
@@ -570,7 +597,15 @@ export default function App() {
                       </div>
                     )}
 
-                    <div className="space-y-2.5 mt-5">
+                    <div className="game-result-actions mt-5">
+                      {state === 'paused' && <>
+                        <button type="button" onClick={() => setState('menu')} className="margin-call-action margin-call-home how-to-play-action w-full rounded font-bold font-mono-term cursor-pointer">Home</button>
+                        <button type="button" onClick={() => setSiteSection('Settings')} className="margin-call-action margin-call-settings how-to-play-action w-full rounded font-bold font-mono-term cursor-pointer">Settings</button>
+                      </>}
+                      {state === 'over' && <>
+                        <button type="button" onClick={() => setState('menu')} className="margin-call-action liquidated-home how-to-play-action w-full rounded font-bold font-mono-term cursor-pointer">Home</button>
+                        <button type="button" onClick={() => setShareDDOpen(true)} className="share-dd-open w-full py-2.5 px-3 rounded border border-[#38bdf8] bg-[#38bdf8] text-white hover:brightness-110 font-bold text-xs font-mono-term transition-colors cursor-pointer">Share DD</button>
+                      </>}
                       <button
                         type="button"
                         onClick={handleStartOrResume}
@@ -578,19 +613,7 @@ export default function App() {
                       >
                         <span>{state === 'paused' ? 'Continue' : 'New Game'}</span>
                       </button>
-                      {state === 'paused' && <button type="button" onClick={() => {
-                        setMobileGuideOpen(true);
-                      }} className="margin-call-action mobile-portrait-how-to-play how-to-play-action w-full rounded-lg font-bold font-mono-term">How to Play</button>}
 
-                      {state === 'over' && <button type="button" onClick={() => setShareDDOpen(true)} className="share-dd-open w-full py-2.5 px-3 rounded-lg border border-[#38bdf8] bg-slate-900/85 text-[#38bdf8] hover:bg-slate-800 font-bold text-xs font-mono-term transition-colors cursor-pointer">Share DD</button>}
-
-                      {state === 'over' && <button
-                        type="button"
-                        onClick={() => setMobileGuideOpen(true)}
-                        className="how-to-play-action liquidated-how-to-play w-full py-2.5 px-3 rounded-lg bg-slate-900/85 hover:bg-slate-800 font-bold text-xs font-mono-term transition-colors cursor-pointer"
-                      >
-                        How to Play
-                      </button>}
                     </div>
 
                   </div>
@@ -614,17 +637,27 @@ export default function App() {
 
         {mobileGuideOpen && <div className="mobile-how-to-dialog fixed inset-0 z-50 flex items-center justify-center p-3" onPointerDown={e => e.stopPropagation()}>
           <div role="dialog" aria-modal="true" aria-labelledby="mobile-guide-title" className="mobile-how-to-panel w-full h-full overflow-hidden bg-[var(--panel)] border border-[var(--line)] rounded-xl p-3">
-            <div className="mobile-how-to-header relative flex h-10 items-center justify-center mb-3 px-10">
+            <div className="mobile-how-to-header relative flex h-10 items-center justify-center mb-3 px-10 border border-[#dbdbdb] rounded">
               <h2 id="mobile-guide-title" className="how-to-play-label text-xl font-black font-mono-term tracking-tight text-center">How to Play</h2>
               <button type="button" autoFocus title="Close How to Play" aria-label="Close How to Play" onClick={() => setMobileGuideOpen(false)} className="dialog-close mobile-dialog-close mobile-how-to-close p-2 rounded border border-[var(--line)] text-[var(--text)] hover:bg-[var(--alt)] transition-colors cursor-pointer"><X className="w-5 h-5" aria-hidden="true" /></button>
             </div>
-            <MechanicsGuide theme={theme} />
+            <div className="how-to-dialog-content">
+              <aside className="how-to-dialog-hero overflow-hidden rounded" aria-label="Stonktrooper illustration">
+                <MenuHero theme={theme} />
+              </aside>
+              <MechanicsGuide theme={theme} />
+            </div>
           </div>
         </div>}
 
         {/* Global Footer */}
-        <SiteFooter theme={theme} section={siteSection} setSection={setSiteSection} onOpen={() => { if (state === 'play') setState('paused'); }} />
+        <SiteFooter volume={soundEnabled ? volume : 0} onVolumeChange={changeVolume} animationsEnabled={animationsEnabled} onToggleAnimations={() => setAnimationsEnabled(current => !current)} liveFeedEnabled={liveFeedEnabled} onToggleLiveFeed={() => setLiveFeedEnabled(current => !current)} onToggleTheme={() => setTheme(current => current === 'dark' ? 'light' : 'dark')} theme={theme} section={siteSection} setSection={setSiteSection} onOpen={() => { if (state === 'play') setState('paused'); }} />
         <MobileDiagnostics />
+
+        <div className="landscape-required" role="status" aria-label="Landscape orientation required">
+          <button type="button" onClick={() => void requestMobileLandscape()} className="rounded border border-[var(--line)] bg-[var(--panel)] px-4 py-2 cursor-pointer">Enter fullscreen</button>
+          {mobileEntryRequired && <button type="button" onClick={() => setMobileEntryRequired(false)} className="mobile-browser-fallback rounded border border-[var(--line)] bg-[var(--panel)] px-4 py-2 cursor-pointer">Continue in browser</button>}
+        </div>
 
       </div>
     </div>

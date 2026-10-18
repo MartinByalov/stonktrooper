@@ -53,6 +53,7 @@ import { ANIMAL_CENTER, animalHeight, drawAnimalCharacter } from './animalRender
 import { extendMarketPath, sampleMarketPath, MarketKnot, MARKET_BASELINE, candleVolatilityBoost, extendMarketRegimes, marketRegimeAt, MarketRegime } from './marketPath';
 
 interface CandleGameProps {
+  liveFeedEnabled?: boolean;
   whaleDemo?: boolean;
   candleDemo?: boolean;
   printerRequest?: number;
@@ -155,6 +156,7 @@ const R = (a: number, b: number) => a + Math.random() * (b - a);
 const price = (y: number) => chartPrice(y, MARKET_BASELINE).toFixed(2);
 
 export const CandleGame: React.FC<CandleGameProps> = ({
+  liveFeedEnabled = true,
   theme,
   state,
   onStateChange,
@@ -199,7 +201,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
       canvas.closest<HTMLElement>('.game-arena')?.style.setProperty('--chart-axis-right', `${Math.max(0, bounds.width - axisLeft)}px`);
       const textScaleX = mobile ? scale / horizontalScale : 1;
       const headerHeight = canvas.closest('.game-app')?.querySelector('header')?.getBoundingClientRect().height ?? 0;
-      headerFeedRef.current = canvas.closest('.game-app')?.querySelector<HTMLCanvasElement>('.mobile-header-feed') ?? null;
+      headerFeedRef.current = Array.from(canvas.closest('.game-app')?.querySelectorAll<HTMLCanvasElement>('.mobile-header-feed, .desktop-live-feed') ?? []).find(feed => feed.getBoundingClientRect().width > 0) ?? null;
       headerFeedActive.current = !!headerFeedRef.current && headerFeedRef.current.getBoundingClientRect().width > 0;
       const headerFeed = headerFeedRef.current;
       if (headerFeed && headerFeedActive.current) {
@@ -208,29 +210,34 @@ export const CandleGame: React.FC<CandleGameProps> = ({
         headerFeed.width = Math.max(1, Math.round(rect.width * Math.min(window.devicePixelRatio || 1, 1.5)));
         headerFeed.height = Math.max(1, Math.round(rect.height * Math.min(window.devicePixelRatio || 1, 1.5)));
       }
-      const tapeHeight = headerFeedActive.current ? 1 / scale : headerHeight > 0 ? headerHeight / scale : TAPE_HEIGHT;
+      const tapeHeight = !liveFeedEnabled ? 0 : headerFeedActive.current ? 1 / scale : headerHeight > 0 ? headerHeight / scale : TAPE_HEIGHT;
       feedLayout.current = { mobile, fontSize: mobile || headerFeedActive.current ? Math.min(64, Math.max(11, 14 / scale)) : 11, textScaleX, tapeHeight };
     };
     const observer = new ResizeObserver(refresh);
     observer.observe(canvas);
     const header = canvas.closest('.game-app')?.querySelector('header');
     if (header) observer.observe(header);
-    const headerFeed = canvas.closest('.game-app')?.querySelector('.mobile-header-feed');
+    const headerFeeds = canvas.closest('.game-app')?.querySelectorAll('.mobile-header-feed, .desktop-live-feed') ?? [];
     const pauseTicker = () => { tickerHoverPausedRef.current = true; };
     const resumeTicker = () => { tickerHoverPausedRef.current = false; };
-    headerFeed?.addEventListener('pointerenter', pauseTicker);
-    headerFeed?.addEventListener('pointerleave', resumeTicker);
-    headerFeed?.addEventListener('pointercancel', resumeTicker);
+    headerFeeds.forEach(feed => {
+      observer.observe(feed);
+      feed.addEventListener('pointerenter', pauseTicker);
+      feed.addEventListener('pointerleave', resumeTicker);
+      feed.addEventListener('pointercancel', resumeTicker);
+    });
     window.addEventListener('resize', refresh);
     refresh();
     return () => {
       observer.disconnect(); window.removeEventListener('resize', refresh);
-      headerFeed?.removeEventListener('pointerenter', pauseTicker);
-      headerFeed?.removeEventListener('pointerleave', resumeTicker);
-      headerFeed?.removeEventListener('pointercancel', resumeTicker);
+      headerFeeds.forEach(feed => {
+        feed.removeEventListener('pointerenter', pauseTicker);
+        feed.removeEventListener('pointerleave', resumeTicker);
+        feed.removeEventListener('pointercancel', resumeTicker);
+      });
       resumeTicker();
     };
-  }, [state]);
+  }, [state, liveFeedEnabled]);
   const tickerHoverPausedRef = useRef(false);
   const aimRef = useRef<AimPoint | null>(null);
   const bossTrack = useRef<{ candles: Candle[]; length: number } | null>(null);
@@ -2523,6 +2530,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
   }, [theme]);
   // 5. TOP SCROLLING NEWS WIRE TICKER & DIAMOND / ROCKET COUNTDOWN STRIP
   const drawTopTickerTape = useCallback((ctx: CanvasRenderingContext2D) => {
+    if (!liveFeedEnabled) return;
     const g = gameRef.current;
     const plotCtx = ctx;
     const header = headerFeedActive.current ? headerFeedRef.current : null;
@@ -2558,7 +2566,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
       // Transparent header canvas: inherit the real header background, no frame.
       ctx.clearRect(0, 0, W, tapeH);
     } else {
-      ctx.fillStyle = theme === 'light' ? '#eaf0f5' : '#131c29';
+      ctx.fillStyle = theme === 'light' ? '#ffffff' : '#253044';
       ctx.fillRect(0, 0, W, tapeH);
     }
 
@@ -2663,20 +2671,20 @@ export const CandleGame: React.FC<CandleGameProps> = ({
       ctx.fillText(`WHALE ${Math.max(0, Math.ceil(g.p.whaleMount.timer / 60))}s`, W - AX - 12, feedLayout.current.tapeHeight + 8);
       ctx.restore();
     }
-  }, [bossEncounter, theme]);
+  }, [bossEncounter, theme, liveFeedEnabled]);
 
   const draw = useCallback((ctx: CanvasRenderingContext2D) => {
     const g = gameRef.current;
     const TAPE_HEIGHT = feedLayout.current.tapeHeight;
     const darkPalette = {
-      bg: '#131722',
+      bg: '#253044',
       grid: '#2a2e3970',
       text: '#d1d4dc',
       muted: '#969dab',
       veil: '#0c1119e8'
     };
     const lightPalette = {
-      bg: '#f5f8fc',
+      bg: '#ebebeb',
       grid: '#d3dde780',
       text: '#24364b',
       muted: '#52677d',

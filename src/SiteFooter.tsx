@@ -1,11 +1,11 @@
 // Browser game module for SiteFooter.
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { Mail, X } from 'lucide-react';
+import { Mail, X, Volume2, VolumeX, Radio, Moon, Sparkles } from 'lucide-react';
 
 const sections = ['About', 'Privacy', 'Disclaimer', 'Preferences'] as const;
-export type SiteSection = typeof sections[number];
+export type SiteSection = typeof sections[number] | 'Settings';
 
-export function SiteFooter({ onOpen, theme, section, setSection }: { onOpen: () => void; theme: 'light' | 'dark'; section: SiteSection | null; setSection: (section: SiteSection | null) => void }) {
+export function SiteFooter({ onOpen, theme, section, setSection, volume, onVolumeChange, animationsEnabled, onToggleAnimations, liveFeedEnabled, onToggleLiveFeed, onToggleTheme }: { onOpen: () => void; theme: 'light' | 'dark'; section: SiteSection | null; setSection: (section: SiteSection | null) => void; volume: number; onVolumeChange: (volume: number) => void; animationsEnabled: boolean; onToggleAnimations: () => void; liveFeedEnabled: boolean; onToggleLiveFeed: () => void; onToggleTheme: () => void }) {
   const [message, setMessage] = useState('');
   const dialog = useRef<HTMLDivElement>(null);
   const close = useRef<HTMLButtonElement>(null);
@@ -51,7 +51,6 @@ export function SiteFooter({ onOpen, theme, section, setSection }: { onOpen: () 
       <nav aria-label="Site information" className="flex flex-wrap items-center justify-start justify-self-start gap-3">
         {sections.map(item => <button key={item} type="button" className="hover:text-[var(--text)] underline underline-offset-2 cursor-pointer" onClick={() => { onOpen(); setMessage(''); setSection(item); }}>{item}</button>)}
       </nav>
-      <span className="site-footer-copyright justify-self-end whitespace-nowrap">© Stonktrooper.lol 2026</span>
     </footer>
     {section && <div className="site-info-overlay fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4" onPointerDown={event => event.stopPropagation()}>
       <div ref={dialog} role="dialog" aria-modal="true" aria-labelledby="site-info-title" className="site-info-dialog w-full max-w-xl max-h-[85dvh] overflow-y-auto rounded-xl border border-[var(--line)] bg-[var(--panel)] p-5 shadow-2xl" onKeyDown={event => {
@@ -96,17 +95,21 @@ export function SiteFooter({ onOpen, theme, section, setSection }: { onOpen: () 
                 </svg>
               </a>
             </div>
-            <div className="about-support space-y-2 pt-2 text-center">
-              <p>Support me at:</p>
-              <button id="about-coffee" className="coffee-link" type="button" aria-label="Buy me a Ko-fi! (opens in a new tab)" onClick={() => window.open('https://ko-fi.com/eon', '_blank', 'noopener,noreferrer')}>
-                <span className="coffee-cup" aria-hidden="true">♥</span>
-                Buy me a Ko-fi!
-              </button>
-            </div>
+            <p className="about-copyright text-center font-mono-term text-[10px]">© Stonktrooper.lol<br />2026</p>
           </>}
+          {section === 'Settings' && <div className="settings-options">
+            <div className="settings-volume-row">
+              <label htmlFor="settings-volume" className="settings-label">{volume === 0 ? <VolumeX aria-hidden="true" /> : <Volume2 aria-hidden="true" />}<span>Sound</span></label>
+              <output htmlFor="settings-volume">{volume === 0 ? 'Muted' : `${volume}%`}</output>
+              <input id="settings-volume" type="range" min="0" max="100" step="1" value={volume} onChange={event => onVolumeChange(Number(event.target.value))} aria-valuetext={volume === 0 ? 'Muted' : `${volume}%`} />
+            </div>
+            <button type="button" role="switch" aria-label="Live Feed" aria-checked={liveFeedEnabled} onClick={onToggleLiveFeed} className="settings-toggle"><span className="settings-label"><Radio aria-hidden="true" />Live Feed</span><span className="settings-switch-state">{liveFeedEnabled ? 'On' : 'Off'}<span className="settings-switch-track" aria-hidden="true" /></span></button>
+            <button type="button" role="switch" aria-label="Night mode" aria-checked={theme === 'dark'} onClick={onToggleTheme} className="settings-toggle"><span className="settings-label"><Moon aria-hidden="true" />Theme</span><span className="settings-switch-state">{theme === 'dark' ? 'Night' : 'Day'}<span className="settings-switch-track" aria-hidden="true" /></span></button>
+            <button type="button" role="switch" aria-label="Interface animations" aria-checked={animationsEnabled} onClick={onToggleAnimations} className="settings-toggle"><span className="settings-label"><Sparkles aria-hidden="true" />Interface animations</span><span className="settings-switch-state">{animationsEnabled ? 'On' : 'Off'}<span className="settings-switch-track" aria-hidden="true" /></span></button>
+          </div>}
           {section === 'Privacy' && <>
             <p>The game does not use analytics, advertising trackers or tracking cookies, and does not upload your score to a game server.</p>
-            <p>Your browser stores the selected theme and sound preferences locally. These settings are not sent by the game to the creator. Current gameplay and scores are held in memory.</p>
+            <p>Your browser stores the selected theme, volume, Live Feed and interface animation preferences locally. These settings are not sent by the game to the creator. Current gameplay and scores are held in memory.</p>
             <p>Share score generates its image locally. Score links include the displayed result in the URL. Anyone with the link can view or edit this self-reported value.</p>
             <p>Hosting: GitHub Pages. GitHub logs visitor IP addresses for security. This is separate from the game's local settings. See the <a className="underline text-[#38bdf8]" href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement" target="_blank" rel="noopener noreferrer">GitHub Privacy Statement</a>.</p>
             <p>Fonts: this page loads fonts from Google Fonts. Your browser contacts Google to retrieve them, which exposes information such as your IP address to the provider. See <a className="underline text-[#38bdf8]" href="https://developers.google.com/fonts/faq/privacy" target="_blank" rel="noopener noreferrer">Google Fonts privacy information</a>.</p>
@@ -117,11 +120,11 @@ export function SiteFooter({ onOpen, theme, section, setSection }: { onOpen: () 
             <p>If you find any in-game bugs, count them as features!</p>
           </>}
           {section === 'Preferences' && <>
-            <p>The game saves only theme and sound preferences in this browser. <br></br> You can remove them below or through your browser's site-data settings.</p>
+            <p>The game saves only theme, volume, Live Feed and interface animation preferences in this browser. <br></br> You can remove them below or through your browser's site-data settings.</p>
             <p>Removing the saved settings does not interrupt the current game. <br></br>Defaults apply after your next reload. Later preference changes may save new settings.</p>
             <div className="pt-2">
               <button type="button" className="preferences-clear-button block mx-auto w-full py-2.5 px-3 rounded-lg border font-bold text-xs font-mono-term cursor-pointer" onClick={() => {
-                try { localStorage.removeItem('cr_theme'); localStorage.removeItem('stonker-sounds'); setMessage('Saved theme and sound preferences removed.'); }
+                try { for (const key of ['cr_theme', 'stonker-sounds', 'cr_sound_enabled', 'cr_live_feed', 'cr_volume', 'cr_animations']) localStorage.removeItem(key); setMessage('Saved theme, volume, Live Feed and interface animation preferences removed.'); }
                 catch { setMessage('Unable to access browser storage. Use your browser site-data settings.'); }
               }}>Clear saved preferences</button>
             </div>
