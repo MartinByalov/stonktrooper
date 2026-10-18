@@ -2,12 +2,12 @@
 export function LiquidatedBackdrop() {
   return (
     <svg aria-hidden="true" focusable="false" viewBox="0 0 440 360" preserveAspectRatio="xMidYMid slice" className="liquidated-backdrop absolute inset-0 w-full h-full pointer-events-none">
-      <rect width="440" height="360" fill="#101b2b" />
+      <rect width="440" height="360" fill="var(--liquidated-scene-bg, #101b2b)" />
       <circle cx="360" cy="42" r="37" fill="#d5e7f3" opacity="0.08" />
-      <g fill="#213247" opacity="0.65">
+      <g fill="var(--liquidated-scene-skyline, #213247)" opacity="0.65">
         <path d="M0 300V250H35V274H62V225H105V300ZM330 360V260H365V232H401V280H440V360Z" />
       </g>
-      <g stroke="#e7ad58" strokeWidth="2" fill="none" opacity="0.95">
+      <g stroke="var(--liquidated-scene-crane, #e7ad58)" strokeWidth="2" fill="none" opacity="0.95">
         <path d="M312 360V89H340V360M312 89L340 125L312 162L340 199L312 236L340 273L312 310L340 347" />
         <path d="M52 89H408V107H52ZM52 107L89 89L126 107L163 89L200 107L237 89L274 107L311 89L348 107L385 89" />
         <path d="M326 37L52 89M326 37L408 89M326 37V89M98 107V188" />
@@ -21,14 +21,14 @@ export function LiquidatedBackdrop() {
           <path d="M-9 -25Q-19 -14 -7 -7L2 -11L-1 -25Z" fill="#68abd0" />
           <path d="M-11 -18L-2 -15M-10 -13L-2 -11" stroke="#b3c7ce" strokeWidth="1.5" />
           <path d="M2 -27L3 -3" stroke="#263c40" strokeWidth="3" />
-          <circle cx="5" cy="-30" r="9" fill="#182a34" />
-          <ellipse cx="9" cy="-28" rx="5" ry="4" fill="#edf0dd" />
-          <circle cx="10" cy="-33" r="1.3" fill="#ffffff" />
+          <circle cx="5" cy="-30" r="9" fill="var(--liquidated-scene-ink)" />
+          <ellipse cx="9" cy="-28" rx="5" ry="4" fill="var(--liquidated-scene-bg)" />
+          <circle cx="10" cy="-33" r="1.3" fill="var(--liquidated-scene-bg)" />
           <path d="M13 -30L20 -28L13 -26Z" fill="#6d7b80" />
           <path d="M-4 -2V2H-8M5 -2V2H9" stroke="#8b938d" strokeWidth="1.5" fill="none" />
         </g>
       ))}
-      <rect y="115" width="440" height="245" fill="#101b2b" opacity="0.45" />
+      <rect y="115" width="440" height="245" fill="var(--liquidated-scene-bg, #101b2b)" opacity="0.45" />
     </svg>
   );
 }

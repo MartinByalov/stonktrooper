@@ -531,11 +531,34 @@ html[data-theme="light"] .game-result-over .liquidated-how-to-play:hover,
 }
 
 .liquidated-backdrop {
+  --liquidated-scene-bg: #ffffff;
+  --liquidated-scene-ink: #000000;
+  --liquidated-scene-skyline: #e5e7eb;
+  --liquidated-scene-crane: #000000;
   filter: none;
 }
 
 html:not([data-theme="light"]) .liquidated-backdrop {
-  filter: invert(1);
+  --liquidated-scene-bg: #000000;
+  --liquidated-scene-ink: #ffffff;
+  --liquidated-scene-skyline: #1f2937;
+  --liquidated-scene-crane: #ffffff;
+}
+
+html .game-app .game-result-over .game-result-summary {
+  background: #ffffff;
+  border-color: #ffffff;
+  color: #000000;
+}
+
+html .game-app .game-result-over .game-result-summary span {
+  color: inherit;
+}
+
+html[data-theme="light"] .game-app .game-result-over .game-result-summary {
+  background: #000000;
+  border-color: #000000;
+  color: #ffffff;
 }
 
 .game-result-over .share-dd-open {
@@ -3299,12 +3322,22 @@ html:not([data-theme="light"]) .game-app .game-stage {
   pointer-events: none;
 }
 
+.landing-menu-chart foreignObject canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
 html .game-app {
   --menu-action-width: min(100%, 320px);
   --menu-action-gap: 4px;
 }
 
-.game-app .landing-menu-panel > .landing-menu-actions {
+html .game-app .landing-menu-panel > .landing-menu-actions {
+  --menu-hero-width: clamp(64px, 21dvh, 126px);
+  position: relative;
+  overflow: visible;
+  padding-top: calc(var(--menu-hero-width) * 107.5 / 140);
   display: flex;
   flex-direction: column;
   align-items: stretch;
@@ -3315,6 +3348,16 @@ html .game-app {
   transform: translateY(clamp(-24px, -3vh, -8px));
 }
 
+.menu-celebration {
+  position: absolute;
+  width: var(--menu-hero-width);
+  height: auto;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
 .game-app .landing-menu-actions > .landing-menu-guide-button {
   background: #000000;
   border-color: #000000;
@@ -3322,7 +3365,11 @@ html .game-app {
 }
 
 .game-app .landing-menu-actions > .how-to-mode-buttons {
+  display: flex;
+  flex-direction: column;
   margin: 0;
+  padding: 0;
+  line-height: 0;
 }
 
 .game-app .landing-menu-panel button {
@@ -3526,8 +3573,13 @@ html .game-app .game-result-actions {
   gap: var(--menu-action-gap);
 }
 
+html .game-app .landing-menu-actions button,
 html .game-app .game-result-actions > button {
+  box-sizing: border-box;
+  flex-shrink: 0;
   border-radius: var(--ui-radius);
+  margin: 0;
+  box-shadow: none;
 }
 
 html .game-app[data-live-feed="false"] :is(.desktop-live-feed-bar, .mobile-header-feed) {
@@ -3709,6 +3761,15 @@ html:not([data-theme="light"]) .game-app :is(.landing-menu-guide-button, .landin
 }
 
 .settings-options { display: grid; gap: 8px; }
+.game-app .game-result-over .game-result-actions > button:last-child {
+  flex-direction: column;
+  gap: 2px;
+}
+.new-game-space-key {
+  width: 30px;
+  height: 5px;
+  flex-shrink: 0;
+}
 .settings-label, .settings-switch-state { display: flex; align-items: center; gap: 10px; }
 .settings-label svg { width: 18px; height: 18px; flex: 0 0 auto; color: #38bdf8; }
 html .game-app .settings-toggle {

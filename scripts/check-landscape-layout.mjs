@@ -93,8 +93,60 @@ try {
           overflow:document.documentElement.scrollWidth > innerWidth };
       })()`);
       assert.equal(menu.touch, touch, 'Pointer emulation');
+      const headerInsets = await evaluate(`(() => {
+        const header=document.querySelector('header').getBoundingClientRect();
+        const logo=document.querySelector('.header-logo-frame').getBoundingClientRect();
+        const icon=document.querySelector('.desktop-fullscreen-control svg');
+        const rect=icon.getBoundingClientRect(), bounds=icon.getBBox(), box=icon.viewBox.baseVal;
+        const right=rect.left+(bounds.x+bounds.width+parseFloat(getComputedStyle(icon).strokeWidth)/2-box.x)*rect.width/box.width;
+        return {left:logo.left-header.left,right:header.right-right};
+      })()`);
+      assert.ok(Math.abs(headerInsets.left-headerInsets.right)<1, `Header balances logo against painted fullscreen icon: ${JSON.stringify(headerInsets)}`);
+      const homeActions = await evaluate(`(() => {
+        const buttons = [...document.querySelectorAll('.landing-menu-actions button')];
+        const rects = buttons.map(button => button.getBoundingClientRect());
+        return { sizes: rects.map(r => ({width:r.width,height:r.height})),
+          shadows: buttons.map(button => getComputedStyle(button).boxShadow),
+          gaps: rects.slice(1).map((r,i) => r.top-rects[i].bottom) };
+      })()`);
+      const actionGap = touch ? Math.max(3, Math.min(height / 100, 6)) : 4;
+      assert.ok(homeActions.sizes.every(size => Math.abs(size.width-homeActions.sizes[0].width)<0.1 && Math.abs(size.height-homeActions.sizes[0].height)<0.1), 'All Home buttons have identical dimensions');
+      assert.ok(homeActions.gaps.every(gap => Math.abs(gap-actionGap)<0.1), `Home actual gaps are equal: ${JSON.stringify(homeActions.gaps)}`);
+      assert.ok(homeActions.shadows.every(shadow => shadow === 'none'), 'Home buttons have no shadows distorting gaps');
       assert.equal(menu.oldMenu, false, 'No separate portrait menu');
       assert.equal(menu.overflow, false, 'No horizontal document overflow');
+      const scenery = await evaluate(`(() => {
+        const controls = document.querySelector('.landing-menu-actions').getBoundingClientRect();
+        const donate = document.querySelector('.home-coffee-link').getBoundingClientRect();
+        const overlaps = (a,b) => a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
+        return [...document.querySelectorAll('[data-menu-asset]')].map(element => {
+          const canvas = element.querySelector('canvas');
+          const pixels = canvas.getContext('2d').getImageData(0,0,160,160).data;
+          const r = element.getBoundingClientRect();
+          return {asset:element.dataset.menuAsset,painted:pixels.some((value,i) => i%4===3 && value>0),
+            grounded:element.dataset.grounded==='true',
+            groundError: Math.abs(Number(element.getAttribute('y')) + Number(element.getAttribute('height')) - Number(element.dataset.candleTop)),
+            overlaps:overlaps(r,controls)||overlaps(r,donate)};
+        });
+      })()`);
+      assert.equal(scenery.length, 17, 'Home displays the simplified decorative cast');
+      assert.ok(scenery.every(item => item.painted && !item.overlaps), `All game assets render without covering controls or Donate: ${JSON.stringify({width,height,failed:scenery.filter(item=>!item.painted||item.overlaps)})}`);
+      assert.ok(scenery.filter(item => item.grounded).every(item => item.groundError < 1), 'Walking characters stand on chart candles');
+      const hero = await evaluate(`(() => {const r=document.querySelector('.menu-celebration').getBoundingClientRect();const b=document.querySelector('.landing-menu-guide-button').getBoundingClientRect();return {center:Math.abs(r.left+r.width/2-b.left-b.width/2),gap:b.top-r.bottom};})()`);
+      assert.ok(hero.center < 1 && Math.abs(hero.gap) < 1, 'Rear-facing character stands on the centred How to Play top border');
+      const heroClipped = await evaluate(`(() => {
+        const hero = document.querySelector('.menu-celebration');
+        const r = hero.getBoundingClientRect();
+        for (let ancestor = hero.parentElement; ancestor; ancestor = ancestor.parentElement) {
+          const style = getComputedStyle(ancestor);
+          const bounds = ancestor.getBoundingClientRect();
+          if (['hidden','clip','auto','scroll'].includes(style.overflowY) && (r.top < bounds.top - 1 || r.bottom > bounds.bottom + 1)) return true;
+          if (['hidden','clip','auto','scroll'].includes(style.overflowX) && (r.left < bounds.left - 1 || r.right > bounds.right + 1)) return true;
+        }
+        return false;
+      })()`);
+      assert.equal(heroClipped, false, 'Celebrating character is not clipped by any ancestor');
+      assert.ok(!scenery.some(item => ['bag', 'wolf', 'turtle', 'fedora', 'briefcase', 'bull-rider', 'bear-rider', 'dumpster'].includes(item.asset)), 'Excluded assets do not appear on the chart');
       assert.equal(menu.feed.y - menu.header.bottom, 4, 'Header to feed gap');
       assert.ok(menu.menu.width > width - 24, 'Full-width landing chart');
       assert.deepEqual(menu.buttons.map(button => button.text.replace(/\s+/g, ' ')), ['How to Play', 'Settings', 'Hard Mode', 'Start'], 'Home button order');
@@ -223,6 +275,8 @@ try {
   assert.equal(settingsStyle.slider, 'rgb(56, 189, 248)');
   assert.equal(settingsStyle.activeSwitch, 'rgb(56, 189, 248)');
   assert.equal(settingsStyle.removedText, false);
+  assert.equal(await evaluate("document.querySelector('label[for=\"settings-volume\"]').textContent.trim()"), 'Sound (M)');
+  assert.ok(await evaluate("document.querySelector('[aria-label=\"Night mode\"] .settings-label').textContent.includes('(N)')"), 'Settings displays theme shortcut');
   await evaluate("Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(document.querySelector('#settings-volume'), '0'); document.querySelector('#settings-volume').dispatchEvent(new Event('input', {bubbles:true})); document.querySelector('button[aria-label=\"Live Feed\"]').click()");
   await settle();
   assert.equal(await evaluate("localStorage.getItem('cr_sound_enabled')"), 'false');
@@ -277,6 +331,28 @@ try {
   assert.ok(pause.sizes.every(size => size.width === homeButton.width && size.height === homeButton.height), 'Pause buttons match home dimensions');
   assert.ok(pause.radii.length === 4 && pause.radii.every(radius => radius === homeStyle.radius), 'Pause panel and buttons match Home corner radius');
   assert.equal(await evaluate("getComputedStyle(document.querySelector('.game-result-actions')).gap"), homeStyle.gap, 'Pause gap matches Home');
+  for (const [width, height, touch] of [[1440, 900, false], [844, 390, true], [667, 375, true]]) {
+    await call('Emulation.setTouchEmulationEnabled', { enabled: touch });
+    await call('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: touch });
+    await settle();
+    for (const theme of ['light', 'dark']) {
+      await evaluate(`document.documentElement.dataset.theme = '${theme}'`);
+      const actions = await evaluate(`(() => {
+        const buttons = [...document.querySelectorAll('.game-result-actions > button')];
+        const rects = buttons.map(button => button.getBoundingClientRect());
+        return {sizes:rects.map(r => ({width:r.width,height:r.height})),
+          shadows:buttons.map(button => getComputedStyle(button).boxShadow),
+          gaps:rects.slice(1).map((r,i) => r.top-rects[i].bottom)};
+      })()`);
+      const expectedWidth = touch ? Math.min(width*0.34,320) : desktopHomeButton.width;
+      const expectedHeight = touch ? Math.max(28,Math.min(height*0.09,48)) : desktopHomeButton.height;
+      const expectedGap = touch ? Math.max(3,Math.min(height/100,6)) : 4;
+      assert.ok(actions.sizes.every(r => Math.abs(r.width-expectedWidth)<0.1 && Math.abs(r.height-expectedHeight)<0.1), 'Margin Call dimensions match Home');
+      assert.ok(actions.gaps.every(gap => Math.abs(gap-expectedGap)<0.1), 'Margin Call actual gaps match Home');
+      assert.ok(actions.shadows.every(shadow => shadow === 'none'), 'Margin Call buttons have no shadows');
+      console.log(`PASS Margin Call ${width}x${height} ${theme}: button gaps ${actions.gaps.join(' / ')}px`);
+    }
+  }
   for (const theme of ['light', 'dark']) {
     await evaluate(`document.documentElement.dataset.theme = '${theme}'`);
     await checkHover(['.margin-call-home', '.margin-call-settings'], theme);
@@ -311,6 +387,11 @@ try {
         const share = getComputedStyle(document.querySelector('.share-dd-open'));
         return { summary: document.querySelector('.game-result-summary').getBoundingClientRect().width,
           backdropFilter: getComputedStyle(document.querySelector('.liquidated-backdrop')).filter,
+          backdropFill: getComputedStyle(document.querySelector('.liquidated-backdrop > rect')).fill,
+          crane: getComputedStyle(document.querySelector('.liquidated-backdrop > g[stroke]')).stroke,
+          birdHead: getComputedStyle(document.querySelector('.liquidated-backdrop g > circle')).fill,
+          summaryBackground: getComputedStyle(document.querySelector('.game-result-summary')).backgroundColor,
+          shadows: buttons.map(button => getComputedStyle(button).boxShadow),
           labels: buttons.map(button => button.textContent.trim()),
           share: {background:share.backgroundColor, color:share.color},
           gap: parseFloat(getComputedStyle(document.querySelector('.game-result-actions')).gap),
@@ -319,13 +400,23 @@ try {
       })()`);
       const expectedGap = touch ? Math.max(3, Math.min(height / 100, 6)) : 4;
       assert.deepEqual(layout.labels, ['Home', 'Share DD', 'New Game'], 'Liquidated button order');
-      assert.equal(layout.backdropFilter, theme === 'light' ? 'none' : 'invert(1)', 'Liquidated uses original Day backdrop and light inverted Night backdrop');
+      assert.ok(await evaluate("(() => {const icon=document.querySelector('.new-game-space-key'), button=icon.closest('button').getBoundingClientRect(), label=icon.previousElementSibling.getBoundingClientRect(), r=icon.getBoundingClientRect();return r.top>=label.bottom && r.bottom<=button.bottom;})()"), 'Space hint sits below New Game inside the button');
+      assert.equal(layout.backdropFilter, 'none', 'Liquidated preserves natural bird colors without inversion');
+      const paper = theme === 'light' ? 'rgb(255, 255, 255)' : 'rgb(0, 0, 0)';
+      const ink = theme === 'light' ? 'rgb(0, 0, 0)' : 'rgb(255, 255, 255)';
+      assert.equal(layout.backdropFill, paper, 'Liquidated scene background follows theme');
+      assert.equal(layout.crane, ink, 'Crane contrasts with scene background');
+      assert.equal(layout.birdHead, ink, 'Bird heads contrast with scene background');
+      assert.equal(layout.summaryBackground, ink, 'All-time High panel contrasts with scene');
+      assert.ok(layout.shadows.every(shadow => shadow === 'none'), 'Button shadows do not distort the visible gaps');
       assert.deepEqual(layout.share, {background:'rgb(56, 189, 248)', color:'rgb(255, 255, 255)'}, 'Share DD blue background and white text in both themes');
       const expectedHeight = touch ? Math.max(28, Math.min(height * 0.09, 48)) : 44;
       const expectedWidth = touch ? Math.min(width * 0.34, 320) : desktopHomeButton.width;
       assert.ok(layout.sizes.every(size => Math.abs(size.width-expectedWidth)<1 && Math.abs(size.height-expectedHeight)<1 && size.radius===homeStyle.radius), `Liquidated uses shared Home dimensions and corners: ${JSON.stringify({width,height,theme,layout,expectedWidth,expectedHeight,homeStyle})}`);
       assert.ok(Math.abs(layout.summary-expectedWidth)<1, 'All-time High matches button width');
       assert.ok(Math.abs(layout.gap-expectedGap)<0.1 && layout.gaps.every(gap => Math.abs(gap-expectedGap)<1), 'Liquidated actual gaps match Home');
+      assert.ok(Math.abs(layout.gaps[0]-layout.gaps[1])<0.1, 'Home/Share and Share/New Game gaps are equal');
+      console.log(`PASS Liquidated ${width}x${height} ${theme}: button gaps ${layout.gaps.join(' / ')}px`);
     }
   }
   console.log('PASS Settings persistence and Liquidated button dimensions');

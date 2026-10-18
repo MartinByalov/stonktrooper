@@ -3,6 +3,7 @@ import { useMobileDialogFit } from './useMobileDialogFit';
 import { observeViewportHeight } from './viewportHeight';
 import { MenuHero } from './MenuHero';
 import { MenuChart } from './MenuChart';
+import { MenuCelebration } from './MenuCelebration';
 import { MobileDiagnostics } from './MobileDiagnostics';
 import { BoxingGame } from './BoxingGame';
 import type { BossArena } from './boxingRules';
@@ -110,6 +111,20 @@ export default function App() {
       if (!canvas) return;
       const rect = canvas.getBoundingClientRect();
       const headerHeight = header?.getBoundingClientRect().height ?? 0;
+      const fullscreenIcon = fullscreenControl?.querySelector('svg');
+      if (header && fullscreenIcon && fullscreenIcon.getBoundingClientRect().width > 0) {
+        const iconRect = fullscreenIcon.getBoundingClientRect();
+        const bounds = fullscreenIcon.getBBox();
+        const viewBox = fullscreenIcon.viewBox.baseVal;
+        const scale = iconRect.width / viewBox.width;
+        const stroke = parseFloat(getComputedStyle(fullscreenIcon).strokeWidth) || 0;
+        const paintedRight = iconRect.left + (bounds.x + bounds.width + stroke / 2 - viewBox.x) * scale;
+        header.style.paddingLeft = `${Math.max(0, header.getBoundingClientRect().right - paintedRight)}px`;
+        const logo = app.querySelector('.stonktrooper-logo');
+        if (logo) {
+          app.style.setProperty('--home-logo-inset', `${Math.max(0, logo.getBoundingClientRect().left - app.getBoundingClientRect().left)}px`);
+        }
+      }
       const headerFeed = Array.from(app.querySelectorAll('.mobile-header-feed, .desktop-live-feed')).find(feed => feed.getBoundingClientRect().width > 0);
       const desktopFeed = app.querySelector('.desktop-live-feed-bar');
       app.style.setProperty('--desktop-feed-bottom', `${desktopFeed && desktopFeed.getBoundingClientRect().height > 0 ? desktopFeed.getBoundingClientRect().bottom : rect.top}px`);
@@ -541,12 +556,13 @@ export default function App() {
                 <div style={{ backgroundColor: 'color-mix(in srgb, var(--panel) 88%, transparent)' }} className="initial-guide desktop-initial-guide max-w-[1640px] w-full border border-[var(--line)] rounded-xl p-3 sm:p-5 shadow-2xl text-left">
                   <div className="how-to-layout flex flex-col items-stretch gap-3">
                     <section className="landing-menu-panel rounded border border-[var(--line)]" aria-label="Game menu">
-                      <MenuChart />
+                      <MenuChart theme={theme} />
                       <button className="coffee-link home-coffee-link" type="button" aria-label="Donate (opens in a new tab)" onClick={() => window.open('https://ko-fi.com/eon', '_blank', 'noopener,noreferrer')}>
                         <span className="coffee-cup" aria-hidden="true">♥</span>
                         <span className="donate-label">Donate</span>
                       </button>
                       <div className="landing-menu-actions how-to-controls w-full flex flex-col gap-1">
+                        <MenuCelebration theme={theme} />
                         <button type="button" onClick={() => setMobileGuideOpen(true)} aria-haspopup="dialog" className="landing-menu-guide-button menu-action-button w-full rounded border border-black bg-black text-white font-bold font-mono-term cursor-pointer">How to Play</button>
                         <button type="button" onClick={() => setSiteSection('Settings')} aria-haspopup="dialog" className="landing-menu-settings-button menu-action-button w-full rounded border border-[var(--line)] bg-[var(--panel)] text-[var(--text)] font-bold font-mono-term cursor-pointer">Settings</button>
                         <div className="how-to-mode-buttons">
@@ -580,7 +596,7 @@ export default function App() {
               {/* PAUSE & GAME OVER WINDOWS */}
               {state !== 'menu' && (
                 <div className={`game-result ${state === 'over' ? 'game-result-over' : ''} relative isolate overflow-hidden max-w-md w-full text-center bg-[var(--panel)] border border-[var(--line)] rounded-xl p-6 sm:p-7 shadow-2xl`}>
-                  {state === 'over' && <><LiquidatedBackdrop /><div className="absolute inset-0 bg-slate-950/15 pointer-events-none" aria-hidden="true" /></>}
+                  {state === 'over' && <LiquidatedBackdrop />}
                   <div className={`relative z-10 ${state === 'over' ? 'game-result-content pt-28 pb-4' : ''}`}>
 
                     {state === 'paused' && <h2 className="font-black tracking-tight mb-2 font-mono-term text-3xl sm:text-4xl" style={{ color: theme === 'dark' ? '#54d3ac' : '#08795c' }}>Margin Call</h2>}
@@ -592,7 +608,7 @@ export default function App() {
                         <h2 className="font-black text-lg sm:text-xl text-red-400 mb-2">LIQUIDATED</h2>
                         <div>
                           <span className="text-xl sm:text-2xl font-bold text-[var(--text)] block">All-time High</span>
-                          <strong className="text-3xl sm:text-4xl block mt-2" style={{ color: theme === 'dark' ? '#54d3ac' : '#08795c' }}>{Math.round(currentResult).toLocaleString('en-US', { maximumFractionDigits: 0 })}</strong>
+                          <strong className="text-3xl sm:text-4xl block mt-2" style={{ color: theme === 'dark' ? '#08795c' : '#54d3ac' }}>{Math.round(currentResult).toLocaleString('en-US', { maximumFractionDigits: 0 })}</strong>
                         </div>
                       </div>
                     )}
@@ -612,6 +628,7 @@ export default function App() {
                         className="margin-call-action w-full rounded-lg bg-[#08795c] hover:brightness-110 active:brightness-95 text-white font-bold font-mono-term text-sm transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer"
                       >
                         <span>{state === 'paused' ? 'Continue' : 'New Game'}</span>
+                        {state === 'over' && <svg className="new-game-space-key" viewBox="0 0 36 6" aria-hidden="true" focusable="false"><path d="M1 1V5H35V1" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>}
                       </button>
 
                     </div>

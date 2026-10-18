@@ -45,6 +45,7 @@ import { getRandomNews, getTickerNews, formatFeedHeadline, MarketNews } from './
 import { trackHeightAt, animalTrackHeightAt, animalFallsInGap, rocketTrackPose } from './track';
 import { canMountWhale, touchesWhale, jumpWhaleMount, stepWhaleMount, whaleStompsEnemy, WHALE_CONTACT_RADIUS, WHALE_MOUNT_DURATION, WHALE_SEAT_HEIGHT, WHALE_SPEED_MULTIPLIER } from './whaleMount';
 import { marketClockLabel, marketClockStep } from './marketClock';
+import { drawChartGridLine } from './chartGridRenderer';
 import { popupColor } from './popupColors';
 import { FEDORA_DURATION, FEDORA_WINDUP, FEDORA_MAX_THROWS, addFedoraTime, weaponHatCount, fedoraArmPose, fedoraHit, fedoraHitsMount, separateFedoraMount, stepFlyingFedora, type FlyingFedora } from './fedoraBoomerang';
 import { drawSpinningFedora } from './fedoraRenderer';
@@ -2174,12 +2175,14 @@ export const CandleGame: React.FC<CandleGameProps> = ({
         drawApeHead(ctx, g.playerHat === 'default' && g.fedoraTimer <= 0);
         if (g.playerHat === 'standard') drawCharacterHat(ctx, false, false, theme === 'dark');
       } else drawHumanHead(ctx, g.playerHat !== 'none', theme === 'dark');
-      ctx.restore();
       const hats = weaponHatCount(g.fedoraTimer, g.fedoraWindup, !!g.flyingFedora);
       for (let hat = 0; hat < hats; hat++) {
-        ctx.save(); ctx.translate(0, -49 - hat * 11); ctx.scale(0.8, 0.8);
+        // The hat renderer already offsets the brim onto the forehead.
+        // Share the head origin/scale instead of lifting the whole hat again.
+        ctx.save(); ctx.translate(0, -hat * 11 / 0.8);
         drawCharacterHat(ctx, false, false, theme === 'dark'); ctx.restore();
       }
+      ctx.restore();
       // Keep lap luggage stacked: collected bags no longer replace the case.
       if (g.p.carry > 0 && g.p.shieldKind !== 'bag') {
         ctx.save(); ctx.translate(9, -7); ctx.scale(0.55, 0.55);
@@ -2677,15 +2680,15 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     const g = gameRef.current;
     const TAPE_HEIGHT = feedLayout.current.tapeHeight;
     const darkPalette = {
-      bg: '#253044',
-      grid: '#2a2e3970',
+      bg: '#000000',
+      grid: '#303640',
       text: '#d1d4dc',
       muted: '#969dab',
       veil: '#0c1119e8'
     };
     const lightPalette = {
-      bg: '#ebebeb',
-      grid: '#d3dde780',
+      bg: '#ffffff',
+      grid: '#d5dbe2',
       text: '#24364b',
       muted: '#52677d',
       veil: '#f5f8fced'
@@ -2736,14 +2739,13 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     const layers = renderLayers(renderMode);
     const actors = actorLayers(renderMode);
     if (layers.chart) {
+    // Pixel-aligned fills keep moving grid lines at constant raster coverage.
     ctx.strokeStyle = palette.grid;
-    ctx.lineWidth = 1;
+    ctx.lineWidth = 1 / viewport.scale;
     for (let gridY = Math.floor(g.cy / 50) * 50; gridY < g.cy + H; gridY += 50) {
       const y = gridY - g.cy;
-      ctx.beginPath();
-      ctx.moveTo(0, y);
-      ctx.lineTo(W, y);
-      ctx.stroke();
+      drawChartGridLine(ctx, screenToChart({ x: 0, y: 0 }, viewport).x, y,
+        screenToChart({ x: W - AX, y: 0 }, viewport).x, y);
     }
 
     }
@@ -2751,23 +2753,34 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     const visibleRight = screenToChart({ x: W - AX, y: 0 }, viewport).x;
     const a = Math.floor((g.cx + visibleLeft) / CW) - 1;
     const b = Math.ceil((g.cx + visibleRight) / CW) + 2;
+    // One set of visible ticks drives both grid lines and time-axis labels.
+    ctx.save();
+    ctx.font = '9px system-ui, monospace';
+    const tickPixels = Math.abs(chartToScreen({ x: CW, y: 0 }, viewport).x - chartToScreen({ x: 0, y: 0 }, viewport).x);
+    const tickStep = marketClockStep(tickPixels, ctx.measureText(marketClockLabel(g.candleOffset + b)).width + 18);
+    ctx.restore();
+    const timeTicks: { x: number; labelX: number; label: string }[] = [];
+    for (let i = a; i <= b; i++) {
+      if ((g.candleOffset + i) % tickStep !== 0) continue;
+      const x = i * CW - g.cx;
+      const labelX = chartToScreen({ x, y: 0 }, viewport).x;
+      if (labelX >= 0 && labelX < W - AX) {
+        timeTicks.push({ x, labelX, label: marketClockLabel(g.candleOffset + i) });
+      }
+    }
 
     // Temporarily project the boss encounter onto this chart, retaining the run.
     const encounter = g.currentState === 'boxing' ? bossEncounter.current : null;
 
     if (layers.chart) {
-    const tickPixels = Math.abs(chartToScreen({ x: CW, y: 0 }, viewport).x - chartToScreen({ x: 0, y: 0 }, viewport).x);
-    const tickStep = marketClockStep(tickPixels, ctx.measureText(marketClockLabel(g.candleOffset + b)).width + 18);
-    for (let i = a; i <= b; i++) {
-      if ((g.candleOffset + i) % tickStep === 0) {
-        const x = i * CW - g.cx;
-        ctx.beginPath();
-        ctx.moveTo(x, TAPE_HEIGHT);
-        ctx.lineTo(x, H);
-        ctx.stroke();
-      }
+    ctx.strokeStyle = palette.grid;
+    ctx.lineWidth = 1 / viewport.scaleX;
+    for (const { x } of timeTicks) {
+        drawChartGridLine(ctx, x, screenToChart({ x: 0, y: -H }, viewport).y,
+          x, screenToChart({ x: 0, y: H * 2 }, viewport).y);
     }
 
+    ctx.lineWidth = 1;
     for (let i = a; i <= b; i++) {
       const c = chartHistory(g.C, i);
       if (!c || c.hole) continue;
@@ -3020,11 +3033,8 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     ctx.font = '9px system-ui, monospace';
     ctx.fillStyle = palette.muted;
     ctx.textAlign = 'center';
-    for (let i = a; i <= b; i++) {
-      if (i % 10 === 0) {
-        const labelX = chartToScreen({ x: i * CW - g.cx, y: 0 }, viewport).x;
-        if (labelX >= 0 && labelX < W - AX) ctx.fillText(marketClockLabel(g.candleOffset + i), labelX, H - 3);
-      }
+    for (const { labelX, label } of timeTicks) {
+      ctx.fillText(label, labelX, H - 3);
     }
 
     // Price Axis (Right)

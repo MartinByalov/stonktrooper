@@ -6,10 +6,11 @@ import type { Animal, Swan } from './types';
 import { createBossArena } from './boxingRules';
 import { drawBossEncounter } from './bossRenderer';
 import { drawChickenTender } from './tenderRenderer';
+import { drawDumpster } from './dumpsterRenderer';
 
-export type PreviewAsset = 'tender' | 'jerome' | 'coin' | 'diamond' | 'banknote' | 'bag' | 'banana' | 'ape' | 'whale' | 'swan' | 'white' | 'hawk' | 'bell' | 'pigeon' | 'printer' | 'bull' | 'bear' | 'bull-rider' | 'bear-rider' | 'jump' | 'briefcase' | 'fedora';
+export type PreviewAsset = 'dumpster' | 'tender' | 'jerome' | 'coin' | 'diamond' | 'banknote' | 'bag' | 'banana' | 'ape' | 'whale' | 'swan' | 'white' | 'hawk' | 'bell' | 'pigeon' | 'printer' | 'bull' | 'bear' | 'bull-rider' | 'bear-rider' | 'jump' | 'briefcase' | 'fedora';
 
-export function AssetPreview({ asset, compact = false, theme = 'light' }: { asset: PreviewAsset; compact?: boolean; theme?: 'light' | 'dark' }) {
+export function AssetPreview({ asset, compact = false, theme = 'light', grounded = false }: { asset: PreviewAsset; compact?: boolean; theme?: 'light' | 'dark'; grounded?: boolean }) {
   const canvas = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
     const output = canvas.current?.getContext('2d');
@@ -22,7 +23,11 @@ export function AssetPreview({ asset, compact = false, theme = 'light' }: { asse
     if (!ctx) return;
     ctx.save();
     ctx.translate(256, 256);
-    if (asset === 'jerome') {
+    if (asset === 'dumpster') {
+      ctx.translate(0, 45);
+      ctx.scale(1.6, 1.6);
+      drawDumpster(ctx, 1, 0.8, 0, theme === 'dark');
+    } else if (asset === 'jerome') {
       const arena = createBossArena();
       arena.boss.x = 0; arena.boss.y = 40;
       arena.boss.facing = -1;
@@ -120,7 +125,7 @@ export function AssetPreview({ asset, compact = false, theme = 'light' }: { asse
     const size = smallerPickup ? 86 : smallPickup ? 104 : asset === 'diamond' ? 156 : 136;
     const scale = size / Math.max(width, height);
     output.drawImage(buffer, left, top, width, height,
-      (160 - width * scale) / 2, (160 - height * scale) / 2, width * scale, height * scale);
-  }, [asset, theme]);
+      (160 - width * scale) / 2, grounded ? 160 - height * scale : (160 - height * scale) / 2, width * scale, height * scale);
+  }, [asset, theme, grounded]);
   return <canvas ref={canvas} width={160} height={160} role="img" aria-label={`${asset} game asset`} className={`${compact ? 'w-[72px]' : 'w-24'} aspect-square h-auto shrink-0 max-w-full`} />;
 }

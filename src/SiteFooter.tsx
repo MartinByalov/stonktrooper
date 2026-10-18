@@ -99,12 +99,12 @@ export function SiteFooter({ onOpen, theme, section, setSection, volume, onVolum
           </>}
           {section === 'Settings' && <div className="settings-options">
             <div className="settings-volume-row">
-              <label htmlFor="settings-volume" className="settings-label">{volume === 0 ? <VolumeX aria-hidden="true" /> : <Volume2 aria-hidden="true" />}<span>Sound</span></label>
+              <label htmlFor="settings-volume" className="settings-label">{volume === 0 ? <VolumeX aria-hidden="true" /> : <Volume2 aria-hidden="true" />}<span>Sound (M)</span></label>
               <output htmlFor="settings-volume">{volume === 0 ? 'Muted' : `${volume}%`}</output>
               <input id="settings-volume" type="range" min="0" max="100" step="1" value={volume} onChange={event => onVolumeChange(Number(event.target.value))} aria-valuetext={volume === 0 ? 'Muted' : `${volume}%`} />
             </div>
             <button type="button" role="switch" aria-label="Live Feed" aria-checked={liveFeedEnabled} onClick={onToggleLiveFeed} className="settings-toggle"><span className="settings-label"><Radio aria-hidden="true" />Live Feed</span><span className="settings-switch-state">{liveFeedEnabled ? 'On' : 'Off'}<span className="settings-switch-track" aria-hidden="true" /></span></button>
-            <button type="button" role="switch" aria-label="Night mode" aria-checked={theme === 'dark'} onClick={onToggleTheme} className="settings-toggle"><span className="settings-label"><Moon aria-hidden="true" />Theme</span><span className="settings-switch-state">{theme === 'dark' ? 'Night' : 'Day'}<span className="settings-switch-track" aria-hidden="true" /></span></button>
+            <button type="button" role="switch" aria-label="Night mode" aria-checked={theme === 'dark'} onClick={onToggleTheme} className="settings-toggle"><span className="settings-label"><Moon aria-hidden="true" />Theme (N)</span><span className="settings-switch-state">{theme === 'dark' ? 'Night' : 'Day'}<span className="settings-switch-track" aria-hidden="true" /></span></button>
             <button type="button" role="switch" aria-label="Interface animations" aria-checked={animationsEnabled} onClick={onToggleAnimations} className="settings-toggle"><span className="settings-label"><Sparkles aria-hidden="true" />Interface animations</span><span className="settings-switch-state">{animationsEnabled ? 'On' : 'Off'}<span className="settings-switch-track" aria-hidden="true" /></span></button>
           </div>}
           {section === 'Privacy' && <>
