@@ -8,5 +8,5 @@ export function marketClockLabel(index: number): string {
 }
 
 export function marketClockStep(candlePixels: number, labelPixels: number): number {
-  return Math.max(5, Math.ceil(labelPixels / Math.max(1, candlePixels) / 5) * 5);
+  return Math.max(10, Math.ceil(labelPixels / Math.max(1, candlePixels) / 10) * 10);
 }

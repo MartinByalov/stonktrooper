@@ -11,33 +11,50 @@ export function SiteFooter({ onOpen, theme, section, setSection, volume, onVolum
   const close = useRef<HTMLButtonElement>(null);
   useLayoutEffect(() => {
     const panel = dialog.current;
-    const title = panel?.querySelector<HTMLElement>('.site-info-title');
-    if (!panel || !title) return;
-    const syncEndGap = () => {
-      const style = getComputedStyle(panel);
-      const topGap = title.getBoundingClientRect().top - panel.getBoundingClientRect().top;
-      // The panel's bottom padding already contributes to the visible end gap.
-      const endGap = Math.max(0, topGap - parseFloat(style.paddingBottom) - parseFloat(style.borderBottomWidth));
-      panel.style.setProperty('--site-info-end-gap', `${endGap}px`);
-      const leftGap = Math.max(0, topGap - parseFloat(style.paddingLeft) - parseFloat(style.borderLeftWidth));
-      const rightGap = Math.max(0, topGap - parseFloat(style.paddingRight) - parseFloat(style.borderRightWidth));
-      panel.style.setProperty('--site-info-left-gap', `${leftGap}px`);
-      panel.style.setProperty('--site-info-right-gap', `${rightGap}px`);
-      const header = title.parentElement;
-      if (header) {
-        const headerTail = header.getBoundingClientRect().bottom - title.getBoundingClientRect().bottom;
-        const contentGap = Math.max(0, topGap - headerTail);
-        panel.style.setProperty('--site-info-content-gap', `${contentGap}px`);
+    const app = panel?.closest('.game-app');
+    const target = app?.querySelector<HTMLElement>('.share-dd-dialog')
+      ?? app?.querySelector<HTMLElement>('.game-result')
+      ?? app?.querySelector<HTMLElement>('.landing-menu-actions');
+    const arena = app?.querySelector('.game-arena');
+    if (!panel || !target || !arena) return;
+    const syncPosition = () => {
+      const overlay = panel.parentElement!;
+      if (window.matchMedia('(pointer: coarse)').matches) {
+        const header = app?.querySelector('header')?.getBoundingClientRect();
+        const footer = app?.querySelector('.site-footer')?.getBoundingClientRect();
+        const shell = app!.getBoundingClientRect();
+        const top = header?.bottom ?? shell.top;
+        const bottom = footer && footer.height > 0 ? footer.top : shell.bottom;
+        overlay.style.setProperty('--info-left', `${shell.left}px`);
+        overlay.style.setProperty('--info-top', `${top}px`);
+        overlay.style.setProperty('--info-width', `${shell.width}px`);
+        overlay.style.setProperty('--info-height', `${Math.max(0, bottom - top)}px`);
+        return;
       }
+      const anchor = target.getBoundingClientRect();
+      const area = arena.getBoundingClientRect();
+      const left = Math.max(0, Math.min(area.left + 8, anchor.left));
+      const right = Math.min(window.innerWidth, Math.max(area.right - 8, anchor.right));
+      const top = Math.max(0, Math.min(area.top + 8, anchor.top));
+      const bottom = Math.min(window.innerHeight, Math.max(area.bottom - 8, anchor.bottom));
+      const width = Math.min(right - left, Math.max(560, anchor.width));
+      const height = Math.min(bottom - top, Math.max(360, anchor.height));
+      overlay.style.setProperty('--info-left', `${Math.max(left, Math.min(anchor.x + anchor.width / 2 - width / 2, right - width))}px`);
+      overlay.style.setProperty('--info-top', `${Math.max(top, Math.min(anchor.y + anchor.height / 2 - height / 2, bottom - height))}px`);
+      overlay.style.setProperty('--info-width', `${width}px`);
+      overlay.style.setProperty('--info-height', `${height}px`);
     };
-    const observer = new ResizeObserver(syncEndGap);
-    observer.observe(panel);
-    observer.observe(title);
-    window.addEventListener('resize', syncEndGap);
-    syncEndGap();
+    const observer = new ResizeObserver(syncPosition);
+    observer.observe(target);
+    observer.observe(arena);
+    for (const element of app!.querySelectorAll('header, .site-footer')) observer.observe(element);
+    window.addEventListener('resize', syncPosition);
+    window.addEventListener('scroll', syncPosition, true);
+    syncPosition();
     return () => {
       observer.disconnect();
-      window.removeEventListener('resize', syncEndGap);
+      window.removeEventListener('resize', syncPosition);
+      window.removeEventListener('scroll', syncPosition, true);
     };
   }, [section]);
   useEffect(() => {
@@ -53,16 +70,9 @@ export function SiteFooter({ onOpen, theme, section, setSection, volume, onVolum
       </nav>
     </footer>
     {section && <div className="site-info-overlay fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4" onPointerDown={event => event.stopPropagation()}>
-      <div ref={dialog} role="dialog" aria-modal="true" aria-labelledby="site-info-title" className="site-info-dialog w-full max-w-xl max-h-[85dvh] overflow-y-auto rounded-xl border border-[var(--line)] bg-[var(--panel)] p-5 shadow-2xl" onKeyDown={event => {
+      <div ref={dialog} role="dialog" aria-modal="false" aria-labelledby="site-info-title" className="site-info-dialog w-full max-w-xl max-h-[85dvh] overflow-y-auto rounded-xl border border-[var(--line)] bg-[var(--panel)] p-5 shadow-2xl" onKeyDown={event => {
         event.stopPropagation();
         if (event.key === 'Escape') setSection(null);
-        if (event.key === 'Tab') {
-          const buttons = dialog.current?.querySelectorAll<HTMLElement>('button:not(:disabled), a[href]');
-          if (!buttons?.length) return;
-          const first = buttons[0], last = buttons[buttons.length - 1];
-          if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
-          else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
-        }
       }}>
         <div className="site-info-header relative flex justify-center items-center min-h-10 mb-4 px-10">
           <h2 id="site-info-title" className="site-info-title font-bold text-xl">{section}</h2>

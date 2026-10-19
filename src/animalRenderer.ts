@@ -84,7 +84,7 @@ const drawDyingAnimal = (ctx: CanvasRenderingContext2D, animal: Animal, darkMode
 };
 
 // Left profile faces the runner; far limbs render first, near left arm last.
-export const drawAnimalCharacter = (ctx: CanvasRenderingContext2D, animal: Animal, loweredBat = false, seated = false, darkMode = false, previewBatForward = false, whaleRider = false, whaleSwimApplied = false): void => {
+export const drawAnimalCharacter = (ctx: CanvasRenderingContext2D, animal: Animal, loweredBat = false, seated = false, darkMode = false, previewBatForward = false, whaleRider = false, whaleSwimApplied = false, mountPreview = false): void => {
   // Falling/death pose always takes precedence over mounts and weapon attacks.
   if (animal.dying && animal.type !== 'whale') {
     drawDyingAnimal(ctx, animal, darkMode);
@@ -118,10 +118,16 @@ export const drawAnimalCharacter = (ctx: CanvasRenderingContext2D, animal: Anima
           drawCharacterHat(ctx, false, false, darkMode); ctx.restore();
         }
         ctx.restore();
-        ctx.strokeStyle = fur; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(27, -31); ctx.quadraticCurveTo(43, -25, 36, -14); ctx.stroke();
+        if (animal.mount === 'bear') {
+          // Bears have a short rounded tail tucked against the rump, not a bull's whip.
+          ctx.fillStyle = fur; ctx.beginPath(); ctx.ellipse(30, -31, 5, 4, -0.3, 0, Math.PI * 2); ctx.fill();
+        } else {
+          ctx.strokeStyle = fur; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(27, -31); ctx.quadraticCurveTo(43, -25, 36, -14); ctx.stroke();
+        }
       }
       for (const side of [-1, 1]) {
-        const swing = Math.sin(animal.phase + (near ? 0 : Math.PI) + side) * 7 * (1 - tuck);
+        // Static guide mounts use the same leg profile at both ends of the body.
+        const swing = Math.sin(animal.phase + (near ? 0 : Math.PI) + (mountPreview ? -1 : side)) * 7 * (1 - tuck);
         ctx.strokeStyle = near ? fur : dark; ctx.lineWidth = 8;
         ctx.beginPath(); ctx.moveTo(side * 20, -26); ctx.lineTo(side * 20 + swing, -13); ctx.lineTo(side * 20 - swing, -3 - tuck * 10); ctx.stroke();
       }

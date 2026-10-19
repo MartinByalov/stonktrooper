@@ -1,6 +1,6 @@
 // Browser game module for AssetPreview.
 import { useEffect, useRef } from 'react';
-import { briefcaseColors, drawCharacterHat, drawPickupAsset, drawSwanAsset, drawApeAsset } from './assetRenderer';
+import { drawBriefcase, drawCharacterHat, drawPickupAsset, drawSwanAsset, drawApeAsset } from './assetRenderer';
 import { drawAnimalCharacter } from './animalRenderer';
 import type { Animal, Swan } from './types';
 import { createBossArena } from './boxingRules';
@@ -41,7 +41,7 @@ export function AssetPreview({ asset, compact = false, theme = 'light', grounded
       ctx.translate(15, 55);
       const rider = asset.endsWith('-rider');
       ctx.scale(rider ? 1 : 1.3, rider ? 1 : 1.3);
-      drawAnimalCharacter(ctx, { type: rider ? asset.split('-')[0] : asset, mount: rider ? (asset === 'bull-rider' ? 'bear' : 'bull') : undefined, phase: 0.8, attackTimer: 0 } as Animal, false, false, theme === 'dark', asset === 'bull' || asset === 'bull-rider');
+      drawAnimalCharacter(ctx, { type: rider ? asset.split('-')[0] : asset, mount: rider ? (asset === 'bull-rider' ? 'bear' : 'bull') : undefined, phase: 0.8, attackTimer: 0 } as Animal, false, false, theme === 'dark', asset === 'bull' || asset === 'bull-rider', false, false, rider);
     } else if (asset === 'ape') {
       ctx.scale(1.6, 1.6);
       drawApeAsset(ctx);
@@ -92,16 +92,7 @@ export function AssetPreview({ asset, compact = false, theme = 'light', grounded
       ctx.scale(-2.4, 2.4);
       drawCharacterHat(ctx, false, false, theme === 'dark');
     } else if (asset === 'briefcase') {
-      const colors = briefcaseColors(theme === 'dark');
-      ctx.strokeStyle = colors.handle;
-      ctx.lineWidth = 5;
-      ctx.strokeRect(-12, -26, 24, 14);
-      ctx.fillStyle = colors.body;
-      ctx.fillRect(-35, -15, 70, 45);
-      ctx.strokeStyle = colors.outline;
-      ctx.strokeRect(-35, -15, 70, 45);
-      ctx.fillStyle = colors.clasp;
-      ctx.fillRect(-4, 2, 8, 10);
+      drawBriefcase(ctx, theme === 'dark');
     } else {
       ctx.scale(2.4, 2.4);
       // Use the same orientation and theme-aware pickup renderer as the chart.

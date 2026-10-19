@@ -25,32 +25,39 @@ const scenery: { asset: PreviewAsset; side: 'left' | 'right'; x: number; y: numb
 
 export function MenuChart({ theme }: { theme: 'light' | 'dark' }) {
   const root = useRef<SVGSVGElement>(null);
-  const [size, setSize] = useState({ width: 1040, height: 480 });
+  const [size, setSize] = useState({ width: 1040, height: 480, portrait: false });
 
   useEffect(() => {
     const element = root.current;
     if (!element) return;
-    const observer = new ResizeObserver(([entry]) => {
-      const { width, height } = entry.contentRect;
+    const observer = new ResizeObserver(() => {
+      const { width, height } = element.getBoundingClientRect();
+      const portrait = window.matchMedia('(orientation: portrait) and (pointer: coarse)').matches;
       if (width > 0 && height > 0) {
         setSize(previous => previous.width === width && previous.height === height
-          ? previous : { width, height });
+          && previous.portrait === portrait
+          ? previous : { width, height, portrait });
       }
     });
     observer.observe(element);
+    for (const child of element.parentElement?.querySelectorAll('.landing-menu-actions, .home-coffee-link') ?? []) {
+      observer.observe(child);
+    }
     return () => observer.disconnect();
   }, []);
 
   // Render in CSS pixels: candles, volume and labels never stretch with the panel.
-  const { width, height } = size;
-  const plotWidth = Math.max(1, width - 54);
-  const plotHeight = Math.max(1, height - 18);
+  const { width, height, portrait } = size;
+  const candleSpacing = portrait ? 6 : 4;
+  const candleWidth = portrait ? 3.6 : 2.6;
+  const plotWidth = Math.max(1, width - (portrait ? 0 : 54));
+  const plotHeight = Math.max(1, height - (portrait ? 24 : 18));
   const volumeHeight = Math.min(28, plotHeight * 0.08);
   const menuWidth = Math.min(width * 0.34, 320);
   const sideWidth = Math.max(1, (width - menuWidth) / 2 - 24);
   const sceneUnit = Math.min(sideWidth, plotHeight * 0.46, 220);
   const priceHeight = Math.max(1, plotHeight - volumeHeight - 10);
-  const count = Math.max(2, Math.floor(plotWidth / 4));
+  const count = Math.max(2, Math.floor(plotWidth / candleSpacing));
   // A seeded market walk keeps its shape on rerenders, without periodic candles.
   let seed = 73129;
   const random = () => {
@@ -81,26 +88,27 @@ export function MenuChart({ theme }: { theme: 'light' | 'dark' }) {
     const lowerWick = 0.5 + random() ** 2 * volatility;
     const activity = Math.min(1, Math.abs(close - open) / Math.max(1, volatility));
     const volume = Math.min(volumeHeight, 3 + (0.15 + activity * 0.5 + random() * 0.35) * Math.max(0, volumeHeight - 3));
-    return { x: 2 + index * 4, open, close, volume, upperWick, lowerWick };
+    return { x: 2 + index * candleSpacing, open, close, volume, upperWick, lowerWick };
   });
-  const priceTicks = Array.from({ length: Math.max(1, Math.floor(priceHeight / 48)) }, (_, index) => 24 + index * 48);
+  const priceTickSpacing = portrait ? 64 : 48;
+  const priceTicks = Array.from({ length: Math.max(1, Math.floor(priceHeight / priceTickSpacing)) }, (_, index) => 24 + index * priceTickSpacing);
   const timeStep = Math.max(1, Math.ceil(count / Math.max(1, Math.floor(plotWidth / 70)) / 10)) * 10;
   // The menu is centred in the full panel, not the plot minus its price axis.
-  const timeSpacing = timeStep * 4;
+  const timeSpacing = timeStep * candleSpacing;
   const centerX = width / 2;
   const firstTick = Math.ceil(-centerX / timeSpacing);
   const lastTick = Math.floor((plotWidth - centerX) / timeSpacing);
-  const centerMinute = Math.round(count / 2 / timeStep) * timeStep;
+  const centerMinute = portrait ? 4 * 60 + 20 : Math.round(count / 2 / timeStep) * timeStep;
   const timeTicks = Array.from({ length: Math.max(0, lastTick - firstTick + 1) }, (_, index) => {
     const offset = firstTick + index;
     return { x: centerX + offset * timeSpacing, minute: centerMinute + offset * timeStep };
   });
   const timeLabel = (index: number) => {
-    const minutes = ((9 * 60 + index) % 1440 + 1440) % 1440;
+    const minutes = (((portrait ? 0 : 9 * 60) + index) % 1440 + 1440) % 1440;
     return `${String(Math.floor(minutes / 60) % 24).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
   };
 
-  return <svg ref={root} className="landing-menu-chart" viewBox={`0 0 ${width} ${height}`} aria-hidden="true" focusable="false">
+  return <svg ref={root} className="landing-menu-chart" data-layout={portrait ? 'portrait' : 'landscape'} viewBox={`0 0 ${width} ${height}`} aria-hidden="true" focusable="false">
     <defs>
       <clipPath id="landing-chart-plot"><rect width={plotWidth} height={plotHeight} /></clipPath>
     </defs>
@@ -108,7 +116,8 @@ export function MenuChart({ theme }: { theme: 'light' | 'dark' }) {
     <g stroke="var(--menu-chart-grid, #d3dde780)" strokeWidth="1">
       {priceTicks.map(y => <path key={y} d={`M0 ${y}H${plotWidth}`} />)}
       {timeTicks.map(tick => <path key={tick.minute} d={`M${tick.x} 0V${plotHeight}`} />)}
-      <path d={`M${plotWidth} 0V${height}M0 ${plotHeight}H${width}`} />
+      {!portrait && <path d={`M${plotWidth} 0V${height}`} />}
+      <path d={`M0 ${plotHeight}H${width}`} />
     </g>
     <g clipPath="url(#landing-chart-plot)">
     {candles.map((candle, index) => {
@@ -116,12 +125,12 @@ export function MenuChart({ theme }: { theme: 'light' | 'dark' }) {
       const bottom = Math.max(candle.open, candle.close);
       const color = candle.close < candle.open ? '#08795c' : '#ef5350';
       return <g key={index} fill={color} stroke={color}>
-        <rect x={candle.x - 1.3} y={plotHeight - candle.volume} width="2.6" height={candle.volume} opacity="0.27" stroke="none" />
+        <rect x={candle.x - candleWidth / 2} y={plotHeight - candle.volume} width={candleWidth} height={candle.volume} opacity="0.27" stroke="none" />
         <path d={`M${candle.x} ${top - candle.upperWick}V${bottom + candle.lowerWick}`} strokeWidth="0.65" />
-        <rect x={candle.x - 1.3} y={top} width="2.6" height={Math.max(1, bottom - top)} stroke="none" />
+        <rect x={candle.x - candleWidth / 2} y={top} width={candleWidth} height={Math.max(1, bottom - top)} stroke="none" />
       </g>;
     })}
-    {scenery.map(({ asset, side, x, y, size: factor }, index) => {
+    {!portrait && scenery.map(({ asset, side, x, y, size: factor }, index) => {
       const extent = sceneUnit * factor;
       const left = side === 'left' ? 8 : width / 2 + menuWidth / 2 + 16;
       const available = side === 'left' ? sideWidth : Math.max(1, plotWidth - left - 8);
@@ -134,7 +143,7 @@ export function MenuChart({ theme }: { theme: 'light' | 'dark' }) {
       const bird = ['hawk', 'pigeon', 'swan', 'white'].includes(asset);
       const lift = grounded ? 0 : bird ? extent * (1.4 + y) : extent * (0.3 + y);
       const positionY = asset === 'white'
-        ? Math.min(plotHeight - volumeHeight - extent, ground + extent * 0.25)
+        ? Math.min(plotHeight - volumeHeight - extent, ground + extent * 0.65)
         : Math.max(4, ground - extent - lift);
       return <foreignObject key={index} data-menu-asset={asset} data-grounded={grounded} data-candle-top={ground}
         x={positionX} y={positionY} width={extent} height={extent}>
@@ -143,8 +152,8 @@ export function MenuChart({ theme }: { theme: 'light' | 'dark' }) {
     })}
     </g>
     <g fill="var(--menu-chart-text, #52677d)" fontFamily="system-ui, monospace">
-      {priceTicks.map(y => <text key={y} x={plotWidth + 5} y={y + 3} fontSize="9">{(150 - y / priceHeight * 120).toFixed(2)}</text>)}
-      {timeTicks.filter(tick => tick.x >= 18 && tick.x <= plotWidth - 18).map(tick => <text key={tick.minute} x={tick.x} y={height - 5} fontSize="8" textAnchor="middle">{timeLabel(tick.minute)}</text>)}
+      {!portrait && priceTicks.map((y, index) => <text key={y} x={plotWidth + 5} y={y + 3} fontSize={9}>{150 - index * 10}</text>)}
+      {timeTicks.filter(tick => tick.x >= 18 && tick.x <= plotWidth - 18).map(tick => <text key={tick.minute} x={tick.x} y={height - 5} fontSize={portrait ? 10 : 8} textAnchor="middle">{timeLabel(tick.minute)}</text>)}
     </g>
   </svg>;
 }

@@ -10,8 +10,21 @@ export const briefcaseColors = (darkMode = false) => ({
   body: darkMode ? '#ffffff' : '#05070a',
   outline: darkMode ? '#cbd5e1' : '#1e293b',
   handle: darkMode ? '#ffffff' : '#0f172a',
-  clasp: darkMode ? '#64748b' : '#ffffff',
+  clasp: darkMode ? '#000000' : '#ffffff',
 });
+
+// Shared guide-sized briefcase, centered on the body rather than its handle.
+export function drawBriefcase(ctx: CanvasRenderingContext2D, darkMode = false): void {
+  ctx.save();
+  const colors = briefcaseColors(darkMode);
+  ctx.strokeStyle = colors.handle; ctx.lineWidth = 5;
+  ctx.strokeRect(-12, -26, 24, 14);
+  ctx.fillStyle = colors.body; ctx.fillRect(-35, -15, 70, 45);
+  ctx.strokeStyle = colors.outline; ctx.lineWidth = 1;
+  ctx.strokeRect(-35, -15, 70, 45);
+  ctx.fillStyle = colors.clasp; ctx.fillRect(-4, 2, 8, 10);
+  ctx.restore();
+}
 
 export const drawCharacterHat = (ctx: CanvasRenderingContext2D, captain: boolean, frontFacing = false, darkMode = false): void => {
   ctx.save();
@@ -55,6 +68,43 @@ export const drawCharacterHat = (ctx: CanvasRenderingContext2D, captain: boolean
     ctx.moveTo(7, -15); ctx.quadraticCurveTo(9, -12, 5, -11); ctx.stroke();
     ctx.fillStyle = '#facc15'; ctx.strokeStyle = '#b8860b'; ctx.lineWidth = 0.6;
     ctx.beginPath(); ctx.arc(2, -15, 2, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    ctx.restore();
+    return;
+  }
+  if (frontFacing) {
+    // Frontal fedora: a centered crown sits inside the brim's rear ellipse;
+    // the curved front lip overlaps its base, giving the hat depth, not tilt.
+    ctx.translate(0, -7); ctx.scale(0.86, 0.86); ctx.translate(0, 7);
+    const outline = darkMode ? '#94a3b8' : '#64748b';
+    ctx.fillStyle = darkMode ? '#cbd5e1' : '#101115';
+    ctx.beginPath(); ctx.ellipse(0, -7, 17, 4, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = outline; ctx.lineWidth = 0.65; ctx.stroke();
+    ctx.fillStyle = darkMode ? '#f8fafc' : '#24262b';
+    ctx.beginPath(); ctx.moveTo(-11, -8); ctx.lineTo(-9, -20);
+    ctx.quadraticCurveTo(-6, -23, 0, -20.5);
+    ctx.quadraticCurveTo(6, -23, 9, -20);
+    ctx.lineTo(11, -8); ctx.quadraticCurveTo(0, -5, -11, -8); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = outline; ctx.stroke();
+    // Recessed center crease and shaded side panels describe the crown volume.
+    ctx.fillStyle = darkMode ? '#cbd5e1' : '#101115';
+    ctx.beginPath(); ctx.moveTo(-7, -20);
+    ctx.quadraticCurveTo(0, -17, 7, -20);
+    ctx.quadraticCurveTo(0, -15.5, -7, -20); ctx.fill();
+    for (const side of [-1, 1]) {
+      ctx.beginPath(); ctx.moveTo(side * 9, -20); ctx.lineTo(side * 11, -8);
+      ctx.lineTo(side * 7.5, -8); ctx.lineTo(side * 6.5, -17); ctx.closePath(); ctx.fill();
+    }
+    ctx.fillStyle = darkMode ? '#111318' : '#f8fafc';
+    ctx.beginPath(); ctx.moveTo(-10.5, -12);
+    ctx.quadraticCurveTo(0, -9.5, 10.5, -12); ctx.lineTo(11, -8.5);
+    ctx.quadraticCurveTo(0, -6, -11, -8.5); ctx.closePath(); ctx.fill();
+    // Front of the brim is lower than its rear, but stays above the eyes.
+    ctx.fillStyle = darkMode ? '#e2e8f0' : '#111318';
+    ctx.beginPath(); ctx.moveTo(-17, -7);
+    ctx.quadraticCurveTo(0, -5, 17, -7);
+    ctx.quadraticCurveTo(14, -2.5, 0, -2.5);
+    ctx.quadraticCurveTo(-14, -2.5, -17, -7); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = outline; ctx.lineWidth = 0.7; ctx.stroke();
     ctx.restore();
     return;
   }
@@ -120,10 +170,25 @@ export const drawFallingCharacter = (ctx: CanvasRenderingContext2D, frame: numbe
     ctx.lineTo(side * (8 + Math.sin(frame * 0.2) * 2), -2); ctx.stroke();
   }
   ctx.fillStyle = body;
-  ctx.beginPath(); ctx.ellipse(0, -28, 12, 16, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath();
+  if (apeHead || companion) {
+    ctx.ellipse(0, -28, 12, 16, 0, 0, Math.PI * 2);
+  } else {
+    // Match the tapered, front-facing Home suit rather than a round belly.
+    ctx.moveTo(-8, -40); ctx.quadraticCurveTo(0, -44, 8, -40);
+    ctx.lineTo(10, -19); ctx.quadraticCurveTo(0, -14, -10, -19); ctx.closePath();
+  }
+  ctx.fill();
   if (!companion) {
     ctx.fillStyle = '#f8fafc'; ctx.beginPath(); ctx.moveTo(-5, -41); ctx.lineTo(5, -41); ctx.lineTo(0, -24); ctx.fill();
     ctx.fillStyle = '#ef4444'; ctx.fillRect(-1.5, -37, 3, 11);
+    if (!apeHead) {
+      ctx.strokeStyle = '#42536b'; ctx.lineWidth = 0.7;
+      for (const side of [-1, 1]) {
+        ctx.beginPath(); ctx.moveTo(side * 6, -39); ctx.lineTo(side * 4, -30);
+        ctx.lineTo(side * 8, -28); ctx.lineTo(side * 2, -19); ctx.stroke();
+      }
+    }
   }
   for (const side of [-1, 1]) {
     const handY = side === raisedSide ? -47 : -29;
@@ -140,15 +205,39 @@ export const drawFallingCharacter = (ctx: CanvasRenderingContext2D, frame: numbe
     for (const side of [-1, 1]) { ctx.beginPath(); ctx.arc(side * 10, -51, 4, 0, Math.PI * 2); ctx.fill(); }
     ctx.beginPath(); ctx.ellipse(0, -52, 10, 11, 0, 0, Math.PI * 2); ctx.fill();
   }
-  ctx.fillStyle = skin; ctx.beginPath(); ctx.ellipse(0, -50, apeHead ? 8 : 9, 9, 0, 0, Math.PI * 2); ctx.fill();
+  if (!apeHead) {
+    ctx.fillStyle = '#eab28e'; ctx.fillRect(-3, -44, 6, 5);
+    ctx.strokeStyle = '#eab28e'; ctx.lineWidth = 2;
+    for (const side of [-1, 1]) {
+      ctx.beginPath(); ctx.ellipse(side * 9, -50, 1.5, 2.5, 0, 0, Math.PI * 2); ctx.stroke();
+    }
+  }
+  ctx.fillStyle = apeHead ? skin : '#fed7aa';
+  ctx.beginPath(); ctx.ellipse(0, -50, apeHead ? 8 : 9, apeHead ? 9 : 10.5, 0, 0, Math.PI * 2); ctx.fill();
   if (apeHead) {
     ctx.fillStyle = '#111827';
     for (const side of [-1, 1]) { ctx.beginPath(); ctx.arc(side * 3.5, -53, 1.5, 0, Math.PI * 2); ctx.fill(); }
+  } else {
+    // Home face at gameplay scale; both eyes remain below the hat brim.
+    ctx.fillStyle = '#17202c';
+    for (const side of [-1, 1]) {
+      ctx.beginPath(); ctx.arc(side * 3.4, -51.5, 1.1, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.strokeStyle = '#d49570'; ctx.lineWidth = 0.75;
+    ctx.beginPath(); ctx.moveTo(0, -50); ctx.lineTo(-1.1, -47); ctx.lineTo(0.75, -47); ctx.stroke();
   }
   ctx.strokeStyle = '#70442d'; ctx.lineWidth = 1.2;
   ctx.beginPath(); ctx.moveTo(-4, -46); ctx.quadraticCurveTo(0, -43, 4, -46); ctx.stroke();
-  if (!apeHead && hat) {
-    ctx.save(); ctx.translate(0, -52); drawCharacterHat(ctx, false, true, darkMode); ctx.restore();
+  if (!companion) {
+    // The hero is bald during the fall; his belongings tumble to opposite sides.
+    const time = Math.max(0, frame);
+    if (!apeHead && hat) {
+      ctx.save(); ctx.translate(-14 - time * 2.2, -61 - time * 3.2);
+      ctx.rotate(-time * 0.09); drawCharacterHat(ctx, false, false, darkMode); ctx.restore();
+    }
+    ctx.save(); ctx.translate(27 + time * 2.5, -31 - time * 2.4);
+    ctx.rotate(time * 0.11); ctx.scale(0.34, 0.34);
+    drawBriefcase(ctx, darkMode); ctx.restore();
   }
   ctx.restore();
 };
@@ -612,10 +701,21 @@ export const drawSwanAsset = (ctx: CanvasRenderingContext2D, s: Swan, white = fa
       if (s.kind === 'pigeon') {
         ctx.save();
         ctx.rotate(s.isCharging ? -0.12 : Math.sin(s.phase) * 0.05);
-        ctx.fillStyle = '#475569'; ctx.beginPath(); ctx.moveTo(12, 7); ctx.lineTo(27, 12); ctx.lineTo(23, 1); ctx.closePath(); ctx.fill();
         const feathers = ctx.createLinearGradient(-18, -18, 18, 20);
         feathers.addColorStop(0, '#cbd5e1'); feathers.addColorStop(1, '#64748b');
-        ctx.fillStyle = feathers; ctx.beginPath(); ctx.ellipse(0, 1, 21, 21, 0, 0, Math.PI * 2); ctx.fill();
+        // A single rounded body/tail silhouette avoids a pasted-on triangular join.
+        ctx.fillStyle = feathers; ctx.beginPath(); ctx.moveTo(0, -20);
+        ctx.bezierCurveTo(12, -20, 17, -9, 22, -2);
+        ctx.bezierCurveTo(25, 2, 31, 6, 31, 10);
+        ctx.quadraticCurveTo(30, 14, 25, 13);
+        ctx.quadraticCurveTo(20, 12, 16, 15);
+        ctx.bezierCurveTo(3, 28, -21, 20, -21, 1);
+        ctx.bezierCurveTo(-21, -11, -12, -20, 0, -20); ctx.closePath(); ctx.fill();
+        ctx.strokeStyle = '#64748b'; ctx.lineWidth = 0.8;
+        for (let feather = 0; feather < 3; feather++) {
+          ctx.beginPath(); ctx.moveTo(17 + feather, 2 + feather * 3);
+          ctx.quadraticCurveTo(23, 6 + feather * 2, 29 - feather, 10 + feather); ctx.stroke();
+        }
         ctx.fillStyle = '#dbe4ec'; ctx.beginPath(); ctx.ellipse(-4, 9, 15, 11, -0.15, 0, Math.PI * 2); ctx.fill();
         ctx.fillStyle = '#648c85'; ctx.beginPath(); ctx.ellipse(-11, -7, 9, 6, -0.3, 0, Math.PI * 2); ctx.fill();
         ctx.fillStyle = '#a5b4c3'; ctx.beginPath(); ctx.arc(-13, -12, 9, 0, Math.PI * 2); ctx.fill();

@@ -1808,7 +1808,7 @@ kbd {
 
 /* Only portrait hides the additional header controls. */
 @media (orientation: portrait) and (pointer: coarse) {
-  .game-app .header-controls > :not(.mobile-header-control) {
+  .game-app .header-controls > :not(.mobile-header-control):not(.desktop-fullscreen-control) {
     display: none;
   }
 
@@ -2769,7 +2769,7 @@ kbd {
   }
 }
 
-/* Share DD is the image itself, with controls inside its corners. */
+/* Share DD keeps its controls outside the artwork in a themed window. */
 .game-app:has(.share-dd-overlay) .game-over-overlay > .game-result-over {
   visibility: hidden;
 }
@@ -2789,48 +2789,62 @@ kbd {
 
 .game-app .share-dd-overlay.fixed.inset-0.z-50 > .share-dd-dialog[role="dialog"] {
   position: relative;
-  display: block;
-  flex: 0 0 auto;
-  width: min(768px, calc(100cqw - 16px - env(safe-area-inset-left) - env(safe-area-inset-right)), calc((100cqh - 16px) * 4 / 3));
-  height: auto;
-  aspect-ratio: 4 / 3;
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
+  gap: 12px;
+  flex: 1 1 auto;
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
   min-width: 0;
   min-height: 0;
   max-width: none;
   max-height: none;
-  margin: auto;
-  padding: 0;
-  border: 0;
-  border-radius: 0.5rem;
-  background: transparent;
+  margin: 0;
+  padding: 44px 12px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--ui-radius);
+  background: var(--page-surface);
   box-shadow: none;
   transform: none;
-  overflow: visible;
+  overflow: hidden;
 }
 
-.game-app .share-dd-dialog > .share-dd-canvas {
+.game-app .share-dd-image {
+  grid-column: 2;
+  grid-row: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.game-app .share-dd-image > .share-dd-canvas {
   display: block;
   width: 100%;
-  height: auto;
-  max-height: none;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: 0;
   margin: 0;
 }
 
 .game-app .share-dd-dialog > .share-dd-close {
   position: absolute;
-  top: 8px;
-  right: 8px;
+  top: 2px;
+  right: 2px;
   transform: none;
   z-index: 1;
 }
 
 .game-app .share-dd-dialog > .share-dd-actions {
-  position: absolute;
-  /* The painted inner rectangle starts at 4.4% from the left and ends
-     7.3% above the bottom in both share-card backgrounds. */
-  left: calc(4.4% + 8px);
-  /* Lift off the rounded bottom-left contour, not just its straight baseline. */
-  bottom: calc(7.3% + 16px);
+  position: static;
+  grid-column: 1;
+  grid-row: 1;
+  align-self: end;
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -2898,6 +2912,17 @@ html .game-app .preferences-clear-button {
 html .game-app .share-dd-actions > button.share-dd-copy {
   color: #ffffff !important;
   background: #08795c !important;
+}
+
+html .game-app :is(.share-dd-close, .share-dd-actions > button) svg {
+  width: 14px;
+  height: 14px;
+}
+@media (pointer: coarse) {
+  html .game-app :is(.share-dd-close, .share-dd-actions > button) svg {
+    width: 16px;
+    height: 16px;
+  }
 }
 
 html[data-theme="light"] .game-app .share-dd-actions > button.share-dd-copy {
@@ -3047,7 +3072,7 @@ html .game-app .game-arena > .game-overlay.how-to-play-overlay {
 
 /* Reserve an invisible border so hover feedback never changes icon placement. */
 html[data-theme="light"] .game-app .header-controls > button,
-html[data-theme="light"] .game-app :is(.dialog-close, .site-info-contact-button) {
+html[data-theme="light"] .game-app :is(.dialog-close, .site-info-contact-button, .share-dd-social-button) {
   border: 1px solid transparent !important;
   border-radius: 0.25rem;
   background: transparent !important;
@@ -3055,7 +3080,7 @@ html[data-theme="light"] .game-app :is(.dialog-close, .site-info-contact-button)
 }
 
 html[data-theme="light"] .game-app .header-controls > button:hover,
-html[data-theme="light"] .game-app :is(.dialog-close, .site-info-contact-button):hover {
+html[data-theme="light"] .game-app :is(.dialog-close, .site-info-contact-button, .share-dd-social-button):hover {
   border-color: #ebebeb !important;
   background: #ebebeb !important;
 }
@@ -3067,7 +3092,7 @@ html[data-theme="light"] .game-app .header-controls > .header-pause-control[aria
 }
 
 html[data-theme="light"] .game-app .header-controls > button:focus-visible,
-html[data-theme="light"] .game-app :is(.dialog-close, .site-info-contact-button):focus-visible {
+html[data-theme="light"] .game-app :is(.dialog-close, .site-info-contact-button, .share-dd-social-button):focus-visible {
   outline: 2px solid var(--text);
   outline-offset: 2px;
 }
@@ -3159,9 +3184,8 @@ html[data-theme="light"] .game-app .game-stage {
   box-shadow: none;
 }
 
-/* Day layout has no separators between the page, navigation and footer. */
+/* Footer text follows the secondary theme color. */
 html[data-theme="light"] .game-app .site-footer {
-  border-top: 0;
   color: #000000;
 }
 
@@ -3212,7 +3236,6 @@ html:not([data-theme="light"]) .game-app .site-footer {
 }
 
 html:not([data-theme="light"]) .game-app .site-footer {
-  border-top: 0;
   color: #ffffff;
 }
 
@@ -3220,14 +3243,14 @@ html:not([data-theme="light"]) .game-app .site-footer button {
   color: #ffffff;
 }
 
-html:not([data-theme="light"]) .game-app :is(.header-controls > button, .dialog-close, .site-info-contact-button) {
+html:not([data-theme="light"]) .game-app :is(.header-controls > button, .dialog-close, .site-info-contact-button, .share-dd-social-button) {
   color: #ffffff !important;
   border: 1px solid transparent !important;
   background: transparent !important;
   box-shadow: none;
 }
 
-html:not([data-theme="light"]) .game-app :is(.header-controls > button, .dialog-close, .site-info-contact-button):hover {
+html:not([data-theme="light"]) .game-app :is(.header-controls > button, .dialog-close, .site-info-contact-button, .share-dd-social-button):hover {
   border-color: #253044 !important;
   background: #253044 !important;
 }
@@ -3238,7 +3261,7 @@ html:not([data-theme="light"]) .game-app .header-controls > .header-pause-contro
   background: #131c29 !important;
 }
 
-html:not([data-theme="light"]) .game-app :is(.header-controls > button, .dialog-close, .site-info-contact-button):focus-visible {
+html:not([data-theme="light"]) .game-app :is(.header-controls > button, .dialog-close, .site-info-contact-button, .share-dd-social-button):focus-visible {
   outline: 2px solid #ffffff;
   outline-offset: 2px;
 }
@@ -3762,11 +3785,14 @@ html:not([data-theme="light"]) .game-app :is(.landing-menu-guide-button, .landin
 
 .settings-options { display: grid; gap: 8px; }
 .game-app .game-result-over .game-result-actions > button:last-child {
-  flex-direction: column;
-  gap: 2px;
+  position: relative;
 }
 .new-game-space-key {
-  width: 30px;
+  position: absolute;
+  left: 50%;
+  bottom: 3px;
+  transform: translateX(-50%);
+  width: 64px;
   height: 5px;
   flex-shrink: 0;
 }
@@ -3809,54 +3835,380 @@ html .game-app[data-animations="false"] *::after {
   scroll-behavior: auto !important;
 }
 
-/* Mobile entry gate also covers landscape when fullscreen needs a user gesture. */
+/* Mobile gameplay keeps the chart clear of footer and feed chrome. */
 @media (pointer: coarse) {
-  .game-app[data-mobile-entry="true"] > div > :not(.landscape-required) {
-    visibility: hidden;
-    pointer-events: none;
-  }
-
-  .game-app[data-mobile-entry="true"] .landscape-required {
-    position: fixed;
-    inset: 0;
-    z-index: 100;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 16px;
-    padding: 24px;
-    background: var(--bg);
-    color: var(--text);
-  }
-
   html .game-app:is([data-state="play"], [data-state="boxing"]) :is(.site-footer, .desktop-live-feed-bar, .mobile-header-feed) {
     display: none !important;
   }
 }
 
-/* No separate portrait menu: ask for a physical rotation when locking is unavailable. */
-@media (orientation: portrait) and (pointer: coarse) {
-  .game-app > div > :not(.landscape-required) {
-    visibility: hidden;
-    pointer-events: none;
+/* Edge-to-edge page surfaces, shared by desktop and touch layouts. */
+html .game-app {
+  --page-surface: #000000;
+}
+html[data-theme="light"] .game-app {
+  --page-surface: #ffffff;
+}
+html .game-app :is(.how-to-play-overlay, .desktop-initial-guide, .mobile-how-to-dialog,
+  .mobile-how-to-panel, .site-info-overlay, .site-info-dialog, .mechanics-guide > div,
+  .mechanics-guide-visuals, .mobile-how-to-header) {
+  background: var(--page-surface) !important;
+  box-shadow: none;
+}
+html .game-app .game-arena > .how-to-play-overlay {
+  inset: 0;
+  padding: 0;
+  align-items: stretch;
+}
+html .game-app .how-to-play-overlay > .desktop-initial-guide {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: 0 !important;
+  border: 0;
+  border-radius: 0;
+}
+html .game-app .game-arena > .game-overlay.how-to-play-overlay,
+html .game-app .how-to-play-overlay > .desktop-initial-guide,
+html[data-theme] .game-app .mobile-how-to-dialog.fixed.inset-0.z-50,
+html[data-theme] .game-app .mobile-how-to-panel > .mobile-how-to-header {
+  background: var(--page-surface) !important;
+}
+html .game-app .desktop-initial-guide > .how-to-layout {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  gap: 0;
+}
+html .game-app .landing-menu-panel {
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+}
+html .game-app .mobile-how-to-dialog.fixed.inset-0.z-50 {
+  padding: 0;
+}
+html .game-app .mobile-how-to-dialog > .mobile-how-to-panel {
+  border: 0;
+  border-radius: 0;
+}
+/* Match Fullscreen's right edge to the guide's 1px outer frame. */
+html .game-app header {
+  padding-right: max(1px, env(safe-area-inset-right));
+  border-bottom: 1px solid var(--bg);
+}
+html .game-app .site-footer {
+  border-top: 1px solid var(--bg);
+}
+@media (pointer: coarse) {
+  html .game-app header {
+    padding-left: max(6px, env(safe-area-inset-left));
+    padding-right: max(1px, env(safe-area-inset-right));
   }
-
-  .game-app .landscape-required {
-    position: fixed;
-    inset: 0;
-    z-index: 100;
+}
+@media (orientation: portrait) and (pointer: coarse) {
+  html .game-app > div {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 16px;
-    padding: 24px;
-    background: var(--bg);
-    color: var(--text);
+    padding-top: 0;
   }
+  html .game-app {
+    --menu-action-width: min(70vw, 320px);
+    --menu-action-gap: 4px;
+  }
+  html .game-app .game-stage { height: 100%; min-height: 0; }
+  html .game-app .landing-menu-actions {
+    --menu-hero-width: clamp(64px, 15dvh, 110px);
+  }
+  html .game-app .mobile-how-to-dialog.fixed.inset-0.z-50 {
+    top: var(--desktop-feed-bottom, 0px);
+    bottom: var(--footer-inset-bottom, 0px);
+    height: auto;
+  }
+  html .game-app .mobile-how-to-dialog > .mobile-how-to-panel {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+    padding: 8px;
+  }
+  html .game-app .mobile-how-to-header { flex: 0 0 40px; }
+  html .game-app .how-to-dialog-content {
+    display: block;
+    min-height: 0;
+    overflow-y: auto;
+  }
+  html .game-app .how-to-dialog-hero { display: none; }
+  html .game-app .how-to-dialog-content > .mechanics-guide {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    height: auto;
+    overflow: visible;
+  }
+  html .game-app .site-info-overlay.fixed.inset-0.z-50 {
+    padding: 0;
+  }
+  html .game-app .site-info-overlay.fixed.inset-0.z-50 > .site-info-dialog {
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    max-height: 100%;
+    min-height: 0;
+    border: 0;
+    border-radius: 0;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+  }
+  html .game-app .site-info-content {
+    min-height: 0;
+    overflow-y: auto;
+  }
+  html .game-app .site-footer > nav { flex-wrap: wrap; }
+}
 
-  .game-app .mobile-browser-fallback {
-    display: none;
+/* Information cards cover their source card, not the surrounding scene. */
+html .game-app .site-info-overlay.fixed.inset-0.z-50 {
+  inset: auto !important;
+  left: var(--info-left, 0px) !important;
+  top: var(--info-top, 0px) !important;
+  width: var(--info-width, 100%);
+  height: var(--info-height, 100%);
+  padding: 0 !important;
+  background: transparent !important;
+  z-index: 60;
+}
+html .game-app .site-info-overlay.fixed.inset-0.z-50 > .site-info-dialog {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  max-width: none;
+  max-height: none;
+  padding: 12px !important;
+  margin: 0;
+  overflow: hidden;
+  transform: none;
+  border: 1px solid var(--line);
+  border-radius: var(--ui-radius);
+  background: var(--page-surface) !important;
+  box-shadow: none;
+}
+html .game-app .site-info-overlay.fixed.inset-0.z-50 > .site-info-dialog > .site-info-header {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 36px;
+  height: 36px;
+  min-height: 36px;
+  margin: 0 0 6px;
+  padding: 0 42px;
+}
+html .game-app .site-info-overlay .site-info-header > .site-info-title {
+  margin: 0;
+  transform: none;
+  line-height: 1.2;
+}
+html .game-app .site-info-overlay.fixed.inset-0.z-50 > .site-info-dialog > .site-info-header > .site-info-close {
+  position: absolute;
+  top: 50%;
+  right: 0;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  min-height: 32px;
+  padding: 0;
+}
+html .game-app .site-info-overlay.fixed.inset-0.z-50 > .site-info-dialog > .site-info-content {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 0;
+  min-height: 0;
+  padding: 0 8px;
+  overflow: auto;
+  scrollbar-gutter: stable both-edges;
+}
+html .game-app .site-info-content > .site-info-body {
+  flex: 0 0 auto;
+  width: 100%;
+  margin-block: auto;
+}
+html .game-app .site-info-dialog > .site-info-content::after {
+  display: none;
+}
+
+/* How to Play is one frame with internal dividers, not spaced cards. */
+html .game-app :is(.mobile-how-to-panel, .paused-guide-dialog),
+html .game-app :is(.mobile-how-to-panel, .paused-guide-dialog) .mechanics-guide {
+  --line: var(--bg);
+}
+html[data-theme] .game-app :is(.mobile-how-to-panel, .paused-guide-dialog),
+html[data-theme] .game-app :is(.mobile-how-to-panel, .paused-guide-dialog) :is(.mobile-how-to-header, .how-to-guide-header, .how-to-dialog-hero, .mechanics-guide > div) {
+  border-color: var(--bg) !important;
+}
+html .game-app :is(.mobile-how-to-dialog > .mobile-how-to-panel, .paused-guide-dialog) {
+  gap: 0 !important;
+  padding: 0 !important;
+  border: 1px solid var(--line) !important;
+  border-radius: var(--ui-radius) !important;
+  overflow: hidden;
+}
+html[data-theme] .game-app :is(.mobile-how-to-panel > .mobile-how-to-header, .paused-guide-dialog > .how-to-guide-header) {
+  margin: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  border-bottom: 1px solid var(--line) !important;
+}
+html[data-theme] .game-app :is(.mobile-how-to-panel, .paused-guide-dialog) :is(.mobile-how-to-header, .how-to-guide-header) > :is(h2, .dialog-close) {
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+html .game-app :is(.mobile-how-to-panel, .paused-guide-dialog) .mechanics-guide {
+  gap: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  scrollbar-gutter: auto;
+}
+html .game-app :is(.mobile-how-to-panel, .paused-guide-dialog) .mechanics-guide > div {
+  border: 0 !important;
+  border-radius: 0 !important;
+  border-bottom: 1px solid var(--line) !important;
+}
+html .game-app :is(.mobile-how-to-panel, .paused-guide-dialog) .mechanics-guide > div:nth-child(odd) {
+  border-right: 1px solid var(--line) !important;
+}
+html .game-app :is(.mobile-how-to-panel, .paused-guide-dialog) .mechanics-guide > div:nth-last-child(-n+2) {
+  border-bottom: 0 !important;
+}
+html .game-app .how-to-dialog-content > .how-to-dialog-hero {
+  border: 0;
+  border-right: 1px solid var(--line);
+  border-radius: 0 !important;
+}
+@media (orientation: portrait) and (pointer: coarse) {
+  html .game-app :is(.mobile-how-to-panel, .paused-guide-dialog) .mechanics-guide > div:nth-child(n) {
+    border-right: 0 !important;
+    border-bottom: 1px solid var(--line) !important;
+  }
+  html .game-app :is(.mobile-how-to-panel, .paused-guide-dialog) .mechanics-guide > div:last-child {
+    border-bottom: 0 !important;
+  }
+}
+
+/* Shared compact chrome: 32px controls with 2px external insets. */
+html .game-app {
+  --chrome-height: 36px;
+  /* Fallback for portrait, where the Fullscreen control is hidden. */
+  --content-edge-inset: 12.1666666667px;
+}
+html .game-app header {
+  box-sizing: border-box;
+  height: var(--chrome-height);
+  min-height: var(--chrome-height);
+  flex: 0 0 var(--chrome-height);
+  padding-block: 2px 1px;
+  padding-right: max(2px, env(safe-area-inset-right));
+}
+html .game-app header .stonktrooper-logo { height: 30px; width: auto; }
+html .game-app .header-controls > button {
+  width: 32px;
+  min-width: 32px;
+  height: 32px;
+  min-height: 32px;
+  padding: 0;
+}
+html[data-theme] .game-app .desktop-live-feed-bar {
+  display: block;
+  box-sizing: border-box;
+  height: var(--chrome-height);
+  flex: 0 0 var(--chrome-height);
+  margin: 0;
+  border-bottom: 1px solid var(--bg);
+}
+html .game-app .desktop-live-feed {
+  display: block;
+  width: 100%;
+  height: calc(var(--chrome-height) - 1px);
+}
+html .game-app .mobile-header-feed { display: none; }
+html[data-theme] .game-app .site-footer {
+  box-sizing: border-box;
+  height: calc(var(--chrome-height) / 2);
+  min-height: calc(var(--chrome-height) / 2);
+  flex: 0 0 calc(var(--chrome-height) / 2);
+  padding-block: 0;
+  font-size: 10px;
+  line-height: 1;
+  align-items: center;
+}
+html[data-theme] .game-app :is(.mobile-how-to-panel > .mobile-how-to-header, .paused-guide-dialog > .how-to-guide-header) {
+  position: relative;
+  box-sizing: border-box;
+  height: 35px;
+  min-height: 35px;
+  flex: 0 0 35px;
+  padding: 0 36px;
+}
+html[data-theme] .game-app :is(.mobile-how-to-header, .how-to-guide-header) > .dialog-close {
+  position: absolute;
+  top: 1px;
+  right: 1px;
+  transform: none;
+  width: 32px;
+  min-width: 32px;
+  height: 32px;
+  min-height: 32px;
+}
+
+html .game-app .landing-menu-panel .home-coffee-link {
+  left: max(var(--content-edge-inset), env(safe-area-inset-left));
+  bottom: calc(max(var(--content-edge-inset), env(safe-area-inset-bottom)) + 8px);
+}
+@media (pointer: coarse) {
+  html .game-app .site-info-overlay.fixed.inset-0.z-50 > .site-info-dialog > .site-info-header > .site-info-close {
+    /* The full-width panel has a 1px border and 12px inner padding. */
+    right: calc(var(--fullscreen-control-right, 2px) - 13px);
+  }
+}
+/* Give guide artwork more room without stretching the square previews. */
+html .game-app .mechanics-guide .mechanics-guide-visuals {
+  width: 100px;
+}
+html .game-app .mechanics-guide .mechanics-guide-visuals > div {
+  min-height: 84px;
+}
+html .game-app .mechanics-guide .mechanics-guide-visuals canvas {
+  width: 84px;
+  height: 84px;
+}
+html .game-app .mobile-joystick,
+html .game-app:fullscreen .mobile-joystick {
+  left: max(var(--content-edge-inset), env(safe-area-inset-left));
+  bottom: max(var(--content-edge-inset), env(safe-area-inset-bottom));
+}
+@media (pointer: fine) {
+  html[data-theme] .game-app :is(.mobile-how-to-dialog > .mobile-how-to-panel, .paused-guide-dialog) {
+    border: 0 !important;
+    border-radius: 0 !important;
+  }
+  html[data-theme] .game-app :is(.mobile-how-to-header, .how-to-guide-header) > .dialog-close {
+    top: 2px;
+    right: 2px;
+  }
+  html .game-app :is(.mobile-how-to-panel, .paused-guide-dialog) :is(.how-to-dialog-hero, .how-to-dialog-hero > img) {
+    border-radius: 0 !important;
   }
 }

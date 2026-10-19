@@ -191,10 +191,10 @@ export const CandleGame: React.FC<CandleGameProps> = ({
       const bounds = canvas.getBoundingClientRect();
       canvasDisplay.current = { width: bounds.width, height: bounds.height };
       const logo = canvas.closest('.game-app')?.querySelector('.header-logo-frame');
-      if (logo) scoreInset.current = Math.max(0, logo.getBoundingClientRect().left - bounds.left) + (mobile ? 0 : 2);
-      const mobileEdgeGap = parseFloat(getComputedStyle(canvas).getPropertyValue('--mobile-edge-gap')) || 6;
-      scoreTopInset.current = mobile ? mobileEdgeGap : scoreInset.current;
+      if (logo) scoreInset.current = Math.max(0, logo.getBoundingClientRect().left - bounds.left);
+      scoreTopInset.current = parseFloat(getComputedStyle(canvas).getPropertyValue('--content-edge-inset')) || 12.1666666667;
       canvas.closest<HTMLElement>('.game-stage')?.style.setProperty('--game-hud-inset', `${scoreInset.current}px`);
+      canvas.closest<HTMLElement>('.game-stage')?.style.setProperty('--game-hud-top-inset', `${scoreTopInset.current}px`);
       renderViewport.current = currentChartViewport(bounds);
       const scale = Math.max(0.01, bounds.height / H * mobileCanvasZoom());
       const horizontalScale = Math.max(0.01, bounds.width / W * mobileCanvasZoom());
@@ -2745,7 +2745,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     for (let gridY = Math.floor(g.cy / 50) * 50; gridY < g.cy + H; gridY += 50) {
       const y = gridY - g.cy;
       drawChartGridLine(ctx, screenToChart({ x: 0, y: 0 }, viewport).x, y,
-        screenToChart({ x: W - AX, y: 0 }, viewport).x, y);
+        screenToChart({ x: W - AX, y: 0 }, viewport).x, y, theme === 'dark');
     }
 
     }
@@ -2777,7 +2777,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     ctx.lineWidth = 1 / viewport.scaleX;
     for (const { x } of timeTicks) {
         drawChartGridLine(ctx, x, screenToChart({ x: 0, y: -H }, viewport).y,
-          x, screenToChart({ x: 0, y: H * 2 }, viewport).y);
+          x, screenToChart({ x: 0, y: H * 2 }, viewport).y, theme === 'dark');
     }
 
     ctx.lineWidth = 1;

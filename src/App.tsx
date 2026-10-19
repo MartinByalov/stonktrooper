@@ -23,7 +23,6 @@ import { Maximize, Minimize, Pause, Play, X, ChevronLeft, ChevronRight } from 'l
 
 export default function App() {
   const [mobileDevice, setMobileDevice] = useState(() => window.matchMedia('(pointer: coarse)').matches);
-  const [mobileEntryRequired, setMobileEntryRequired] = useState(false);
   const [state, setState] = useState<GameState>('menu');
   const mobilePlaying = mobileDevice && (state === 'play' || state === 'boxing');
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
@@ -119,11 +118,15 @@ export default function App() {
         const scale = iconRect.width / viewBox.width;
         const stroke = parseFloat(getComputedStyle(fullscreenIcon).strokeWidth) || 0;
         const paintedRight = iconRect.left + (bounds.x + bounds.width + stroke / 2 - viewBox.x) * scale;
-        header.style.paddingLeft = `${Math.max(0, header.getBoundingClientRect().right - paintedRight)}px`;
+        app.style.setProperty('--content-edge-inset', `${Math.max(0, header.getBoundingClientRect().right - paintedRight)}px`);
+        header.style.paddingLeft = 'max(var(--content-edge-inset), env(safe-area-inset-left))';
         const logo = app.querySelector('.stonktrooper-logo');
         if (logo) {
           app.style.setProperty('--home-logo-inset', `${Math.max(0, logo.getBoundingClientRect().left - app.getBoundingClientRect().left)}px`);
         }
+      }
+      if (header && (!fullscreenIcon || fullscreenIcon.getBoundingClientRect().width === 0)) {
+        header.style.paddingLeft = 'max(var(--content-edge-inset), env(safe-area-inset-left))';
       }
       const headerFeed = Array.from(app.querySelectorAll('.mobile-header-feed, .desktop-live-feed')).find(feed => feed.getBoundingClientRect().width > 0);
       const desktopFeed = app.querySelector('.desktop-live-feed-bar');
@@ -185,44 +188,22 @@ export default function App() {
       window.visualViewport?.removeEventListener('scroll', scheduleBoundary);
     };
   }, [liveFeedVisible, mobilePlaying]);
-  const previousMobilePortrait = useRef<boolean | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [fullscreenError, setFullscreenError] = useState('');
-  const requestMobileLandscape = useCallback(async () => {
-    if (!window.matchMedia('(pointer: coarse)').matches) return;
-    if (!appRef.current?.requestFullscreen && !document.fullscreenElement) {
-      setMobileEntryRequired(true);
-      return;
-    }
-    try {
-      if (!document.fullscreenElement && appRef.current?.requestFullscreen) await appRef.current.requestFullscreen();
-    } catch {
-      setMobileEntryRequired(true);
-      return;
-    }
-    try {
-      const orientation = screen.orientation as ScreenOrientation & { lock?: (orientation: 'landscape') => Promise<void> };
-      await orientation?.lock?.('landscape');
-    } catch {
-      // Orientation locking is optional; do not show rotation instructions.
-    }
-    setMobileEntryRequired(false);
-  }, []);
+  const mobileStartPending = useRef(false);
 
   useEffect(() => {
     const media = window.matchMedia('(pointer: coarse)');
     const sync = () => setMobileDevice(media.matches);
     media.addEventListener('change', sync);
-    if (media.matches) void requestMobileLandscape();
     return () => media.removeEventListener('change', sync);
-  }, [requestMobileLandscape]);
+  }, []);
 
   useEffect(() => {
     let wasFullscreen = document.fullscreenElement === appRef.current;
     const syncFullscreen = () => {
       const fullscreen = document.fullscreenElement === appRef.current;
       setIsFullscreen(fullscreen);
-      if (fullscreen) setMobileEntryRequired(false);
       if (wasFullscreen && !fullscreen && window.matchMedia('(pointer: coarse)').matches) {
         const orientation = screen.orientation as ScreenOrientation & { unlock?: () => void };
         try { orientation?.unlock?.(); } catch { }
@@ -236,10 +217,6 @@ export default function App() {
 
   const toggleFullscreen = async () => {
     setFullscreenError('');
-    if (mobileDevice && !document.fullscreenElement) {
-      await requestMobileLandscape();
-      return;
-    }
     try {
       if (document.fullscreenElement) await document.exitFullscreen();
       else if (appRef.current?.requestFullscreen) await appRef.current.requestFullscreen();
@@ -250,8 +227,10 @@ export default function App() {
   };
 
   useEffect(() => { if (state !== 'over') setShareDDOpen(false); }, [state]);
+  useEffect(() => {
+    if (state === 'play' || state === 'boxing') setSiteSection(null);
+  }, [state]);
   const [selectedMode, setSelectedMode] = useState<'easy' | 'hard'>('hard');
-  const [awaitingLandscape, setAwaitingLandscape] = useState(false);
   const [gameKey, setGameKey] = useState<number>(0);
   const [printerRequest, setPrinterRequest] = useState(0);
   const [invertedRequest, setInvertedRequest] = useState(0);
@@ -359,22 +338,63 @@ export default function App() {
     setCurrentResult(finalScore);
   }, []);
 
-  const handleStartOrResume = () => {
-    if (state === 'menu' && selectedMode !== 'hard') return;
-    void requestMobileLandscape();
-    sound.unlock();
-    if (mobileDevice && window.innerHeight > window.innerWidth) {
-      setAwaitingLandscape(true);
-      return;
-    }
-    setAwaitingLandscape(false);
+  const startOrResume = useCallback(() => {
+    mobileStartPending.current = false;
+    setFullscreenError('');
     if (state === 'over' || state === 'menu') {
-
       boxingActive.current = false;
       setCurrentResult(0);
-      setGameKey((k) => k + 1);
+      setGameKey(k => k + 1);
     }
     setState('play');
+  }, [state]);
+
+  useEffect(() => {
+    const checkOrientation = () => {
+      if (!window.matchMedia('(pointer: coarse)').matches) return;
+      const ready = document.fullscreenElement === appRef.current && window.innerWidth > window.innerHeight;
+      if (mobileStartPending.current && ready) startOrResume();
+      else if (!ready && state === 'play') setState('paused');
+    };
+    window.addEventListener('resize', checkOrientation);
+    screen.orientation?.addEventListener('change', checkOrientation);
+    document.addEventListener('fullscreenchange', checkOrientation);
+    return () => {
+      window.removeEventListener('resize', checkOrientation);
+      screen.orientation?.removeEventListener('change', checkOrientation);
+      document.removeEventListener('fullscreenchange', checkOrientation);
+    };
+  }, [state, startOrResume]);
+
+  const handleStartOrResume = async () => {
+    if (state === 'menu' && selectedMode !== 'hard') return;
+    sound.unlock();
+    if (!window.matchMedia('(pointer: coarse)').matches) { startOrResume(); return; }
+    if (mobileStartPending.current) return;
+    mobileStartPending.current = true;
+    setFullscreenError('');
+    try {
+      if (document.fullscreenElement !== appRef.current) {
+        if (!appRef.current?.requestFullscreen) throw new Error('Fullscreen unavailable');
+        await appRef.current.requestFullscreen();
+      }
+    } catch {
+      mobileStartPending.current = false;
+      setFullscreenError('Fullscreen is required to play on mobile. Please try again in a supported browser.');
+      return;
+    }
+    if (!mobileStartPending.current) return;
+    try {
+      const orientation = screen.orientation as ScreenOrientation & { lock?: (orientation: 'landscape') => Promise<void> };
+      await orientation.lock?.('landscape');
+    } catch {
+      // Never start portrait gameplay if the browser refuses the automatic lock.
+      if (window.innerWidth <= window.innerHeight) {
+        mobileStartPending.current = false;
+        return;
+      }
+    }
+    if (mobileStartPending.current && document.fullscreenElement === appRef.current && window.innerWidth > window.innerHeight) startOrResume();
   };
 
   const handleModeSelectorClick = (event: ReactMouseEvent<HTMLButtonElement>) => {
@@ -392,41 +412,8 @@ export default function App() {
     }
   };
 
-  useEffect(() => {
-    const syncOrientation = () => {
-      const portrait = mobileDevice && window.innerHeight > window.innerWidth;
-      const wasPortrait = previousMobilePortrait.current;
-      if (wasPortrait === false && portrait && state === 'play') setState('paused');
-      previousMobilePortrait.current = portrait;
-      if (!portrait && awaitingLandscape) {
-        // The initial request is made from the START tap. Retry after the
-        // physical rotation as some mobile browsers only expose the final
-        // landscape viewport after orientationchange.
-        void requestMobileLandscape();
-        setAwaitingLandscape(false);
-        if (state === 'menu' || state === 'over') {
-          boxingActive.current = false;
-          setCurrentResult(0);
-          setGameKey(k => k + 1);
-        }
-        setState('play');
-      }
-    };
-    syncOrientation();
-    window.addEventListener('resize', syncOrientation);
-    window.addEventListener('orientationchange', syncOrientation);
-    screen.orientation?.addEventListener('change', syncOrientation);
-    window.visualViewport?.addEventListener('resize', syncOrientation);
-    return () => {
-      window.removeEventListener('resize', syncOrientation);
-      window.removeEventListener('orientationchange', syncOrientation);
-      screen.orientation?.removeEventListener('change', syncOrientation);
-      window.visualViewport?.removeEventListener('resize', syncOrientation);
-    };
-  }, [awaitingLandscape, state, mobileDevice, requestMobileLandscape]);
-
   return (
-    <div ref={appRef} data-state={state} data-live-feed={liveFeedVisible} data-mobile-entry={mobileEntryRequired} data-animations={animationsEnabled} className="game-app min-h-screen bg-[var(--bg)] text-[var(--text)] transition-colors duration-200">
+    <div ref={appRef} data-state={state} data-live-feed={liveFeedVisible} data-animations={animationsEnabled} className="game-app min-h-screen bg-[var(--bg)] text-[var(--text)] transition-colors duration-200">
       <div className="w-full pt-2">
 
         {/* Sleek Top Utility & Navigation Bar */}
@@ -502,7 +489,7 @@ export default function App() {
               aria-pressed={state === 'paused'}
               className="mobile-header-control header-pause-control"
             >
-              <Pause className="w-3.5 h-3.5" />
+              {state === 'paused' ? <Play className="w-3.5 h-3.5" /> : <Pause className="w-3.5 h-3.5" />}
             </button>}
             <button
               type="button"
@@ -671,10 +658,6 @@ export default function App() {
         <SiteFooter volume={soundEnabled ? volume : 0} onVolumeChange={changeVolume} animationsEnabled={animationsEnabled} onToggleAnimations={() => setAnimationsEnabled(current => !current)} liveFeedEnabled={liveFeedEnabled} onToggleLiveFeed={() => setLiveFeedEnabled(current => !current)} onToggleTheme={() => setTheme(current => current === 'dark' ? 'light' : 'dark')} theme={theme} section={siteSection} setSection={setSiteSection} onOpen={() => { if (state === 'play') setState('paused'); }} />
         <MobileDiagnostics />
 
-        <div className="landscape-required" role="status" aria-label="Landscape orientation required">
-          <button type="button" onClick={() => void requestMobileLandscape()} className="rounded border border-[var(--line)] bg-[var(--panel)] px-4 py-2 cursor-pointer">Enter fullscreen</button>
-          {mobileEntryRequired && <button type="button" onClick={() => setMobileEntryRequired(false)} className="mobile-browser-fallback rounded border border-[var(--line)] bg-[var(--panel)] px-4 py-2 cursor-pointer">Continue in browser</button>}
-        </div>
 
       </div>
     </div>
