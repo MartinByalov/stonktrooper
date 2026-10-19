@@ -1,6 +1,7 @@
 // Browser game module for bossRenderer.
 import type { BossArena } from './boxingRules';
 import { drawJointedArm } from './armRenderer';
+import { drawBoxingGlove } from './boxingGloveRenderer';
 import { bossGlovePose } from './boxingRules';
 import { drawBossWeapon } from './bossWeaponRenderer';
 import { briefcaseColors, drawSwanAsset, drawPickupAsset } from './assetRenderer';
@@ -93,9 +94,7 @@ export function drawBossEncounter(ctx: CanvasRenderingContext2D, a: BossArena, d
         const armColor = fur;
         // Start within the chest so the rounded upper arm blends into the torso.
         drawJointedArm(ctx, { x: shoulderX, y: shoulderY }, { x: elbowX, y: elbowY }, { x: handX, y: handY }, armColor, 12, 8);
-        ctx.fillStyle = '#ef3340'; ctx.strokeStyle = '#991b1b'; ctx.lineWidth = 2;
-        ctx.beginPath(); ctx.roundRect(handX - 8, handY - 10, 21, 21, 7); ctx.fill(); ctx.stroke();
-        ctx.fillStyle = '#fff'; ctx.fillRect(handX - 7, handY + 7, 9, 4);
+        drawBoxingGlove(ctx, handX, handY, arm === 1, 1.1);
       }
       ctx.restore();
       }

@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { bossColors } from './bossColors';
-import { createBossArena, jumpBossPlayer, stepBossArena, throwBossCase, bossName } from './boxingRules';
+import { createBossArena, jumpBossPlayer, stepBossArena, throwBossCase, bossName, bossMaxHealth } from './boxingRules';
 import type { BossArena } from './boxingRules';
 import { sound } from './audio';
 
@@ -13,8 +13,10 @@ export function BoxingGame({ onComplete, onDefeat, encounter, paused = false, he
   pausedRef.current = paused;
   const [round, setRound] = useState<Round>('fight');
   const [fightBanner, setFightBanner] = useState(true);
-  const [health, setHealth] = useState({ lives: 3, boss: 100 });
   const arena = useRef(encounter.current ?? createBossArena());
+  const [health, setHealth] = useState(() => ({ lives: arena.current.player.lives, boss: arena.current.boss.health }));
+  const maxHealth = bossMaxHealth(arena.current.boss.kind);
+  const healthPercent = Math.max(0, Math.min(100, health.boss / maxHealth * 100));
   const header = headerHud ? document.querySelector('.game-app header') : null;
   const colors = bossColors(arena.current.boss.kind, theme === 'dark');
 
@@ -114,11 +116,11 @@ export function BoxingGame({ onComplete, onDefeat, encounter, paused = false, he
     <>
       {header && createPortal(<div className="boss-header-hud" style={{ color: colors.foreground }}>
         <span className="boss-header-name">{bossName(arena.current.boss.kind)}</span>
-        <div className="boss-header-health" role="progressbar" aria-label="Enemy HP" aria-valuemin={0} aria-valuemax={100} aria-valuenow={health.boss} style={{ background: colors.track }}>
-          <div style={{ width: `${Math.max(0, Math.min(100, health.boss))}%`, background: colors.foreground }} />
+        <div className="boss-header-health" role="progressbar" aria-label="Enemy HP" aria-valuemin={0} aria-valuemax={maxHealth} aria-valuenow={health.boss} style={{ background: colors.track }}>
+          <div style={{ width: `${healthPercent}%`, background: colors.foreground }} />
         </div>
       </div>, header)}
-      <span className="sr-only" role="status">{health.lives} lives remaining. {bossName(arena.current.boss.kind)} health {health.boss} percent.</span>
+      <span className="sr-only" role="status">{health.lives} lives remaining. {bossName(arena.current.boss.kind)} health {Math.round(healthPercent)} percent.</span>
       <div className="absolute inset-0">
         {fightBanner && round === 'fight' && <div className="absolute inset-0 bg-slate-950/20 flex items-center justify-center font-black text-white pointer-events-none">
           <span className="text-3xl sm:text-5xl text-center">I DID NOT HEAR NO BELL</span>

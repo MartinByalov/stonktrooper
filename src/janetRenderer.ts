@@ -1,6 +1,7 @@
 import type { BossArena } from './boxingRules';
 import { janetAttackPose, JANET_SCALE } from './janetRules';
 import { drawJointedArm } from './armRenderer';
+import { drawBoxingGlove } from './boxingGloveRenderer';
 
 export function drawJanet(ctx: CanvasRenderingContext2D, b: BossArena['boss'], frame: number): void {
   ctx.save(); ctx.translate(b.x, b.y); ctx.scale(b.facing * JANET_SCALE, JANET_SCALE);
@@ -43,9 +44,7 @@ export function drawJanet(ctx: CanvasRenderingContext2D, b: BossArena['boss'], f
     const elbow = { x: near ? 13 : 20, y: -35 };
     drawJointedArm(ctx, shoulder, elbow, hand, near ? '#799b50' : '#526c3a', near ? 12 : 9, near ? 9 : 7);
     ctx.fillStyle = near ? '#99b66a' : '#6c874b'; ctx.beginPath(); ctx.ellipse(shoulder.x, -44, near ? 9 : 6, 7, -0.4, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = near ? '#ef3340' : '#b42332'; ctx.strokeStyle = '#991b1b'; ctx.lineWidth = 1.4;
-    ctx.beginPath(); ctx.roundRect(hand.x - 7, hand.y - 8, 17, 17, 6); ctx.fill(); ctx.stroke();
-    ctx.fillStyle = '#fff1e6'; ctx.fillRect(hand.x - 6, hand.y + 5, 9, 4);
+    drawBoxingGlove(ctx, hand.x, hand.y, near, 0.85);
   };
   leg(false); arm(false);
   shell();

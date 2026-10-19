@@ -173,6 +173,7 @@ try {
         if(!canvas.getContext('2d').getImageData(0,0,canvas.width,canvas.height).data.some((v,i)=>i%4===3 && v>0)) throw new Error('Information artwork is painted');
         const bottomItem=panel.querySelector('.site-info-bottom');
         const main=panel.querySelector('.site-info-main').getBoundingClientRect();
+        if(section==='Settings' && Math.abs(main.top+content.scrollTop-heading.bottom-8)>1) throw new Error('Mobile Settings starts 8px below its heading in both orientations');
         if(afterContent) {
           if(image.top<main.bottom) throw new Error('Settings, About and Disclaimer artwork follows the section content');
           if(bottomItem && image.bottom>bottomItem.getBoundingClientRect().top) throw new Error('About coin stays above copyright');
@@ -181,7 +182,9 @@ try {
           const bottomRect=bottomItem.getBoundingClientRect(), button=bottomItem.querySelector('button');
           if(button) {
             const r=button.getBoundingClientRect();
-            if(Math.abs(p.bottom-r.bottom-8)>1) throw new Error('Reset and Clear preferences share the bottom action row');
+            if(section==='Preferences') {
+              if(Math.abs((r.top+r.bottom-main.bottom-p.bottom)/2)>1) throw new Error('Clear preferences is centered between the text and panel bottom');
+            } else if(Math.abs(p.bottom-r.bottom-8)>1) throw new Error('Reset stays in the bottom action row');
           } else if(Math.abs(p.bottom-bottomRect.bottom)>1) throw new Error('Copyright stays at the panel bottom');
         }
         if(b.height<=c.height) {
@@ -196,10 +199,15 @@ try {
         const art=panel.querySelector('.site-info-artwork'), canvas=art.querySelector('canvas'), image=canvas.getBoundingClientRect();
         const main=panel.querySelector('.site-info-main').getBoundingClientRect();
         const expectedSize=body.dataset.infoSection==='Disclaimer'?52:64;
-        if(image.width!==expectedSize || image.height!==expectedSize || image.top<main.bottom || Math.abs(image.left+image.width/2-p.left-p.width/2)>1) throw new Error('Desktop information artwork is visible and centered below content');
+        if(image.width!==expectedSize || image.height!==expectedSize || (body.dataset.infoSection!=='Preferences' && image.top<main.bottom) || Math.abs(image.left+image.width/2-p.left-p.width/2)>1) throw new Error('Desktop information artwork is visible and centered');
         if(!canvas.getContext('2d').getImageData(0,0,canvas.width,canvas.height).data.some((v,i)=>i%4===3 && v>0)) throw new Error('Desktop information artwork is painted');
         const bottom=panel.querySelector('.site-info-bottom');
-        if(bottom && b.height<=c.height+1 && Math.abs(bottom.getBoundingClientRect().bottom-c.bottom)>1) throw new Error('Desktop copyright and Clear preferences stay at the content bottom');
+        if(bottom && b.height<=c.height+1) {
+          if(body.dataset.infoSection==='Preferences') {
+            const button=bottom.querySelector('button').getBoundingClientRect();
+            if(Math.abs((button.top+button.bottom-main.bottom-p.bottom)/2)>1) throw new Error('Desktop Clear preferences is centered below text: '+JSON.stringify({button:[button.top,button.bottom],text:main.bottom,panel:p.bottom,content:c.bottom,rows:getComputedStyle(body).gridTemplateRows}));
+          } else if(Math.abs(bottom.getBoundingClientRect().bottom-c.bottom)>1) throw new Error('Desktop copyright stays at the content bottom');
+        }
         if(b.height>c.height && b.top+content.scrollTop<c.top-1) throw new Error('Overflowing desktop information remains accessible from its start');
       }
       if(settings && !panel.querySelector('.site-info-body > .site-info-bottom > .settings-reset-button')) throw new Error('Settings reset belongs to the shared bottom action row, not the options');
@@ -213,7 +221,12 @@ try {
         const c=clear.getBoundingClientRect(), home=homeButton.getBoundingClientRect();
         if(Math.abs(c.width-home.width)>1 || Math.abs(c.height-home.height)>1) throw new Error('Clear saved preferences matches Home button dimensions: '+JSON.stringify({clear:[c.width,c.height],home:[home.width,home.height]}));
       }
-      return {covers:p.left<=target.left+1 && p.right>=target.right-1 && p.top<=target.top+1 && p.bottom>=target.bottom-1,
+      const targetBottom=matchMedia('(pointer: coarse)').matches && '${selector}'==='.share-dd-dialog'
+        ? Math.min(target.bottom, document.querySelector('.site-footer').getBoundingClientRect().height>0?document.querySelector('.site-footer').getBoundingClientRect().top:target.bottom)
+        : target.bottom;
+      const contacts=panel.querySelector('.about-contact-links');
+      if(contacts && parseFloat(getComputedStyle(contacts).marginTop)<parseFloat(getComputedStyle(contacts).lineHeight)+12-1) throw new Error('About leaves an extra text line before contact buttons');
+      return {covers:p.left<=target.left+1 && p.right>=target.right-1 && p.top<=target.top+1 && p.bottom>=targetBottom-1,
         headerAligned:Math.abs(title.y+title.height/2-close.y-close.height/2)<1,
         transparent:overlay.backgroundColor==='rgba(0, 0, 0, 0)',
         closeReachable:panel.querySelector('.site-info-close').contains(document.elementFromPoint(close.x+close.width/2,close.y+close.height/2))};
@@ -242,6 +255,41 @@ try {
     if (await evaluate('!!document.querySelector(".landing-menu-panel")')) break;
     await settle();
   }
+  await evaluate(`(async () => {
+    const {drawBoxingGlove}=await import('/src/boxingGloveRenderer.ts');
+    const {drawPaulGlove}=await import('/src/paulModel.ts');
+    const {drawBossEncounter}=await import('/src/bossRenderer.ts');
+    const {createBossArena}=await import('/src/boxingRules.ts');
+    if(drawPaulGlove!==drawBoxingGlove) throw new Error('Paul uses the shared boxing glove model');
+    for(const kind of ['jerome','janet','paul']) for(const facing of [-1,1]) for(const attacking of [false,true]) {
+      const canvas=document.createElement('canvas'); canvas.width=600; canvas.height=400;
+      const ctx=canvas.getContext('2d'), arena=createBossArena(kind);
+      Object.assign(arena.boss,{x:300,y:300,facing,arm:1,attack:attacking?24:0,attackKind:kind==='paul'?'hook':'punch'});
+      drawBossEncounter(ctx,arena);
+      const pixels=ctx.getImageData(0,0,600,400).data;
+      let red=0;
+      for(let i=0;i<pixels.length;i+=4) if(pixels[i]>pixels[i+1]*1.5 && pixels[i]>pixels[i+2]*1.2 && pixels[i+3]>200) red++;
+      if(red<20) throw new Error('Boxing gloves render in guard and attack poses for '+kind+' facing '+facing);
+    }
+  })()`);
+  console.log('PASS shared boxing glove model for all three characters, guard/attack and both facings');
+  const bellBalance = await evaluate(`(async () => {
+    const {createBossArena,bossMaxHealth,bossWinPips,throwBossCase}=await import('/src/boxingRules.ts');
+    return ['janet','jerome','paul'].map(kind=>{
+      const arena=createBossArena(kind), initial=arena.boss.health;
+      arena.player.x=arena.boss.x-30; arena.player.y=arena.boss.y;
+      arena.player.facing=1; arena.weapon='bat'; arena.uses=100;
+      let hits=0;
+      while(arena.result==='fight' && hits<30) {
+        arena.player.throwTimer=0; arena.swing=0;
+        throwBossCase(arena); hits++;
+      }
+      if(arena.result!=='win' || arena.boss.health!==0 || initial!==bossMaxHealth(kind)) throw new Error('Boss damage reaches victory at its configured HP: '+kind);
+      return {kind,hp:initial,reward:bossWinPips(kind),hits};
+    });
+  })()`);
+  assert.deepEqual(bellBalance,[{kind:'janet',hp:100,reward:1000,hits:7},{kind:'jerome',hp:200,reward:2000,hits:13},{kind:'paul',hp:300,reward:3000,hits:19}], 'Bell difficulty and win rewards increase from Janet to Jerome to Paul');
+  console.log('PASS Bell HP, lethal damage and win rewards: '+JSON.stringify(bellBalance));
   const fallingFaces = await evaluate(`(async () => {
     const { drawFallingCharacter, drawCharacterHat, drawBriefcase } = await import('/src/assetRenderer.ts');
     for (const dark of [false, true]) {
@@ -366,6 +414,11 @@ try {
   await call('Page.reload');
   await waitForSelector('[aria-label="Start Bell challenge against Pául"]');
   await settle();
+  assert.ok(await evaluate(`(() => {
+    const button=document.querySelector('[aria-label="Start Bell challenge against Pául"]');
+    const r=button.getBoundingClientRect();
+    return r.width>0 && r.height>0 && !button.closest('[hidden]') && button.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2));
+  })()`), 'Kangaroo mode button is visible and reachable in the header');
   await evaluate("document.querySelector('[aria-label=\"Start Bell challenge against Pául\"]').click()");
   await settle();
   const bossHeader = await evaluate(`(() => {
@@ -376,9 +429,11 @@ try {
       bottom:hp.bottom-header.bottom, left:hp.left-header.left, width:hp.width-header.width,
       text:document.querySelector('.boss-header-name').textContent,
       value:Number(document.querySelector('[aria-label="Enemy HP"]').getAttribute('aria-valuenow')),
+      max:Number(document.querySelector('[aria-label="Enemy HP"]').getAttribute('aria-valuemax')),
+      percent:parseFloat(document.querySelector('.boss-header-health > div').style.width),
       feed:document.querySelector('.desktop-live-feed-bar').getBoundingClientRect().height};
   })()`);
-  assert.ok(bossHeader.text.length>0 && bossHeader.value>0 && bossHeader.value<=100, 'Boss header shows name and live HP');
+  assert.ok(bossHeader.text.length>0 && bossHeader.max===300 && bossHeader.value>0 && bossHeader.value<=bossHeader.max && Math.abs(bossHeader.percent-bossHeader.value/bossHeader.max*100)<0.01, 'Paul header shows live HP normalized against 300 maximum HP');
   assert.ok(['center','bottom','left','width'].every(key=>Math.abs(bossHeader[key])<0.1), 'Boss name is centered and HP forms the header bottom: '+JSON.stringify(bossHeader));
   assert.equal(bossHeader.feed, 0, 'Boss header does not restore the disabled feed');
   await evaluate("localStorage.removeItem('cr_live_feed')");
@@ -718,6 +773,20 @@ try {
   assert.ok(homeButton.width < desktopHomeButton.width && homeButton.height < desktopHomeButton.height, 'Mobile actions scale down from desktop');
   await call('Runtime.evaluate', { expression: "document.querySelector('.landing-menu-actions > button:last-child').click()", userGesture: true });
   await settle();
+  await evaluate(`(() => {
+    const root=document.documentElement, previous=root.dataset.theme;
+    const joystick=document.querySelector('.mobile-joystick'), pressed=joystick.dataset.pressed;
+    try {
+      joystick.dataset.pressed='true';
+      for(const theme of ['light','dark']) {
+        root.dataset.theme=theme;
+        if(getComputedStyle(joystick).backgroundColor!==(theme==='light'?'rgb(255, 255, 255)':'rgb(0, 0, 0)')) throw new Error('Pressed joystick uses white in day and black in night');
+      }
+    } finally {
+      root.dataset.theme=previous;
+      if(pressed===undefined) delete joystick.dataset.pressed; else joystick.dataset.pressed=pressed;
+    }
+  })()`);
   const playing = await evaluate(`new Promise(resolve => setTimeout(() => {
     const result = {
       feed: getComputedStyle(document.querySelector('.desktop-live-feed-bar')).display,
@@ -793,8 +862,8 @@ try {
       const expectedHeight = landscapeTouch ? Math.max(28,Math.min(height*0.09,48)) : desktopHomeButton.height;
       const expectedGap = landscapeTouch ? Math.max(3,Math.min(height/100,6)) : 4;
       if(touch) assert.ok(Math.abs(actions.topSpace-actions.bottomSpace)<=1.1, 'Margin Call actions are vertically centered between title and panel bottom: '+JSON.stringify(actions));
-      if(touch && !landscapeTouch) {
-        assert.ok(Math.abs(actions.titleTop-actions.topSpace)<=1.1 && actions.topSpace<=16, 'Portrait Margin Call has equal compact gaps above title, above Home and below Continue: '+JSON.stringify(actions));
+      if(touch) {
+        assert.ok(Math.abs(actions.titleTop-actions.topSpace)<=1.1 && actions.topSpace<=16, 'Mobile Margin Call has equal compact gaps above title, above Home and below Continue in both orientations: '+JSON.stringify(actions));
       }
       assert.ok(actions.sizes.every(r => Math.abs(r.width-expectedWidth)<0.1 && Math.abs(r.height-expectedHeight)<0.1), 'Margin Call dimensions match Home');
       assert.ok(actions.gaps.every(gap => Math.abs(gap-expectedGap)<0.1), 'Margin Call actual gaps match Home');
@@ -844,13 +913,14 @@ try {
         const panel=document.querySelector('.share-dd-dialog'), p=panel.getBoundingClientRect();
         const overlay=panel.parentElement.getBoundingClientRect();
         const mobile=matchMedia('(pointer: coarse)').matches;
+        const portrait=mobile && matchMedia('(orientation: portrait)').matches;
         if(mobile) {
           const feed=document.querySelector('.desktop-live-feed-bar').getBoundingClientRect();
           const header=document.querySelector('header').getBoundingClientRect();
           const footer=document.querySelector('.site-footer').getBoundingClientRect();
-          const bottom=footer.height>0?footer.top:document.querySelector('.game-app').getBoundingClientRect().bottom;
+          const bottom=portrait && footer.height>0?footer.top:document.querySelector('.game-app').getBoundingClientRect().bottom;
           if(Math.abs(p.left)>1 || Math.abs(p.right-innerWidth)>1 || Math.abs(p.top-(feed.height>0?feed.bottom:header.bottom))>1 || Math.abs(p.bottom-bottom)>1) throw new Error('Mobile Share DD fills the section between feed/header and footer');
-        } else if(p.width>780 || p.height>640 || p.left<overlay.left+11 || p.right>overlay.right-11 || p.top<overlay.top+11 || p.bottom>overlay.bottom-11) throw new Error('Desktop Share DD stays within its inset section');
+        } else if(Math.abs(p.left-overlay.left)>1 || Math.abs(p.bottom-overlay.bottom)>1) throw new Error('Desktop Share DD uses the full available area');
         if(Math.abs(p.left+p.width/2-overlay.left-overlay.width/2)>1 || Math.abs(p.top+p.height/2-overlay.top-overlay.height/2)>1) throw new Error('Share DD panel must stay centered');
         const image=document.querySelector('.share-dd-image').getBoundingClientRect();
         const actions=document.querySelector('.share-dd-actions').getBoundingClientRect();
@@ -858,24 +928,48 @@ try {
         const style=getComputedStyle(full);
         const f={width:parseFloat(style.width),height:parseFloat(style.height)};
         const panelStyle=getComputedStyle(panel), ink='${theme}'==='light'?'rgb(0, 0, 0)':'rgb(255, 255, 255)';
-        if(panelStyle.backgroundColor!=='rgba(0, 0, 0, 0)' || panelStyle.borderTopWidth!=='1px' || panelStyle.borderTopColor!==ink) throw new Error('Share DD has a transparent background and a contrasting theme border');
+        if(panelStyle.backgroundColor!=='rgba(0, 0, 0, 0)' || panelStyle.borderTopWidth!=='0px' || panelStyle.borderRadius!=='0px') throw new Error('Share DD is transparent without a black outline');
+        const close=panel.querySelector('.share-dd-close');
+        if((getComputedStyle(close).display!=='none')!==portrait) throw new Error('Only mobile portrait shows Close');
         const canvas=panel.querySelector('.share-dd-canvas');
-        if(Math.abs(image.bottom-p.bottom+1)>1 || image.left<p.left || image.right>p.right || image.top<p.top || Math.abs(image.width/image.height-parseFloat(panel.style.getPropertyValue('--share-art-ratio')))>0.01) throw new Error('Share artwork fits the section and stands at its bottom');
-        if(Math.abs(actions.left-(p.left+13))>1 || Math.abs(actions.bottom-(p.bottom-13))>1) throw new Error('Share buttons overlay the bottom-left corner of the section');
+        if(Math.abs(image.bottom-p.bottom)>1 || image.left<p.left || image.right>p.right || image.top<p.top || Math.abs(image.width/image.height-parseFloat(panel.style.getPropertyValue('--share-art-ratio')))>0.01) throw new Error('Share artwork fits the section and stands at its bottom');
+        const inset=document.querySelector('.stonktrooper-logo').getBoundingClientRect().left-document.querySelector('.game-app').getBoundingClientRect().left;
+        const footerInset=portrait?0:parseFloat(getComputedStyle(document.querySelector('.game-app')).getPropertyValue('--footer-inset-bottom'));
+        if(Math.abs(actions.left-p.left-inset)>1 || Math.abs(p.bottom-actions.bottom-inset-footerInset)>1 || (!portrait && Math.abs(image.left-actions.left)>1)) throw new Error('Share buttons retain logo insets above the footer');
+        const result=document.querySelector('.game-result-over');
+        if((getComputedStyle(result).visibility==='hidden')!==portrait) throw new Error('Liquidated stays visible outside mobile portrait');
+        if(!portrait) {
+          const home=result.querySelector('.liquidated-home'), r=home.getBoundingClientRect();
+          if(!home.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2))) throw new Error('Liquidated buttons remain clickable behind Share DD');
+          if(mobile && image.height>p.height*0.66) throw new Error('Landscape share character uses a reduced height');
+        }
+        const portraitBackdrop=document.querySelector('.share-dd-portrait-backdrop');
+        if((getComputedStyle(portraitBackdrop).display!=='none')!==portrait) throw new Error('Portrait Share DD background is restricted to mobile portrait');
+        if(portrait) {
+          const visible=[...portraitBackdrop.querySelectorAll('img')].filter(img=>getComputedStyle(img).display!=='none');
+          if(visible.length!==1) throw new Error('Share DD shows exactly one portrait background');
+          const background=visible[0]; await background.decode();
+          const expected='${theme}'==='light'?'crane-portrait.png':'crane-portrait-inverted.png';
+          const rect=background.getBoundingClientRect();
+          if(!background.src.endsWith('/images/'+expected) || background.naturalHeight<=background.naturalWidth || getComputedStyle(background).objectFit!=='cover' || Math.abs(rect.width-p.width)>1 || Math.abs(rect.height-p.height)>1) throw new Error('Share DD loads the themed portrait crane and fills its section proportionally');
+        }
         const shareButtons=[...panel.querySelectorAll('.share-dd-actions > button')];
         const shareGap=parseFloat(getComputedStyle(panel.querySelector('.share-dd-actions')).gap);
         if(!shareButtons.at(-1).matches('.share-dd-copy') || shareButtons.some((button,index)=>{const r=button.getBoundingClientRect();return Math.abs(r.left-actions.left)>1 || (index>0 && Math.abs(r.top-shareButtons[index-1].getBoundingClientRect().bottom-shareGap)>1);})) throw new Error('Share DD buttons stack vertically with Share at the bottom');
         for(const button of document.querySelectorAll('.share-dd-close, .share-dd-actions > button')) {
           const r=button.getBoundingClientRect(), s=getComputedStyle(button);
-          const size=button.matches('.share-dd-close')?f:{width:36,height:36};
-          if(r.width!==size.width || r.height!==size.height || s.borderRadius!==style.borderRadius) throw new Error('Share actions are 36px while Close retains Fullscreen dimensions');
+          if(button.getClientRects().length===0) continue;
+          const size=mobile || button.matches('.share-dd-close')?f:{width:36,height:36};
+          if(r.width!==size.width || r.height!==size.height || s.borderRadius!==style.borderRadius) throw new Error('Mobile share controls match Fullscreen dimensions');
           if(!button.matches('.share-dd-close')) {
             const icon=button.querySelector('svg').getBoundingClientRect();
             if(icon.width!==20 || icon.height!==20) throw new Error('Share action icons are 20px');
           }
           if(button.matches('.share-dd-close')) {
             if(s.backgroundColor!=='rgba(0, 0, 0, 0)' || s.color!==ink || s.borderTopColor!=='rgba(0, 0, 0, 0)') throw new Error('Share Close matches the transparent information close button');
-          } else if(s.backgroundColor!==style.backgroundColor || s.color!==style.color || s.borderTopColor!==style.borderTopColor) throw new Error('Share actions retain Fullscreen colors');
+          } else if(button.matches('.share-dd-copy')) {
+            if(s.backgroundColor!=='rgb(8, 121, 92)' || s.color!=='rgb(255, 255, 255)') throw new Error('Share has a green background and white icon');
+          } else if(s.backgroundColor!==style.backgroundColor || s.color!==style.color || s.borderTopColor!==style.borderTopColor) throw new Error('Social actions retain Fullscreen colors');
           if(r.left<p.left || r.right>p.right || r.top<p.top || r.bottom>p.bottom) throw new Error('Share controls must fit the window');
         }
         if(getComputedStyle(canvas).objectFit!=='contain') throw new Error('Share artwork must keep its original proportions');
@@ -920,7 +1014,7 @@ try {
         await call('CSS.forcePseudoState', { nodeId: shareNode, forcedPseudoClasses: [state] });
         await settle();
         const style = await evaluate(`(() => {const s=getComputedStyle(document.querySelector('.share-dd-copy'));return {background:s.backgroundColor,color:s.color,border:s.borderTopColor,outline:s.outlineStyle};})()`);
-        assert.equal(style.background, state === 'hover' ? 'rgb(8, 121, 92)' : 'rgba(0, 0, 0, 0)', 'Share background is green only on hover');
+        assert.equal(style.background, 'rgb(8, 121, 92)', 'Share background stays green, including hover and keyboard focus');
         assert.equal(style.border, 'rgba(0, 0, 0, 0)', 'Share has no visible border');
         if (state === 'hover') assert.equal(style.color, 'rgb(255, 255, 255)', 'Share hover icon contrasts with green');
         else assert.equal(style.outline, 'solid', 'Share retains a visible keyboard focus indicator');

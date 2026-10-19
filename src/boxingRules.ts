@@ -12,6 +12,10 @@ import { bellAnimalBounds, bellSegmentHit } from './bellCombat';
 import { emitBellBlood, stepBellBlood, type BellBlood } from './bellBlood';
 export const BELL_MAX_LIVES = 3;
 export type BossKind = 'jerome' | 'janet' | 'paul';
+export const bossMaxHealth = (kind: BossKind): number =>
+  kind === 'janet' ? 100 : kind === 'jerome' ? 200 : 300;
+export const bossWinPips = (kind: BossKind): number =>
+  kind === 'janet' ? 1000 : kind === 'jerome' ? 2000 : 3000;
 export const bossName = (kind: BossKind): string => kind === 'paul' ? 'Pául' : kind === 'janet' ? 'Janét' : 'Jeromé';
 export const randomBossKind = (random = Math.random): BossKind =>
   (['jerome', 'janet', 'paul'] as const)[Math.floor(random() * 3)];
@@ -59,7 +63,7 @@ export const createBossArena = (kind: BossKind = 'jerome') => ({
   blood: [] as BellBlood[],
   player: { x: 180, y: arenaHeightAt(180), vy: 0, grounded: true, facing: 1, lives: 3, invulnerable: 0, throwTimer: 0, walkPhase: 0, moving: false, coyote: 6, jumpBuffer: 0, jumps: 0, doubleReady: false, fallFrames: 0, clownHead: false, soiledHead: false },
   boss: { kind, attackKind: 'punch' as 'punch' | 'neck' | 'spin' | 'hook' | 'tail' | 'chase', attackCount: 0, spinAngle: 0, moving: false, walkPhase: 0, jumps: 0, chaseJump: false,
-    x: 900, y: arenaHeightAt(900), vy: 0, grounded: true, hopTimer: 45, facing: -1, health: 100, attack: 0, cooldown: 80, hit: false, arm: 0, uppercut: false, aimY: arenaHeightAt(900) - 60 },
+    x: 900, y: arenaHeightAt(900), vy: 0, grounded: true, hopTimer: 45, facing: -1, health: bossMaxHealth(kind), attack: 0, cooldown: 80, hit: false, arm: 0, uppercut: false, aimY: arenaHeightAt(900) - 60 },
   cases: [] as { x: number; y: number; vx: number; vy: number; life: number }[],
   drops: [] as { x: number; y: number; vy: number; kind: 'bat' | 'chainsaw' | 'bag' | 'tender' | 'life'; life: number }[],
   weapon: null as 'bat' | 'chainsaw' | null,

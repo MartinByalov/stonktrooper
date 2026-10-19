@@ -509,13 +509,13 @@ export default function App() {
               setInvertedRequest(1); setState('play');
             }} className="px-2.5 py-1.5 rounded border border-[var(--line)] bg-[var(--alt)] text-xs text-[var(--green)] disabled:opacity-40">↕ Inverted</button>
             <button type="button" title="Music styles" aria-expanded={soundMenuOpen} onClick={() => { if (state === 'play') setState('paused'); setSoundMenuOpen(true); }} className="px-2.5 py-1.5 rounded border border-[var(--line)] bg-[var(--alt)] text-xs text-[var(--green)]">♫ Music</button>
+            </div>
             <button type="button" title="Test Bell mode with Pául" aria-label="Start Bell challenge against Pául" disabled={state === 'boxing'} onClick={() => {
               sound.unlock(); setSoundMenuOpen(false);
               if (state === 'menu' || state === 'over') { setCurrentResult(0); setGameKey(k => k + 1); }
               bossEncounter.current = createBossArena('paul');
               boxingActive.current = true; setState('boxing');
             }} className="mobile-header-control px-2.5 py-1.5 rounded border border-[var(--line)] bg-[var(--alt)] text-xs text-[var(--green)] cursor-pointer disabled:opacity-40">🦘<span className="hidden sm:inline"> Kangaroo</span></button>
-            </div>
             {(state === 'play' || state === 'paused') && <button
               type="button"
               onClick={() => setState(current => current === 'play' ? 'paused' : 'play')}

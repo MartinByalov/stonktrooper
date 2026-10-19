@@ -36,7 +36,7 @@ import { hawkCandle, hawkDropBudget, hawkSpeedMultiplier } from './hawkTrack';
 import { zeroCrashCamera, zeroCrashComplete } from './zeroCrash';
 import { canSpawnEncounter, shouldPlaceBell, WARMUP_CANDLES, difficultyUnlocked, chartPrice, marketReachedZero } from './pacing';
 import { pigeonFlightY, stepPigeonDrop, PigeonDrop } from './pigeonEffects';
-import { createBossArena, sidewaysTops, bossName, randomBossKind } from './boxingRules';
+import { createBossArena, sidewaysTops, bossName, randomBossKind, bossMaxHealth, bossWinPips, type BossArena } from './boxingRules';
 import { drawBossEncounter } from './bossRenderer';
 import { bossColors } from './bossColors';
 import { drawBossHero } from './bossHeroRenderer';
@@ -246,7 +246,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
   }, [state, liveFeedEnabled]);
   const tickerHoverPausedRef = useRef(false);
   const aimRef = useRef<AimPoint | null>(null);
-  const bossTrack = useRef<{ candles: Candle[]; length: number } | null>(null);
+  const bossTrack = useRef<{ candles: Candle[]; length: number; encounter: BossArena | null } | null>(null);
   const gameRef = useRef({
     C: [] as Candle[],
     candleOffset: 0,
@@ -2648,7 +2648,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     if (g.currentState === 'boxing' && bossEncounter.current && liveFeedEnabled) {
       const colors = bossColors(bossEncounter.current.boss.kind, theme === 'dark');
       ctx.fillStyle = colors.track; ctx.fillRect(0, tapeH - 3, W, 3);
-      ctx.fillStyle = colors.foreground; ctx.fillRect(0, tapeH - 3, (W) * Math.max(0, Math.min(1, bossEncounter.current.boss.health / 100)), 3);
+      ctx.fillStyle = colors.foreground; ctx.fillRect(0, tapeH - 3, (W) * Math.max(0, Math.min(1, bossEncounter.current.boss.health / bossMaxHealth(bossEncounter.current.boss.kind))), 3);
     } else if (g.p && g.p.rocketTimer > 0) {
       ctx.fillStyle = '#064e3b';
       ctx.fillRect(0, tapeH - 3, W, 3);
@@ -3173,7 +3173,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
       g.p.rocketTimer = 0;
       g.fedoraTimer = 0; g.fedoraCount = 0; g.fedoraWindup = 0; g.flyingFedora = null;
       g.swans = []; g.animals = []; g.cases = []; g.pigeonDrops = []; g.spits = [];
-      bossTrack.current = { candles: g.C.slice(), length: g.C.length };
+      bossTrack.current = { candles: g.C.slice(), length: g.C.length, encounter: null };
       const left = Math.max(0, g.cx);
       const right = left + W - AX - 25;
       const base = g.p.y;
@@ -3189,6 +3189,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
         g.C[i] = { ...old, hole: false, top, bot: top + body, o: green ? top + body : top, c: green ? top : top + body, h: top - R(1, 14), l: top + body + R(1, 16), v: R(0.15, 1.4), sp: false, k: 'Sideways' };
       }
       const encounter = createBossArena(bossEncounter.current?.boss.kind ?? randomBossKind());
+      bossTrack.current.encounter = encounter;
       encounter.left = left + 25; encounter.right = right;
       const heroIndex = Math.floor(g.p.x / CW);
       const bossIndex = Math.floor(Math.min(right - 60, g.p.x + 550) / CW);
@@ -3235,11 +3236,12 @@ export const CandleGame: React.FC<CandleGameProps> = ({
       encounter.boss.aimY = encounter.boss.y - 60;
       bossEncounter.current = encounter;
     } else if (state !== 'boxing' && bossTrack.current) {
+      const completedEncounter = bossTrack.current.encounter;
       g.C = bossTrack.current.candles;
       g.C.length = bossTrack.current.length;
       bossTrack.current = null; bossEncounter.current = null;
       if (state === 'play' && g.p) {
-        g.activityPips += 1000;
+        if (completedEncounter?.result === 'win') g.activityPips += bossWinPips(completedEncounter.boss.kind);
         // Return above solid normal-run terrain, then let ordinary gravity
         // animate the descent. Never spawn directly over the saved gap.
         let index = Math.max(0, Math.floor(g.p.x / CW));

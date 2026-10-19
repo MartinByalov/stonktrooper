@@ -90,7 +90,7 @@ export function SiteFooter({ onOpen, theme, section, setSection, volume, onVolum
             <p><img src={`${import.meta.env.BASE_URL}images/${theme === 'dark' ? 'logo-inverted.png' : 'logo.png'}`} alt="Stonktrooper" className="relative -top-[1px] inline-block h-6 w-auto max-w-full align-middle" />{' '}is a game inspired by fictional financial markets, internet memes and experimental game design. It's an amalgamation of the author's experience with the real markets.</p>
             <p>The game is completely free to play. There are no purchases, subscriptions, paid upgrades or real-money gameplay. No account is required.</p>
             <p>If you have any idea or a suggestion about the game, feel free to contact me.</p>
-            <div className="flex items-center justify-center gap-3" aria-label="Contact links">
+            <div className="about-contact-links flex items-center justify-center gap-3" aria-label="Contact links">
               <a href="mailto:evangelion.conquest@gmail.com" aria-label="Email me" title="evangelion.conquest@gmail.com" className="site-info-contact-button inline-flex items-center justify-center p-2 rounded border border-[var(--line)] hover:bg-[var(--alt)] focus-visible:outline-2 focus-visible:outline-[var(--green)]">
                 <Mail className="w-5 h-5" aria-hidden="true" />
               </a>

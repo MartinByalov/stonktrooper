@@ -25,7 +25,8 @@ export function ShareDD({ score, theme, scoreTheme = theme, demo = false, onClos
   }, [copied]);
   useEffect(() => {
     const previous = document.activeElement as HTMLElement | null;
-    closeButton.current?.focus();
+    const firstVisibleButton = dialog.current?.querySelectorAll<HTMLButtonElement>('button');
+    Array.from(firstVisibleButton ?? []).find(button => button.getClientRects().length > 0)?.focus();
     return () => { previous?.focus(); };
   }, []);
   useEffect(() => {
@@ -86,11 +87,17 @@ export function ShareDD({ score, theme, scoreTheme = theme, demo = false, onClos
     } finally { setSharing(false); }
   };
   return <div className="share-dd-overlay fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4" onPointerDown={event => event.stopPropagation()}>
-    <div ref={dialog} role="dialog" aria-modal="true" aria-label={demo ? 'Share score demo — simulated result' : 'Share score'} className="share-dd-dialog" onKeyDown={event => {
+    <div className="share-dd-portrait-backdrop" aria-hidden="true">
+      <img className="share-dd-portrait-day" src={`${import.meta.env.BASE_URL}images/crane-portrait.png`} alt="" draggable={false} />
+      <img className="share-dd-portrait-night" src={`${import.meta.env.BASE_URL}images/crane-portrait-inverted.png`} alt="" draggable={false} />
+    </div>
+    <div ref={dialog} role="dialog" aria-modal="false" aria-label={demo ? 'Share score demo — simulated result' : 'Share score'} className="share-dd-dialog" onKeyDown={event => {
       event.stopPropagation();
       if (event.key === 'Escape') { onClose(); return; }
       if (event.key === 'Tab') {
-        const buttons = dialog.current?.querySelectorAll<HTMLElement>('button:not(:disabled), a[href]');
+        if (!window.matchMedia('(pointer: coarse) and (orientation: portrait)').matches) return;
+        const buttons = Array.from(dialog.current?.querySelectorAll<HTMLElement>('button:not(:disabled), a[href]') ?? [])
+          .filter(button => button.getClientRects().length > 0);
         if (!buttons?.length) return;
         const first = buttons[0], last = buttons[buttons.length - 1];
         if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }

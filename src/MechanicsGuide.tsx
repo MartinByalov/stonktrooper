@@ -10,7 +10,7 @@ const cards: { asset: PreviewAsset; below?: PreviewAsset; title: string; text: s
   { asset: 'printer', below: 'pigeon', title: 'Money Printer Go Brrr (pips x 10)', text: 'Pigeon (+150 pips). \n\nAccept the challenge and ride the waves or walk out in shame.' },
   { asset: 'banana', below: 'ape', title: 'Apes Together Strong', text: 'Banana for scale.' },
   { asset: 'tender', below: 'hawk', title: 'Tendies (pips x 2)', text: 'Hawk (+150 pips). \n\nDodge the offer or take a dumbster ride.' },
-  { asset: 'bell', below: 'jerome', title: 'I Did Not Hear No Bell', text: "A / ← (Move Left)\n D / → (Move Right)\n S / ↓ (Does Nothing)\n\n Jeromé waits to see what you've got. \n3 lifes, +1000 pips per win. \n\nFor mobile use the joystick." },
+  { asset: 'bell', below: 'jerome', title: 'I Did Not Hear No Bell', text: "A / ← (Move Left)\n D / → (Move Right)\n S / ↓ (Does Nothing)\n\n3 lives. Win rewards:\nJanét +1000 / Jeromé +2000 / Pául +3000 pips.\n\nFor mobile use the joystick." },
   { asset: 'bull', below: 'bear', title: 'Bull / Bear (+50 pips)', text: 'Shoot or stomp them.' },
   { asset: 'bull-rider', below: 'bear-rider', title: 'Trend Rider (+100 pips)', text: 'Shoot or stomp them. \nFirst hit drops the raider, next hit kills the mount.' },
   { asset: 'swan', below: 'white', title: 'Bag Holder', text: "Swan (+200 pips). \n\nYou found yourself holding the bag? \nGood. Now you can't shoot too." },
