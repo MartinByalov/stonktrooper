@@ -71,6 +71,35 @@ export default function App() {
   useEffect(() => {
     try { localStorage.setItem('cr_live_feed', String(liveFeedEnabled)); } catch { }
   }, [liveFeedEnabled]);
+  const [highContrast, setHighContrast] = useState(() => {
+    try { return localStorage.getItem('cr_high_contrast') === 'true'; } catch { return false; }
+  });
+  const [boxingPaused, setBoxingPaused] = useState(false);
+  useEffect(() => {
+    document.documentElement.dataset.highContrast = String(highContrast);
+    try { localStorage.setItem('cr_high_contrast', String(highContrast)); } catch { }
+  }, [highContrast]);
+  useEffect(() => {
+    const pause = () => {
+      setState(current => current === 'play' ? 'paused' : current);
+      if (state === 'boxing') setBoxingPaused(true);
+    };
+    const visibility = () => { if (document.hidden) pause(); };
+    window.addEventListener('blur', pause);
+    document.addEventListener('visibilitychange', visibility);
+    return () => {
+      window.removeEventListener('blur', pause);
+      document.removeEventListener('visibilitychange', visibility);
+    };
+  }, [state]);
+  useEffect(() => { if (state !== 'boxing') setBoxingPaused(false); }, [state]);
+  const resetDefaults = () => {
+    setTheme('dark');
+    changeVolume(100);
+    setLiveFeedEnabled(true);
+    setAnimationsEnabled(true);
+    setHighContrast(false);
+  };
   const [soundMenuOpen, setSoundMenuOpen] = useState(false);
   const [pausedGuideOpen, setPausedGuideOpen] = useState(false);
   const [mobileGuideOpen, setMobileGuideOpen] = useState(false);
@@ -118,7 +147,11 @@ export default function App() {
         const scale = iconRect.width / viewBox.width;
         const stroke = parseFloat(getComputedStyle(fullscreenIcon).strokeWidth) || 0;
         const paintedRight = iconRect.left + (bounds.x + bounds.width + stroke / 2 - viewBox.x) * scale;
-        app.style.setProperty('--content-edge-inset', `${Math.max(0, header.getBoundingClientRect().right - paintedRight)}px`);
+        const edgeInset = `${Math.max(0, header.getBoundingClientRect().right - paintedRight)}px`;
+        if (app.style.getPropertyValue('--content-edge-inset') !== edgeInset) {
+          app.style.setProperty('--content-edge-inset', edgeInset);
+          app.dispatchEvent(new Event('hudlayoutchange'));
+        }
         header.style.paddingLeft = 'max(var(--content-edge-inset), env(safe-area-inset-left))';
         const logo = app.querySelector('.stonktrooper-logo');
         if (logo) {
@@ -174,6 +207,7 @@ export default function App() {
     const mutationObserver = new MutationObserver(scheduleBoundary);
     mutationObserver.observe(app, { childList: true, subtree: true });
     window.addEventListener('resize', scheduleBoundary);
+    document.addEventListener('fullscreenchange', scheduleBoundary);
     window.addEventListener('scroll', scheduleBoundary, true);
     window.visualViewport?.addEventListener('resize', scheduleBoundary);
     window.visualViewport?.addEventListener('scroll', scheduleBoundary);
@@ -183,6 +217,7 @@ export default function App() {
       mutationObserver.disconnect();
       cancelAnimationFrame(boundaryFrame);
       window.removeEventListener('resize', scheduleBoundary);
+      document.removeEventListener('fullscreenchange', scheduleBoundary);
       window.removeEventListener('scroll', scheduleBoundary, true);
       window.visualViewport?.removeEventListener('resize', scheduleBoundary);
       window.visualViewport?.removeEventListener('scroll', scheduleBoundary);
@@ -534,7 +569,8 @@ export default function App() {
           />
 
           {/* OVERLAYS: START MENU / PAUSE / MARGIN CALL */}
-          {state === 'boxing' && <BoxingGame encounter={bossEncounter} onDefeat={() => { boxingActive.current = false; setState('over'); }} onComplete={() => { bossEncounter.current = null; boxingActive.current = false; setState('play'); }} />}
+          {state === 'boxing' && <BoxingGame headerHud={!liveFeedVisible} theme={theme} paused={boxingPaused} encounter={bossEncounter} onDefeat={() => { boxingActive.current = false; setState('over'); }} onComplete={() => { bossEncounter.current = null; boxingActive.current = false; setState('play'); }} />}
+          {state === 'boxing' && boxingPaused && <div className="absolute inset-0 z-50 flex items-center justify-center bg-[var(--veil)]"><button type="button" className="preferences-clear-button p-4 rounded border font-bold" onClick={() => setBoxingPaused(false)}>Resume game</button></div>}
           {state !== 'play' && state !== 'boxing' && (
             <div className={`game-overlay ${state === 'menu' ? 'how-to-play-overlay' : ''} ${state === 'paused' ? 'pause-overlay' : ''} ${state === 'over' ? 'game-over-overlay' : ''} absolute inset-0 z-30 flex items-center justify-center p-3 sm:p-6 ${state === 'menu' ? (theme === 'light' ? 'bg-slate-100/20 backdrop-blur-xs' : 'bg-slate-950/25 backdrop-blur-xs') : state === 'over' ? (theme === 'light' ? 'bg-slate-100/45 backdrop-blur-sm' : 'bg-slate-950/55 backdrop-blur-xs') : 'bg-[var(--veil)] backdrop-blur-xs'} transition-opacity duration-200`}>
 
@@ -656,7 +692,7 @@ export default function App() {
         </div>}
 
         {/* Global Footer */}
-        <SiteFooter volume={soundEnabled ? volume : 0} onVolumeChange={changeVolume} animationsEnabled={animationsEnabled} onToggleAnimations={() => setAnimationsEnabled(current => !current)} liveFeedEnabled={liveFeedEnabled} onToggleLiveFeed={() => setLiveFeedEnabled(current => !current)} onToggleTheme={() => setTheme(current => current === 'dark' ? 'light' : 'dark')} theme={theme} section={siteSection} setSection={setSiteSection} onOpen={() => { if (state === 'play') setState('paused'); }} />
+        <SiteFooter highContrast={highContrast} onToggleHighContrast={() => setHighContrast(current => !current)} onResetDefaults={resetDefaults} volume={soundEnabled ? volume : 0} onVolumeChange={changeVolume} animationsEnabled={animationsEnabled} onToggleAnimations={() => setAnimationsEnabled(current => !current)} liveFeedEnabled={liveFeedEnabled} onToggleLiveFeed={() => setLiveFeedEnabled(current => !current)} onToggleTheme={() => setTheme(current => current === 'dark' ? 'light' : 'dark')} theme={theme} section={siteSection} setSection={setSiteSection} onOpen={() => { if (state === 'play') setState('paused'); }} />
         <MobileDiagnostics />
 
 

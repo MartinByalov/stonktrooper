@@ -38,7 +38,19 @@ export function ShareDD({ score, theme, scoreTheme = theme, demo = false, onClos
       const ctx = canvas.current?.getContext('2d');
       if (!ctx || !canvas.current) { setError('Unable to generate the share image.'); return; }
       drawShareCard(ctx, score, background, scoreTheme);
-      dialog.current?.style.setProperty('--share-art-ratio', String(background.naturalWidth / background.naturalHeight));
+      // Ignore transparent rows below the shoes for display only; the exported
+      // card retains the complete native image and its transparency.
+      const pixels = ctx.getImageData(0, 0, background.naturalWidth, background.naturalHeight).data;
+      let bottom = background.naturalHeight - 1;
+      while (bottom > 0) {
+        let occupied = false;
+        for (let x = 0; x < background.naturalWidth; x++) {
+          if (pixels[(bottom * background.naturalWidth + x) * 4 + 3] > 16) { occupied = true; break; }
+        }
+        if (occupied) break;
+        bottom--;
+      }
+      dialog.current?.style.setProperty('--share-art-ratio', String(background.naturalWidth / (bottom + 1)));
       canvas.current.toBlob(blob => {
         if (cancelled) return;
         if (blob) setFile(new File([blob], 'stonktrooper-dd.png', { type: 'image/png' }));

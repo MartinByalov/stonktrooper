@@ -83,6 +83,13 @@ try {
     return response.result.value;
   };
   const settle = () => evaluate('new Promise(resolve => setTimeout(resolve, 350))');
+  const waitForSelector = async selector => {
+    for (let attempt=0; attempt<100; attempt++) {
+      if(await evaluate(`!!document.querySelector(${JSON.stringify(selector)})`)) return;
+      await new Promise(resolve=>setTimeout(resolve,100));
+    }
+    throw new Error('Timed out waiting for '+selector);
+  };
   const checkGuideFrame = async () => {
     const frame = await evaluate(`(() => {
       const style = selector => getComputedStyle(document.querySelector(selector));
@@ -133,8 +140,15 @@ try {
       const title=panel.querySelector('.site-info-title').getBoundingClientRect();
       const close=panel.querySelector('.site-info-close').getBoundingClientRect();
       const overlay=getComputedStyle(panel.parentElement);
+      const settings=panel.querySelector('.settings-options');
+      if(settings) {
+        const labels=[...settings.querySelectorAll('.settings-label')].map(label=>label.textContent.trim());
+        if(JSON.stringify(labels)!==JSON.stringify(['Sound (M)','Theme (N)','Shmuck Feed','Animations','High contrast'])) throw new Error('Settings order: Sound, Theme, Shmuck Feed, Animations, High contrast');
+        const shortcuts=[...settings.querySelectorAll('.settings-label strong')];
+        if(shortcuts.map(key=>key.textContent).join('')!=='MN' || shortcuts.some(key=>parseInt(getComputedStyle(key).fontWeight,10)<700)) throw new Error('Settings shortcut letters M and N are bold');
+      }
       if(matchMedia('(pointer: coarse)').matches) {
-        if(parseFloat(getComputedStyle(panel).borderTopLeftRadius)<=0 || parseFloat(getComputedStyle(panel).borderBottomRightRadius)<=0) throw new Error('Mobile information panels must have rounded corners');
+        if(['borderTopLeftRadius','borderTopRightRadius','borderBottomLeftRadius','borderBottomRightRadius'].some(key=>parseFloat(getComputedStyle(panel)[key])!==0)) throw new Error('Mobile information panels must have square corners');
         const header=document.querySelector('header').getBoundingClientRect();
         const footer=document.querySelector('.site-footer').getBoundingClientRect();
         const feed=document.querySelector('.desktop-live-feed-bar').getBoundingClientRect();
@@ -156,7 +170,6 @@ try {
         const section=body.dataset.infoSection, afterContent=['Settings','About','Disclaimer'].includes(section);
         const iconSize=section==='Disclaimer'?52:64;
         if(image.width!==iconSize || image.height!==iconSize || Math.abs(a.left+a.width/2-p.left-p.width/2)>1 || a.top<heading.bottom-1) throw new Error('Mobile information artwork has the correct size and horizontal alignment');
-        if(parseFloat(style.borderTopLeftRadius)!==12) throw new Error('Mobile information panels use clearly rounded corners');
         if(!canvas.getContext('2d').getImageData(0,0,canvas.width,canvas.height).data.some((v,i)=>i%4===3 && v>0)) throw new Error('Information artwork is painted');
         const bottomItem=panel.querySelector('.site-info-bottom');
         const main=panel.querySelector('.site-info-main').getBoundingClientRect();
@@ -168,7 +181,7 @@ try {
           const bottomRect=bottomItem.getBoundingClientRect(), button=bottomItem.querySelector('button');
           if(button) {
             const r=button.getBoundingClientRect();
-            if(Math.abs(r.top+r.height/2-(main.bottom+p.bottom)/2)>1) throw new Error('Clear preferences is centered between last text and panel bottom');
+            if(Math.abs(p.bottom-r.bottom-8)>1) throw new Error('Reset and Clear preferences share the bottom action row');
           } else if(Math.abs(p.bottom-bottomRect.bottom)>1) throw new Error('Copyright stays at the panel bottom');
         }
         if(b.height<=c.height) {
@@ -189,6 +202,7 @@ try {
         if(bottom && b.height<=c.height+1 && Math.abs(bottom.getBoundingClientRect().bottom-c.bottom)>1) throw new Error('Desktop copyright and Clear preferences stay at the content bottom');
         if(b.height>c.height && b.top+content.scrollTop<c.top-1) throw new Error('Overflowing desktop information remains accessible from its start');
       }
+      if(settings && !panel.querySelector('.site-info-body > .site-info-bottom > .settings-reset-button')) throw new Error('Settings reset belongs to the shared bottom action row, not the options');
       for(const button of panel.querySelectorAll('.site-info-contact-button')) {
         const r=button.getBoundingClientRect(), icon=button.querySelector('svg').getBoundingClientRect();
         if(r.width!==36 || r.height!==36 || icon.width!==20 || icon.height!==20) throw new Error('About contact buttons match Share actions: 36px buttons and 20px icons');
@@ -324,6 +338,54 @@ try {
     }
   })()`);
   console.log('PASS bear/bull tail anatomy, matching preview leg profiles and seamless pigeon tail');
+  for (const width of [320, 390, 430]) {
+    await call('Emulation.setTouchEmulationEnabled', {enabled:true});
+    await call('Emulation.setDeviceMetricsOverride', {width,height:844,deviceScaleFactor:1,mobile:true});
+    await settle();
+    for (const theme of ['light','dark']) {
+      await evaluate(`document.documentElement.dataset.theme='${theme}'`);
+      const edges=await evaluate(`(() => {
+        const chart=document.querySelector('.landing-menu-chart');
+        const candles=[...chart.querySelectorAll('g[clip-path] > g')];
+        return {portrait:chart.dataset.layout==='portrait', overflow:document.documentElement.scrollWidth>innerWidth,
+          bars:[0,1].map(index=>{
+            const first=candles[0].querySelectorAll('rect')[index].getBoundingClientRect();
+            const last=candles.at(-1).querySelectorAll('rect')[index].getBoundingClientRect();
+            return {left:first.left,right:last.right-innerWidth,width:first.width};
+          })};
+      })()`);
+      assert.ok(edges.portrait && !edges.overflow && edges.bars.every(bar=>bar.left<=0 && bar.right>=0 && Math.abs(bar.width-3.6)<0.01), 'Portrait candles and volume cover both screen edges: '+JSON.stringify(edges));
+      console.log('PASS portrait candle and volume screen edges '+width+'px '+theme);
+    }
+  }
+  await call('Emulation.setTouchEmulationEnabled', {enabled:false});
+  await call('Emulation.setDeviceMetricsOverride', {width:1440,height:900,deviceScaleFactor:1,mobile:false});
+  await settle();
+  // Exercise the header replacement with the real boss simulation and feed preference.
+  await evaluate("localStorage.setItem('cr_live_feed','false')");
+  await call('Page.reload');
+  await waitForSelector('[aria-label="Start Bell challenge against Pául"]');
+  await settle();
+  await evaluate("document.querySelector('[aria-label=\"Start Bell challenge against Pául\"]').click()");
+  await settle();
+  const bossHeader = await evaluate(`(() => {
+    const header=document.querySelector('header').getBoundingClientRect();
+    const name=document.querySelector('.boss-header-name').getBoundingClientRect();
+    const hp=document.querySelector('.boss-header-health').getBoundingClientRect();
+    return {center:(name.left+name.right-header.left-header.right)/2,
+      bottom:hp.bottom-header.bottom, left:hp.left-header.left, width:hp.width-header.width,
+      text:document.querySelector('.boss-header-name').textContent,
+      value:Number(document.querySelector('[aria-label="Enemy HP"]').getAttribute('aria-valuenow')),
+      feed:document.querySelector('.desktop-live-feed-bar').getBoundingClientRect().height};
+  })()`);
+  assert.ok(bossHeader.text.length>0 && bossHeader.value>0 && bossHeader.value<=100, 'Boss header shows name and live HP');
+  assert.ok(['center','bottom','left','width'].every(key=>Math.abs(bossHeader[key])<0.1), 'Boss name is centered and HP forms the header bottom: '+JSON.stringify(bossHeader));
+  assert.equal(bossHeader.feed, 0, 'Boss header does not restore the disabled feed');
+  await evaluate("localStorage.removeItem('cr_live_feed')");
+  await call('Page.reload');
+  await waitForSelector('.landing-menu-settings-button');
+  await settle();
+  console.log('PASS Kangaroo header name and HP with Live Feed disabled');
   for (const [width, height, touch] of [[1440, 900, false], [844, 390, true], [667, 375, true]]) {
     await call('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: touch });
     await call('Emulation.setTouchEmulationEnabled', { enabled: touch });
@@ -579,12 +641,52 @@ try {
   assert.equal(settingsStyle.slider, 'rgb(56, 189, 248)');
   assert.equal(settingsStyle.activeSwitch, 'rgb(56, 189, 248)');
   assert.equal(settingsStyle.removedText, false);
+  await evaluate("document.querySelector('.settings-diamond-button').click()");
+  await settle();
+  assert.equal(await evaluate("document.querySelector('.settings-diamond-message').textContent"), "Don't drop it!");
+  assert.equal(await evaluate("document.querySelector('.settings-diamond-effect').dataset.phase"), 'holding');
+  await evaluate("window.dispatchEvent(new PointerEvent('pointermove',{clientX:900,clientY:350}))");
+  const heldDiamond = await evaluate("document.querySelector('.settings-diamond-bare').toDataURL()");
+  await settle();
+  assert.notEqual(await evaluate("document.querySelector('.settings-diamond-bare').toDataURL()"), heldDiamond, 'Held diamond spins');
+  assert.ok(await evaluate("(() => {const c=document.querySelector('.settings-diamond-bare'),ctx=c.getContext('2d');return !document.querySelector('.settings-diamond-floating canvas[aria-label]') && ctx.getImageData(80,5,1,1).data[3]===0 && ctx.getImageData(80,80,1,1).data[3]>0;})()"), 'Picked diamond is painted without the shield preview');
+  assert.ok(await evaluate("(() => {const r=document.querySelector('.settings-diamond-floating').getBoundingClientRect();return Math.abs(r.left+r.width/2-900)<1 && r.bottom<350;})()"), 'Diamond follows above the cursor');
+  assert.equal(await evaluate("document.querySelector('.settings-diamond-effect').style.pointerEvents || getComputedStyle(document.querySelector('.settings-diamond-effect')).pointerEvents"), 'none');
+  await evaluate("new Promise(resolve=>setTimeout(resolve,4400))");
+  assert.equal(await evaluate("document.querySelector('.settings-diamond-effect')?.dataset.phase"), 'falling');
+  assert.equal(await evaluate("document.querySelector('.settings-diamond-paper-hands').textContent"), 'Paper Hands');
+  for (const theme of ['light','dark']) {
+    await evaluate(`document.querySelector('.settings-diamond-effect').dataset.theme='${theme}'`);
+    assert.equal(await evaluate("getComputedStyle(document.querySelector('.settings-diamond-paper-hands')).color"),theme==='light'?'rgb(0, 0, 0)':'rgb(255, 255, 255)','Paper Hands contrasts with the theme');
+  }
+  const droppedDiamond = await evaluate("document.querySelector('.settings-diamond-bare').toDataURL()");
+  const fallingTop=await evaluate("document.querySelector('.settings-diamond-floating').getBoundingClientRect().top");
+  await settle();
+  assert.notEqual(await evaluate("document.querySelector('.settings-diamond-bare').toDataURL()"), droppedDiamond, 'Dropped diamond tumbles as it falls');
+  assert.ok(await evaluate("document.querySelector('.settings-diamond-floating').getBoundingClientRect().top")>fallingTop, 'Diamond falls down the viewport');
+  await evaluate("new Promise(resolve=>setTimeout(resolve,1100))");
+  assert.ok(await evaluate("!!document.querySelector('.settings-diamond-button') && !document.querySelector('.settings-diamond-effect') && !document.querySelector('.settings-diamond-message')"), 'Diamond returns after leaving the viewport');
+  await evaluate("document.querySelector('.settings-diamond-button').click()");
+  await settle();
+  await evaluate("document.querySelector('.site-info-close').click()");
+  await settle();
+  assert.equal(await evaluate("document.querySelector('.settings-diamond-effect')"), null, 'Closing Settings cleans up the diamond effect');
+  await evaluate("document.querySelector('.landing-menu-settings-button').click()");
+  await settle();
+  console.log('PASS Settings diamond pickup, cursor tracking, five-second hold, fall, restoration and cleanup');
+  await evaluate("document.querySelector('button[aria-label=\"High contrast\"]').click()");
+  await settle();
+  assert.equal(await evaluate("document.documentElement.dataset.highContrast"), 'true');
+  assert.equal(await evaluate("localStorage.getItem('cr_high_contrast')"), 'true');
+  await evaluate("document.querySelector('.settings-reset-button').click()");
+  await settle();
+  assert.deepEqual(await evaluate("({theme:document.documentElement.dataset.theme,contrast:document.documentElement.dataset.highContrast,volume:document.querySelector('#settings-volume').value,animations:document.querySelector('.game-app').dataset.animations,feed:document.querySelector('.game-app').dataset.liveFeed})"), {theme:'dark',contrast:'false',volume:'100',animations:'true',feed:'true'}, 'Reset applies defaults immediately');
   assert.equal(await evaluate("document.querySelector('label[for=\"settings-volume\"]').textContent.trim()"), 'Sound (M)');
   assert.ok(await evaluate("document.querySelector('[aria-label=\"Night mode\"] .settings-label').textContent.includes('(N)')"), 'Settings displays theme shortcut');
   await evaluate("Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(document.querySelector('#settings-volume'), '0'); document.querySelector('#settings-volume').dispatchEvent(new Event('input', {bubbles:true})); document.querySelector('button[aria-label=\"Shmuck Feed\"]').click()");
   await settle();
   assert.equal(await evaluate("localStorage.getItem('cr_sound_enabled')"), 'false');
-  await evaluate("document.querySelector('button[aria-label=\"Interface animations\"]').click()");
+  await evaluate("document.querySelector('button[aria-label=\"Animations\"]').click()");
   await settle();
   assert.equal(await evaluate("document.querySelector('.game-app').dataset.animations"), 'false');
   assert.equal(await evaluate("getComputedStyle(document.querySelector('.game-overlay')).backdropFilter"), 'none');
@@ -602,7 +704,7 @@ try {
   await evaluate("document.querySelector('.landing-menu-settings-button').click()");
   await settle();
   assert.equal(await evaluate("document.querySelector('#settings-volume').value"), '0', 'Sound preference survives reload');
-  assert.equal(await evaluate("document.querySelector('button[aria-label=\"Interface animations\"]').getAttribute('aria-checked')"), 'false', 'Animation preference survives reload');
+  assert.equal(await evaluate("document.querySelector('button[aria-label=\"Animations\"]').getAttribute('aria-checked')"), 'false', 'Animation preference survives reload');
   await evaluate("Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(document.querySelector('#settings-volume'), '65'); document.querySelector('#settings-volume').dispatchEvent(new Event('input', {bubbles:true})); document.querySelector('button[aria-label=\"Shmuck Feed\"]').click(); document.querySelector('.site-info-close').click()");
   await settle();
   assert.equal(await evaluate("localStorage.getItem('cr_volume')"), '65', 'Volume slider saves intermediate levels');
@@ -635,6 +737,14 @@ try {
   assert.equal(playing.liveFeed, 'true', 'Mobile gameplay preserves the enabled feed preference');
   assert.ok(Math.abs(playing.hudInset-playing.iconInset)<0.1 && Math.abs(playing.joystickLeft-playing.hudInset)<0.1, 'Pips and joystick match visible Fullscreen icon inset: '+JSON.stringify(playing));
   assert.ok(Math.abs(playing.hudTop-playing.hudInset)<0.1 && Math.abs(playing.joystickBottom-playing.hudInset)<0.1, 'Pips top and joystick bottom use the same edge inset');
+  const fullscreenEdges = await evaluate(`(() => {
+    const app=document.querySelector('.game-app').getBoundingClientRect();
+    const svg=document.querySelector('.desktop-fullscreen-control svg'), r=svg.getBoundingClientRect(), b=svg.getBBox(), v=svg.viewBox.baseVal;
+    const right=app.right-(r.left+(b.x+b.width+parseFloat(getComputedStyle(svg).strokeWidth)/2-v.x)*r.width/v.width);
+    return {right, logo:document.querySelector('.header-logo-frame').getBoundingClientRect().left-app.left, fullscreen:!!document.fullscreenElement};
+  })()`);
+  assert.ok(fullscreenEdges.fullscreen && Math.abs(fullscreenEdges.right-fullscreenEdges.logo)<0.1 && Math.abs(fullscreenEdges.right-playing.hudInset)<0.1, 'Real fullscreen logo and gameplay HUD match the painted icon edge: '+JSON.stringify(fullscreenEdges));
+  console.log('PASS mobile landscape Pips and joystick left/top/bottom match Fullscreen artwork inset');
   await settle();
   assert.equal(await evaluate("document.querySelector('.game-app').dataset.state"), 'paused', 'Pause control pauses gameplay');
   assert.ok(await evaluate("document.fullscreenElement===document.querySelector('.game-app')"), 'Pausing preserves fullscreen');
@@ -673,6 +783,7 @@ try {
         const panel=document.querySelector('.pause-overlay .game-result').getBoundingClientRect();
         const title=document.querySelector('.pause-overlay .game-result h2').getBoundingClientRect();
         return {sizes:rects.map(r => ({width:r.width,height:r.height})),
+          titleTop:title.top-panel.top,
           topSpace:rects[0].top-title.bottom, bottomSpace:panel.bottom-rects.at(-1).bottom,
           shadows:buttons.map(button => getComputedStyle(button).boxShadow),
           gaps:rects.slice(1).map((r,i) => r.top-rects[i].bottom)};
@@ -682,6 +793,9 @@ try {
       const expectedHeight = landscapeTouch ? Math.max(28,Math.min(height*0.09,48)) : desktopHomeButton.height;
       const expectedGap = landscapeTouch ? Math.max(3,Math.min(height/100,6)) : 4;
       if(touch) assert.ok(Math.abs(actions.topSpace-actions.bottomSpace)<=1.1, 'Margin Call actions are vertically centered between title and panel bottom: '+JSON.stringify(actions));
+      if(touch && !landscapeTouch) {
+        assert.ok(Math.abs(actions.titleTop-actions.topSpace)<=1.1 && actions.topSpace<=16, 'Portrait Margin Call has equal compact gaps above title, above Home and below Continue: '+JSON.stringify(actions));
+      }
       assert.ok(actions.sizes.every(r => Math.abs(r.width-expectedWidth)<0.1 && Math.abs(r.height-expectedHeight)<0.1), 'Margin Call dimensions match Home');
       assert.ok(actions.gaps.every(gap => Math.abs(gap-expectedGap)<0.1), 'Margin Call actual gaps match Home');
       assert.ok(actions.shadows.every(shadow => shadow === 'none'), 'Margin Call buttons have no shadows');
@@ -729,17 +843,25 @@ try {
       await evaluate(`(async () => {
         const panel=document.querySelector('.share-dd-dialog'), p=panel.getBoundingClientRect();
         const overlay=panel.parentElement.getBoundingClientRect();
-        if(p.width>780 || p.height>640 || p.left<overlay.left+11 || p.right>overlay.right-11 || p.top<overlay.top+11 || p.bottom>overlay.bottom-11) throw new Error('Share DD must be a separate inset panel containing artwork and share controls');
+        const mobile=matchMedia('(pointer: coarse)').matches;
+        if(mobile) {
+          const feed=document.querySelector('.desktop-live-feed-bar').getBoundingClientRect();
+          const header=document.querySelector('header').getBoundingClientRect();
+          const footer=document.querySelector('.site-footer').getBoundingClientRect();
+          const bottom=footer.height>0?footer.top:document.querySelector('.game-app').getBoundingClientRect().bottom;
+          if(Math.abs(p.left)>1 || Math.abs(p.right-innerWidth)>1 || Math.abs(p.top-(feed.height>0?feed.bottom:header.bottom))>1 || Math.abs(p.bottom-bottom)>1) throw new Error('Mobile Share DD fills the section between feed/header and footer');
+        } else if(p.width>780 || p.height>640 || p.left<overlay.left+11 || p.right>overlay.right-11 || p.top<overlay.top+11 || p.bottom>overlay.bottom-11) throw new Error('Desktop Share DD stays within its inset section');
         if(Math.abs(p.left+p.width/2-overlay.left-overlay.width/2)>1 || Math.abs(p.top+p.height/2-overlay.top-overlay.height/2)>1) throw new Error('Share DD panel must stay centered');
         const image=document.querySelector('.share-dd-image').getBoundingClientRect();
         const actions=document.querySelector('.share-dd-actions').getBoundingClientRect();
         const full=document.querySelector('.desktop-fullscreen-control');
         const style=getComputedStyle(full);
         const f={width:parseFloat(style.width),height:parseFloat(style.height)};
-        if(getComputedStyle(panel).backgroundColor!=='rgba(0, 0, 0, 0)' || getComputedStyle(panel).borderTopWidth!=='0px') throw new Error('Share DD artwork is the panel without an outer background or border');
+        const panelStyle=getComputedStyle(panel), ink='${theme}'==='light'?'rgb(0, 0, 0)':'rgb(255, 255, 255)';
+        if(panelStyle.backgroundColor!=='rgba(0, 0, 0, 0)' || panelStyle.borderTopWidth!=='1px' || panelStyle.borderTopColor!==ink) throw new Error('Share DD has a transparent background and a contrasting theme border');
         const canvas=panel.querySelector('.share-dd-canvas');
-        if(Math.abs(image.left-p.left)>1 || Math.abs(image.top-p.top)>1 || Math.abs(image.width-p.width)>1 || Math.abs(image.height-p.height)>1 || Math.abs(p.width/p.height-canvas.width/canvas.height)>0.01) throw new Error('Share artwork fills its section at its native proportions');
-        if(Math.abs(actions.left-(image.left+12))>1 || Math.abs(actions.bottom-(image.bottom-12))>1 || actions.right>image.right) throw new Error('Share buttons overlay the bottom-left corner of the artwork');
+        if(Math.abs(image.bottom-p.bottom+1)>1 || image.left<p.left || image.right>p.right || image.top<p.top || Math.abs(image.width/image.height-parseFloat(panel.style.getPropertyValue('--share-art-ratio')))>0.01) throw new Error('Share artwork fits the section and stands at its bottom');
+        if(Math.abs(actions.left-(p.left+13))>1 || Math.abs(actions.bottom-(p.bottom-13))>1) throw new Error('Share buttons overlay the bottom-left corner of the section');
         const shareButtons=[...panel.querySelectorAll('.share-dd-actions > button')];
         const shareGap=parseFloat(getComputedStyle(panel.querySelector('.share-dd-actions')).gap);
         if(!shareButtons.at(-1).matches('.share-dd-copy') || shareButtons.some((button,index)=>{const r=button.getBoundingClientRect();return Math.abs(r.left-actions.left)>1 || (index>0 && Math.abs(r.top-shareButtons[index-1].getBoundingClientRect().bottom-shareGap)>1);})) throw new Error('Share DD buttons stack vertically with Share at the bottom');
@@ -751,7 +873,9 @@ try {
             const icon=button.querySelector('svg').getBoundingClientRect();
             if(icon.width!==20 || icon.height!==20) throw new Error('Share action icons are 20px');
           }
-          if(s.backgroundColor!==style.backgroundColor || s.color!==style.color || s.borderTopColor!==style.borderTopColor) throw new Error('Share controls must match Fullscreen colors: '+JSON.stringify({button:button.className,actual:[s.backgroundColor,s.color,s.borderTopColor],expected:[style.backgroundColor,style.color,style.borderTopColor]}));
+          if(button.matches('.share-dd-close')) {
+            if(s.backgroundColor!=='rgba(0, 0, 0, 0)' || s.color!==ink || s.borderTopColor!=='rgba(0, 0, 0, 0)') throw new Error('Share Close matches the transparent information close button');
+          } else if(s.backgroundColor!==style.backgroundColor || s.color!==style.color || s.borderTopColor!==style.borderTopColor) throw new Error('Share actions retain Fullscreen colors');
           if(r.left<p.left || r.right>p.right || r.top<p.top || r.bottom>p.bottom) throw new Error('Share controls must fit the window');
         }
         if(getComputedStyle(canvas).objectFit!=='contain') throw new Error('Share artwork must keep its original proportions');
@@ -759,8 +883,38 @@ try {
         background.src = '${theme}' === 'dark' ? '/images/score-back-inverted.png' : '/images/score-back.png';
         await background.decode();
         if(background.naturalWidth!==canvas.width || background.naturalHeight!==canvas.height) throw new Error('Share background must load at its native size in both themes');
+        const ctx=canvas.getContext('2d');
+        if(ctx.getImageData(0,0,1,1).data[3]!==0) throw new Error('Share image export preserves transparent corners');
+        const original=document.createElement('canvas'); original.width=canvas.width; original.height=canvas.height;
+        const originalCtx=original.getContext('2d'); originalCtx.drawImage(background,0,0);
+        const before=originalCtx.getImageData(0,0,canvas.width,canvas.height).data;
+        const after=ctx.getImageData(0,0,canvas.width,canvas.height).data;
+        let lastVisible=canvas.height-1;
+        while(lastVisible>0 && !Array.from({length:canvas.width},(_,x)=>after[(lastVisible*canvas.width+x)*4+3]).some(alpha=>alpha>16)) lastVisible--;
+        const displayedCanvas=canvas.getBoundingClientRect();
+        const feetBottom=displayedCanvas.top+(lastVisible+1)*displayedCanvas.width/canvas.width;
+        if(Math.abs(feetBottom-image.bottom)>1 || Math.abs(displayedCanvas.width/displayedCanvas.height-canvas.width/canvas.height)>0.01) throw new Error('Visible shoes stand on the section bottom without distorting the native artwork');
+        let changed=0;
+        for(let y=0;y<canvas.height;y++) for(let x=0;x<canvas.width;x++) {
+          const i=(y*canvas.width+x)*4;
+          // Ignore premultiplied-alpha rounding on translucent artwork edges.
+          if(Math.abs(before[i+3]-after[i+3])<=2 && (after[i+3]<250 || Math.max(Math.abs(before[i]-after[i]),Math.abs(before[i+1]-after[i+1]),Math.abs(before[i+2]-after[i+2]))<=2)) continue;
+          changed++;
+          if(x<canvas.width*0.49 || x>canvas.width*0.82 || y<canvas.height*0.27 || y>canvas.height*0.43) throw new Error('Score text stays inside the replacement briefcase lid: '+JSON.stringify({x,y,width:canvas.width,height:canvas.height,before:[...before.slice(i,i+4)],after:[...after.slice(i,i+4)]}));
+        }
+        if(changed<100) throw new Error('Share score is painted over the artwork');
       })()`);
       const { root: shareRoot } = await call('DOM.getDocument');
+      const { nodeId: closeNode } = await call('DOM.querySelector', { nodeId: shareRoot.nodeId, selector: '.share-dd-close' });
+      for (const state of ['hover', 'focus-visible']) {
+        await call('CSS.forcePseudoState', { nodeId: closeNode, forcedPseudoClasses: [state] });
+        const closeStyle=await evaluate(`(() => {const button=document.querySelector('.share-dd-close'),s=getComputedStyle(button),probe=document.createElement('span');probe.style.backgroundColor='var(--alt)';button.append(probe);const alt=getComputedStyle(probe).backgroundColor;probe.remove();return {background:s.backgroundColor,alt};})()`);
+        await settle();
+        const background=await evaluate("getComputedStyle(document.querySelector('.share-dd-close')).backgroundColor");
+        assert.equal(background,closeStyle.alt,'Share Close hover and keyboard focus use the secondary color');
+      }
+      await call('CSS.forcePseudoState', { nodeId: closeNode, forcedPseudoClasses: [] });
+      await settle();
       const { nodeId: shareNode } = await call('DOM.querySelector', { nodeId: shareRoot.nodeId, selector: '.share-dd-copy' });
       for (const state of ['hover', 'focus-visible']) {
         await call('CSS.forcePseudoState', { nodeId: shareNode, forcedPseudoClasses: [state] });
@@ -900,7 +1054,12 @@ try {
           candleWidth:candles[0].querySelector('rect').getAttribute('width'),
           plotWidth:parseFloat(chart.querySelector('#landing-chart-plot rect').getAttribute('width')),
           priceLabels:[...chart.querySelectorAll('text')].filter(label=>/^[0-9]+[.][0-9]{2}$/.test(label.textContent)).length,
-          lastCandleX:parseFloat(candles.at(-1).querySelector('path').getAttribute('d').match(/M([\\d.]+)/)[1])-r.width,
+          edges:[0,1].map(index=>{
+            const first=candles[0].querySelectorAll('rect')[index].getBoundingClientRect();
+            const last=candles.at(-1).querySelectorAll('rect')[index].getBoundingClientRect();
+            return {left:first.left, right:last.right, spacing:parseFloat(candles[1].querySelectorAll('rect')[index].getAttribute('x'))-parseFloat(candles[0].querySelectorAll('rect')[index].getAttribute('x'))};
+          }),
+          screenWidth:innerWidth,
           overflow:document.documentElement.scrollWidth>innerWidth };
       })()`);
       assert.equal(portrait.layout, 'portrait');
@@ -913,7 +1072,7 @@ try {
       assert.equal(portrait.priceLabels, 0, 'Portrait Home has no price labels');
       assert.ok(await evaluate("(() => {const chart=document.querySelector('.landing-menu-chart'),label=[...chart.querySelectorAll('text')].find(label=>label.textContent==='04:20');return !!label && Math.abs(parseFloat(label.getAttribute('x'))-chart.viewBox.baseVal.width/2)<0.1;})()"), 'Portrait time axis centers on 04:20');
       assert.ok(Math.abs(portrait.plotWidth-portrait.viewWidth)<1, 'Portrait plot extends edge to edge without a price column');
-      assert.ok(portrait.lastCandleX<0 && portrait.lastCandleX>-12, 'Candles fill the full portrait plot');
+      assert.ok(portrait.edges.every(edge=>edge.left<=0 && edge.right>=portrait.screenWidth && edge.spacing>5.8 && edge.spacing<=6), 'Portrait candles and volume reach both screen edges without stretching the bars: '+JSON.stringify(portrait.edges));
       assert.equal(portrait.overflow, false);
       console.log(`PASS portrait chart ${width}x${height} ${theme}: ${portrait.count} decorations, no overlap`);
     }
@@ -988,6 +1147,22 @@ try {
     assert.equal(await evaluate("document.querySelector('.game-app').dataset.state"), 'paused', 'Exiting mobile fullscreen pauses gameplay');
   }
   console.log('PASS mobile Start, Continue and New Game block portrait and start in landscape fullscreen; exit pauses');
+  await call('Emulation.setDeviceMetricsOverride', { width:1440,height:900,deviceScaleFactor:1,mobile:false });
+  await call('Emulation.setTouchEmulationEnabled', {enabled:false});
+  await settle();
+  for (const reason of ['blur','hidden']) {
+    await evaluate("document.querySelector('.header-pause-control').click()");
+    await settle();
+    assert.equal(await evaluate("document.querySelector('.game-app').dataset.state"),'play');
+    if(reason==='blur') await evaluate("window.dispatchEvent(new Event('blur'))");
+    else await evaluate("Object.defineProperty(document,'hidden',{configurable:true,value:true});document.dispatchEvent(new Event('visibilitychange'))");
+    await settle();
+    assert.equal(await evaluate("document.querySelector('.game-app').dataset.state"),'paused','Auto-pause on '+reason);
+    await evaluate("delete document.hidden;document.dispatchEvent(new Event('visibilitychange'));window.dispatchEvent(new Event('focus'))");
+    await settle();
+    assert.equal(await evaluate("document.querySelector('.game-app').dataset.state"),'paused','Focus does not resume automatically');
+  }
+  console.log('PASS automatic pause on blur/hidden tab with explicit resume');
 } finally {
   for (const request of pending.values()) clearTimeout(request.timer);
   socket?.close();

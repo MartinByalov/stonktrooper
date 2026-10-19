@@ -1,6 +1,6 @@
 // Initial canvas size; rendering adopts the loaded artwork's native dimensions.
-export const SHARE_CARD_WIDTH = 1536;
-export const SHARE_CARD_HEIGHT = 1024;
+export const SHARE_CARD_WIDTH = 1254;
+export const SHARE_CARD_HEIGHT = 1254;
 
 export const formatShareScore = (score: number): string =>
   Math.max(0, Math.round(Number.isFinite(score) ? score : 0)).toLocaleString('en-US');
@@ -17,16 +17,16 @@ export function drawShareCard(ctx: CanvasRenderingContext2D, score: number, back
   ctx.save();
   ctx.drawImage(background, 0, 0, width, height);
 
-  // Position text inside each illustration's briefcase lid, not the whole card.
-  const night = background.src.endsWith('/score-back-inverted.png');
-  const centerX = width * 0.625;
+  // Both replacement illustrations share the same inner-lid position.
+  // Center the two-line score block inside it, rather than on the whole card.
+  const centerX = width * 0.652;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
   ctx.shadowBlur = 12;
   ctx.fillStyle = '#f8fafc';
   ctx.font = '700 28px "Space Grotesk", sans-serif';
-  ctx.fillText('BEST SCORE', centerX, height * (night ? 0.50 : 0.60));
+  ctx.fillText('BEST SCORE', centerX, height * 0.315);
 
   const fullScore = formatShareScore(score);
   // A single line remains legible up to a safe integer; avoid microscopic type
@@ -37,6 +37,6 @@ export function drawShareCard(ctx: CanvasRenderingContext2D, score: number, back
   const fontSize = Math.max(32, Math.min(86, 86 * maxWidth / Math.max(1, ctx.measureText(value).width)));
   ctx.font = `700 ${fontSize}px "Space Grotesk", sans-serif`;
   ctx.fillStyle = '#54d3ac';
-  ctx.fillText(value, centerX, height * (night ? 0.58 : 0.69), maxWidth);
+  ctx.fillText(value, centerX, height * 0.38, maxWidth);
   ctx.restore();
 }

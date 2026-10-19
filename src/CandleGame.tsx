@@ -191,8 +191,10 @@ export const CandleGame: React.FC<CandleGameProps> = ({
       const bounds = canvas.getBoundingClientRect();
       canvasDisplay.current = { width: bounds.width, height: bounds.height };
       const logo = canvas.closest('.game-app')?.querySelector('.header-logo-frame');
-      if (logo) scoreInset.current = Math.max(0, logo.getBoundingClientRect().left - bounds.left);
       scoreTopInset.current = parseFloat(getComputedStyle(canvas).getPropertyValue('--content-edge-inset')) || 12.1666666667;
+      const header = canvas.closest('.game-app')?.querySelector('header');
+      scoreInset.current = mobile ? Math.max(scoreTopInset.current, header ? parseFloat(getComputedStyle(header).paddingLeft) || 0 : 0)
+        : logo ? Math.max(0, logo.getBoundingClientRect().left - bounds.left) : scoreTopInset.current;
       canvas.closest<HTMLElement>('.game-stage')?.style.setProperty('--game-hud-inset', `${scoreInset.current}px`);
       canvas.closest<HTMLElement>('.game-stage')?.style.setProperty('--game-hud-top-inset', `${scoreTopInset.current}px`);
       renderViewport.current = currentChartViewport(bounds);
@@ -215,6 +217,8 @@ export const CandleGame: React.FC<CandleGameProps> = ({
       feedLayout.current = { mobile, fontSize: mobile || headerFeedActive.current ? Math.min(64, Math.max(11, 14 / scale)) : 11, textScaleX, tapeHeight };
     };
     const observer = new ResizeObserver(refresh);
+    const app = canvas.closest('.game-app');
+    app?.addEventListener('hudlayoutchange', refresh);
     observer.observe(canvas);
     const header = canvas.closest('.game-app')?.querySelector('header');
     if (header) observer.observe(header);
@@ -231,6 +235,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     refresh();
     return () => {
       observer.disconnect(); window.removeEventListener('resize', refresh);
+      app?.removeEventListener('hudlayoutchange', refresh);
       headerFeeds.forEach(feed => {
         feed.removeEventListener('pointerenter', pauseTicker);
         feed.removeEventListener('pointerleave', resumeTicker);
@@ -2640,7 +2645,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
       ctx.scale(1, tapeH);
       tapeH = 3;
     }
-    if (g.currentState === 'boxing' && bossEncounter.current) {
+    if (g.currentState === 'boxing' && bossEncounter.current && liveFeedEnabled) {
       const colors = bossColors(bossEncounter.current.boss.kind, theme === 'dark');
       ctx.fillStyle = colors.track; ctx.fillRect(0, tapeH - 3, W, 3);
       ctx.fillStyle = colors.foreground; ctx.fillRect(0, tapeH - 3, (W) * Math.max(0, Math.min(1, bossEncounter.current.boss.health / 100)), 3);

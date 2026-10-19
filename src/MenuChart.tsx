@@ -48,16 +48,19 @@ export function MenuChart({ theme }: { theme: 'light' | 'dark' }) {
 
   // Render in CSS pixels: candles, volume and labels never stretch with the panel.
   const { width, height, portrait } = size;
-  const candleSpacing = portrait ? 6 : 4;
   const candleWidth = portrait ? 3.6 : 2.6;
   const plotWidth = Math.max(1, width - (portrait ? 0 : 54));
+  // Put portrait's outer candle centres on the screen edges. The plot clips
+  // their bodies and volume bars, so neither side ends in an empty gutter.
+  const portraitIntervals = Math.max(1, Math.ceil(plotWidth / 6));
+  const candleSpacing = portrait ? plotWidth / portraitIntervals : 4;
   const plotHeight = Math.max(1, height - (portrait ? 24 : 18));
   const volumeHeight = Math.min(28, plotHeight * 0.08);
   const menuWidth = Math.min(width * 0.34, 320);
   const sideWidth = Math.max(1, (width - menuWidth) / 2 - 24);
   const sceneUnit = Math.min(sideWidth, plotHeight * 0.46, 220);
   const priceHeight = Math.max(1, plotHeight - volumeHeight - 10);
-  const count = Math.max(2, Math.floor(plotWidth / candleSpacing));
+  const count = portrait ? portraitIntervals + 1 : Math.max(2, Math.floor(plotWidth / candleSpacing));
   // A seeded market walk keeps its shape on rerenders, without periodic candles.
   let seed = 73129;
   const random = () => {
@@ -88,7 +91,7 @@ export function MenuChart({ theme }: { theme: 'light' | 'dark' }) {
     const lowerWick = 0.5 + random() ** 2 * volatility;
     const activity = Math.min(1, Math.abs(close - open) / Math.max(1, volatility));
     const volume = Math.min(volumeHeight, 3 + (0.15 + activity * 0.5 + random() * 0.35) * Math.max(0, volumeHeight - 3));
-    return { x: 2 + index * candleSpacing, open, close, volume, upperWick, lowerWick };
+    return { x: (portrait ? 0 : 2) + index * candleSpacing, open, close, volume, upperWick, lowerWick };
   });
   const priceTickSpacing = portrait ? 64 : 48;
   const priceTicks = Array.from({ length: Math.max(1, Math.floor(priceHeight / priceTickSpacing)) }, (_, index) => 24 + index * priceTickSpacing);
