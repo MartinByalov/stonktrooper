@@ -38,6 +38,7 @@ export function ShareDD({ score, theme, scoreTheme = theme, demo = false, onClos
       const ctx = canvas.current?.getContext('2d');
       if (!ctx || !canvas.current) { setError('Unable to generate the share image.'); return; }
       drawShareCard(ctx, score, background, scoreTheme);
+      dialog.current?.style.setProperty('--share-art-ratio', String(background.naturalWidth / background.naturalHeight));
       canvas.current.toBlob(blob => {
         if (cancelled) return;
         if (blob) setFile(new File([blob], 'stonktrooper-dd.png', { type: 'image/png' }));

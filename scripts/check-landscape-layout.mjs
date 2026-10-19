@@ -177,6 +177,22 @@ try {
           if(b.top+content.scrollTop<c.top-1 || !['auto','scroll'].includes(getComputedStyle(content).overflowY)) throw new Error('Long information content starts at the top and remains scrollable: '+JSON.stringify({bodyTop:b.top,contentTop:c.top,scroll:content.scrollTop,overflow:getComputedStyle(content).overflowY,bodyHeight:b.height,contentHeight:c.height}));
         }
       }
+      if(matchMedia('(pointer: fine)').matches) {
+        const content=panel.querySelector('.site-info-content'), body=panel.querySelector('.site-info-body');
+        const c=content.getBoundingClientRect(), b=body.getBoundingClientRect();
+        const art=panel.querySelector('.site-info-artwork'), canvas=art.querySelector('canvas'), image=canvas.getBoundingClientRect();
+        const main=panel.querySelector('.site-info-main').getBoundingClientRect();
+        const expectedSize=body.dataset.infoSection==='Disclaimer'?52:64;
+        if(image.width!==expectedSize || image.height!==expectedSize || image.top<main.bottom || Math.abs(image.left+image.width/2-p.left-p.width/2)>1) throw new Error('Desktop information artwork is visible and centered below content');
+        if(!canvas.getContext('2d').getImageData(0,0,canvas.width,canvas.height).data.some((v,i)=>i%4===3 && v>0)) throw new Error('Desktop information artwork is painted');
+        const bottom=panel.querySelector('.site-info-bottom');
+        if(bottom && b.height<=c.height+1 && Math.abs(bottom.getBoundingClientRect().bottom-c.bottom)>1) throw new Error('Desktop copyright and Clear preferences stay at the content bottom');
+        if(b.height>c.height && b.top+content.scrollTop<c.top-1) throw new Error('Overflowing desktop information remains accessible from its start');
+      }
+      for(const button of panel.querySelectorAll('.site-info-contact-button')) {
+        const r=button.getBoundingClientRect(), icon=button.querySelector('svg').getBoundingClientRect();
+        if(r.width!==36 || r.height!==36 || icon.width!==20 || icon.height!==20) throw new Error('About contact buttons match Share actions: 36px buttons and 20px icons');
+      }
       const clear=panel.querySelector('.preferences-clear-button');
       const homeButton=document.querySelector('.landing-menu-settings-button');
       if(clear && homeButton) {
@@ -721,16 +737,24 @@ try {
         const style=getComputedStyle(full);
         const f={width:parseFloat(style.width),height:parseFloat(style.height)};
         if(getComputedStyle(panel).backgroundColor!=='rgba(0, 0, 0, 0)' || getComputedStyle(panel).borderTopWidth!=='0px') throw new Error('Share DD artwork is the panel without an outer background or border');
-        if(Math.abs(image.left-p.left)>1 || Math.abs(image.top-p.top)>1 || Math.abs(image.width-p.width)>1 || Math.abs(image.height-p.height)>1 || Math.abs(p.width/p.height-1448/1086)>0.01) throw new Error('Share artwork fills its section at its native proportions');
+        const canvas=panel.querySelector('.share-dd-canvas');
+        if(Math.abs(image.left-p.left)>1 || Math.abs(image.top-p.top)>1 || Math.abs(image.width-p.width)>1 || Math.abs(image.height-p.height)>1 || Math.abs(p.width/p.height-canvas.width/canvas.height)>0.01) throw new Error('Share artwork fills its section at its native proportions');
         if(Math.abs(actions.left-(image.left+12))>1 || Math.abs(actions.bottom-(image.bottom-12))>1 || actions.right>image.right) throw new Error('Share buttons overlay the bottom-left corner of the artwork');
+        const shareButtons=[...panel.querySelectorAll('.share-dd-actions > button')];
+        const shareGap=parseFloat(getComputedStyle(panel.querySelector('.share-dd-actions')).gap);
+        if(!shareButtons.at(-1).matches('.share-dd-copy') || shareButtons.some((button,index)=>{const r=button.getBoundingClientRect();return Math.abs(r.left-actions.left)>1 || (index>0 && Math.abs(r.top-shareButtons[index-1].getBoundingClientRect().bottom-shareGap)>1);})) throw new Error('Share DD buttons stack vertically with Share at the bottom');
         for(const button of document.querySelectorAll('.share-dd-close, .share-dd-actions > button')) {
           const r=button.getBoundingClientRect(), s=getComputedStyle(button);
-          if(r.width!==f.width || r.height!==f.height || s.borderRadius!==style.borderRadius) throw new Error('Share buttons must match Fullscreen dimensions');
+          const size=button.matches('.share-dd-close')?f:{width:36,height:36};
+          if(r.width!==size.width || r.height!==size.height || s.borderRadius!==style.borderRadius) throw new Error('Share actions are 36px while Close retains Fullscreen dimensions');
+          if(!button.matches('.share-dd-close')) {
+            const icon=button.querySelector('svg').getBoundingClientRect();
+            if(icon.width!==20 || icon.height!==20) throw new Error('Share action icons are 20px');
+          }
           if(s.backgroundColor!==style.backgroundColor || s.color!==style.color || s.borderTopColor!==style.borderTopColor) throw new Error('Share controls must match Fullscreen colors: '+JSON.stringify({button:button.className,actual:[s.backgroundColor,s.color,s.borderTopColor],expected:[style.backgroundColor,style.color,style.borderTopColor]}));
           if(r.left<p.left || r.right>p.right || r.top<p.top || r.bottom>p.bottom) throw new Error('Share controls must fit the window');
         }
-        const canvas=document.querySelector('.share-dd-canvas');
-        if(canvas.width!==1448 || canvas.height!==1086 || getComputedStyle(canvas).objectFit!=='contain') throw new Error('Share artwork must keep its original proportions');
+        if(getComputedStyle(canvas).objectFit!=='contain') throw new Error('Share artwork must keep its original proportions');
         const background = new Image();
         background.src = '${theme}' === 'dark' ? '/images/score-back-inverted.png' : '/images/score-back.png';
         await background.decode();

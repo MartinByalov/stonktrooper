@@ -2817,9 +2817,9 @@ kbd {
   display: block;
   flex: 0 0 auto;
   box-sizing: border-box;
-  width: min(780px, calc(100% - 24px), calc((100cqh - 24px) * 4 / 3));
+  width: min(780px, calc(100% - 24px), calc((100cqh - 24px) * var(--share-art-ratio, 1.5)));
   height: auto;
-  aspect-ratio: 1448 / 1086;
+  aspect-ratio: var(--share-art-ratio, 1.5);
   min-width: 0;
   min-height: 0;
   max-width: calc(100% - 24px);
@@ -2870,8 +2870,8 @@ kbd {
   max-width: calc(100% - 24px);
   z-index: 1;
   display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
+  flex-direction: column;
+  flex-wrap: nowrap;
   gap: 6px;
   margin: 0;
 }
@@ -2959,6 +2959,24 @@ html .game-app :is(.share-dd-close, .share-dd-actions > button) svg {
   html .game-app :is(.share-dd-close, .share-dd-actions > button) svg {
     width: 16px;
     height: 16px;
+  }
+}
+
+html .game-app :is(.share-dd-actions > button, .site-info-contact-button) {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  min-height: 36px;
+}
+
+html .game-app :is(.share-dd-actions > button, .site-info-contact-button) svg {
+  width: 20px;
+  height: 20px;
+}
+
+@media (max-width: 360px) {
+  .game-app .share-dd-dialog > .share-dd-actions {
+    gap: 0;
   }
 }
 
@@ -4093,6 +4111,39 @@ html .game-app .site-info-content > .site-info-body {
 }
 .game-app .site-info-artwork { display: none; }
 .game-app .site-info-bottom { margin-top: 12px; }
+@media (pointer: fine) {
+  html .game-app .site-info-content > .site-info-body {
+    display: grid;
+    grid-template-rows: auto minmax(80px, 1fr) auto;
+    min-height: 100%;
+    margin-block: 0;
+  }
+  html .game-app .site-info-main {
+    grid-row: 1;
+    padding-top: 12px;
+  }
+  html .game-app .site-info-artwork {
+    grid-row: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+  }
+  html .game-app .site-info-artwork canvas {
+    width: 64px;
+    height: 64px;
+  }
+  html .game-app .site-info-body[data-info-section="Disclaimer"] .site-info-artwork canvas {
+    width: 52px;
+    height: 52px;
+  }
+  html .game-app .site-info-bottom {
+    grid-row: 3;
+    align-self: end;
+    margin: 0;
+    padding-block: 8px;
+  }
+}
 html .game-app .site-info-dialog > .site-info-content::after {
   display: none;
 }
