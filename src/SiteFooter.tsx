@@ -1,9 +1,11 @@
 // Browser game module for SiteFooter.
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Mail, X, Volume2, VolumeX, Radio, Moon, Sparkles } from 'lucide-react';
+import { AssetPreview, type PreviewAsset } from './AssetPreview';
 
 const sections = ['About', 'Privacy', 'Disclaimer', 'Preferences'] as const;
 export type SiteSection = typeof sections[number] | 'Settings';
+const sectionAssets: Record<SiteSection, PreviewAsset> = { About: 'coin', Privacy: 'briefcase', Disclaimer: 'bag', Preferences: 'banana', Settings: 'diamond' };
 
 export function SiteFooter({ onOpen, theme, section, setSection, volume, onVolumeChange, animationsEnabled, onToggleAnimations, liveFeedEnabled, onToggleLiveFeed, onToggleTheme }: { onOpen: () => void; theme: 'light' | 'dark'; section: SiteSection | null; setSection: (section: SiteSection | null) => void; volume: number; onVolumeChange: (volume: number) => void; animationsEnabled: boolean; onToggleAnimations: () => void; liveFeedEnabled: boolean; onToggleLiveFeed: () => void; onToggleTheme: () => void }) {
   const [message, setMessage] = useState('');
@@ -23,7 +25,8 @@ export function SiteFooter({ onOpen, theme, section, setSection, volume, onVolum
         const header = app?.querySelector('header')?.getBoundingClientRect();
         const footer = app?.querySelector('.site-footer')?.getBoundingClientRect();
         const shell = app!.getBoundingClientRect();
-        const top = header?.bottom ?? shell.top;
+        const feed = app?.querySelector('.desktop-live-feed-bar')?.getBoundingClientRect();
+        const top = feed && feed.height > 0 ? feed.bottom : header?.bottom ?? shell.top;
         const bottom = footer && footer.height > 0 ? footer.top : shell.bottom;
         overlay.style.setProperty('--info-left', `${shell.left}px`);
         overlay.style.setProperty('--info-top', `${top}px`);
@@ -47,7 +50,7 @@ export function SiteFooter({ onOpen, theme, section, setSection, volume, onVolum
     const observer = new ResizeObserver(syncPosition);
     observer.observe(target);
     observer.observe(arena);
-    for (const element of app!.querySelectorAll('header, .site-footer')) observer.observe(element);
+    for (const element of app!.querySelectorAll('header, .desktop-live-feed-bar, .site-footer')) observer.observe(element);
     window.addEventListener('resize', syncPosition);
     window.addEventListener('scroll', syncPosition, true);
     syncPosition();
@@ -79,7 +82,9 @@ export function SiteFooter({ onOpen, theme, section, setSection, volume, onVolum
           <button ref={close} type="button" aria-label="Close site information" onClick={() => setSection(null)} className="dialog-close mobile-dialog-close site-info-close absolute right-0 top-0 p-2 border border-[var(--line)] rounded hover:bg-[var(--alt)] cursor-pointer"><X className="w-5 h-5" aria-hidden="true" /></button>
         </div>
         <div className="site-info-content text-sm leading-relaxed">
-          <div className="site-info-body space-y-3">
+          <div className="site-info-body" data-info-section={section}>
+          <div className="site-info-artwork" data-info-asset={sectionAssets[section]} aria-hidden="true"><AssetPreview asset={sectionAssets[section]} theme={theme} /></div>
+          <div className="site-info-main space-y-3">
           {section === 'About' && <>
             <p><img src={`${import.meta.env.BASE_URL}images/${theme === 'dark' ? 'logo-inverted.png' : 'logo.png'}`} alt="Stonktrooper" className="relative -top-[1px] inline-block h-6 w-auto max-w-full align-middle" />{' '}is a game inspired by fictional financial markets, internet memes and experimental game design. It's an amalgamation of the author's experience with the real markets.</p>
             <p>The game is completely free to play. There are no purchases, subscriptions, paid upgrades or real-money gameplay. No account is required.</p>
@@ -105,7 +110,6 @@ export function SiteFooter({ onOpen, theme, section, setSection, volume, onVolum
                 </svg>
               </a>
             </div>
-            <p className="about-copyright text-center font-mono-term text-[10px]">© Stonktrooper.lol<br />2026</p>
           </>}
           {section === 'Settings' && <div className="settings-options">
             <div className="settings-volume-row">
@@ -113,13 +117,13 @@ export function SiteFooter({ onOpen, theme, section, setSection, volume, onVolum
               <output htmlFor="settings-volume">{volume === 0 ? 'Muted' : `${volume}%`}</output>
               <input id="settings-volume" type="range" min="0" max="100" step="1" value={volume} onChange={event => onVolumeChange(Number(event.target.value))} aria-valuetext={volume === 0 ? 'Muted' : `${volume}%`} />
             </div>
-            <button type="button" role="switch" aria-label="Live Feed" aria-checked={liveFeedEnabled} onClick={onToggleLiveFeed} className="settings-toggle"><span className="settings-label"><Radio aria-hidden="true" />Live Feed</span><span className="settings-switch-state">{liveFeedEnabled ? 'On' : 'Off'}<span className="settings-switch-track" aria-hidden="true" /></span></button>
+            <button type="button" role="switch" aria-label="Shmuck Feed" aria-checked={liveFeedEnabled} onClick={onToggleLiveFeed} className="settings-toggle"><span className="settings-label"><Radio aria-hidden="true" />Shmuck Feed</span><span className="settings-switch-state">{liveFeedEnabled ? 'On' : 'Off'}<span className="settings-switch-track" aria-hidden="true" /></span></button>
             <button type="button" role="switch" aria-label="Night mode" aria-checked={theme === 'dark'} onClick={onToggleTheme} className="settings-toggle"><span className="settings-label"><Moon aria-hidden="true" />Theme (N)</span><span className="settings-switch-state">{theme === 'dark' ? 'Night' : 'Day'}<span className="settings-switch-track" aria-hidden="true" /></span></button>
             <button type="button" role="switch" aria-label="Interface animations" aria-checked={animationsEnabled} onClick={onToggleAnimations} className="settings-toggle"><span className="settings-label"><Sparkles aria-hidden="true" />Interface animations</span><span className="settings-switch-state">{animationsEnabled ? 'On' : 'Off'}<span className="settings-switch-track" aria-hidden="true" /></span></button>
           </div>}
           {section === 'Privacy' && <>
             <p>The game does not use analytics, advertising trackers or tracking cookies, and does not upload your score to a game server.</p>
-            <p>Your browser stores the selected theme, volume, Live Feed and interface animation preferences locally. These settings are not sent by the game to the creator. Current gameplay and scores are held in memory.</p>
+            <p>Your browser stores the selected theme, volume, Shmuck Feed and interface animation preferences locally. These settings are not sent by the game to the creator. Current gameplay and scores are held in memory.</p>
             <p>Share score generates its image locally. Score links include the displayed result in the URL. Anyone with the link can view or edit this self-reported value.</p>
             <p>Hosting: GitHub Pages. GitHub logs visitor IP addresses for security. This is separate from the game's local settings. See the <a className="underline text-[#38bdf8]" href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement" target="_blank" rel="noopener noreferrer">GitHub Privacy Statement</a>.</p>
             <p>Fonts: this page loads fonts from Google Fonts. Your browser contacts Google to retrieve them, which exposes information such as your IP address to the provider. See <a className="underline text-[#38bdf8]" href="https://developers.google.com/fonts/faq/privacy" target="_blank" rel="noopener noreferrer">Google Fonts privacy information</a>.</p>
@@ -130,16 +134,18 @@ export function SiteFooter({ onOpen, theme, section, setSection, volume, onVolum
             <p>If you find any in-game bugs, count them as features!</p>
           </>}
           {section === 'Preferences' && <>
-            <p>The game saves only theme, volume, Live Feed and interface animation preferences in this browser. <br></br> You can remove them below or through your browser's site-data settings.</p>
+            <p>The game saves only theme, volume, Shmuck Feed and interface animation preferences in this browser. <br></br> You can remove them below or through your browser's site-data settings.</p>
             <p>Removing the saved settings does not interrupt the current game. <br></br>Defaults apply after your next reload. Later preference changes may save new settings.</p>
-            <div className="pt-2">
-              <button type="button" className="preferences-clear-button block mx-auto w-full py-2.5 px-3 rounded-lg border font-bold text-xs font-mono-term cursor-pointer" onClick={() => {
-                try { for (const key of ['cr_theme', 'stonker-sounds', 'cr_sound_enabled', 'cr_live_feed', 'cr_volume', 'cr_animations']) localStorage.removeItem(key); setMessage('Saved theme, volume, Live Feed and interface animation preferences removed.'); }
-                catch { setMessage('Unable to access browser storage. Use your browser site-data settings.'); }
-              }}>Clear saved preferences</button>
-            </div>
             {message && <p role="status">{message}</p>}
           </>}
+          </div>
+          {section === 'About' && <p className="site-info-bottom about-copyright text-center font-mono-term text-[10px]">© Stonktrooper.lol<br />2026</p>}
+          {section === 'Preferences' && <div className="site-info-bottom pt-2">
+              <button type="button" className="preferences-clear-button block mx-auto w-full py-2.5 px-3 rounded-lg border font-bold text-xs font-mono-term cursor-pointer" onClick={() => {
+                try { for (const key of ['cr_theme', 'stonker-sounds', 'cr_sound_enabled', 'cr_live_feed', 'cr_volume', 'cr_animations']) localStorage.removeItem(key); setMessage('Saved theme, volume, Shmuck Feed and interface animation preferences removed.'); }
+                catch { setMessage('Unable to access browser storage. Use your browser site-data settings.'); }
+              }}>Clear saved preferences</button>
+            </div>}
           </div>
         </div>
       </div>

@@ -2533,7 +2533,6 @@ export const CandleGame: React.FC<CandleGameProps> = ({
   }, [theme]);
   // 5. TOP SCROLLING NEWS WIRE TICKER & DIAMOND / ROCKET COUNTDOWN STRIP
   const drawTopTickerTape = useCallback((ctx: CanvasRenderingContext2D) => {
-    if (!liveFeedEnabled) return;
     const g = gameRef.current;
     const plotCtx = ctx;
     const header = headerFeedActive.current ? headerFeedRef.current : null;
@@ -2548,89 +2547,95 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     const { mobile, fontSize: feedFontSize } = feedLayout.current;
     const textScaleX = header ? (headerFeedLayout.current.height / tapeH) / Math.max(0.01, headerFeedLayout.current.width / W) : feedLayout.current.textScaleX;
 
-    ctx.save();
-    ctx.textBaseline = 'alphabetic';
-    const writeCentered = (text: string, x: number) => {
-      // Center the visible glyph bounds within the Live Feed, independent
-      // of glyph ascenders/descenders.
-      const metrics = ctx.measureText(text);
-      const ascent = metrics.actualBoundingBoxAscent ?? 9;
-      const descent = metrics.actualBoundingBoxDescent ?? 2;
+    if (liveFeedEnabled) {
       ctx.save();
-      const feedCenterY = tapeH / 2;
-      ctx.translate(x, feedCenterY + (ascent - descent) / 2);
-      ctx.scale(textScaleX, 1);
-      ctx.fillText(text, 0, 0);
-      ctx.restore();
-    };
+      ctx.textBaseline = 'alphabetic';
+      const writeCentered = (text: string, x: number) => {
+        // Center the visible glyph bounds within the Live Feed, independent
+        // of glyph ascenders/descenders.
+        const metrics = ctx.measureText(text);
+        const ascent = metrics.actualBoundingBoxAscent ?? 9;
+        const descent = metrics.actualBoundingBoxDescent ?? 2;
+        ctx.save();
+        const feedCenterY = tapeH / 2;
+        ctx.translate(x, feedCenterY + (ascent - descent) / 2);
+        ctx.scale(textScaleX, 1);
+        ctx.fillText(text, 0, 0);
+        ctx.restore();
+      };
 
-    // NORMAL WIRE TICKER
-    if (header) {
-      // Transparent header canvas: inherit the real header background, no frame.
-      ctx.clearRect(0, 0, W, tapeH);
-    } else {
-      ctx.fillStyle = theme === 'light' ? '#ffffff' : '#253044';
-      ctx.fillRect(0, 0, W, tapeH);
-    }
-
-    ctx.textAlign = 'left';
-
-    ctx.save();
-    ctx.beginPath();
-    ctx.rect(0, 0, W, tapeH);
-    ctx.clip();
-
-
-    ctx.font = `bold ${feedFontSize}px monospace`;
-    if (g.currentState === 'boxing' || g.printerTimer > 0) {
-      ctx.textAlign = 'center';
-      ctx.fillStyle = theme === 'light' ? '#08795c' : '#55d6ae';
-      ctx.font = `bold ${mobile || header ? feedFontSize : 13}px monospace`;
-      if (g.currentState === 'boxing') {
-        ctx.fillStyle = bossColors(bossEncounter.current?.boss.kind ?? 'jerome', theme === 'dark').foreground;
-        writeCentered(bossName(bossEncounter.current?.boss.kind ?? 'jerome'), (W) / 2);
+      // NORMAL WIRE TICKER
+      if (header) {
+        // Transparent header canvas: inherit the real header background, no frame.
+        ctx.clearRect(0, 0, W, tapeH);
       } else {
-        ctx.textAlign = 'left';
-        // The prefix never wraps; only the trailing R stream repeats.
-        const prefix = 'MONEY PRINTER GO B';
-        const prefixWidth = ctx.measureText(prefix).width * textScaleX;
-        if (g.printerTickerX + prefixWidth > 0) writeCentered(prefix, g.printerTickerX);
-        const letterWidth = Math.max(1, ctx.measureText('R').width * textScaleX);
-        const tailX = g.printerTickerX + prefixWidth;
-        const visibleTailX = tailX < 0 ? -((-tailX) % letterWidth) : tailX;
-        if (visibleTailX < W) {
-          const count = Math.ceil((W - visibleTailX) / letterWidth) + 1;
-          writeCentered('R'.repeat(count), visibleTailX);
+        ctx.fillStyle = theme === 'light' ? '#ffffff' : '#253044';
+        ctx.fillRect(0, 0, W, tapeH);
+      }
+
+      ctx.textAlign = 'left';
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(0, 0, W, tapeH);
+      ctx.clip();
+
+
+      ctx.font = `bold ${feedFontSize}px monospace`;
+      if (g.currentState === 'boxing' || g.printerTimer > 0) {
+        ctx.textAlign = 'center';
+        ctx.fillStyle = theme === 'light' ? '#08795c' : '#55d6ae';
+        ctx.font = `bold ${mobile || header ? feedFontSize : 13}px monospace`;
+        if (g.currentState === 'boxing') {
+          ctx.fillStyle = bossColors(bossEncounter.current?.boss.kind ?? 'jerome', theme === 'dark').foreground;
+          writeCentered(bossName(bossEncounter.current?.boss.kind ?? 'jerome'), (W) / 2);
+        } else {
+          ctx.textAlign = 'left';
+          // The prefix never wraps; only the trailing R stream repeats.
+          const prefix = 'MONEY PRINTER GO B';
+          const prefixWidth = ctx.measureText(prefix).width * textScaleX;
+          if (g.printerTickerX + prefixWidth > 0) writeCentered(prefix, g.printerTickerX);
+          const letterWidth = Math.max(1, ctx.measureText('R').width * textScaleX);
+          const tailX = g.printerTickerX + prefixWidth;
+          const visibleTailX = tailX < 0 ? -((-tailX) % letterWidth) : tailX;
+          if (visibleTailX < W) {
+            const count = Math.ceil((W - visibleTailX) / letterWidth) + 1;
+            writeCentered('R'.repeat(count), visibleTailX);
+          }
         }
       }
-    }
-    let tickerX = g.tickerScrollX;
-    let itemIndex = 0;
-    while (g.currentState !== 'boxing' && g.printerTimer <= 0 && tickerX < W + 500) {
-      if (itemIndex >= g.tickerQueue.length) {
-        g.tickerQueue.push({ news: getTickerNews(g.tickerQueue.at(-1)?.news.headline), width: 0 });
+      let tickerX = g.tickerScrollX;
+      let itemIndex = 0;
+      while (g.currentState !== 'boxing' && g.printerTimer <= 0 && tickerX < W + 500) {
+        if (itemIndex >= g.tickerQueue.length) {
+          g.tickerQueue.push({ news: getTickerNews(g.tickerQueue.at(-1)?.news.headline), width: 0 });
+        }
+        const item = g.tickerQueue[itemIndex++];
+        let cached = feedTextCache.current.get(item.news);
+        if (!cached || cached.font !== ctx.font || cached.textScaleX !== textScaleX) {
+          const message = cached?.message ?? `${item.news.source}: ${formatFeedHeadline(item.news.headline)}`.replace(/[\p{Extended_Pictographic}\uFE0F\u200D]/gu, '');
+          cached = { message, font: ctx.font, width: (ctx.measureText(message).width + 48) * textScaleX, textScaleX };
+          feedTextCache.current.set(item.news, cached);
+        }
+        const message = cached.message;
+        item.width = cached.width;
+        ctx.fillStyle = item.news.sentiment === 'bearish' ? (theme === 'light' ? '#b91c1c' : '#f87171') : item.news.sentiment === 'bullish' ? (theme === 'light' ? '#15803d' : '#4ade80') : (theme === 'light' ? '#0369a1' : '#38bdf8');
+        writeCentered(message, tickerX);
+        tickerX += item.width;
       }
-      const item = g.tickerQueue[itemIndex++];
-      let cached = feedTextCache.current.get(item.news);
-      if (!cached || cached.font !== ctx.font || cached.textScaleX !== textScaleX) {
-        const message = cached?.message ?? `${item.news.source}: ${formatFeedHeadline(item.news.headline)}`.replace(/[\p{Extended_Pictographic}\uFE0F\u200D]/gu, '');
-        cached = { message, font: ctx.font, width: (ctx.measureText(message).width + 48) * textScaleX, textScaleX };
-        feedTextCache.current.set(item.news, cached);
-      }
-      const message = cached.message;
-      item.width = cached.width;
-      ctx.fillStyle = item.news.sentiment === 'bearish' ? (theme === 'light' ? '#b91c1c' : '#f87171') : item.news.sentiment === 'bullish' ? (theme === 'light' ? '#15803d' : '#4ade80') : (theme === 'light' ? '#0369a1' : '#38bdf8');
-      writeCentered(message, tickerX);
-      tickerX += item.width;
-    }
 
-    ctx.restore();
-    // Carry effects only tint the thin timer strip; news remains uninterrupted.
-    ctx.restore();
+      ctx.restore();
+      // Carry effects only tint the thin timer strip; news remains uninterrupted.
+      ctx.restore();
+    }
     ctx = plotCtx;
     ctx.save();
     tapeH = feedLayout.current.tapeHeight;
-    if (headerFeedActive.current) {
+    if (!liveFeedEnabled) {
+      // Keep active countdowns at the chart's top edge without reserving a news strip.
+      ctx.scale(1, 1 / Math.max(0.01, canvasDisplay.current.height / H * mobileCanvasZoom()));
+      tapeH = 3;
+    } else if (headerFeedActive.current) {
       // No idle divider beneath the header wire; only active status strips.
       ctx.scale(1, tapeH);
       tapeH = 3;
@@ -2725,6 +2730,24 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     ctx.clip();
 
     const viewport = renderViewport.current;
+    const renderMode = renderTestEnabled ? getRenderMode() : 'full';
+    const layers = renderLayers(renderMode);
+    const actors = actorLayers(renderMode);
+    const visibleLeft = screenToChart({ x: 0, y: 0 }, viewport).x;
+    const visibleRight = screenToChart({ x: W - AX, y: 0 }, viewport).x;
+    const a = Math.floor((g.cx + visibleLeft) / CW) - 1;
+    const b = Math.ceil((g.cx + visibleRight) / CW) + 2;
+    if (layers.chart) {
+      // Volume is anchored to the screen's time axis, not the zoomed price plot.
+      for (let i = a; i <= b; i++) {
+        const c = chartHistory(g.C, i);
+        if (!c || c.hole) continue;
+        const x = chartToScreen({ x: i * CW - g.cx + 1, y: 0 }, viewport).x;
+        const h = c.v * 40;
+        ctx.fillStyle = (c.c < c.o ? GREEN : RED) + (c.sp ? 'bb' : '44');
+        ctx.fillRect(x, H - TIME_AXIS_HEIGHT - h, (CW - 3) * viewport.scaleX, h);
+      }
+    }
     ctx.translate(viewport.x * (1 - viewport.scaleX), viewport.y * (1 - viewport.scale));
     ctx.scale(viewport.scaleX, viewport.scale);
 
@@ -2735,9 +2758,6 @@ export const CandleGame: React.FC<CandleGameProps> = ({
 
 
 
-    const renderMode = renderTestEnabled ? getRenderMode() : 'full';
-    const layers = renderLayers(renderMode);
-    const actors = actorLayers(renderMode);
     if (layers.chart) {
     // Pixel-aligned fills keep moving grid lines at constant raster coverage.
     ctx.strokeStyle = palette.grid;
@@ -2749,10 +2769,6 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     }
 
     }
-    const visibleLeft = screenToChart({ x: 0, y: 0 }, viewport).x;
-    const visibleRight = screenToChart({ x: W - AX, y: 0 }, viewport).x;
-    const a = Math.floor((g.cx + visibleLeft) / CW) - 1;
-    const b = Math.ceil((g.cx + visibleRight) / CW) + 2;
     // One set of visible ticks drives both grid lines and time-axis labels.
     ctx.save();
     ctx.font = '9px system-ui, monospace';
@@ -2781,15 +2797,6 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     }
 
     ctx.lineWidth = 1;
-    for (let i = a; i <= b; i++) {
-      const c = chartHistory(g.C, i);
-      if (!c || c.hole) continue;
-      const x = i * CW - g.cx;
-      const h = c.v * 40;
-      ctx.fillStyle = (c.c < c.o ? GREEN : RED) + (c.sp ? 'bb' : '44');
-      ctx.fillRect(x + 1, H - TIME_AXIS_HEIGHT - h, CW - 3, h);
-    }
-
     for (let i = a; i <= b; i++) {
       const c = chartHistory(g.C, i);
       if (!c || g.printerTimer > 0) continue;

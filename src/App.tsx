@@ -63,7 +63,7 @@ export default function App() {
   const [liveFeedEnabled, setLiveFeedEnabled] = useState(() => {
     try { return localStorage.getItem('cr_live_feed') !== 'false'; } catch { return true; }
   });
-  const liveFeedVisible = liveFeedEnabled && !mobilePlaying;
+  const liveFeedVisible = liveFeedEnabled;
   useEffect(() => {
     sound.enabled = soundEnabled;
     try { localStorage.setItem('cr_sound_enabled', String(soundEnabled)); } catch { }
@@ -572,7 +572,8 @@ export default function App() {
                           disabled={selectedMode !== 'hard'}
                           className="menu-action-button mobile-portrait-action-button w-full rounded-lg bg-[#08795c] hover:brightness-110 active:brightness-95 text-white font-bold text-sm sm:text-base transition-all shadow-lg flex items-center justify-center gap-2 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                         >
-                          Start
+                          <span>Start</span>
+                          <svg className="new-game-space-key" viewBox="0 0 36 6" aria-hidden="true" focusable="false"><path d="M1 1V5H35V1" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
                         </button>
                       </div>
                     </section>
@@ -581,9 +582,9 @@ export default function App() {
               )}
 
               {/* PAUSE & GAME OVER WINDOWS */}
+              {state === 'over' && <LiquidatedBackdrop />}
               {state !== 'menu' && (
                 <div className={`game-result ${state === 'over' ? 'game-result-over' : ''} relative isolate overflow-hidden max-w-md w-full text-center bg-[var(--panel)] border border-[var(--line)] rounded-xl p-6 sm:p-7 shadow-2xl`}>
-                  {state === 'over' && <LiquidatedBackdrop />}
                   <div className={`relative z-10 ${state === 'over' ? 'game-result-content pt-28 pb-4' : ''}`}>
 
                     {state === 'paused' && <h2 className="font-black tracking-tight mb-2 font-mono-term text-3xl sm:text-4xl" style={{ color: theme === 'dark' ? '#54d3ac' : '#08795c' }}>Margin Call</h2>}
@@ -615,7 +616,7 @@ export default function App() {
                         className="margin-call-action w-full rounded-lg bg-[#08795c] hover:brightness-110 active:brightness-95 text-white font-bold font-mono-term text-sm transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer"
                       >
                         <span>{state === 'paused' ? 'Continue' : 'New Game'}</span>
-                        {state === 'over' && <svg className="new-game-space-key" viewBox="0 0 36 6" aria-hidden="true" focusable="false"><path d="M1 1V5H35V1" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>}
+                        <svg className="new-game-space-key" viewBox="0 0 36 6" aria-hidden="true" focusable="false"><path d="M1 1V5H35V1" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
                       </button>
 
                     </div>

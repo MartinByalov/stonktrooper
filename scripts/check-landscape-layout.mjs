@@ -10,7 +10,43 @@ const profile = await mkdtemp(join(tmpdir(), 'stonktrooper-layout-'));
 const pending = new Map();
 let browser, server, socket, id = 0;
 try {
-  server = await createServer({ root, server: { host: '127.0.0.1', port: 5537, strictPort: true }, logLevel: 'error' });
+  server = await createServer({ root, plugins: [{
+    name: 'countdown-regression-hook', enforce: 'pre',
+    transform(code, id) {
+      if (!id.replaceAll('\\', '/').endsWith('/src/CandleGame.tsx')) return;
+      return code.replace('  const draw = useCallback', `  window.__checkVolumes = () => {
+        const canvas = document.createElement('canvas'); canvas.width = W; canvas.height = H;
+        const ctx = canvas.getContext('2d');
+        const fillRect = ctx.fillRect.bind(ctx), bars = [];
+        ctx.fillRect = (x, y, width, height) => {
+          if (height > 0 && height <= 40 && Math.abs(y + height - (H - TIME_AXIS_HEIGHT)) < 0.01) {
+            const matrix = ctx.getTransform();
+            bars.push({ bottom: matrix.d * (y + height) + matrix.f,
+              scaleY: matrix.d, left: matrix.a * x + matrix.e, width: width * matrix.a });
+          }
+          fillRect(x, y, width, height);
+        };
+        const g = gameRef.current, state = g.currentState;
+        g.currentState = 'paused';
+        try { draw(ctx); return { bars, baseline: H - TIME_AXIS_HEIGHT,
+          barWidth: (CW - 3) * renderViewport.current.scaleX }; }
+        finally { g.currentState = state; }
+      };
+      window.__checkCountdown = () => {
+        const canvas = document.createElement('canvas'); canvas.width = W; canvas.height = H;
+        const ctx = canvas.getContext('2d');
+        const savedTimer = gameRef.current.hawkTimer;
+        const savedState = gameRef.current.currentState;
+        gameRef.current.hawkTimer = 300; gameRef.current.currentState = 'menu';
+        try {
+          drawTopTickerTape(ctx);
+          const pixel = [...ctx.getImageData(1, 0, 1, 1).data];
+          return { pixel, tapeHeight: feedLayout.current.tapeHeight };
+        } finally { gameRef.current.hawkTimer = savedTimer; gameRef.current.currentState = savedState; }
+      };
+  const draw = useCallback`);
+    },
+  }], server: { host: '127.0.0.1', port: 5537, strictPort: true }, logLevel: 'error' });
   await server.listen();
   browser = spawn(process.env.EDGE_PATH ?? 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe', [
     '--headless=new', '--remote-debugging-port=0', `--user-data-dir=${profile}`, '--no-first-run', 'about:blank',
@@ -98,12 +134,54 @@ try {
       const close=panel.querySelector('.site-info-close').getBoundingClientRect();
       const overlay=getComputedStyle(panel.parentElement);
       if(matchMedia('(pointer: coarse)').matches) {
+        if(parseFloat(getComputedStyle(panel).borderTopLeftRadius)<=0 || parseFloat(getComputedStyle(panel).borderBottomRightRadius)<=0) throw new Error('Mobile information panels must have rounded corners');
         const header=document.querySelector('header').getBoundingClientRect();
         const footer=document.querySelector('.site-footer').getBoundingClientRect();
+        const feed=document.querySelector('.desktop-live-feed-bar').getBoundingClientRect();
+        const top=feed.height>0?feed.bottom:header.bottom;
         const bottom=footer.height>0?footer.top:document.querySelector('.game-app').getBoundingClientRect().bottom;
-        if(Math.abs(p.top-header.bottom)>1 || Math.abs(p.bottom-bottom)>1 || Math.abs(p.width-innerWidth)>1) throw new Error('Mobile information fills all space between header and footer');
+        if(Math.abs(p.top-top)>1 || Math.abs(p.bottom-bottom)>1 || Math.abs(p.width-innerWidth)>1) throw new Error('Mobile information fills all space below the feed (or header when disabled) and above the footer');
+        if(Math.abs(close.top-p.top-(p.right-close.right))>0.1) throw new Error('Mobile information X has equal top and right insets');
         const fullscreen=document.querySelector('.desktop-fullscreen-control').getBoundingClientRect();
         if(Math.abs(close.right-fullscreen.right)>0.1 || close.width!==fullscreen.width) throw new Error('Mobile information X must align below Fullscreen');
+        const style=getComputedStyle(panel);
+        if(style.borderTopWidth!=='0px' || style.borderBottomWidth!=='0px') throw new Error('Mobile information must not double the feed/footer separators');
+        const content=panel.querySelector('.site-info-content'), body=panel.querySelector('.site-info-body');
+        const c=content.getBoundingClientRect(), b=body.getBoundingClientRect();
+        const heading=panel.querySelector('.site-info-header').getBoundingClientRect();
+        const art=panel.querySelector('.site-info-artwork'), a=art.getBoundingClientRect();
+        const expectedAssets={About:'coin',Privacy:'briefcase',Disclaimer:'bag',Preferences:'banana',Settings:'diamond'};
+        if(art.dataset.infoAsset!==expectedAssets[panel.querySelector('.site-info-title').textContent]) throw new Error('Information section uses its matching game artwork');
+        const canvas=art.querySelector('canvas'), image=canvas.getBoundingClientRect();
+        const section=body.dataset.infoSection, afterContent=['Settings','About','Disclaimer'].includes(section);
+        const iconSize=section==='Disclaimer'?52:64;
+        if(image.width!==iconSize || image.height!==iconSize || Math.abs(a.left+a.width/2-p.left-p.width/2)>1 || a.top<heading.bottom-1) throw new Error('Mobile information artwork has the correct size and horizontal alignment');
+        if(parseFloat(style.borderTopLeftRadius)!==12) throw new Error('Mobile information panels use clearly rounded corners');
+        if(!canvas.getContext('2d').getImageData(0,0,canvas.width,canvas.height).data.some((v,i)=>i%4===3 && v>0)) throw new Error('Information artwork is painted');
+        const bottomItem=panel.querySelector('.site-info-bottom');
+        const main=panel.querySelector('.site-info-main').getBoundingClientRect();
+        if(afterContent) {
+          if(image.top<main.bottom) throw new Error('Settings, About and Disclaimer artwork follows the section content');
+          if(bottomItem && image.bottom>bottomItem.getBoundingClientRect().top) throw new Error('About coin stays above copyright');
+        } else if(Math.abs((image.top+image.height/2)-(heading.bottom+main.top)/2+content.scrollTop/2)>1) throw new Error('Information icon is vertically centered between heading and first content element');
+        if(bottomItem && b.height<=c.height+1) {
+          const bottomRect=bottomItem.getBoundingClientRect(), button=bottomItem.querySelector('button');
+          if(button) {
+            const r=button.getBoundingClientRect();
+            if(Math.abs(r.top+r.height/2-(main.bottom+p.bottom)/2)>1) throw new Error('Clear preferences is centered between last text and panel bottom');
+          } else if(Math.abs(p.bottom-bottomRect.bottom)>1) throw new Error('Copyright stays at the panel bottom');
+        }
+        if(b.height<=c.height) {
+          if(Math.abs((b.top-heading.bottom)-(p.bottom-b.bottom))>1) throw new Error('Mobile information body is centered between heading and panel bottom');
+        } else {
+          if(b.top+content.scrollTop<c.top-1 || !['auto','scroll'].includes(getComputedStyle(content).overflowY)) throw new Error('Long information content starts at the top and remains scrollable: '+JSON.stringify({bodyTop:b.top,contentTop:c.top,scroll:content.scrollTop,overflow:getComputedStyle(content).overflowY,bodyHeight:b.height,contentHeight:c.height}));
+        }
+      }
+      const clear=panel.querySelector('.preferences-clear-button');
+      const homeButton=document.querySelector('.landing-menu-settings-button');
+      if(clear && homeButton) {
+        const c=clear.getBoundingClientRect(), home=homeButton.getBoundingClientRect();
+        if(Math.abs(c.width-home.width)>1 || Math.abs(c.height-home.height)>1) throw new Error('Clear saved preferences matches Home button dimensions: '+JSON.stringify({clear:[c.width,c.height],home:[home.width,home.height]}));
       }
       return {covers:p.left<=target.left+1 && p.right>=target.right-1 && p.top<=target.top+1 && p.bottom>=target.bottom-1,
         headerAligned:Math.abs(title.y+title.height/2-close.y-close.height/2)<1,
@@ -310,7 +388,7 @@ try {
       })()`);
       assert.equal(heroClipped, false, 'Celebrating character is not clipped by any ancestor');
       assert.ok(!scenery.some(item => ['bag', 'wolf', 'turtle', 'fedora', 'briefcase', 'bull-rider', 'bear-rider', 'dumpster'].includes(item.asset)), 'Excluded assets do not appear on the chart');
-      assert.equal(menu.feed.y - menu.header.bottom, 0, 'No gap above Live Feed');
+      assert.equal(menu.feed.y - menu.header.bottom, 0, 'No gap above Shmuck Feed');
       assert.ok(menu.menu.width > width - 24, 'Full-width landing chart');
       assert.deepEqual(menu.buttons.map(button => button.text.replace(/\s+/g, ' ')), ['How to Play', 'Settings', 'Hard Mode', 'Start'], 'Home button order');
       assert.ok(menu.buttons[0].y >= menu.menu.y && menu.buttons[3].bottom <= menu.menu.bottom, 'Menu buttons fit');
@@ -327,7 +405,7 @@ try {
         assert.ok(Math.abs(responsive.chartHeight - responsive.panelHeight) < 3, 'Chart fills available panel');
         await evaluate("document.querySelector('.landing-menu-settings-button').click()");
         await settle();
-        await evaluate("document.querySelector('button[aria-label=\"Live Feed\"]').click(); document.querySelector('.site-info-close').click()");
+        await evaluate("document.querySelector('button[aria-label=\"Shmuck Feed\"]').click(); document.querySelector('.site-info-close').click()");
         await settle();
         const hiddenFeed = await evaluate(`(() => {
           const bar = document.querySelector('.desktop-live-feed-bar');
@@ -336,9 +414,13 @@ try {
             reserved: parseFloat(document.querySelector('.game-app').style.getPropertyValue('--live-feed-height')) };
         })()`);
         assert.deepEqual(hiddenFeed, { hidden: true, height: 0, margin: '0px', reserved: 0 }, 'Disabled mobile feed removes entire strip and reserved space');
+        assert.deepEqual(await evaluate('window.__checkCountdown()'), { pixel: [163, 230, 53, 255], tapeHeight: 0 }, 'Disabled Shmuck Feed keeps the active countdown visible at the chart top on mobile');
+        const volumes = await evaluate('window.__checkVolumes()');
+        assert.ok(volumes.bars.length > 0, 'Mobile gameplay draws volume bars');
+        assert.ok(volumes.bars.every(bar => Math.abs(bar.bottom - volumes.baseline) < 0.01 && bar.scaleY === 1 && Math.abs(bar.width - volumes.barWidth) < 0.01), 'Mobile volume bars stay above the time axis and match candle widths without vertical zoom');
         await evaluate("document.querySelector('.landing-menu-settings-button').click()");
         await settle();
-        await evaluate("document.querySelector('button[aria-label=\"Live Feed\"]').click(); document.querySelector('.site-info-close').click()");
+        await evaluate("document.querySelector('button[aria-label=\"Shmuck Feed\"]').click(); document.querySelector('.site-info-close').click()");
         await settle();
       }
       const homeStyle = await evaluate(`(() => {
@@ -353,7 +435,7 @@ try {
         return { labelOffset: label.top + label.height / 2 - (rect.top + rect.height / 2),
           cupOffset: cup.top + cup.height / 2 - (rect.top + rect.height / 2),
           width: rect.width, height: rect.height, logoWidth: logo.width, left: rect.left, logoLeft: logo.left,
-          leftInset: rect.left - chart.left, bottomInset: chart.bottom - rect.bottom,
+          leftInset: rect.left - chart.left, bottomInset: chart.top + parseFloat(document.querySelector('#landing-chart-plot rect').getAttribute('height')) - rect.bottom,
           insideChart: coffee.parentElement.matches('.landing-menu-panel') && rect.top >= chart.top && rect.right <= chart.right,
           bottom: innerHeight - rect.bottom, background: getComputedStyle(coffee).backgroundColor,
           cupColor: getComputedStyle(coffee.querySelector('.coffee-cup')).backgroundColor,
@@ -364,8 +446,9 @@ try {
       })()`);
       assert.ok(Math.abs(homeStyle.width - homeStyle.logoWidth) < 1, 'Ko-fi matches logo width');
       assert.equal(homeStyle.height, 36, 'Donate has a compact 36px height');
+      assert.ok(await evaluate("(() => {const button=document.querySelector('.landing-menu-actions > button:last-child'), icon=button.querySelector('.new-game-space-key'), b=button.getBoundingClientRect(), r=icon.getBoundingClientRect(); return r.width===64 && r.left>=b.left && r.right<=b.right && r.top>=b.top && r.bottom<=b.bottom;})()"), 'Start has the same contained Space Bar hint as New Game');
       assert.ok(Math.abs(homeStyle.labelOffset) < 1 && Math.abs(homeStyle.cupOffset) < 1, 'Donate text and icon are vertically centered');
-      assert.ok(homeStyle.insideChart && Math.abs(homeStyle.leftInset - homeStyle.logoLeft) < 1 && Math.abs(homeStyle.bottomInset - homeStyle.logoLeft - 8) < 1, 'Donate keeps its left gutter and sits 8px higher');
+      assert.ok(homeStyle.insideChart && Math.abs(homeStyle.leftInset - homeStyle.logoLeft) < 1 && Math.abs(homeStyle.bottomInset - homeStyle.logoLeft) < 1, 'Donate left gutter and gap above time-axis line match the logo left gutter');
       assert.ok(await evaluate("(() => {const chart=document.querySelector('.landing-menu-chart'), width=chart.viewBox.baseVal.width, labels=[...chart.querySelectorAll('text')].filter(label=>parseFloat(label.getAttribute('x'))>width-54);return labels.length>0 && labels.every(label=>/^-?[0-9]+$/.test(label.textContent) && Number(label.textContent)%10===0);})()"), 'Home price labels are round multiples of ten');
       assert.equal(homeStyle.background, 'rgb(114, 164, 242)');
       const dayColor = 'rgb(0, 0, 0)', nightColor = 'rgb(255, 255, 255)';
@@ -423,7 +506,7 @@ try {
       assert.equal(chrome.footerHeight, chrome.headerHeight / 2);
       assert.equal(chrome.headerColor, theme === 'light' ? 'rgb(235, 235, 235)' : 'rgb(37, 48, 68)');
       assert.equal(chrome.footerColor, chrome.headerColor, 'Header/footer use the secondary theme color');
-      assert.equal(chrome.feedBorder, chrome.footerColor, 'Live Feed separator matches footer');
+      assert.equal(chrome.feedBorder, chrome.footerColor, 'Shmuck Feed separator matches footer');
       assert.equal(chrome.feedBorderWidth, '1px');
       assert.equal(chrome.headerWidth, '1px');
       assert.equal(chrome.footerWidth, '1px');
@@ -456,6 +539,10 @@ try {
           && copyright.innerText === '© Stonktrooper.lol\\n2026';
       })()`), true, 'Two-line copyright is last in About');
       await evaluate("document.querySelector('.site-info-close').click()");
+      await evaluate("[...document.querySelectorAll('.site-footer nav button')].find(button=>button.textContent.trim()==='Preferences').click()");
+      await settle();
+      await checkInfoCard('.landing-menu-actions');
+      await evaluate("document.querySelector('.site-info-close').click()");
       console.log(`PASS ${width}x${height} ${touch ? 'touch' : 'mouse'} ${theme}`);
     }
   }
@@ -478,7 +565,7 @@ try {
   assert.equal(settingsStyle.removedText, false);
   assert.equal(await evaluate("document.querySelector('label[for=\"settings-volume\"]').textContent.trim()"), 'Sound (M)');
   assert.ok(await evaluate("document.querySelector('[aria-label=\"Night mode\"] .settings-label').textContent.includes('(N)')"), 'Settings displays theme shortcut');
-  await evaluate("Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(document.querySelector('#settings-volume'), '0'); document.querySelector('#settings-volume').dispatchEvent(new Event('input', {bubbles:true})); document.querySelector('button[aria-label=\"Live Feed\"]').click()");
+  await evaluate("Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(document.querySelector('#settings-volume'), '0'); document.querySelector('#settings-volume').dispatchEvent(new Event('input', {bubbles:true})); document.querySelector('button[aria-label=\"Shmuck Feed\"]').click()");
   await settle();
   assert.equal(await evaluate("localStorage.getItem('cr_sound_enabled')"), 'false');
   await evaluate("document.querySelector('button[aria-label=\"Interface animations\"]').click()");
@@ -487,6 +574,10 @@ try {
   assert.equal(await evaluate("getComputedStyle(document.querySelector('.game-overlay')).backdropFilter"), 'none');
   assert.equal(await evaluate("getComputedStyle(document.querySelector('.game-app')).transitionDuration"), '0s');
   assert.equal(await evaluate("localStorage.getItem('cr_live_feed')"), 'false');
+  assert.equal(await evaluate("document.querySelector('button[aria-label=\"Shmuck Feed\"] .settings-label').textContent.trim()"), 'Shmuck Feed', 'Settings uses the renamed feed label');
+  assert.deepEqual(await evaluate('window.__checkCountdown()'), { pixel: [163, 230, 53, 255], tapeHeight: 0 }, 'Disabled Shmuck Feed keeps the active countdown visible at the chart top on desktop');
+  const desktopVolumes = await evaluate('window.__checkVolumes()');
+  assert.ok(desktopVolumes.bars.length > 0 && desktopVolumes.bars.every(bar => Math.abs(bar.bottom - desktopVolumes.baseline) < 0.01 && bar.scaleY === 1), 'Desktop volume bars remain anchored above the time axis');
   assert.equal(await evaluate("document.querySelector('.desktop-live-feed-bar').getBoundingClientRect().height"), 0, 'Feed hidden without reserved space');
   await call('Page.reload');
   await settle();
@@ -496,7 +587,7 @@ try {
   await settle();
   assert.equal(await evaluate("document.querySelector('#settings-volume').value"), '0', 'Sound preference survives reload');
   assert.equal(await evaluate("document.querySelector('button[aria-label=\"Interface animations\"]').getAttribute('aria-checked')"), 'false', 'Animation preference survives reload');
-  await evaluate("Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(document.querySelector('#settings-volume'), '65'); document.querySelector('#settings-volume').dispatchEvent(new Event('input', {bubbles:true})); document.querySelector('button[aria-label=\"Live Feed\"]').click(); document.querySelector('.site-info-close').click()");
+  await evaluate("Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(document.querySelector('#settings-volume'), '65'); document.querySelector('#settings-volume').dispatchEvent(new Event('input', {bubbles:true})); document.querySelector('button[aria-label=\"Shmuck Feed\"]').click(); document.querySelector('.site-info-close').click()");
   await settle();
   assert.equal(await evaluate("localStorage.getItem('cr_volume')"), '65', 'Volume slider saves intermediate levels');
   assert.equal(await evaluate("import('/src/audio.ts').then(({sound}) => sound.masterVolume)"), 0.65, 'Audio master volume updated');
@@ -523,15 +614,27 @@ try {
     document.querySelector('.header-pause-control').click();
     resolve(result);
   }, 50))`);
-  assert.equal(playing.feed, 'none', 'Mobile gameplay hides feed');
+  assert.equal(playing.feed, 'block', 'Mobile gameplay shows the enabled feed');
   assert.equal(playing.footer, 'none', 'Mobile gameplay hides footer');
-  assert.equal(playing.liveFeed, 'false', 'Canvas feed disabled during mobile gameplay');
+  assert.equal(playing.liveFeed, 'true', 'Mobile gameplay preserves the enabled feed preference');
   assert.ok(Math.abs(playing.hudInset-playing.iconInset)<0.1 && Math.abs(playing.joystickLeft-playing.hudInset)<0.1, 'Pips and joystick match visible Fullscreen icon inset: '+JSON.stringify(playing));
   assert.ok(Math.abs(playing.hudTop-playing.hudInset)<0.1 && Math.abs(playing.joystickBottom-playing.hudInset)<0.1, 'Pips top and joystick bottom use the same edge inset');
-  await evaluate('document.exitFullscreen()');
   await settle();
+  assert.equal(await evaluate("document.querySelector('.game-app').dataset.state"), 'paused', 'Pause control pauses gameplay');
+  assert.ok(await evaluate("document.fullscreenElement===document.querySelector('.game-app')"), 'Pausing preserves fullscreen');
+  assert.equal(await evaluate("getComputedStyle(document.querySelector('.site-footer')).display"), 'none', 'Paused fullscreen keeps footer hidden');
+  await evaluate("document.querySelector('.header-pause-control').click()");
+  await settle();
+  assert.equal(await evaluate("document.querySelector('.game-app').dataset.state"), 'play', 'Resume control resumes gameplay');
+  assert.ok(await evaluate("document.fullscreenElement===document.querySelector('.game-app')"), 'Resuming preserves fullscreen');
+  await evaluate("document.querySelector('.header-pause-control').click()");
+  await settle();
+  await call('Runtime.evaluate', { expression: "document.querySelector('.desktop-fullscreen-control').click()", userGesture: true });
+  await settle();
+  assert.equal(await evaluate('!!document.fullscreenElement'), false, 'Fullscreen button explicitly exits fullscreen');
   assert.notEqual(await evaluate("getComputedStyle(document.querySelector('.site-footer')).display"), 'none', 'Pause restores footer');
   assert.equal(await evaluate("document.querySelector('.game-app').dataset.liveFeed"), 'true', 'Pause restores enabled feed');
+  assert.ok(await evaluate("(() => {const button=document.querySelector('.pause-overlay .game-result-actions > button:last-child'), icon=button.querySelector('.new-game-space-key'), b=button.getBoundingClientRect(), r=icon.getBoundingClientRect(); return r.width===64 && r.left>=b.left && r.right<=b.right && r.top>=b.top && r.bottom<=b.bottom;})()"), 'Continue has the same contained Space Bar hint as New Game');
   assert.ok(await evaluate("!!document.querySelector('.header-pause-control[aria-label=\"Resume game\"] .lucide-play') && !document.querySelector('.header-pause-control .lucide-pause')"), 'Paused game shows Play instead of Pause');
   const pause = await evaluate(`(() => {
     const headerRadius = getComputedStyle(document.querySelector('.header-pause-control')).borderRadius;
@@ -542,7 +645,7 @@ try {
   assert.ok(pause.sizes.every(size => size.width === homeButton.width && size.height === homeButton.height), 'Pause buttons match home dimensions');
   assert.ok(pause.radii.length === 4 && pause.radii.every(radius => radius === homeStyle.radius), 'Pause panel and buttons match Home corner radius');
   assert.equal(await evaluate("getComputedStyle(document.querySelector('.game-result-actions')).gap"), homeStyle.gap, 'Pause gap matches Home');
-  for (const [width, height, touch] of [[1440, 900, false], [844, 390, true], [667, 375, true]]) {
+  for (const [width, height, touch] of [[1440, 900, false], [390, 844, true], [844, 390, true], [667, 375, true]]) {
     await call('Emulation.setTouchEmulationEnabled', { enabled: touch });
     await call('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: touch });
     await settle();
@@ -551,13 +654,18 @@ try {
       const actions = await evaluate(`(() => {
         const buttons = [...document.querySelectorAll('.game-result-actions > button')];
         const rects = buttons.map(button => button.getBoundingClientRect());
+        const panel=document.querySelector('.pause-overlay .game-result').getBoundingClientRect();
+        const title=document.querySelector('.pause-overlay .game-result h2').getBoundingClientRect();
         return {sizes:rects.map(r => ({width:r.width,height:r.height})),
+          topSpace:rects[0].top-title.bottom, bottomSpace:panel.bottom-rects.at(-1).bottom,
           shadows:buttons.map(button => getComputedStyle(button).boxShadow),
           gaps:rects.slice(1).map((r,i) => r.top-rects[i].bottom)};
       })()`);
-      const expectedWidth = touch ? Math.min(width*0.34,320) : desktopHomeButton.width;
-      const expectedHeight = touch ? Math.max(28,Math.min(height*0.09,48)) : desktopHomeButton.height;
-      const expectedGap = touch ? Math.max(3,Math.min(height/100,6)) : 4;
+      const landscapeTouch = touch && width > height;
+      const expectedWidth = touch ? Math.min(width*(landscapeTouch?0.34:0.7),320) : desktopHomeButton.width;
+      const expectedHeight = landscapeTouch ? Math.max(28,Math.min(height*0.09,48)) : desktopHomeButton.height;
+      const expectedGap = landscapeTouch ? Math.max(3,Math.min(height/100,6)) : 4;
+      if(touch) assert.ok(Math.abs(actions.topSpace-actions.bottomSpace)<=1.1, 'Margin Call actions are vertically centered between title and panel bottom: '+JSON.stringify(actions));
       assert.ok(actions.sizes.every(r => Math.abs(r.width-expectedWidth)<0.1 && Math.abs(r.height-expectedHeight)<0.1), 'Margin Call dimensions match Home');
       assert.ok(actions.gaps.every(gap => Math.abs(gap-expectedGap)<0.1), 'Margin Call actual gaps match Home');
       assert.ok(actions.shadows.every(shadow => shadow === 'none'), 'Margin Call buttons have no shadows');
@@ -602,26 +710,45 @@ try {
       await evaluate(`if (document.documentElement.dataset.theme !== '${theme}') window.dispatchEvent(new KeyboardEvent('keydown', {key:'n', bubbles:true}));`);
       await evaluate('document.activeElement?.blur()');
       await settle();
-      await evaluate(`(() => {
+      await evaluate(`(async () => {
         const panel=document.querySelector('.share-dd-dialog'), p=panel.getBoundingClientRect();
+        const overlay=panel.parentElement.getBoundingClientRect();
+        if(p.width>780 || p.height>640 || p.left<overlay.left+11 || p.right>overlay.right-11 || p.top<overlay.top+11 || p.bottom>overlay.bottom-11) throw new Error('Share DD must be a separate inset panel containing artwork and share controls');
+        if(Math.abs(p.left+p.width/2-overlay.left-overlay.width/2)>1 || Math.abs(p.top+p.height/2-overlay.top-overlay.height/2)>1) throw new Error('Share DD panel must stay centered');
         const image=document.querySelector('.share-dd-image').getBoundingClientRect();
         const actions=document.querySelector('.share-dd-actions').getBoundingClientRect();
         const full=document.querySelector('.desktop-fullscreen-control');
         const style=getComputedStyle(full);
         const f={width:parseFloat(style.width),height:parseFloat(style.height)};
-        if(getComputedStyle(panel).backgroundColor!=='${theme === 'light' ? 'rgb(255, 255, 255)' : 'rgb(0, 0, 0)'}') throw new Error('Share DD must use the information window theme');
-        if(actions.right>image.left || actions.bottom>p.bottom || Math.abs(actions.bottom-(p.bottom-13))>1) throw new Error('Share buttons must sit bottom-left outside the image');
+        if(getComputedStyle(panel).backgroundColor!=='rgba(0, 0, 0, 0)' || getComputedStyle(panel).borderTopWidth!=='0px') throw new Error('Share DD artwork is the panel without an outer background or border');
+        if(Math.abs(image.left-p.left)>1 || Math.abs(image.top-p.top)>1 || Math.abs(image.width-p.width)>1 || Math.abs(image.height-p.height)>1 || Math.abs(p.width/p.height-1448/1086)>0.01) throw new Error('Share artwork fills its section at its native proportions');
+        if(Math.abs(actions.left-(image.left+12))>1 || Math.abs(actions.bottom-(image.bottom-12))>1 || actions.right>image.right) throw new Error('Share buttons overlay the bottom-left corner of the artwork');
         for(const button of document.querySelectorAll('.share-dd-close, .share-dd-actions > button')) {
           const r=button.getBoundingClientRect(), s=getComputedStyle(button);
           if(r.width!==f.width || r.height!==f.height || s.borderRadius!==style.borderRadius) throw new Error('Share buttons must match Fullscreen dimensions');
-          if(button.matches('.share-dd-copy')) {
-            if(s.backgroundColor!=='rgb(8, 121, 92)') throw new Error('Share must stay green');
-          } else if(s.backgroundColor!==style.backgroundColor || s.color!==style.color || s.borderTopColor!==style.borderTopColor) throw new Error('Share controls must match Fullscreen colors: '+JSON.stringify({button:button.className,actual:[s.backgroundColor,s.color,s.borderTopColor],expected:[style.backgroundColor,style.color,style.borderTopColor]}));
+          if(s.backgroundColor!==style.backgroundColor || s.color!==style.color || s.borderTopColor!==style.borderTopColor) throw new Error('Share controls must match Fullscreen colors: '+JSON.stringify({button:button.className,actual:[s.backgroundColor,s.color,s.borderTopColor],expected:[style.backgroundColor,style.color,style.borderTopColor]}));
           if(r.left<p.left || r.right>p.right || r.top<p.top || r.bottom>p.bottom) throw new Error('Share controls must fit the window');
         }
         const canvas=document.querySelector('.share-dd-canvas');
         if(canvas.width!==1448 || canvas.height!==1086 || getComputedStyle(canvas).objectFit!=='contain') throw new Error('Share artwork must keep its original proportions');
+        const background = new Image();
+        background.src = '${theme}' === 'dark' ? '/images/score-back-inverted.png' : '/images/score-back.png';
+        await background.decode();
+        if(background.naturalWidth!==canvas.width || background.naturalHeight!==canvas.height) throw new Error('Share background must load at its native size in both themes');
       })()`);
+      const { root: shareRoot } = await call('DOM.getDocument');
+      const { nodeId: shareNode } = await call('DOM.querySelector', { nodeId: shareRoot.nodeId, selector: '.share-dd-copy' });
+      for (const state of ['hover', 'focus-visible']) {
+        await call('CSS.forcePseudoState', { nodeId: shareNode, forcedPseudoClasses: [state] });
+        await settle();
+        const style = await evaluate(`(() => {const s=getComputedStyle(document.querySelector('.share-dd-copy'));return {background:s.backgroundColor,color:s.color,border:s.borderTopColor,outline:s.outlineStyle};})()`);
+        assert.equal(style.background, state === 'hover' ? 'rgb(8, 121, 92)' : 'rgba(0, 0, 0, 0)', 'Share background is green only on hover');
+        assert.equal(style.border, 'rgba(0, 0, 0, 0)', 'Share has no visible border');
+        if (state === 'hover') assert.equal(style.color, 'rgb(255, 255, 255)', 'Share hover icon contrasts with green');
+        else assert.equal(style.outline, 'solid', 'Share retains a visible keyboard focus indicator');
+      }
+      await call('CSS.forcePseudoState', { nodeId: shareNode, forcedPseudoClasses: [] });
+      await settle();
       console.log('PASS themed Share DD, Fullscreen controls and external artwork actions '+width+'x'+height+' '+theme);
     }
   }
@@ -652,15 +779,7 @@ try {
         const share = getComputedStyle(document.querySelector('.share-dd-open'));
         return { summary: document.querySelector('.game-result-summary').getBoundingClientRect().width,
           backdropFilter: getComputedStyle(document.querySelector('.liquidated-backdrop')).filter,
-          backdropFill: getComputedStyle(document.querySelector('.liquidated-backdrop > rect')).fill,
-          crane: getComputedStyle(document.querySelector('.liquidated-backdrop > g[stroke]')).stroke,
-          birdHead: getComputedStyle(document.querySelector('.liquidated-backdrop g > circle')).fill,
-          birdAccessories: ['.liquidated-bird-hat', '.liquidated-bird-briefcase'].map(selector => {
-            const item = document.querySelector(selector);
-            return {count: document.querySelectorAll(selector).length, bird: item.parentElement.dataset.liquidatedBird,
-              fill: getComputedStyle(item).fill, width: item.getBoundingClientRect().width,
-              image: item.querySelector('image')?.getAttribute('href')?.startsWith('data:image/png')};
-          }),
+          backdropFill: getComputedStyle(document.querySelector('.liquidated-backdrop')).backgroundColor,
           summaryBackground: getComputedStyle(document.querySelector('.game-result-summary')).backgroundColor,
           shadows: buttons.map(button => getComputedStyle(button).boxShadow),
           labels: buttons.map(button => button.textContent.trim()),
@@ -673,13 +792,27 @@ try {
       assert.deepEqual(layout.labels, ['Home', 'Share DD', 'New Game'], 'Liquidated button order');
       assert.ok(await evaluate("(() => {const icon=document.querySelector('.new-game-space-key'), button=icon.closest('button').getBoundingClientRect(), label=icon.previousElementSibling.getBoundingClientRect(), r=icon.getBoundingClientRect();return r.width===64 && r.bottom<=button.bottom && Math.abs(label.top+label.height/2-button.top-button.height/2)<1;})()"), 'Wide Space hint leaves New Game text vertically centered');
       assert.equal(layout.backdropFilter, 'none', 'Liquidated preserves natural bird colors without inversion');
+      assert.ok(await evaluate(`(async () => {
+        const scene=document.querySelector('.liquidated-backdrop'),r=scene.getBoundingClientRect(),
+          overlay=document.querySelector('.game-over-overlay').getBoundingClientRect(),
+          panel=document.querySelector('.game-result-over').getBoundingClientRect(),
+          content=document.querySelector('.game-result-content').getBoundingClientRect(),
+          images=[...scene.querySelectorAll('img')],
+          visible=images.filter(image=>getComputedStyle(image).display!=='none');
+        await Promise.all(images.map(image=>image.decode()));
+        const image=visible[0], imageRect=image?.getBoundingClientRect();
+        return scene.parentElement.classList.contains('game-over-overlay') &&
+          Math.abs(r.width-overlay.width)<1 && Math.abs(r.height-overlay.height)<1 &&
+          Math.abs(content.left+content.width/2-overlay.left-overlay.width/2)<1 &&
+          Math.abs(panel.top+panel.height/2-overlay.top-overlay.height/2)<1 &&
+          visible.length===1 && image.naturalWidth>0 && image.naturalHeight>0 &&
+          image.src.endsWith('/images/${theme === 'light' ? 'crane.png' : 'crane-inverted.png'}') &&
+          getComputedStyle(image).objectFit==='cover' &&
+          Math.abs(imageRect.width-r.width)<1 && Math.abs(imageRect.height-r.height)<1;
+      })()`), 'Liquidated loads the correct themed crane artwork across the overlay without moving the centered controls');
       const paper = theme === 'light' ? 'rgb(255, 255, 255)' : 'rgb(0, 0, 0)';
       const ink = theme === 'light' ? 'rgb(0, 0, 0)' : 'rgb(255, 255, 255)';
       assert.equal(layout.backdropFill, paper, 'Liquidated scene background follows theme');
-      assert.equal(layout.crane, ink, 'Crane contrasts with scene background');
-      assert.equal(layout.birdHead, ink, 'Bird heads contrast with scene background');
-      assert.deepEqual(layout.birdAccessories.map(item => item.bird), ['1', '3'], 'First bird wears the hat; third holds the briefcase');
-      assert.ok(layout.birdAccessories.every(item => item.count === 1 && item.fill === ink && item.width > 0 && item.image), 'Bird accessories use actual game renderers, black in Day and white in Night');
       assert.equal(layout.summaryBackground, ink, 'All-time High panel contrasts with scene');
       await evaluate("document.querySelector('.site-footer nav button').click()");
       await settle();
@@ -749,6 +882,7 @@ try {
       assert.equal(portrait.layout, 'portrait');
       assert.ok(portrait.height>portrait.width && Math.abs(portrait.width-portrait.viewWidth)<1, 'Portrait chart uses native vertical dimensions');
       assert.equal(portrait.count, 0, 'Portrait Home chart has no models');
+      assert.ok(await evaluate("(() => {const chart=document.querySelector('.landing-menu-chart').getBoundingClientRect(),button=document.querySelector('.home-coffee-link').getBoundingClientRect(),logo=document.querySelector('.stonktrooper-logo').getBoundingClientRect(),plotHeight=parseFloat(document.querySelector('#landing-chart-plot rect').getAttribute('height'));return Math.abs(button.left-chart.left-logo.left)<1 && Math.abs(chart.top+plotHeight-button.bottom-logo.left)<1;})()"), 'Portrait Donate left gutter and gap above time-axis line match the logo left gutter');
       assert.ok(await evaluate("(() => {const hero=document.querySelector('.landing-menu-actions .menu-celebration').getBoundingClientRect(), button=document.querySelector('.landing-menu-guide-button').getBoundingClientRect();return hero.width>0 && hero.bottom<=button.top+1;})()"), 'Portrait keeps the hero above How to Play');
       assert.ok(await evaluate("(() => {const button=document.querySelector('.desktop-fullscreen-control'),r=button.getBoundingClientRect();return r.width===32 && r.height===32 && button.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2));})()"), 'Portrait Fullscreen is visible and reachable');
       assert.equal(portrait.candleWidth, '3.6');
@@ -777,6 +911,13 @@ try {
       await settle();
       assert.ok(await evaluate("(() => {const panel=document.querySelector('.site-info-dialog'), r=panel.getBoundingClientRect(), close=panel.querySelector('.site-info-close'), c=close.getBoundingClientRect();return r.left>=0 && r.right<=innerWidth+1 && r.bottom<=innerHeight+1 && close.contains(document.elementFromPoint(c.x+c.width/2,c.y+c.height/2));})()"), `${section} fits portrait with reachable close`);
       await checkInfoCard('.landing-menu-actions');
+      if (section === 'Settings') {
+        for (let toggle = 0; toggle < 2; toggle++) {
+          await evaluate("document.querySelector('button[aria-label=\"Shmuck Feed\"]').click()");
+          await settle();
+          await checkInfoCard('.landing-menu-actions');
+        }
+      }
       await evaluate("document.querySelector('.site-info-close').click()");
     }
   }
@@ -792,6 +933,10 @@ try {
   await settle();
   assert.equal(await evaluate('!!document.fullscreenElement'), false, 'Fullscreen control exits fullscreen');
   console.log('PASS portrait Fullscreen toggle, hidden footer and fullscreen information bounds');
+  await evaluate("document.querySelector('.landing-menu-settings-button').click()");
+  await settle();
+  await evaluate("const feedToggle=document.querySelector('button[aria-label=\"Shmuck Feed\"]'); if(feedToggle.getAttribute('aria-checked')!=='true') feedToggle.click(); document.querySelector('.site-info-close').click()");
+  await settle();
   for (const action of ['Start', 'Continue', 'New Game']) {
     await call('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 1, mobile: true });
     await settle();
@@ -812,6 +957,7 @@ try {
     await settle();
     assert.equal(await evaluate("document.querySelector('.game-app').dataset.state"), 'play', action+' starts only after landscape fullscreen');
     assert.equal(await evaluate("getComputedStyle(document.querySelector('.site-footer')).display"), 'none', action+' keeps footer hidden');
+    assert.ok(await evaluate("(() => {const feed=document.querySelector('.desktop-live-feed-bar'),r=feed.getBoundingClientRect();return !feed.hidden && r.height>0 && getComputedStyle(feed).display!=='none';})()"), action+' shows the enabled Live Feed during mobile gameplay');
     assert.ok(await evaluate('innerWidth>innerHeight'), action+' uses landscape orientation');
     await evaluate('document.exitFullscreen()');
     await settle();

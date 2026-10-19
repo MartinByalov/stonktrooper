@@ -531,18 +531,43 @@ html[data-theme="light"] .game-result-over .liquidated-how-to-play:hover,
 }
 
 .liquidated-backdrop {
-  --liquidated-scene-bg: #ffffff;
-  --liquidated-scene-ink: #000000;
-  --liquidated-scene-skyline: #e5e7eb;
-  --liquidated-scene-crane: #000000;
+  background: #ffffff;
   filter: none;
+  z-index: 0;
+}
+
+.liquidated-backdrop > img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+.liquidated-backdrop > .liquidated-scene-night {
+  display: none;
+}
+
+html .game-app .game-over-overlay > .game-result-over {
+  z-index: 1;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+
+html .game-app .game-over-overlay > .game-result-over > .game-result-content {
+  padding-block: 0 !important;
 }
 
 html:not([data-theme="light"]) .liquidated-backdrop {
-  --liquidated-scene-bg: #000000;
-  --liquidated-scene-ink: #ffffff;
-  --liquidated-scene-skyline: #1f2937;
-  --liquidated-scene-crane: #ffffff;
+  background: #000000;
+}
+
+html:not([data-theme="light"]) .liquidated-backdrop > .liquidated-scene-day {
+  display: none;
+}
+
+html:not([data-theme="light"]) .liquidated-backdrop > .liquidated-scene-night {
+  display: block;
 }
 
 html .game-app .game-result-over .game-result-summary {
@@ -2300,8 +2325,8 @@ kbd {
     text-align: center;
   }
 
-  .game-app .pause-overlay > .game-result > div > .space-y-2\.5 {
-    margin-top: 0;
+  .game-app .pause-overlay > .game-result > div > .game-result-actions {
+    margin-top: var(--margin-call-gap);
   }
 
   /* Override portrait's generic arena-overlay stretch in both orientations. */
@@ -2769,7 +2794,7 @@ kbd {
   }
 }
 
-/* Share DD keeps its controls outside the artwork in a themed window. */
+/* The artwork itself is the Share DD panel; controls overlay its corners. */
 .game-app:has(.share-dd-overlay) .game-over-overlay > .game-result-over {
   visibility: hidden;
 }
@@ -2789,31 +2814,29 @@ kbd {
 
 .game-app .share-dd-overlay.fixed.inset-0.z-50 > .share-dd-dialog[role="dialog"] {
   position: relative;
-  display: grid;
-  grid-template-columns: 32px minmax(0, 1fr);
-  grid-template-rows: minmax(0, 1fr);
-  gap: 12px;
-  flex: 1 1 auto;
+  display: block;
+  flex: 0 0 auto;
   box-sizing: border-box;
-  width: 100%;
-  height: 100%;
+  width: min(780px, calc(100% - 24px), calc((100cqh - 24px) * 4 / 3));
+  height: auto;
+  aspect-ratio: 1448 / 1086;
   min-width: 0;
   min-height: 0;
-  max-width: none;
-  max-height: none;
+  max-width: calc(100% - 24px);
+  max-height: calc(100% - 24px);
   margin: 0;
-  padding: 44px 12px 12px;
-  border: 1px solid var(--line);
+  padding: 0;
+  border: 0;
   border-radius: var(--ui-radius);
-  background: var(--page-surface);
+  background: transparent;
   box-shadow: none;
   transform: none;
   overflow: hidden;
 }
 
 .game-app .share-dd-image {
-  grid-column: 2;
-  grid-row: 1;
+  width: 100%;
+  height: 100%;
   min-width: 0;
   min-height: 0;
   display: flex;
@@ -2841,12 +2864,14 @@ kbd {
 }
 
 .game-app .share-dd-dialog > .share-dd-actions {
-  position: static;
-  grid-column: 1;
-  grid-row: 1;
-  align-self: end;
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  max-width: calc(100% - 24px);
+  z-index: 1;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  flex-wrap: wrap;
   gap: 6px;
   margin: 0;
 }
@@ -2910,8 +2935,20 @@ html .game-app .preferences-clear-button {
 
 
 html .game-app .share-dd-actions > button.share-dd-copy {
+  color: var(--square-control-ink) !important;
+  background: transparent !important;
+  border: 1px solid transparent !important;
+  box-shadow: none;
+}
+
+html .game-app .share-dd-actions > button.share-dd-copy:hover {
   color: #ffffff !important;
   background: #08795c !important;
+}
+
+html .game-app .share-dd-actions > button.share-dd-copy:focus-visible {
+  outline: 2px solid var(--square-control-ink);
+  outline-offset: 2px;
 }
 
 html .game-app :is(.share-dd-close, .share-dd-actions > button) svg {
@@ -2923,10 +2960,6 @@ html .game-app :is(.share-dd-close, .share-dd-actions > button) svg {
     width: 16px;
     height: 16px;
   }
-}
-
-html[data-theme="light"] .game-app .share-dd-actions > button.share-dd-copy {
-  border-color: #000000 !important;
 }
 
 .mobile-diagnostics {
@@ -3578,6 +3611,7 @@ html .game-app .landing-menu-panel > .landing-menu-actions {
 
 /* Home, pause and game-over actions share the same hit area and width. */
 html .game-app .landing-menu-panel button,
+html .game-app .site-info-dialog .preferences-clear-button,
 html .game-app .game-result :is(.margin-call-action, .share-dd-open, .liquidated-how-to-play) {
   height: 44px;
   min-height: 44px;
@@ -3597,12 +3631,19 @@ html .game-app .game-result-actions {
 }
 
 html .game-app .landing-menu-actions button,
+html .game-app .site-info-dialog .preferences-clear-button,
 html .game-app .game-result-actions > button {
   box-sizing: border-box;
   flex-shrink: 0;
   border-radius: var(--ui-radius);
   margin: 0;
   box-shadow: none;
+}
+
+html .game-app .site-info-dialog .preferences-clear-button {
+  width: var(--menu-action-width);
+  max-width: 100%;
+  margin-inline: auto;
 }
 
 html .game-app[data-live-feed="false"] :is(.desktop-live-feed-bar, .mobile-header-feed) {
@@ -3683,6 +3724,7 @@ html .game-app[data-live-feed="false"] :is(.desktop-live-feed-bar, .mobile-heade
   }
 
   html .game-app .landing-menu-actions .menu-action-button,
+  html .game-app .site-info-dialog .preferences-clear-button,
   html .game-app .game-result :is(.margin-call-action, .share-dd-open, .liquidated-how-to-play) {
     height: var(--touch-action-height);
     min-height: var(--touch-action-height);
@@ -3784,7 +3826,8 @@ html:not([data-theme="light"]) .game-app :is(.landing-menu-guide-button, .landin
 }
 
 .settings-options { display: grid; gap: 8px; }
-.game-app .game-result-over .game-result-actions > button:last-child {
+.game-app .game-result-actions > button:last-child,
+.game-app .landing-menu-actions > button:last-child {
   position: relative;
 }
 .new-game-space-key {
@@ -3835,9 +3878,12 @@ html .game-app[data-animations="false"] *::after {
   scroll-behavior: auto !important;
 }
 
-/* Mobile gameplay keeps the chart clear of footer and feed chrome. */
+/* Mobile gameplay hides the footer; the feed follows the user's preference. */
 @media (pointer: coarse) {
-  html .game-app:is([data-state="play"], [data-state="boxing"]) :is(.site-footer, .desktop-live-feed-bar, .mobile-header-feed) {
+  html[data-theme] .game-app:fullscreen .site-footer {
+    display: none !important;
+  }
+  html .game-app:is([data-state="play"], [data-state="boxing"]) .site-footer {
     display: none !important;
   }
 }
@@ -3958,7 +4004,7 @@ html .game-app .site-footer {
     max-height: 100%;
     min-height: 0;
     border: 0;
-    border-radius: 0;
+    border-radius: var(--ui-radius);
     padding: 16px;
     display: flex;
     flex-direction: column;
@@ -4045,6 +4091,8 @@ html .game-app .site-info-content > .site-info-body {
   width: 100%;
   margin-block: auto;
 }
+.game-app .site-info-artwork { display: none; }
+.game-app .site-info-bottom { margin-top: 12px; }
 html .game-app .site-info-dialog > .site-info-content::after {
   display: none;
 }
@@ -4175,9 +4223,74 @@ html[data-theme] .game-app :is(.mobile-how-to-header, .how-to-guide-header) > .d
 
 html .game-app .landing-menu-panel .home-coffee-link {
   left: max(var(--content-edge-inset), env(safe-area-inset-left));
-  bottom: calc(max(var(--content-edge-inset), env(safe-area-inset-bottom)) + 8px);
+  bottom: calc(18px + max(var(--content-edge-inset), env(safe-area-inset-left)));
+}
+@media (orientation: portrait) and (pointer: coarse) {
+  html .game-app .landing-menu-panel .home-coffee-link {
+    bottom: calc(24px + max(var(--content-edge-inset), env(safe-area-inset-left)));
+  }
 }
 @media (pointer: coarse) {
+  html .game-app .site-info-overlay.fixed.inset-0.z-50 > .site-info-dialog {
+    padding-block: 0 !important;
+    border-block-width: 0;
+    border-radius: 12px !important;
+  }
+  html .game-app .site-info-overlay.fixed.inset-0.z-50 > .site-info-dialog > .site-info-content {
+    /* Auto body margins center short content without clipping the start of long text. */
+    justify-content: flex-start;
+  }
+  html .game-app .site-info-content > .site-info-body {
+    display: grid;
+    grid-template-rows: minmax(88px, 1fr) auto minmax(60px, 1fr);
+    min-height: 100%;
+    margin-block: 0;
+  }
+  html .game-app .site-info-main {
+    margin: 0;
+    padding: 0;
+  }
+  html .game-app .site-info-artwork {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+  }
+  html .game-app .site-info-artwork canvas {
+    width: 64px;
+    height: 64px;
+  }
+  html .game-app .site-info-body:is([data-info-section="Settings"], [data-info-section="About"], [data-info-section="Disclaimer"]) {
+    grid-template-rows: minmax(16px, 1fr) auto minmax(88px, 1fr) auto;
+  }
+  html .game-app .site-info-body:is([data-info-section="Settings"], [data-info-section="About"], [data-info-section="Disclaimer"]) > .site-info-main {
+    grid-row: 2;
+  }
+  html .game-app .site-info-body:is([data-info-section="Settings"], [data-info-section="About"], [data-info-section="Disclaimer"]) > .site-info-artwork {
+    grid-row: 3;
+  }
+  html .game-app .site-info-body[data-info-section="About"] > .about-copyright {
+    grid-row: 4;
+  }
+  html .game-app .site-info-body[data-info-section="Disclaimer"] > .site-info-artwork canvas {
+    width: 52px;
+    height: 52px;
+  }
+  html .game-app .site-info-bottom {
+    align-self: center;
+    margin: 0;
+    padding-block: 8px;
+  }
+  html .game-app .about-copyright {
+    align-self: end;
+  }
+  html .game-app .site-info-overlay.fixed.inset-0.z-50 > .site-info-dialog > .site-info-header {
+    /* The shared chrome owns the separators; retain equal top/right X insets. */
+    height: calc(32px + var(--fullscreen-control-right, 2px) + var(--fullscreen-control-right, 2px));
+    min-height: calc(32px + var(--fullscreen-control-right, 2px) + var(--fullscreen-control-right, 2px));
+    flex-basis: calc(32px + var(--fullscreen-control-right, 2px) + var(--fullscreen-control-right, 2px));
+    margin-bottom: 0;
+  }
   html .game-app .site-info-overlay.fixed.inset-0.z-50 > .site-info-dialog > .site-info-header > .site-info-close {
     /* The full-width panel has a 1px border and 12px inner padding. */
     right: calc(var(--fullscreen-control-right, 2px) - 13px);

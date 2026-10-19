@@ -90,7 +90,7 @@ export function ShareDD({ score, theme, scoreTheme = theme, demo = false, onClos
       </div>
       <div className="share-dd-actions">
         {socialLinks(score).map(platform => <button key={platform.name} type="button" disabled={sharing} onClick={() => { void shareSocial(platform.name); }} aria-label={`Share score link to ${platform.name}`} title={`Share score on ${platform.name}`} className="share-dd-social-button flex items-center justify-center rounded-lg border border-[var(--line)] bg-[var(--alt)] p-3 disabled:opacity-40 cursor-pointer"><SocialIcon name={platform.name} /></button>)}
-        <button type="button" aria-label={error || (copied ? 'Score link copied' : 'Copy score link')} title={error || (copied ? 'Copied!' : 'Copy score link')} disabled={sharing} onClick={() => { void share(); }} className="share-dd-copy flex items-center justify-center gap-2 rounded-lg bg-[#08795c] text-white p-3 font-bold disabled:opacity-40">
+        <button type="button" aria-label={error || (copied ? 'Score link copied' : 'Copy score link')} title={error || (copied ? 'Copied!' : 'Copy score link')} disabled={sharing} onClick={() => { void share(); }} className="share-dd-copy flex items-center justify-center gap-2 rounded-lg p-3 font-bold disabled:opacity-40">
           {copied ? <Check className="w-5 h-5" aria-hidden="true" /> : <Share2 className="w-5 h-5" aria-hidden="true" />}
         </button>
       </div>
