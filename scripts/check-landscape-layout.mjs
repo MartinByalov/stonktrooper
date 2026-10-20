@@ -106,8 +106,8 @@ try {
       controller.tone(440,220,0.4,0.1);
       return peaks;
     })()`);
-    assert.deepEqual(levels, [0.2, 0.1], 'Background notes are boosted 2x while effect envelopes stay unchanged');
-    console.log('PASS background music 2x gain, unchanged sound-effect gain');
+    assert.ok(Math.abs(levels[0] - 0.3) < 1e-10 && levels[1] === 0.1, 'Background notes are boosted 3x while effect envelopes stay unchanged');
+    console.log('PASS background music 3x gain, unchanged sound-effect gain');
   } else if (process.env.CHECK_LANDSCAPE_EDGES === '1') {
     await call('Emulation.setDeviceMetricsOverride', { width: 844, height: 390, deviceScaleFactor: 1, mobile: true });
     await call('Emulation.setTouchEmulationEnabled', { enabled: true });
@@ -222,19 +222,33 @@ try {
         assert.equal(await evaluate("document.querySelector('.game-app').dataset.state"), 'menu');
         assert.equal(await evaluate("!!document.querySelector('.menu-celebration, .share-dd-dialog, .game-result')"), false);
         assert.equal(await evaluate("document.querySelector('.landing-score').getAttribute('aria-label')"), 'Shared best score: 37,135');
-        const layout = await evaluate(`(() => {
+        const layout = await evaluate(`(async () => {
           const r=s=>document.querySelector(s).getBoundingClientRect();
           const art=r('.landing-score canvas'), panel=r('.landing-menu-panel'), actions=r('.landing-menu-actions'), donate=r('.home-coffee-link'), guide=r('.landing-menu-guide-button'), footer=r('.site-footer');
           const overlap=(a,b)=>a.left<b.right && a.right>b.left && a.top<b.bottom && a.bottom>b.top;
           const canvas=document.querySelector('.landing-score canvas'), ctx=canvas.getContext('2d');
           const target=${height > width} ? guide : donate;
+          // Independently measure native alpha bounds to locate the body axis
+          // and higher shoe, rather than centering the briefcase-inclusive box.
+          const image=new Image(); image.src='/images/score-back${theme === 'dark' ? '-inverted' : ''}.png'; await image.decode();
+          const probe=document.createElement('canvas'); probe.width=image.naturalWidth; probe.height=image.naturalHeight;
+          const pc=probe.getContext('2d'); pc.drawImage(image,0,0);
+          const pixels=pc.getImageData(0,0,probe.width,probe.height);
+          let minX=probe.width,minY=probe.height,maxX=-1,maxY=-1;
+          for(let y=0;y<probe.height;y++) for(let x=0;x<probe.width;x++) {
+            if(pixels.data[(y*probe.width+x)*4+3]<=16) continue;
+            minX=Math.min(minX,x); maxX=Math.max(maxX,x); minY=Math.min(minY,y); maxY=Math.max(maxY,y);
+          }
+          const axis=(probe.width*0.407-minX)/(maxX-minX+1), baseline=(probe.height*0.965-minY)/(maxY-minY+1);
+          const grounded={left:art.left,right:art.right,top:art.top,bottom:art.top+art.height*baseline};
           return { visible:art.width>0 && art.height>0, inside:art.left>=panel.left && art.right<=panel.right && art.top>=panel.top && art.bottom<=(${mobile} ? panel.bottom : footer.bottom)+1,
-            overlap:overlap(art,actions)||overlap(art,donate), painted:ctx.getImageData(canvas.width/2,canvas.height/2,1,1).data[3]>0,
-            anchored: ${mobile} ? Math.abs(art.bottom-target.top)<1 && Math.abs(art.left+art.width/2-target.left-target.width/2)<1 : Math.abs(art.bottom-footer.bottom)<1 && Math.abs(art.left-donate.right-8)<1,
+            overlap:${mobile} ? grounded.bottom>target.top+1 : overlap(art,actions)||overlap(art,donate), painted:ctx.getImageData(canvas.width/2,canvas.height/2,1,1).data[3]>0,
+            anchored: ${mobile} ? Math.abs(grounded.bottom-target.top)<1 && Math.abs(art.left+art.width*axis-target.left-target.width/2)<1 && art.bottom>target.top : Math.abs(art.bottom-footer.bottom)<1 && Math.abs(art.left-donate.right-8)<1,
+            smaller: ${mobile && height > width} ? art.height<=288.1 : true,
             centered: ${mobile && height > width} ? Math.abs(actions.top+actions.height/2-panel.top-panel.height/2)<1 : true };
         })()`);
         if (layout.overlap) console.log(await evaluate("JSON.stringify(['.landing-score canvas','.landing-menu-panel','.landing-menu-actions','.home-coffee-link'].map(s=>[s,document.querySelector(s).getBoundingClientRect().toJSON()]))"));
-        assert.deepEqual(layout, { visible: true, inside: true, overlap: false, painted: true, anchored: true, centered: true }, `${width}x${height} ${theme}: ${JSON.stringify(layout)}`);
+        assert.deepEqual(layout, { visible: true, inside: true, overlap: false, painted: true, anchored: true, smaller: true, centered: true }, `${width}x${height} ${theme}: ${JSON.stringify(layout)}`);
         console.log(`PASS shared score Home ${width}x${height} ${theme}`);
       }
     }

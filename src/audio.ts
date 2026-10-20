@@ -4,7 +4,7 @@ import { loadSoundSettings, SoundCategory, SoundVariant } from './soundSettings'
 import { MusicMode, MusicPlaylist } from './musicBank';
 
 // Boost the whole background arrangement without changing sound effects/master volume.
-const MUSIC_VOLUME_BOOST = 2;
+const MUSIC_VOLUME_BOOST = 3;
 
 export class SoundController {
   private masterGain: GainNode | null = null;

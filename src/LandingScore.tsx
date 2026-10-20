@@ -6,6 +6,9 @@ export function LandingScore({ score, theme }: { score: number; theme: 'light' |
   const canvas = useRef<HTMLCanvasElement>(null);
   const figure = useRef<HTMLElement>(null);
   const anchor = useRef<HTMLSpanElement>(null);
+  // The briefcase makes the artwork bounds asymmetric. Use the trouser split
+  // as the body axis, and the higher (anatomical left) shoe as the baseline.
+  const artworkAnchor = useRef({ x: 0.5, baseline: 1 });
   const [loaded, setLoaded] = useState(false);
   const [portalHost, setPortalHost] = useState<Element>(() => document.fullscreenElement ?? document.body);
 
@@ -34,6 +37,10 @@ export function LandingScore({ score, theme }: { score: number; theme: 'light' |
       }
       if (right >= left && bottom >= top) {
         const cropped = ctx.getImageData(left, top, right - left + 1, bottom - top + 1);
+        artworkAnchor.current = {
+          x: (image.naturalWidth * 0.407 - left) / cropped.width,
+          baseline: (image.naturalHeight * 0.965 - top) / cropped.height,
+        };
         ctx.canvas.width = cropped.width; ctx.canvas.height = cropped.height;
         ctx.putImageData(cropped, 0, 0);
       }
@@ -60,14 +67,15 @@ export function LandingScore({ score, theme }: { score: number; theme: 'light' |
       const center = target.left + target.width / 2;
       const bottom = mobile ? target.top : footer.getBoundingClientRect().bottom;
       const availableHeight = Math.max(0, bottom - p.top - 8);
+      const axis = artworkAnchor.current.x;
       const availableWidth = Math.max(0, mobile
-        ? 2 * Math.min(center - p.left, p.right - center, portrait ? p.width / 2 : a.left - center - 8)
+        ? Math.min((center - p.left) / axis, ((portrait ? p.right : a.left - 8) - center) / (1 - axis))
         : a.left - d.right - 16);
       const ratio = canvas.current ? canvas.current.width / canvas.current.height : 1;
-      const height = Math.min(availableHeight, availableWidth / ratio, mobile ? 320 : 480);
-      const left = mobile ? center - height * ratio / 2 : d.right + 8;
+      const height = Math.min(availableHeight, availableWidth / ratio, mobile ? 320 : 480) * (mobile && portrait ? 0.9 : 1);
+      const left = mobile ? center - height * ratio * axis : d.right + 8;
       element.style.left = `${left}px`;
-      element.style.top = `${bottom - height}px`;
+      element.style.top = `${bottom - height * (mobile ? artworkAnchor.current.baseline : 1)}px`;
       element.style.width = `${height * ratio}px`;
       element.style.height = `${height}px`;
       element.dataset.layout = mobile ? portrait ? 'portrait' : 'landscape' : 'desktop';
