@@ -3,6 +3,9 @@
 import { loadSoundSettings, SoundCategory, SoundVariant } from './soundSettings';
 import { MusicMode, MusicPlaylist } from './musicBank';
 
+// Boost the whole background arrangement without changing sound effects/master volume.
+const MUSIC_VOLUME_BOOST = 2;
+
 export class SoundController {
   private masterGain: GainNode | null = null;
   private masterVolume = 1;
@@ -653,9 +656,9 @@ export class SoundController {
       }
       if (track.bass[step]) this.musicNote(track.bass[step], 0.28, 0.045, 'triangle');
       for (const pitch of track.chords[step]) this.musicNote(pitch, 0.55, 0.009, 'triangle');
-      if ((track.rhythm[step] & 1) || (style === 'deep' && step % 2 === 0)) this.tone(100, 35, 0.12, style === 'soft' ? 0.018 : 0.035, 'sine');
-      if (track.rhythm[step] & 2) this.noise(0.09, 0.014, 1100, 450);
-      if (track.rhythm[step] & 4) this.noise(0.03, 0.004, 3300, 2200);
+      if ((track.rhythm[step] & 1) || (style === 'deep' && step % 2 === 0)) this.tone(100, 35, 0.12, (style === 'soft' ? 0.018 : 0.035) * MUSIC_VOLUME_BOOST, 'sine');
+      if (track.rhythm[step] & 2) this.noise(0.09, 0.014 * MUSIC_VOLUME_BOOST, 1100, 450);
+      if (track.rhythm[step] & 4) this.noise(0.03, 0.004 * MUSIC_VOLUME_BOOST, 3300, 2200);
       // Two complete sixteen-bar loops before selecting the next composition.
       if (this.musicStep >= 256) {
         this.musicTrack = this.musicPlaylist.next(this.musicMode);
@@ -675,7 +678,7 @@ export class SoundController {
     filter.frequency.setValueAtTime(this.musicMode === 'kangaroo' ? 1800 : 1400, now);
     filter.Q.value = 0.4;
     gain.gain.setValueAtTime(0.0001, now);
-    gain.gain.linearRampToValueAtTime(volume, now + 0.018);
+    gain.gain.linearRampToValueAtTime(volume * MUSIC_VOLUME_BOOST, now + 0.018);
     gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
     osc.connect(filter); filter.connect(gain); gain.connect(this.masterGain ?? this.ctx.destination);
     this.trackVoice(osc);

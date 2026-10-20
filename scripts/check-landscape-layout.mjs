@@ -93,7 +93,22 @@ try {
     }
     throw new Error('Timed out waiting for '+selector);
   };
-  if (process.env.CHECK_LANDSCAPE_EDGES === '1') {
+  if (process.env.CHECK_MUSIC_VOLUME === '1') {
+    await call('Page.navigate', { url: 'http://127.0.0.1:5537/' });
+    await waitForSelector('.landing-menu-panel');
+    const levels = await evaluate(`(async () => {
+      const {SoundController}=await import('/src/audio.ts');
+      const controller=new SoundController(), peaks=[];
+      const param=()=>({value:0,setValueAtTime(){},exponentialRampToValueAtTime(){},linearRampToValueAtTime(value){peaks.push(value);}});
+      const node=()=>({connect(){},disconnect(){},start(){},stop(){},frequency:param(),Q:param(),gain:param()});
+      controller.ctx={currentTime:0,createOscillator:node,createGain:node,createBiquadFilter:node,destination:{}};
+      controller.musicNote(440,0.4,0.1,'triangle');
+      controller.tone(440,220,0.4,0.1);
+      return peaks;
+    })()`);
+    assert.deepEqual(levels, [0.2, 0.1], 'Background notes are boosted 2x while effect envelopes stay unchanged');
+    console.log('PASS background music 2x gain, unchanged sound-effect gain');
+  } else if (process.env.CHECK_LANDSCAPE_EDGES === '1') {
     await call('Emulation.setDeviceMetricsOverride', { width: 844, height: 390, deviceScaleFactor: 1, mobile: true });
     await call('Emulation.setTouchEmulationEnabled', { enabled: true });
     for (const insets of [{ left: 0, right: 0, top: 0, bottom: 0 }, { left: 44, right: 0, top: 0, bottom: 21 }, { left: 0, right: 44, top: 0, bottom: 21 }]) {
@@ -194,9 +209,9 @@ try {
     assert.equal(result,true);
     console.log('PASS joystick sectors, initial touch, dragging, continuous jump physics, diagonal movement, release/cancel/blur and normal tap');
   } else if (process.env.CHECK_LANDING_SCORE === '1') {
-    for (const [width, height, mobile] of [[1440, 900, false], [844, 390, true], [390, 844, true], [360, 640, true]]) {
+    for (const [width, height, mobile, touch = mobile] of [[1920, 800, false], [1440, 900, false], [844, 390, true], [798, 354, true, false], [390, 844, true], [359, 798, true, false], [360, 640, true]]) {
       await call('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile });
-      await call('Emulation.setTouchEmulationEnabled', { enabled: mobile });
+      await call('Emulation.setTouchEmulationEnabled', { enabled: touch });
       for (const theme of ['light', 'dark']) {
         await call('Page.navigate', { url: 'http://127.0.0.1:5537/' });
         await waitForSelector('.landing-menu-panel');
@@ -209,12 +224,13 @@ try {
         assert.equal(await evaluate("document.querySelector('.landing-score').getAttribute('aria-label')"), 'Shared best score: 37,135');
         const layout = await evaluate(`(() => {
           const r=s=>document.querySelector(s).getBoundingClientRect();
-          const art=r('.landing-score canvas'), panel=r('.landing-menu-panel'), actions=r('.landing-menu-actions'), donate=r('.home-coffee-link');
+          const art=r('.landing-score canvas'), panel=r('.landing-menu-panel'), actions=r('.landing-menu-actions'), donate=r('.home-coffee-link'), guide=r('.landing-menu-guide-button'), footer=r('.site-footer');
           const overlap=(a,b)=>a.left<b.right && a.right>b.left && a.top<b.bottom && a.bottom>b.top;
           const canvas=document.querySelector('.landing-score canvas'), ctx=canvas.getContext('2d');
-          return { visible:art.width>0 && art.height>0, inside:art.left>=panel.left && art.right<=panel.right && art.top>=panel.top && art.bottom<=panel.bottom,
+          const target=${height > width} ? guide : donate;
+          return { visible:art.width>0 && art.height>0, inside:art.left>=panel.left && art.right<=panel.right && art.top>=panel.top && art.bottom<=(${mobile} ? panel.bottom : footer.bottom)+1,
             overlap:overlap(art,actions)||overlap(art,donate), painted:ctx.getImageData(canvas.width/2,canvas.height/2,1,1).data[3]>0,
-            anchored: ${mobile} ? Math.abs(art.bottom-donate.top+8)<1 && Math.abs(art.left-donate.left)<1 : Math.abs(art.bottom-donate.bottom)<1 && Math.abs(art.left-donate.right-8)<1,
+            anchored: ${mobile} ? Math.abs(art.bottom-target.top)<1 && Math.abs(art.left+art.width/2-target.left-target.width/2)<1 : Math.abs(art.bottom-footer.bottom)<1 && Math.abs(art.left-donate.right-8)<1,
             centered: ${mobile && height > width} ? Math.abs(actions.top+actions.height/2-panel.top-panel.height/2)<1 : true };
         })()`);
         if (layout.overlap) console.log(await evaluate("JSON.stringify(['.landing-score canvas','.landing-menu-panel','.landing-menu-actions','.home-coffee-link'].map(s=>[s,document.querySelector(s).getBoundingClientRect().toJSON()]))"));
