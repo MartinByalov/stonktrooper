@@ -3705,6 +3705,14 @@ html .game-app .landing-menu-panel > .landing-menu-actions {
 }
 .landing-menu-quote em { font-style: italic; }
 .landing-menu-quote span { display: block; font-style: normal; }
+@media (orientation: landscape) and (pointer: coarse) {
+  .landing-menu-quote {
+    font-size: clamp(14px, 4dvh, 22px);
+    line-height: 1.2;
+    white-space: nowrap;
+  }
+  .landing-menu-quote span { display: inline; }
+}
 
 .menu-celebration {
   position: absolute;

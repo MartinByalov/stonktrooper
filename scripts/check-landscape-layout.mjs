@@ -176,9 +176,11 @@ try {
           const hero=document.querySelector('.menu-celebration').getBoundingClientRect();
           const feed=document.querySelector('.desktop-live-feed-bar').getBoundingClientRect();
           const top=feed.height>0 ? feed.bottom : document.querySelector('.game-app header').getBoundingClientRect().bottom;
-          return {text:element.textContent,italic:getComputedStyle(element.querySelector('em')).fontStyle,authorStyle:getComputedStyle(element.querySelector('span')).fontStyle,font:getComputedStyle(element).fontFamily,above:r.bottom<=hero.top,visible:r.top>=0&&r.left>=0&&r.right<=innerWidth,error:Math.abs((r.top+r.bottom)/2-(top+hero.top)/2)};
+          const text=element.querySelector('em').getBoundingClientRect(),author=element.querySelector('span').getBoundingClientRect();
+          return {singleLine:Math.abs(text.top-author.top)<1,text:element.textContent,italic:getComputedStyle(element.querySelector('em')).fontStyle,authorStyle:getComputedStyle(element.querySelector('span')).fontStyle,font:getComputedStyle(element).fontFamily,above:r.bottom<=hero.top,visible:r.top>=0&&r.left>=0&&r.right<=innerWidth,error:Math.abs((r.top+r.bottom)/2-(top+hero.top)/2)};
         })()`);
         assert.ok(quote.text==='“Next time for sure!” - Regard' && quote.italic==='italic' && quote.authorStyle==='normal' && quote.font.includes('Georgia') && quote.above && quote.visible && quote.error<1,JSON.stringify({width,height,quote}));
+        assert.equal(quote.singleLine,mobile && width>height,JSON.stringify({width,height,quote}));
         console.log('PASS shoe baseline on How to Play border '+width+'x'+height+' '+theme);
       }
     }
