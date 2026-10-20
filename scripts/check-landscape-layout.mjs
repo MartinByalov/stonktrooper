@@ -143,9 +143,9 @@ try {
           const banana=host.querySelector('[data-asset="banana"]');
           const fruits=[banana.dataset.fruit];
           for(let i=0;i<4;i++){banana.click();await settle();fruits.push(banana.dataset.fruit);}
-          const result={clown,sack,fruits,disabled:banana.disabled};root.unmount();host.remove();return result;
+          const result={clown,sack,height:bag.getBoundingClientRect().height,fruits,disabled:banana.disabled};root.unmount();host.remove();return result;
         })()`);
-        assert.ok(result.clown.bottom<=result.sack.top,JSON.stringify(result));
+        assert.ok(Math.abs(result.clown.bottom-result.sack.top)<0.5,JSON.stringify(result));
         assert.deepEqual(result.fruits,['banana','orange','watermelon','kiwi','tomato']);
         assert.equal(result.disabled,true);
         console.log('PASS clown above bag and watermelon sequence '+width+'x'+height+' '+theme);

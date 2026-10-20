@@ -16,7 +16,7 @@
 .info-bag-surprise { position: relative; display: block; }
 .info-bag-front { position: relative; display: block; z-index: 1; }
 .info-bag-clown { position: absolute; inset: 0; z-index: 2; pointer-events: none; opacity: 0; transform: translateY(0) scale(0.25); }
-.info-artwork-button[data-clown="true"] .info-bag-clown { opacity: 1; transform: translateY(-68%) scale(0.65); }
+.info-artwork-button[data-clown="true"] .info-bag-clown { opacity: 1; transform: translateY(-55.5%) scale(0.65); }
 .info-artwork-button[data-animate="true"] .info-bag-clown { transition: transform 300ms ease-out, opacity 300ms ease-out; }
 .info-artwork-button:disabled { cursor: default; opacity: 1; }
 .info-artwork-button[data-animate="true"] .info-coin-rotation { transition: transform 600ms ease-in-out; }
