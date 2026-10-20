@@ -108,6 +108,10 @@ try {
         if (card.scrollWidth>card.clientWidth+1) throw new Error('Larger guide images must not cause horizontal card overflow');
         const text=card.querySelector('.mechanics-guide-description');
         if (text.scrollWidth>text.clientWidth+1) throw new Error('Guide descriptions must still fit beside enlarged images');
+        const heading=card.querySelector('.mechanics-guide-title').getBoundingClientRect();
+        const paragraph=text.querySelector('p').getBoundingClientRect();
+        const bottom=card.getBoundingClientRect().bottom-parseFloat(getComputedStyle(card).borderBottomWidth);
+        if(Math.abs((paragraph.top-heading.bottom)-(bottom-paragraph.bottom))>1) throw new Error('Guide description has equal gaps below its heading and above the card bottom: '+JSON.stringify({title:card.querySelector('h3').textContent,above:paragraph.top-heading.bottom,below:bottom-paragraph.bottom}));
       }
       const p=document.querySelector('.mobile-how-to-panel').getBoundingClientRect();
       const x=document.querySelector('.mobile-how-to-close').getBoundingClientRect();
@@ -409,38 +413,7 @@ try {
   await call('Emulation.setTouchEmulationEnabled', {enabled:false});
   await call('Emulation.setDeviceMetricsOverride', {width:1440,height:900,deviceScaleFactor:1,mobile:false});
   await settle();
-  // Exercise the header replacement with the real boss simulation and feed preference.
-  await evaluate("localStorage.setItem('cr_live_feed','false')");
-  await call('Page.reload');
-  await waitForSelector('[aria-label="Start Bell challenge against Pául"]');
-  await settle();
-  assert.ok(await evaluate(`(() => {
-    const button=document.querySelector('[aria-label="Start Bell challenge against Pául"]');
-    const r=button.getBoundingClientRect();
-    return r.width>0 && r.height>0 && !button.closest('[hidden]') && button.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2));
-  })()`), 'Kangaroo mode button is visible and reachable in the header');
-  await evaluate("document.querySelector('[aria-label=\"Start Bell challenge against Pául\"]').click()");
-  await settle();
-  const bossHeader = await evaluate(`(() => {
-    const header=document.querySelector('header').getBoundingClientRect();
-    const name=document.querySelector('.boss-header-name').getBoundingClientRect();
-    const hp=document.querySelector('.boss-header-health').getBoundingClientRect();
-    return {center:(name.left+name.right-header.left-header.right)/2,
-      bottom:hp.bottom-header.bottom, left:hp.left-header.left, width:hp.width-header.width,
-      text:document.querySelector('.boss-header-name').textContent,
-      value:Number(document.querySelector('[aria-label="Enemy HP"]').getAttribute('aria-valuenow')),
-      max:Number(document.querySelector('[aria-label="Enemy HP"]').getAttribute('aria-valuemax')),
-      percent:parseFloat(document.querySelector('.boss-header-health > div').style.width),
-      feed:document.querySelector('.desktop-live-feed-bar').getBoundingClientRect().height};
-  })()`);
-  assert.ok(bossHeader.text.length>0 && bossHeader.max===300 && bossHeader.value>0 && bossHeader.value<=bossHeader.max && Math.abs(bossHeader.percent-bossHeader.value/bossHeader.max*100)<0.01, 'Paul header shows live HP normalized against 300 maximum HP');
-  assert.ok(['center','bottom','left','width'].every(key=>Math.abs(bossHeader[key])<0.1), 'Boss name is centered and HP forms the header bottom: '+JSON.stringify(bossHeader));
-  assert.equal(bossHeader.feed, 0, 'Boss header does not restore the disabled feed');
-  await evaluate("localStorage.removeItem('cr_live_feed')");
-  await call('Page.reload');
-  await waitForSelector('.landing-menu-settings-button');
-  await settle();
-  console.log('PASS Kangaroo header name and HP with Live Feed disabled');
+  assert.equal(await evaluate("!!document.querySelector('[aria-label=\"Start Bell challenge against Pául\"]')"), false, 'Bell developer shortcut is removed from the header');
   for (const [width, height, touch] of [[1440, 900, false], [844, 390, true], [667, 375, true]]) {
     await call('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: touch });
     await call('Emulation.setTouchEmulationEnabled', { enabled: touch });
@@ -671,11 +644,100 @@ try {
         return !!copyright && copyright === copyright.parentElement.lastElementChild
           && copyright.innerText === '© Stonktrooper.lol\\n2026';
       })()`), true, 'Two-line copyright is last in About');
+      const coinBefore=await evaluate("document.querySelector('.info-artwork-button').getBoundingClientRect().toJSON()");
+      await evaluate("document.querySelector('.info-artwork-button').click()");
+      await settle();
+      await settle();
+      assert.equal(await evaluate(`(() => {
+        const button=document.querySelector('.info-artwork-button'), r=button.getBoundingClientRect();
+        const front=button.querySelector('.info-coin-front canvas'), back=button.querySelector('.info-coin-back canvas');
+        return button.dataset.side==='B' && front.toDataURL()!==back.toDataURL()
+          && Math.abs(r.x-${coinBefore.x})<1 && Math.abs(r.y-${coinBefore.y})<1
+          && Math.abs(r.width-${coinBefore.width})<1 && Math.abs(r.height-${coinBefore.height})<1;
+      })()`), true, 'About coin flips to its B face without moving or resizing');
+      await evaluate("document.querySelector('.info-artwork-button').click()");
+      await settle();
+      assert.equal(await evaluate("document.querySelector('.info-artwork-button').dataset.side"), 'M', 'Coin flips back on another click');
+      await evaluate("document.querySelector('.stonks-copyright-button').click()");
+      await waitForSelector('.stonks-dialog');
+      for (let attempt = 0; attempt < 100; attempt++) {
+        if (await evaluate("document.querySelector('.stonks-canvas-frame').getAttribute('aria-busy')==='false'")) break;
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+      assert.equal(await evaluate(`(() => {
+        const panel=document.querySelector('.stonks-dialog'), r=panel.getBoundingClientRect();
+        const canvas=panel.querySelector('canvas');
+        const paper=getComputedStyle(document.querySelector('.game-app')).getPropertyValue('--panel').trim();
+        const probe=document.createElement('span'); probe.style.color=paper; document.body.append(probe);
+        const expected=getComputedStyle(probe).color; probe.remove();
+        return !panel.querySelector('.stonks-error, .stonks-loading')
+          && panel.querySelectorAll('.stonks-traits > div').length>0
+          && !/[\\u0400-\\u04ff]/.test(panel.textContent)
+          && getComputedStyle(panel).backgroundColor===expected
+          && r.left>=0 && r.top>=0 && r.right<=innerWidth && r.bottom<=innerHeight
+          && panel.scrollWidth<=panel.clientWidth+1
+          && canvas.getContext('2d').getImageData(0,0,512,512).data.some(value=>value!==0)
+          && document.activeElement===panel.querySelector('.stonks-close');
+      })()`), true, 'Copyright opens a themed, English Stonks generator with rendered artwork and no overflow');
+      assert.equal(await evaluate("document.querySelectorAll('.stonks-actions button').length===1 && document.querySelector('.stonks-actions button').textContent.trim()==='Download' && !document.querySelector('.stonks-actions button svg') && getComputedStyle(document.querySelector('.stonks-close')).borderTopWidth==='0px'"), true, 'Stonks has a text-only Download button, a borderless close button and no Generate action');
+      await evaluate("document.querySelector('.stonks-close').click()");
+      await settle();
+      await evaluate("document.querySelector('.stonks-copyright-button').click()");
+      await waitForSelector('.stonks-dialog');
+      for (let attempt = 0; attempt < 100; attempt++) {
+        if (await evaluate("document.querySelector('.stonks-canvas-frame').getAttribute('aria-busy')==='false'")) break;
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+      assert.equal(await evaluate(`(() => {
+        let downloaded=false;
+        const original=HTMLAnchorElement.prototype.click;
+        HTMLAnchorElement.prototype.click=function(){downloaded=/^stonk-\\d+\\.png$/.test(this.download)&&this.href.startsWith('data:image/png');};
+        try { document.querySelector('.stonks-actions button:last-child').click(); }
+        finally { HTMLAnchorElement.prototype.click=original; }
+        return downloaded;
+      })()`), true, 'Reopening Copyright generates a Stonk with a locally generated PNG download');
+      await call('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Escape', code: 'Escape' });
+      await call('Input.dispatchKeyEvent', { type: 'keyUp', key: 'Escape', code: 'Escape' });
+      await settle();
+      assert.equal(await evaluate("!document.querySelector('.stonks-dialog') && document.activeElement===document.querySelector('.stonks-copyright-button') && !!document.querySelector('.site-info-dialog')"), true, 'Escape closes only Stonks and restores Copyright focus');
+      console.log(`PASS Copyright Stonks generator, theme, English text, PNG download and focus restoration ${width}x${height} ${theme}`);
+      await evaluate("document.querySelector('.site-info-close').click()");
+      await evaluate("[...document.querySelectorAll('.site-footer nav button')].find(button=>button.textContent.trim()==='Privacy').click()");
+      await settle();
+      await checkInfoCard('.landing-menu-actions');
+      await evaluate("document.querySelector('.info-artwork-button').click()");
+      await settle();
+      assert.equal(await evaluate("Number(document.querySelector('.info-artwork-button').dataset.scale)"), 0.9, 'Privacy briefcase shrinks slightly on first click');
+      for(let click=0;click<12;click++) await evaluate("document.querySelector('.info-artwork-button').click()");
+      await settle();
+      assert.equal(await evaluate("Number(document.querySelector('.info-artwork-button').dataset.scale)===0 && document.querySelector('.info-briefcase-scale').getBoundingClientRect().width===0"), true, 'Repeated clicks shrink the briefcase to zero without negative scaling');
       await evaluate("document.querySelector('.site-info-close').click()");
       await evaluate("[...document.querySelectorAll('.site-footer nav button')].find(button=>button.textContent.trim()==='Preferences').click()");
       await settle();
       await checkInfoCard('.landing-menu-actions');
       await evaluate("document.querySelector('.site-info-close').click()");
+      for (const section of ['Disclaimer', 'Preferences', 'About', 'Privacy']) {
+        const openSection=()=>evaluate(`[...document.querySelectorAll('.site-footer nav button')].find(button=>button.textContent.trim()==='${section}').click()`);
+        await openSection(); await settle();
+        const initial=await evaluate("document.querySelector('.info-artwork-button').outerHTML");
+        if(section==='Disclaimer') {
+          await evaluate("document.querySelector('.info-artwork-button').click()"); await settle();
+          assert.equal(await evaluate("document.querySelector('.info-artwork-button').dataset.clown"), 'true', 'Disclaimer clown emerges');
+          await evaluate('new Promise(resolve=>setTimeout(resolve,2700))');
+          assert.equal(await evaluate("document.querySelector('.info-artwork-button').dataset.clown"), 'false', 'Clown hides after 2.5 seconds');
+        } else if(section==='Preferences') {
+          for(const fruit of ['orange','apple','kiwi','tomato']) {
+            await evaluate("document.querySelector('.info-artwork-button').click()"); await settle();
+            assert.equal(await evaluate("document.querySelector('.info-artwork-button').dataset.fruit"), fruit, 'Fruit sequence advances to '+fruit);
+          }
+          assert.equal(await evaluate("document.querySelector('.info-artwork-button').disabled"), true, 'Tomato is the final non-interactive fruit');
+        } else { await evaluate("document.querySelector('.info-artwork-button').click()"); await settle(); }
+        await evaluate("document.querySelector('.site-info-close').click()"); await settle();
+        await openSection(); await settle();
+        assert.equal(await evaluate("document.querySelector('.info-artwork-button').outerHTML"), initial, section+' easter egg resets on closing');
+        await evaluate("document.querySelector('.site-info-close').click()"); await settle();
+      }
+      console.log(`PASS information easter eggs and reset on close ${width}x${height} ${theme}`);
       console.log(`PASS ${width}x${height} ${touch ? 'touch' : 'mouse'} ${theme}`);
     }
   }
@@ -709,6 +771,7 @@ try {
   assert.equal(await evaluate("document.querySelector('.settings-diamond-effect').style.pointerEvents || getComputedStyle(document.querySelector('.settings-diamond-effect')).pointerEvents"), 'none');
   await evaluate("new Promise(resolve=>setTimeout(resolve,4400))");
   assert.equal(await evaluate("document.querySelector('.settings-diamond-effect')?.dataset.phase"), 'falling');
+  assert.equal(await evaluate("document.querySelector('.settings-diamond-message').textContent"), '😤', 'Dropping the diamond replaces the warning with the emoji');
   assert.equal(await evaluate("document.querySelector('.settings-diamond-paper-hands').textContent"), 'Paper Hands');
   for (const theme of ['light','dark']) {
     await evaluate(`document.querySelector('.settings-diamond-effect').dataset.theme='${theme}'`);
@@ -720,15 +783,18 @@ try {
   assert.notEqual(await evaluate("document.querySelector('.settings-diamond-bare').toDataURL()"), droppedDiamond, 'Dropped diamond tumbles as it falls');
   assert.ok(await evaluate("document.querySelector('.settings-diamond-floating').getBoundingClientRect().top")>fallingTop, 'Diamond falls down the viewport');
   await evaluate("new Promise(resolve=>setTimeout(resolve,1100))");
-  assert.ok(await evaluate("!!document.querySelector('.settings-diamond-button') && !document.querySelector('.settings-diamond-effect') && !document.querySelector('.settings-diamond-message')"), 'Diamond returns after leaving the viewport');
-  await evaluate("document.querySelector('.settings-diamond-button').click()");
-  await settle();
+  assert.ok(await evaluate("!document.querySelector('.settings-diamond-button') && !document.querySelector('.settings-diamond-effect') && document.querySelector('.settings-diamond-message').textContent==='😤'"), 'Dropped diamond keeps the emoji until Settings closes');
   await evaluate("document.querySelector('.site-info-close').click()");
   await settle();
   assert.equal(await evaluate("document.querySelector('.settings-diamond-effect')"), null, 'Closing Settings cleans up the diamond effect');
   await evaluate("document.querySelector('.landing-menu-settings-button').click()");
   await settle();
-  console.log('PASS Settings diamond pickup, cursor tracking, five-second hold, fall, restoration and cleanup');
+  assert.equal(await evaluate("!!document.querySelector('.settings-diamond-button') && !document.querySelector('.settings-diamond-message')"), true, 'Reopening Settings resets the diamond easter egg');
+  await evaluate("document.querySelector('.settings-diamond-button').click()"); await settle();
+  await evaluate("document.querySelector('.site-info-close').click()"); await settle();
+  assert.equal(await evaluate("document.querySelector('.settings-diamond-effect')"), null, 'Closing Settings during pickup removes the floating diamond');
+  await evaluate("document.querySelector('.landing-menu-settings-button').click()"); await settle();
+  console.log('PASS Settings diamond pickup, cursor tracking, five-second hold, fall, emoji and reset on close');
   await evaluate("document.querySelector('button[aria-label=\"High contrast\"]').click()");
   await settle();
   assert.equal(await evaluate("document.documentElement.dataset.highContrast"), 'true');
@@ -902,7 +968,7 @@ try {
   await call('Page.navigate', { url: 'http://127.0.0.1:5537/?score=123' });
   await settle();
   await settle();
-  for (const [width, height, touch] of [[1440, 900, false], [844, 390, true], [667, 375, true], [320, 568, true]]) {
+  for (const [width, height, touch] of [[1440, 900, false], [1920, 1080, false], [2560, 1440, false], [1024, 600, false], [844, 390, true], [667, 375, true], [320, 568, true]]) {
     await call('Emulation.setTouchEmulationEnabled', { enabled: touch });
     await call('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: touch });
     for (const theme of ['light', 'dark']) {
@@ -934,25 +1000,26 @@ try {
         const canvas=panel.querySelector('.share-dd-canvas');
         if(Math.abs(image.bottom-p.bottom)>1 || image.left<p.left || image.right>p.right || image.top<p.top || Math.abs(image.width/image.height-parseFloat(panel.style.getPropertyValue('--share-art-ratio')))>0.01) throw new Error('Share artwork fits the section and stands at its bottom');
         const inset=document.querySelector('.stonktrooper-logo').getBoundingClientRect().left-document.querySelector('.game-app').getBoundingClientRect().left;
+        if(!mobile) {
+          const ratio=parseFloat(panel.style.getPropertyValue('--share-art-ratio'));
+          const expectedWidth=Math.min(p.width-inset,p.height*ratio);
+          if(Math.abs(image.width-expectedWidth)>1) throw new Error('Desktop Share DD scales dynamically with the available width and height, without a fixed pixel cap');
+        }
         const footerInset=portrait?0:parseFloat(getComputedStyle(document.querySelector('.game-app')).getPropertyValue('--footer-inset-bottom'));
         if(Math.abs(actions.left-p.left-inset)>1 || Math.abs(p.bottom-actions.bottom-inset-footerInset)>1 || (!portrait && Math.abs(image.left-actions.left)>1)) throw new Error('Share buttons retain logo insets above the footer');
         const result=document.querySelector('.game-result-over');
-        if((getComputedStyle(result).visibility==='hidden')!==portrait) throw new Error('Liquidated stays visible outside mobile portrait');
-        if(!portrait) {
+        if(getComputedStyle(result).visibility==='hidden') throw new Error('Liquidated stays visible alongside Share DD');
+        if(result) {
           const home=result.querySelector('.liquidated-home'), r=home.getBoundingClientRect();
           if(!home.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2))) throw new Error('Liquidated buttons remain clickable behind Share DD');
-          if(mobile && image.height>p.height*0.66) throw new Error('Landscape share character uses a reduced height');
+          if(mobile && image.height>p.height*(portrait?0.33:0.66)) throw new Error('Landscape share character uses a reduced height');
+          if(portrait) {
+            const buttons=result.querySelector('.game-result-actions').getBoundingClientRect();
+            if(Math.abs((buttons.left+buttons.right)/2-(p.left+p.right)/2)>1 || buttons.bottom>image.top) throw new Error('Portrait Liquidated buttons are centered above the reduced Best Score artwork');
+          }
         }
         const portraitBackdrop=document.querySelector('.share-dd-portrait-backdrop');
-        if((getComputedStyle(portraitBackdrop).display!=='none')!==portrait) throw new Error('Portrait Share DD background is restricted to mobile portrait');
-        if(portrait) {
-          const visible=[...portraitBackdrop.querySelectorAll('img')].filter(img=>getComputedStyle(img).display!=='none');
-          if(visible.length!==1) throw new Error('Share DD shows exactly one portrait background');
-          const background=visible[0]; await background.decode();
-          const expected='${theme}'==='light'?'crane-portrait.png':'crane-portrait-inverted.png';
-          const rect=background.getBoundingClientRect();
-          if(!background.src.endsWith('/images/'+expected) || background.naturalHeight<=background.naturalWidth || getComputedStyle(background).objectFit!=='cover' || Math.abs(rect.width-p.width)>1 || Math.abs(rect.height-p.height)>1) throw new Error('Share DD loads the themed portrait crane and fills its section proportionally');
-        }
+        if(getComputedStyle(portraitBackdrop).display!=='none') throw new Error('Portrait Share DD background is restricted to mobile portrait');
         const shareButtons=[...panel.querySelectorAll('.share-dd-actions > button')];
         const shareGap=parseFloat(getComputedStyle(panel.querySelector('.share-dd-actions')).gap);
         if(!shareButtons.at(-1).matches('.share-dd-copy') || shareButtons.some((button,index)=>{const r=button.getBoundingClientRect();return Math.abs(r.left-actions.left)>1 || (index>0 && Math.abs(r.top-shareButtons[index-1].getBoundingClientRect().bottom-shareGap)>1);})) throw new Error('Share DD buttons stack vertically with Share at the bottom');

@@ -333,7 +333,7 @@ export const drawApeAsset = (ctx: CanvasRenderingContext2D, phase = 0, seated = 
   ctx.restore();
 };
 
-export const drawPickupAsset = (ctx: CanvasRenderingContext2D, d: Pickup, x: number, y: number, frame = 0, darkMode = false): void => {
+export const drawPickupAsset = (ctx: CanvasRenderingContext2D, d: Pickup, x: number, y: number, frame = 0, darkMode = false, coinLetter: 'M' | 'B' = 'M'): void => {
   if (d.type === 'fedora') {
     ctx.save();
     ctx.translate(x, y);
@@ -504,7 +504,7 @@ export const drawPickupAsset = (ctx: CanvasRenderingContext2D, d: Pickup, x: num
         ctx.font = 'bold 11px monospace';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText('M', 0, 0.5);
+        ctx.fillText(coinLetter, 0, 0.5);
         // Moving reflection across the face, without rotating or scaling the coin.
         const sweep = ((frame * 0.35 + d.x * 0.15) % 40) - 20;
         ctx.save(); ctx.beginPath(); ctx.arc(0, 0, 10, 0, Math.PI * 2); ctx.clip();

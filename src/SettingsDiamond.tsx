@@ -4,13 +4,13 @@ import { AssetPreview } from './AssetPreview';
 import { drawPickupAsset } from './assetRenderer';
 
 export function SettingsDiamond({ theme, animationsEnabled }: { theme: 'light' | 'dark'; animationsEnabled: boolean }) {
-  const [phase, setPhase] = useState<'idle' | 'holding' | 'falling'>('idle');
+  const [phase, setPhase] = useState<'idle' | 'holding' | 'falling' | 'dropped'>('idle');
   const pointer = useRef({ x: 0, y: 0 });
   const floating = useRef<HTMLDivElement>(null);
   const label = useRef<HTMLDivElement>(null);
   const diamond = useRef<HTMLCanvasElement>(null);
   const rotationStarted = useRef<number | null>(null);
-  const active = phase !== 'idle';
+  const active = phase === 'holding' || phase === 'falling';
 
   useEffect(() => {
     if (!active) return;
@@ -59,7 +59,7 @@ export function SettingsDiamond({ theme, animationsEnabled }: { theme: 'light' |
         const labelX = Math.max(64, Math.min(window.innerWidth - 64, pointer.current.x));
         label.current.style.transform = `translate3d(${labelX - 64}px, ${Math.max(0, pointer.current.y - 38)}px, 0)`;
       }
-      if (phase === 'falling' && progress === 1) { rotationStarted.current = null; setPhase('idle'); return; }
+      if (phase === 'falling' && progress === 1) { rotationStarted.current = null; setPhase('dropped'); return; }
       frame = window.requestAnimationFrame(draw);
     };
     frame = window.requestAnimationFrame(draw);
@@ -67,7 +67,7 @@ export function SettingsDiamond({ theme, animationsEnabled }: { theme: 'light' |
   }, [active, phase, animationsEnabled]);
 
   return <>
-    {active ? <span className="settings-diamond-message" role="status">Don't drop it!</span> :
+    {phase !== 'idle' ? <span className="settings-diamond-message" role="status">{phase === 'holding' ? "Don't drop it!" : '😤'}</span> :
       <button type="button" className="settings-diamond-button" aria-label="Pick up the diamond" onClick={event => {
         const rect = event.currentTarget.getBoundingClientRect();
         pointer.current = event.detail === 0 ? { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 } : { x: event.clientX, y: event.clientY };

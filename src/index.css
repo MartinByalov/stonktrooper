@@ -1,5 +1,139 @@
 @import "tailwindcss";
 
+.info-artwork-button {
+  display: flex;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  perspective: 500px;
+}
+.info-artwork-button:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
+.info-coin-rotation { position: relative; display: block; transform-style: preserve-3d; }
+.info-coin-front, .info-coin-back { display: block; backface-visibility: hidden; }
+.info-coin-back { position: absolute; inset: 0; transform: rotateY(180deg); }
+.info-briefcase-scale { display: block; transform-origin: center; }
+.info-bag-surprise { position: relative; display: block; }
+.info-bag-front { position: relative; display: block; z-index: 1; }
+.info-bag-clown { position: absolute; inset: 0; opacity: 0; transform: translateY(0) scale(0.25); }
+.info-artwork-button[data-clown="true"] .info-bag-clown { opacity: 1; transform: translateY(-38%) scale(0.65); }
+.info-artwork-button[data-animate="true"] .info-bag-clown { transition: transform 300ms ease-out, opacity 300ms ease-out; }
+.info-artwork-button:disabled { cursor: default; opacity: 1; }
+.info-artwork-button[data-animate="true"] .info-coin-rotation { transition: transform 600ms ease-in-out; }
+.info-artwork-button[data-animate="true"] .info-briefcase-scale { transition: transform 180ms ease-out; }
+@media (prefers-reduced-motion: reduce) {
+  .info-artwork-button[data-animate="true"] :is(.info-coin-rotation, .info-briefcase-scale, .info-bag-clown) { transition: none; }
+}
+
+/* The description owns all space below the heading, with equal vertical gaps. */
+html .game-app .mechanics-guide .mechanics-guide-text {
+  padding-bottom: 0;
+}
+html .game-app .mechanics-guide .mechanics-guide-title {
+  flex: 0 0 auto;
+  height: auto;
+  min-height: 0;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+html .game-app .mechanics-guide .mechanics-guide-description {
+  flex: 1 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-block: 8px;
+}
+
+.stonks-copyright-button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+}
+.stonks-copyright-button:hover { color: var(--green); }
+.stonks-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+  background: var(--veil);
+  pointer-events: auto;
+}
+.stonks-dialog {
+  width: min(780px, 100%);
+  max-height: calc(100dvh - 32px);
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--text);
+  border-radius: var(--ui-radius);
+  background: var(--panel);
+  color: var(--text);
+}
+.stonks-header {
+  position: relative;
+  flex-shrink: 0;
+  padding: 16px 52px;
+  border-bottom: 1px solid var(--line);
+  text-align: center;
+}
+.stonks-header h2 { font-size: 20px; font-weight: 800; }
+.stonks-close {
+  position: absolute;
+  inset: 8px 8px auto auto;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  color: inherit;
+  background: transparent;
+  border: 0;
+  border-radius: var(--ui-radius);
+}
+.stonks-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 20px;
+  padding: 20px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  min-height: 0;
+}
+.stonks-canvas-frame {
+  position: relative;
+  align-self: start;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  background: var(--alt);
+}
+.stonks-canvas-frame canvas { display: block; width: 100%; height: 100%; image-rendering: pixelated; }
+.stonks-loading { position: absolute; inset: 0; display: grid; place-items: center; padding: 16px; background: var(--panel); text-align: center; font-size: 13px; }
+.stonks-details { min-width: 0; }
+.stonks-details h3 { font-size: 18px; font-weight: 800; }
+.stonks-pills { display: flex; flex-wrap: wrap; gap: 6px; margin-block: 12px; font-size: 11px; }
+.stonks-pills span { padding: 4px 8px; background: var(--alt); border: 1px solid var(--line); }
+.stonks-pills .stonks-golden { color: var(--text); border-color: var(--green); }
+.stonks-traits { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.stonks-traits > div { padding: 8px; border: 1px solid var(--line); overflow-wrap: anywhere; }
+.stonks-traits dt { color: var(--muted); font-size: 10px; }
+.stonks-traits dd { margin-top: 4px; font-size: 12px; font-weight: 700; }
+.stonks-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.stonks-actions button { display: inline-flex; flex: 1 1 auto; align-items: center; justify-content: center; gap: 6px; padding: 10px; border: 1px solid var(--text); border-radius: var(--ui-radius); background: var(--panel); color: var(--text); font-size: 12px; font-weight: 700; }
+.stonks-actions button:hover:not(:disabled), .stonks-close:hover { background: var(--alt); }
+.stonks-actions button:disabled { opacity: 0.5; }
+.stonks-error { color: var(--red); font-size: 12px; margin-block: 12px; }
+.stonks-dialog button:focus-visible, .stonks-copyright-button:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
+@media (max-width: 600px) {
+  .stonks-body { grid-template-columns: minmax(0, 1fr); gap: 16px; padding: 12px; }
+  .stonks-canvas-frame { width: min(100%, 280px); justify-self: center; }
+}
+
 button:not(:disabled),
 a[href] {
   cursor: pointer;
@@ -2827,11 +2961,6 @@ kbd {
 }
 
 /* Share controls belong to the section, independently of the artwork size. */
-@media (pointer: coarse) and (orientation: portrait) {
-  .game-app:has(.share-dd-overlay) .game-over-overlay > .game-result-over {
-    visibility: hidden;
-  }
-}
 
 .game-app .share-dd-portrait-backdrop {
   display: none;
@@ -2891,7 +3020,7 @@ html:not([data-theme="light"]) .game-app .share-dd-portrait-day {
   left: var(--home-logo-inset, 12px);
   bottom: 0;
   transform: none;
-  width: min(640px, calc(100cqw - var(--home-logo-inset, 12px)), calc(100cqh * var(--share-art-ratio, 1)));
+  width: min(calc(100cqw - var(--home-logo-inset, 12px)), calc(100cqh * var(--share-art-ratio, 1)));
   aspect-ratio: var(--share-art-ratio, 1);
   overflow: hidden;
   min-width: 0;
@@ -3069,11 +3198,28 @@ html .game-app .share-dd-dialog[role="dialog"] > .share-dd-close:is(:hover, :foc
 
 @media (pointer: coarse) and (orientation: portrait) {
   .game-app .share-dd-portrait-backdrop {
-    display: block;
+    display: none;
+  }
+  .game-app:has(.share-dd-overlay) .liquidated-scene-day {
+    content: url('../public/images/crane-portrait.png');
+  }
+  .game-app:has(.share-dd-overlay) .liquidated-scene-night {
+    content: url('../public/images/crane-portrait-inverted.png');
+  }
+  html .game-app:has(.share-dd-overlay) .game-over-overlay > .game-result-over {
+    position: absolute;
+    top: 34%;
+    left: 50%;
+    width: min(72%, 20rem);
+    transform: translate(-50%, -50%);
+    padding: 4px !important;
+  }
+  html .game-app:has(.share-dd-overlay) .game-result-over > .game-result-content {
+    padding: 0 !important;
   }
   .game-app .share-dd-overlay.fixed.inset-0.z-50 {
     height: calc(var(--app-viewport-height, 100dvh) - var(--desktop-feed-bottom, var(--live-feed-bottom, 0px)) - var(--footer-inset-bottom, 0px));
-    pointer-events: auto;
+    pointer-events: none;
   }
   html .game-app .share-dd-overlay.fixed.inset-0.z-50 > .share-dd-dialog[role="dialog"] {
     width: 100%;
@@ -3089,7 +3235,7 @@ html .game-app .share-dd-dialog[role="dialog"] > .share-dd-close:is(:hover, :foc
   .game-app .share-dd-image {
     left: 50%;
     transform: translateX(-50%);
-    width: min(100cqw, calc(100cqh * var(--share-art-ratio, 1)));
+    width: min(70cqw, calc(32cqh * var(--share-art-ratio, 1)));
   }
   .game-app .share-dd-dialog > .share-dd-actions {
     left: var(--home-logo-inset, 12px);

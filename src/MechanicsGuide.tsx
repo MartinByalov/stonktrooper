@@ -7,13 +7,14 @@ const cards: { asset: PreviewAsset; below?: PreviewAsset; title: string; text: s
   { asset: 'coin', title: 'Coin (+10 pips)', text: 'Jump to collect.' },
   { asset: 'diamond', title: 'Diamond Hands (+250 pips)', text: "Don't drop it." },
   { asset: 'banknote', below: 'whale', title: 'To the Moon', text: "You can't jump on a Whale. \nShoot it for a guaranteed +500 pips or a small chance of a banknote ticket for a ride to the moon." },
-  { asset: 'printer', below: 'pigeon', title: 'Money Printer Go Brrr (pips x 10)', text: 'Pigeon (+150 pips). \n\nAccept the challenge and ride the waves or walk out in shame.' },
+  { asset: 'printer', below: 'pigeon'
+    , title: 'Money Printer Go Brrr (pips x 10)', text: 'Pigeon (+150 pips) \n\nAccept the challenge and ride the waves or walk out in shame.' },
   { asset: 'banana', below: 'ape', title: 'Apes Together Strong', text: 'Banana for scale.' },
-  { asset: 'tender', below: 'hawk', title: 'Tendies (pips x 2)', text: 'Hawk (+150 pips). \n\nDodge the offer or take a dumbster ride.' },
-  { asset: 'bell', below: 'jerome', title: 'I Did Not Hear No Bell', text: "A / ← (Move Left)\n D / → (Move Right)\n S / ↓ (Does Nothing)\n\n3 lives. Win rewards:\nJanét +1000 / Jeromé +2000 / Pául +3000 pips.\n\nFor mobile use the joystick." },
+  { asset: 'tender', below: 'hawk', title: 'Tendies (pips x 2)', text: 'Hawk (+150 pips) \n\nDodge the offer or take a dumbster ride.' },
+  { asset: 'bell', below: 'jerome', title: 'I Did Not Hear No Bell', text: "A / ← (Move Left)\n D / → (Move Right)\n S / ↓ (Does Nothing)\n\n3 lives.\n Difficulty rewards:\n+1000/+2000 /+3000 pips\n\nFor mobile use the joystick." },
   { asset: 'bull', below: 'bear', title: 'Bull / Bear (+50 pips)', text: 'Shoot or stomp them.' },
-  { asset: 'bull-rider', below: 'bear-rider', title: 'Trend Rider (+100 pips)', text: 'Shoot or stomp them. \nFirst hit drops the raider, next hit kills the mount.' },
-  { asset: 'swan', below: 'white', title: 'Bag Holder', text: "Swan (+200 pips). \n\nYou found yourself holding the bag? \nGood. Now you can't shoot too." },
+  { asset: 'bull-rider', below: 'bear-rider', title: 'Trend Rider (+100 pips)', text: 'Shoot or stomp them. \nFirst hit drops the rider, next hit kills the mount.' },
+  { asset: 'swan', below: 'white', title: 'Bag Holder', text: "Swan (+200 pips) \n\nYou found yourself holding the bag? \nGood. Now you can't shoot too." },
 ];
 
 export function MechanicsGuide({ theme }: { theme: 'light' | 'dark' }) {
@@ -24,7 +25,7 @@ export function MechanicsGuide({ theme }: { theme: 'light' | 'dark' }) {
           <div className="min-h-[72px] flex items-center justify-center px-1"><AssetPreview asset={card.asset} compact theme={theme} /></div>
           {card.below && <div className="min-h-[72px] border-t border-[var(--line)] flex items-center justify-center px-1"><AssetPreview asset={card.below} compact theme={theme} /></div>}
         </div>
-        <div className="min-w-0 flex-1 flex flex-col items-center text-center px-2 py-1.5">
+        <div className="mechanics-guide-text min-w-0 flex-1 flex flex-col items-center text-center px-2 pt-1.5">
           <h3 className="mechanics-guide-title uppercase text-xs font-bold leading-tight px-2 pt-2 pb-1 mb-2 w-full shrink-0 min-h-[3em]">{card.title}</h3>
           <div className="mechanics-guide-description flex flex-1 w-full items-center justify-center">
             <p className="m-0 whitespace-pre-line">{card.text.split(/((?:Pigeon|Hawk|Swan) \(\+\d+ pips\)|A \/ ← \(Move Left\)|D \/ → \(Move Right\)|S \/ ↓ \(Does Nothing\)|\+\d+ pips)/g).map((part, index) => /^(?:(?:Pigeon|Hawk|Swan) \(\+\d+ pips\)|A \/ ← \(Move Left\)|D \/ → \(Move Right\)|S \/ ↓ \(Does Nothing\)|\+\d+ pips)$/.test(part) ? <strong key={index}>{part}</strong> : part)}</p>

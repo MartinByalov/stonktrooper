@@ -10,7 +10,7 @@ import { drawDumpster } from './dumpsterRenderer';
 
 export type PreviewAsset = 'dumpster' | 'tender' | 'jerome' | 'coin' | 'diamond' | 'banknote' | 'bag' | 'banana' | 'ape' | 'whale' | 'swan' | 'white' | 'hawk' | 'bell' | 'pigeon' | 'printer' | 'bull' | 'bear' | 'bull-rider' | 'bear-rider' | 'jump' | 'briefcase' | 'fedora';
 
-export function AssetPreview({ asset, compact = false, theme = 'light', grounded = false }: { asset: PreviewAsset; compact?: boolean; theme?: 'light' | 'dark'; grounded?: boolean }) {
+export function AssetPreview({ asset, compact = false, theme = 'light', grounded = false, coinLetter = 'M' }: { asset: PreviewAsset; compact?: boolean; theme?: 'light' | 'dark'; grounded?: boolean; coinLetter?: 'M' | 'B' }) {
   const canvas = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
     const output = canvas.current?.getContext('2d');
@@ -96,7 +96,7 @@ export function AssetPreview({ asset, compact = false, theme = 'light', grounded
     } else {
       ctx.scale(2.4, 2.4);
       // Use the same orientation and theme-aware pickup renderer as the chart.
-      drawPickupAsset(ctx, { type: asset, x: 0, y: 0, taken: false }, 0, 0, 0, theme === 'dark');
+      drawPickupAsset(ctx, { type: asset, x: 0, y: 0, taken: false }, 0, 0, 0, theme === 'dark', coinLetter);
     }
     ctx.restore();
     const pixels = ctx.getImageData(0, 0, 512, 512).data;
@@ -117,6 +117,6 @@ export function AssetPreview({ asset, compact = false, theme = 'light', grounded
     const scale = size / Math.max(width, height);
     output.drawImage(buffer, left, top, width, height,
       (160 - width * scale) / 2, grounded ? 160 - height * scale : (160 - height * scale) / 2, width * scale, height * scale);
-  }, [asset, theme, grounded]);
+  }, [asset, theme, grounded, coinLetter]);
   return <canvas ref={canvas} width={160} height={160} role="img" aria-label={`${asset} game asset`} className={`${compact ? 'w-[72px]' : 'w-24'} aspect-square h-auto shrink-0 max-w-full`} />;
 }

@@ -3,6 +3,8 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Mail, X, Volume2, VolumeX, Radio, Moon, Sparkles } from 'lucide-react';
 import { AssetPreview, type PreviewAsset } from './AssetPreview';
 import { SettingsDiamond } from './SettingsDiamond';
+import { StonksDialog } from './StonksDialog';
+import { InfoArtwork } from './InfoArtwork';
 
 const sections = ['About', 'Privacy', 'Disclaimer', 'Preferences'] as const;
 export type SiteSection = typeof sections[number] | 'Settings';
@@ -10,6 +12,8 @@ const sectionAssets: Record<SiteSection, PreviewAsset> = { About: 'coin', Privac
 
 export function SiteFooter({ onOpen, theme, section, setSection, volume, onVolumeChange, animationsEnabled, onToggleAnimations, liveFeedEnabled, onToggleLiveFeed, onToggleTheme, highContrast, onToggleHighContrast, onResetDefaults }: { onOpen: () => void; theme: 'light' | 'dark'; section: SiteSection | null; setSection: (section: SiteSection | null) => void; volume: number; onVolumeChange: (volume: number) => void; animationsEnabled: boolean; onToggleAnimations: () => void; liveFeedEnabled: boolean; onToggleLiveFeed: () => void; onToggleTheme: () => void; highContrast: boolean; onToggleHighContrast: () => void; onResetDefaults: () => void }) {
   const [message, setMessage] = useState('');
+  const [stonksOpen, setStonksOpen] = useState(false);
+  useEffect(() => { if (section !== 'About') setStonksOpen(false); }, [section]);
   const dialog = useRef<HTMLDivElement>(null);
   const close = useRef<HTMLButtonElement>(null);
   useLayoutEffect(() => {
@@ -84,7 +88,7 @@ export function SiteFooter({ onOpen, theme, section, setSection, volume, onVolum
         </div>
         <div className="site-info-content text-sm leading-relaxed">
           <div className="site-info-body" data-info-section={section}>
-          <div className="site-info-artwork" data-info-asset={sectionAssets[section]} aria-hidden={section === 'Settings' ? undefined : true}>{section === 'Settings' ? <SettingsDiamond theme={theme} animationsEnabled={animationsEnabled} /> : <AssetPreview asset={sectionAssets[section]} theme={theme} />}</div>
+          <div className="site-info-artwork" data-info-asset={sectionAssets[section]}>{section === 'Settings' ? <SettingsDiamond theme={theme} animationsEnabled={animationsEnabled} /> : <InfoArtwork key={section} asset={sectionAssets[section] as 'coin' | 'briefcase' | 'bag' | 'banana'} theme={theme} animationsEnabled={animationsEnabled} />}</div>
           <div className="site-info-main space-y-3">
           {section === 'About' && <>
             <p><img src={`${import.meta.env.BASE_URL}images/${theme === 'dark' ? 'logo-inverted.png' : 'logo.png'}`} alt="Stonktrooper" className="relative -top-[1px] inline-block h-6 w-auto max-w-full align-middle" />{' '}is a game inspired by fictional financial markets, internet memes and experimental game design. It's an amalgamation of the author's experience with the real markets.</p>
@@ -142,7 +146,7 @@ export function SiteFooter({ onOpen, theme, section, setSection, volume, onVolum
             {message && <p role="status">{message}</p>}
           </>}
           </div>
-          {section === 'About' && <p className="site-info-bottom about-copyright text-center font-mono-term text-[10px]">© Stonktrooper.lol<br />2026</p>}
+          {section === 'About' && <p className="site-info-bottom about-copyright text-center font-mono-term text-[10px]"><button type="button" className="stonks-copyright-button" aria-label="Open The Stonks" title="The Stonks" onClick={event => { event.currentTarget.focus(); onOpen(); setStonksOpen(true); }}>©</button> Stonktrooper.lol<br />2026</p>}
           {section === 'Settings' && <div className="site-info-bottom pt-2">
               <button type="button" className="settings-reset-button preferences-clear-button block mx-auto w-full py-2.5 px-3 rounded-lg border font-bold text-xs font-mono-term cursor-pointer" onClick={() => { onResetDefaults(); setMessage('Default settings restored.'); }}>Reset to defaults</button>
             </div>}
@@ -156,5 +160,6 @@ export function SiteFooter({ onOpen, theme, section, setSection, volume, onVolum
         </div>
       </div>
     </div>}
+    {stonksOpen && section === 'About' && <StonksDialog onClose={() => setStonksOpen(false)} />}
   </>;
 }

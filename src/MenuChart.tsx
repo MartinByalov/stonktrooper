@@ -146,7 +146,7 @@ export function MenuChart({ theme }: { theme: 'light' | 'dark' }) {
       const bird = ['hawk', 'pigeon', 'swan', 'white'].includes(asset);
       const lift = grounded ? 0 : bird ? extent * (1.4 + y) : extent * (0.3 + y);
       const positionY = asset === 'white'
-        ? Math.min(plotHeight - volumeHeight - extent, ground + extent * 0.65)
+        ? Math.min(plotHeight - volumeHeight - extent, ground + extent * 0.85)
         : Math.max(4, ground - extent - lift);
       return <foreignObject key={index} data-menu-asset={asset} data-grounded={grounded} data-candle-top={ground}
         x={positionX} y={positionY} width={extent} height={extent}>
