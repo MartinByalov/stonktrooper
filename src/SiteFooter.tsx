@@ -139,7 +139,7 @@ export function SiteFooter({ onOpen, theme, section, setSection, volume, onVolum
           {section === 'Disclaimer' && <>
             <p>For entertainment only. Prices, charts, headlines, characters and events are fictional and are not investment, financial or trading advice.</p>
             <p>Scores and in-game rewards have no monetary value. This is not a brokerage, trading platform or real-money gambling service.</p>
-            <p>If you find any in-game bugs, count them as features!</p>
+            <p>If you find any in-game bugs, it may be a feature!</p>
           </>}
           {section === 'Preferences' && <>
             <p>The game saves only theme, volume, Shmuck Feed, high contrast and interface animation preferences in this browser. <br></br> You can remove them below or through your browser's site-data settings.</p>

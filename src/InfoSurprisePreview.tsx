@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { drawClownHeadFront } from './clownRenderer';
 
-export type InfoFruit = 'orange' | 'apple' | 'kiwi' | 'tomato';
+export type InfoFruit = 'orange' | 'watermelon' | 'kiwi' | 'tomato';
 
 export function InfoSurprisePreview({ kind }: { kind: InfoFruit | 'clown' }) {
   const canvas = useRef<HTMLCanvasElement>(null);
@@ -12,8 +12,20 @@ export function InfoSurprisePreview({ kind }: { kind: InfoFruit | 'clown' }) {
     ctx.save(); ctx.translate(80, 80);
     if (kind === 'clown') {
       ctx.scale(3, 3); drawClownHeadFront(ctx);
+    } else if (kind === 'watermelon') {
+      // A seeded slice with a green rind, rather than another round fruit.
+      ctx.fillStyle = '#15803d';
+      ctx.beginPath(); ctx.moveTo(-44, -20); ctx.arc(0, -20, 44, 0, Math.PI); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#bbf7d0';
+      ctx.beginPath(); ctx.moveTo(-39, -20); ctx.arc(0, -20, 39, 0, Math.PI); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#ef4444';
+      ctx.beginPath(); ctx.moveTo(-34, -20); ctx.arc(0, -20, 34, 0, Math.PI); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#292524';
+      for (const [x, y] of [[-22, -10], [-11, 2], [0, -10], [11, 2], [22, -10], [0, 10]]) {
+        ctx.beginPath(); ctx.ellipse(x, y, 1.8, 3, -x / 35, 0, Math.PI * 2); ctx.fill();
+      }
     } else {
-      const colors = { orange: '#f59e0b', apple: '#dc2626', kiwi: '#84cc16', tomato: '#ef4444' };
+      const colors = { orange: '#f59e0b', kiwi: '#84cc16', tomato: '#ef4444' };
       ctx.fillStyle = colors[kind]; ctx.strokeStyle = kind === 'kiwi' ? '#854d0e' : '#9a3412';
       ctx.lineWidth = kind === 'kiwi' ? 5 : 2;
       ctx.beginPath(); ctx.ellipse(0, 3, kind === 'tomato' ? 41 : 36, kind === 'kiwi' ? 39 : 36, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();

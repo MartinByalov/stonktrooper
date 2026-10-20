@@ -96,7 +96,43 @@ try {
     }
     throw new Error('Timed out waiting for '+selector);
   };
-  if (process.env.CHECK_GUIDE_ALIGNMENT === '1') {
+  if (process.env.CHECK_INFO_SURPRISES === '1') {
+    for (const [width,height,mobile] of [[1440,900,false],[844,390,true],[390,844,true]]) {
+      await call('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile});
+      await call('Emulation.setTouchEmulationEnabled',{enabled:mobile});
+      for (const theme of ['light','dark']) {
+        await call('Page.navigate',{url:'http://127.0.0.1:5537/'});
+        await waitForSelector('.landing-menu-panel');
+        const result=await evaluate(`(async()=>{
+          const {default:React}=await import('/node_modules/.vite/deps/react.js');
+          const {default:{createRoot}}=await import('/node_modules/.vite/deps/react-dom_client.js');
+          const {InfoArtwork}=await import('/src/InfoArtwork.tsx');
+          const host=document.createElement('div');host.className='game-app';
+          host.style.cssText='position:fixed;top:200px;left:100px;z-index:9999';document.body.append(host);
+          const root=createRoot(host);
+          root.render(React.createElement('div',null,...['bag','banana'].map(asset=>React.createElement(InfoArtwork,{key:asset,asset,theme:'${theme}',animationsEnabled:false}))));
+          const settle=()=>new Promise(r=>setTimeout(r,100));await settle();
+          const bag=host.querySelector('[data-asset="bag"]');bag.click();await settle();
+          const painted=canvas=>{
+            const data=canvas.getContext('2d').getImageData(0,0,canvas.width,canvas.height).data;
+            let top=canvas.height,bottom=0;
+            for(let y=0;y<canvas.height;y++)for(let x=0;x<canvas.width;x++)if(data[(y*canvas.width+x)*4+3]>16){top=Math.min(top,y);bottom=Math.max(bottom,y);}
+            const r=canvas.getBoundingClientRect();return {top:r.top+top/canvas.height*r.height,bottom:r.top+(bottom+1)/canvas.height*r.height};
+          };
+          const clown=painted(bag.querySelector('.info-bag-clown canvas'));
+          const sack=painted(bag.querySelector('.info-bag-front canvas'));
+          const banana=host.querySelector('[data-asset="banana"]');
+          const fruits=[banana.dataset.fruit];
+          for(let i=0;i<4;i++){banana.click();await settle();fruits.push(banana.dataset.fruit);}
+          const result={clown,sack,fruits,disabled:banana.disabled};root.unmount();host.remove();return result;
+        })()`);
+        assert.ok(result.clown.bottom<=result.sack.top,JSON.stringify(result));
+        assert.deepEqual(result.fruits,['banana','orange','watermelon','kiwi','tomato']);
+        assert.equal(result.disabled,true);
+        console.log('PASS clown above bag and watermelon sequence '+width+'x'+height+' '+theme);
+      }
+    }
+  } else if (process.env.CHECK_GUIDE_ALIGNMENT === '1') {
     for (const [width,height,mobile] of [[1440,900,false],[844,390,true],[390,844,true],[360,640,true]]) {
       await call('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile});
       await call('Emulation.setTouchEmulationEnabled',{enabled:mobile});

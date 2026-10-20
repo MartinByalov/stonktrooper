@@ -427,10 +427,10 @@ export async function generateNFT(tokenId = null) {
 
     let pillsHtml = `
       <span class="nft-pill rank">
-        <span aria-hidden="true">&#127942;</span> Ранг #${info.rarityRank} / ${info.totalSupply}
+        <span aria-hidden="true">&#127942;</span> Ранг #${esc(info.rarityRank)} / ${esc(info.totalSupply)}
       </span>
       <span class="nft-pill">
-        <span aria-hidden="true">&#9733;</span> Рядкост: ${typeof info.rarityScore === 'number' ? info.rarityScore.toFixed(1) : info.rarityScore}
+        <span aria-hidden="true">&#9733;</span> Рядкост: ${esc(typeof info.rarityScore === 'number' ? info.rarityScore.toFixed(1) : info.rarityScore)}
       </span>
     `;
 

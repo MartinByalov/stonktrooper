@@ -10,7 +10,7 @@ export function InfoArtwork({ asset, theme, animationsEnabled }: { asset: 'coin'
     const timer = window.setTimeout(() => setClownVisible(false), 2500);
     return () => window.clearTimeout(timer);
   }, [clownVisible, clicks]);
-  const fruits = ['banana', 'orange', 'apple', 'kiwi', 'tomato'] as const;
+  const fruits = ['banana', 'orange', 'watermelon', 'kiwi', 'tomato'] as const;
   const fruit = fruits[Math.min(clicks, 4)];
   const scale = Math.max(0, 1 - clicks * 0.1);
   return <button type="button" className="info-artwork-button" data-asset={asset}
