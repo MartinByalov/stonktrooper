@@ -10,11 +10,24 @@ import { drawDumpster } from './dumpsterRenderer';
 
 export type PreviewAsset = 'dumpster' | 'tender' | 'jerome' | 'coin' | 'diamond' | 'banknote' | 'bag' | 'banana' | 'ape' | 'whale' | 'swan' | 'white' | 'hawk' | 'bell' | 'pigeon' | 'printer' | 'bull' | 'bear' | 'bull-rider' | 'bear-rider' | 'jump' | 'briefcase' | 'fedora';
 
+// Retain only small, finished previews, never the 512px measurement buffers.
+const previewCache = new Map<string, HTMLCanvasElement>();
+const PREVIEW_CACHE_LIMIT = 96;
+
 export function AssetPreview({ asset, compact = false, theme = 'light', grounded = false, coinLetter = 'M' }: { asset: PreviewAsset; compact?: boolean; theme?: 'light' | 'dark'; grounded?: boolean; coinLetter?: 'M' | 'B' }) {
   const canvas = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
     const output = canvas.current?.getContext('2d');
     if (!output) return;
+    const key = `${asset}:${theme}:${grounded}:${coinLetter}`;
+    const cached = previewCache.get(key);
+    if (cached) {
+      previewCache.delete(key);
+      previewCache.set(key, cached);
+      output.clearRect(0, 0, 160, 160);
+      output.drawImage(cached, 0, 0);
+      return;
+    }
     // Render without clipping first, then fit the actual painted bounds, not
     // the character's feet/origin, into the square preview.
     const buffer = document.createElement('canvas');
@@ -117,6 +130,14 @@ export function AssetPreview({ asset, compact = false, theme = 'light', grounded
     const scale = size / Math.max(width, height);
     output.drawImage(buffer, left, top, width, height,
       (160 - width * scale) / 2, grounded ? 160 - height * scale : (160 - height * scale) / 2, width * scale, height * scale);
+    const preview = document.createElement('canvas');
+    preview.width = 160; preview.height = 160;
+    const previewContext = preview.getContext('2d');
+    if (previewContext) {
+      previewContext.drawImage(canvas.current!, 0, 0);
+      if (previewCache.size >= PREVIEW_CACHE_LIMIT) previewCache.delete(previewCache.keys().next().value!);
+      previewCache.set(key, preview);
+    }
   }, [asset, theme, grounded, coinLetter]);
   return <canvas ref={canvas} width={160} height={160} role="img" aria-label={`${asset} game asset`} className={`${compact ? 'w-[72px]' : 'w-24'} aspect-square h-auto shrink-0 max-w-full`} />;
 }

@@ -96,7 +96,55 @@ try {
     }
     throw new Error('Timed out waiting for '+selector);
   };
-  if (process.env.CHECK_DEFAULT_THEME === '1') {
+  if (process.env.CHECK_PREVIEW_CACHE === '1') {
+    await call('Page.navigate',{url:'http://127.0.0.1:5537/'});
+    await waitForSelector('.landing-menu-panel');
+    const result=await evaluate(`(async()=>{
+      const {default:React}=await import('/node_modules/.vite/deps/react.js');
+      const {default:{createRoot}}=await import('/node_modules/.vite/deps/react-dom_client.js');
+      const {MechanicsGuide}=await import('/src/MechanicsGuide.tsx');
+      const {AssetPreview}=await import('/src/AssetPreview.tsx');
+      const original=CanvasRenderingContext2D.prototype.getImageData;
+      let scans=0;
+      CanvasRenderingContext2D.prototype.getImageData=function(...args){
+        if(this.canvas.width===512 && this.canvas.height===512)scans++;
+        return original.apply(this,args);
+      };
+      const mount=async(element)=>{
+        const host=document.createElement('div');document.body.append(host);
+        const root=createRoot(host);
+        try{
+          root.render(element);await new Promise(r=>setTimeout(r,200));
+          return Array.from(host.querySelectorAll('canvas')).map(canvas=>canvas.toDataURL());
+        }finally{root.unmount();host.remove();}
+      };
+      try{
+        const light=await mount(React.createElement(MechanicsGuide,{theme:'light'})), first=scans;
+        const repeat=await mount(React.createElement(MechanicsGuide,{theme:'light'})), second=scans;
+        const dark=await mount(React.createElement(MechanicsGuide,{theme:'dark'})), third=scans;
+        const darkRepeat=await mount(React.createElement(MechanicsGuide,{theme:'dark'})), fourth=scans;
+        const variants=[];
+        for(const props of [{asset:'coin',coinLetter:'M'},{asset:'coin',coinLetter:'B'},{asset:'bag',grounded:false},{asset:'bag',grounded:true}]) {
+          const cold=await mount(React.createElement(AssetPreview,props)), count=scans;
+          const warm=await mount(React.createElement(AssetPreview,props));
+          variants.push({identical:JSON.stringify(cold)===JSON.stringify(warm),noScans:count===scans,image:cold[0]});
+        }
+        return {count:light.length,first,second,third,fourth,
+          lightIdentical:JSON.stringify(light)===JSON.stringify(repeat),
+          darkIdentical:JSON.stringify(dark)===JSON.stringify(darkRepeat),
+          themeDifferent:JSON.stringify(light)!==JSON.stringify(dark),
+          variantsValid:variants.every(v=>v.identical&&v.noScans),
+          coinDifferent:variants[0].image!==variants[1].image,
+          groundedDifferent:variants[2].image!==variants[3].image};
+      }finally{CanvasRenderingContext2D.prototype.getImageData=original;}
+    })()`);
+    assert.equal(result.count,21);
+    assert.ok(result.first>0 && result.third>result.second,JSON.stringify(result));
+    assert.equal(result.first,result.second,'Repeated light guide performs no measurement scans');
+    assert.equal(result.third,result.fourth,'Repeated dark guide performs no measurement scans');
+    for(const key of ['lightIdentical','darkIdentical','themeDifferent','variantsValid','coinDifferent','groundedDifferent']) assert.equal(result[key],true,key);
+    console.log('PASS preview cache: identical pixels, no repeated scans, isolated themes/coin letters/grounding',JSON.stringify(result));
+  } else if (process.env.CHECK_DEFAULT_THEME === '1') {
     await call('Page.navigate',{url:'http://127.0.0.1:5537/'});
     await waitForSelector('.landing-menu-panel');
     for (const [saved,expected] of [[null,'light'],['dark','dark'],['light','light'],['invalid','light']]) {
@@ -123,6 +171,14 @@ try {
           return {gap:button.top-shoeBottom,center:Math.abs(r.left+r.width/2-button.left-button.width/2)};
         })()`);
         assert.ok(Math.abs(result.gap)<0.1 && result.center<1,JSON.stringify({width,height,theme,...result}));
+        const quote=await evaluate(`(() => {
+          const element=document.querySelector('.landing-menu-quote'),r=element.getBoundingClientRect();
+          const hero=document.querySelector('.menu-celebration').getBoundingClientRect();
+          const feed=document.querySelector('.desktop-live-feed-bar').getBoundingClientRect();
+          const top=feed.height>0 ? feed.bottom : document.querySelector('.game-app header').getBoundingClientRect().bottom;
+          return {text:element.textContent,italic:getComputedStyle(element.querySelector('em')).fontStyle,authorStyle:getComputedStyle(element.querySelector('span')).fontStyle,font:getComputedStyle(element).fontFamily,above:r.bottom<=hero.top,visible:r.top>=0&&r.left>=0&&r.right<=innerWidth,error:Math.abs((r.top+r.bottom)/2-(top+hero.top)/2)};
+        })()`);
+        assert.ok(quote.text==='“Next time for sure!” - Regard' && quote.italic==='italic' && quote.authorStyle==='normal' && quote.font.includes('Georgia') && quote.above && quote.visible && quote.error<1,JSON.stringify({width,height,quote}));
         console.log('PASS shoe baseline on How to Play border '+width+'x'+height+' '+theme);
       }
     }

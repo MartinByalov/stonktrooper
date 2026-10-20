@@ -4,6 +4,7 @@ import { observeViewportHeight } from './viewportHeight';
 import { MenuHero } from './MenuHero';
 import { MenuChart } from './MenuChart';
 import { MenuCelebration } from './MenuCelebration';
+import { MenuQuote } from './MenuQuote';
 import { LandingScore } from './LandingScore';
 import { MobileDiagnostics } from './MobileDiagnostics';
 import { BoxingGame } from './BoxingGame';
@@ -573,6 +574,7 @@ export default function App() {
                         <span className="donate-label">Donate</span>
                       </button>
                       <div className="landing-menu-actions how-to-controls w-full flex flex-col gap-1">
+                        {landingScore === null && <MenuQuote liveFeedEnabled={liveFeedVisible} />}
                         {landingScore === null && <MenuCelebration theme={theme} />}
                         <button type="button" onClick={() => setMobileGuideOpen(true)} aria-haspopup="dialog" className="landing-menu-guide-button menu-action-button w-full rounded border border-black bg-black text-white font-bold font-mono-term cursor-pointer">How to Play</button>
                         <button type="button" onClick={() => setSiteSection('Settings')} aria-haspopup="dialog" className="landing-menu-settings-button menu-action-button w-full rounded border border-[var(--line)] bg-[var(--panel)] text-[var(--text)] font-bold font-mono-term cursor-pointer">Settings</button>
