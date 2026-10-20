@@ -3702,21 +3702,19 @@ html .game-app .landing-menu-panel > .landing-menu-actions {
 
 html .game-app .landing-menu-shared-score > .landing-menu-actions {
   padding-top: 0;
+  transform: none;
 }
 
 .landing-score {
   position: absolute;
-  left: 8px;
-  bottom: 76px;
-  width: min(30%, 380px);
   margin: 0;
   pointer-events: none;
 }
 
 .landing-score canvas {
+  display: block;
   width: 100%;
-  height: auto;
-  max-height: calc(100dvh - 170px);
+  height: 100%;
   object-fit: contain;
   object-position: left bottom;
 }
@@ -3726,34 +3724,6 @@ html .game-app .landing-menu-shared-score > .landing-menu-actions {
   background: var(--panel);
   padding: 8px;
   border-radius: var(--ui-radius);
-}
-
-@media (max-width: 700px) and (orientation: portrait) {
-  .game-app .landing-menu-shared-score {
-    justify-content: flex-start;
-  }
-
-  html .game-app .landing-menu-shared-score > .landing-menu-actions {
-    transform: none;
-  }
-
-  .landing-score {
-    position: relative;
-    order: 1;
-    align-self: flex-start;
-    left: auto;
-    bottom: auto;
-    width: min(65%, 300px);
-    min-height: 0;
-    flex: 1 1 0;
-    margin-bottom: 80px;
-  }
-
-  .landing-score canvas {
-    height: 100%;
-    object-fit: contain;
-    object-position: left bottom;
-  }
 }
 
 .game-app .landing-menu-actions > .landing-menu-guide-button {

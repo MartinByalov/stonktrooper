@@ -194,7 +194,7 @@ try {
     assert.equal(result,true);
     console.log('PASS joystick sectors, initial touch, dragging, continuous jump physics, diagonal movement, release/cancel/blur and normal tap');
   } else if (process.env.CHECK_LANDING_SCORE === '1') {
-    for (const [width, height, mobile] of [[1440, 900, false], [844, 390, true], [390, 844, true]]) {
+    for (const [width, height, mobile] of [[1440, 900, false], [844, 390, true], [390, 844, true], [360, 640, true]]) {
       await call('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile });
       await call('Emulation.setTouchEmulationEnabled', { enabled: mobile });
       for (const theme of ['light', 'dark']) {
@@ -213,10 +213,12 @@ try {
           const overlap=(a,b)=>a.left<b.right && a.right>b.left && a.top<b.bottom && a.bottom>b.top;
           const canvas=document.querySelector('.landing-score canvas'), ctx=canvas.getContext('2d');
           return { visible:art.width>0 && art.height>0, inside:art.left>=panel.left && art.right<=panel.right && art.top>=panel.top && art.bottom<=panel.bottom,
-            overlap:overlap(art,actions)||overlap(art,donate), painted:ctx.getImageData(640,640,1,1).data[3]>0 };
+            overlap:overlap(art,actions)||overlap(art,donate), painted:ctx.getImageData(canvas.width/2,canvas.height/2,1,1).data[3]>0,
+            anchored: ${mobile} ? Math.abs(art.bottom-donate.top+8)<1 && Math.abs(art.left-donate.left)<1 : Math.abs(art.bottom-donate.bottom)<1 && Math.abs(art.left-donate.right-8)<1,
+            centered: ${mobile && height > width} ? Math.abs(actions.top+actions.height/2-panel.top-panel.height/2)<1 : true };
         })()`);
         if (layout.overlap) console.log(await evaluate("JSON.stringify(['.landing-score canvas','.landing-menu-panel','.landing-menu-actions','.home-coffee-link'].map(s=>[s,document.querySelector(s).getBoundingClientRect().toJSON()]))"));
-        assert.deepEqual(layout, { visible: true, inside: true, overlap: false, painted: true }, `${width}x${height} ${theme}: ${JSON.stringify(layout)}`);
+        assert.deepEqual(layout, { visible: true, inside: true, overlap: false, painted: true, anchored: true, centered: true }, `${width}x${height} ${theme}: ${JSON.stringify(layout)}`);
         console.log(`PASS shared score Home ${width}x${height} ${theme}`);
       }
     }
