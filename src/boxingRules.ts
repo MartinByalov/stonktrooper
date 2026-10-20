@@ -54,6 +54,7 @@ export const createBossArena = (kind: BossKind = 'jerome') => ({
   aim: null as AimPoint | null,
   attackRequested: false,
   jumpRequested: false,
+  joystickJumpHeld: false,
   joystickX: 0,
   doubleJumpAt: (_x: number): boolean => false,
   safeHeightAt: arenaHeightAt,
@@ -243,7 +244,7 @@ export const stepBossArena = (arena: BossArena, direction: number, random = Math
     p.vy += 0.48; p.y += p.vy;
     if (p.vy >= 0 && p.y >= floor) { p.y = floor; p.vy = 0; p.grounded = true; p.jumps = 0; p.doubleReady = arena.doubleJumpAt(p.x); }
   }
-  if (p.jumpBuffer > 0 && p.grounded) jumpBossPlayer(arena);
+  if ((p.jumpBuffer > 0 || arena.joystickJumpHeld) && p.grounded) jumpBossPlayer(arena);
   if (b.kind === 'janet') stepJanet(arena);
   else if (b.kind === 'paul') stepPaul(arena);
   else {

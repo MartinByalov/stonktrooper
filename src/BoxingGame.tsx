@@ -61,7 +61,11 @@ export function BoxingGame({ onComplete, onDefeat, encounter, paused = false, he
       }
     };
     const up = (e: KeyboardEvent) => { keys.current.delete(e.code); };
-    const blur = () => { keys.current.clear(); touch.current = 0; };
+    const blur = () => {
+      keys.current.clear(); touch.current = 0;
+      arena.current.joystickX = 0; arena.current.joystickJumpHeld = false;
+      arena.current.jumpRequested = false;
+    };
     window.addEventListener('keydown', down); window.addEventListener('keyup', up); window.addEventListener('blur', blur);
     return () => { window.removeEventListener('keydown', down); window.removeEventListener('keyup', up); window.removeEventListener('blur', blur); };
   }, []);
@@ -72,6 +76,7 @@ export function BoxingGame({ onComplete, onDefeat, encounter, paused = false, he
         previous = 0; accumulator = 0;
         keys.current.clear(); touch.current = 0;
         arena.current.joystickX = 0;
+        arena.current.joystickJumpHeld = false;
         arena.current.jumpRequested = false; arena.current.attackRequested = false;
         frame = requestAnimationFrame(loop);
         return;

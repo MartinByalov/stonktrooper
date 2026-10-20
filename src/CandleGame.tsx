@@ -3474,8 +3474,17 @@ export const CandleGame: React.FC<CandleGameProps> = ({
           if (gameRef.current.currentState === 'boxing' && bossEncounter.current) bossEncounter.current.jumpRequested = true;
           else pressJump();
         }}
-        onMove={x => { if (bossEncounter.current) bossEncounter.current.joystickX = x; }}
-        onRelease={() => { releaseJump(); if (bossEncounter.current) bossEncounter.current.joystickX = 0; }}
+        onMove={(x, y) => {
+          const arena = bossEncounter.current;
+          if (!arena) return;
+          arena.joystickX = x;
+          arena.joystickJumpHeld = y < 0;
+        }}
+        onRelease={() => {
+          releaseJump();
+          const arena = bossEncounter.current;
+          if (arena) { arena.joystickX = 0; arena.joystickJumpHeld = false; }
+        }}
       />}
     </div>
   );

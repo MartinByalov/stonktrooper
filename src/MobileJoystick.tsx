@@ -1,6 +1,6 @@
 // Browser game module for MobileJoystick.
 import { useEffect, useLayoutEffect, useRef } from 'react';
-import { joystickSwipe } from './joystickGesture';
+import { joystickDirection } from './joystickGesture';
 
 export function MobileJoystick({ onMove, onPress, onRelease, movementEnabled }: {
   onMove: (x: number, y: number) => void;
@@ -11,7 +11,6 @@ export function MobileJoystick({ onMove, onPress, onRelease, movementEnabled }: 
   const pointer = useRef<number | null>(null);
   const control = useRef<HTMLDivElement>(null);
   const keyboardPressed = useRef(false);
-  const gesture = useRef({ startX: 0, startY: 0, latched: false });
   const knob = useRef<HTMLSpanElement>(null);
   const callbacks = useRef({ onMove, onRelease });
   useLayoutEffect(() => { callbacks.current = { onMove, onRelease }; });
@@ -21,7 +20,6 @@ export function MobileJoystick({ onMove, onPress, onRelease, movementEnabled }: 
       pointer.current = null;
       keyboardPressed.current = false;
       control.current?.removeAttribute('data-pressed');
-      gesture.current.latched = false;
       if (knob.current) knob.current.style.transform = 'translate(0px, 0px)';
       callbacks.current.onMove(0, 0);
       callbacks.current.onRelease();
@@ -39,37 +37,38 @@ export function MobileJoystick({ onMove, onPress, onRelease, movementEnabled }: 
     if (pointer.current === null) return;
     pointer.current = null;
     control.current?.removeAttribute('data-pressed');
-    gesture.current.latched = false;
     if (knob.current) knob.current.style.transform = 'translate(0px, 0px)';
     onMove(0, 0); onRelease();
   };
+  const move = (element: HTMLDivElement, clientX: number, clientY: number) => {
+    if (!movementEnabled) return;
+    const rect = element.getBoundingClientRect();
+    const dx = clientX - rect.left - rect.width / 2;
+    const dy = clientY - rect.top - rect.height / 2;
+    const radius = rect.width * 0.29, length = Math.hypot(dx, dy);
+    const scale = length > radius ? radius / length : 1;
+    const x = dx * scale, y = dy * scale;
+    if (knob.current) knob.current.style.transform = `translate(${x}px, ${y}px)`;
+    const direction = joystickDirection(x / radius, y / radius);
+    onMove(direction.x, direction.y);
+  };
   return <div
     ref={control}
-    role="button" aria-label={movementEnabled ? 'Joystick: drag to move, swipe up or tap to jump' : 'Joystick: tap to jump'} tabIndex={0}
+    role="button" aria-label={movementEnabled ? 'Joystick: hold up to keep jumping, diagonally up to jump and move' : 'Joystick: tap to jump'} tabIndex={0}
     className="mobile-joystick absolute bottom-4 left-4 z-50 flex items-center justify-center rounded-full touch-none select-none pointer-events-auto"
     onPointerDown={e => {
       e.preventDefault(); e.stopPropagation();
       if (pointer.current !== null) return;
       pointer.current = e.pointerId;
       e.currentTarget.setAttribute('data-pressed', 'true');
-      gesture.current = { startX: e.clientX, startY: e.clientY, latched: false };
-      e.currentTarget.setPointerCapture(e.pointerId); onPress();
+      e.currentTarget.setPointerCapture(e.pointerId);
+      if (movementEnabled) move(e.currentTarget, e.clientX, e.clientY);
+      else onPress();
     }}
     onPointerMove={e => {
       if (pointer.current !== e.pointerId) return;
       e.preventDefault(); e.stopPropagation();
-      if (!movementEnabled) return;
-      const rect = e.currentTarget.getBoundingClientRect();
-      const dx = e.clientX - rect.left - rect.width / 2;
-      const dy = e.clientY - rect.top - rect.height / 2;
-      const radius = rect.width * 0.29, length = Math.hypot(dx, dy);
-      const swipe = joystickSwipe(gesture.current.startY - e.clientY, radius, gesture.current.latched, e.clientX - gesture.current.startX);
-      gesture.current.latched = swipe.latched;
-      if (swipe.jump) onPress();
-      const scale = length > radius ? radius / length : 1;
-      const x = dx * scale, y = dy * scale;
-      if (knob.current) knob.current.style.transform = `translate(${x}px, ${y}px)`;
-      onMove(x / radius, y / radius);
+      move(e.currentTarget, e.clientX, e.clientY);
     }}
     onPointerUp={e => { e.stopPropagation(); if (pointer.current === e.pointerId) reset(); }}
     onPointerCancel={reset} onLostPointerCapture={reset}

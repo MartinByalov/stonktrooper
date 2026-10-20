@@ -2,15 +2,23 @@
 export function MenuCelebration({ theme }: { theme: 'light' | 'dark' }) {
   const caseColor = theme === 'dark' ? '#ffffff' : '#05070a';
   return <svg className="menu-celebration" viewBox="0 0 140 107.5" aria-hidden="true" focusable="false">
+    <defs>
+      <linearGradient id="menu-suit" x1="0" y1="0" x2="1" y2="1">
+        <stop stopColor="#293d60" /><stop offset="1" stopColor="#101a2d" />
+      </linearGradient>
+    </defs>
     <g strokeLinecap="round" strokeLinejoin="round">
-      <path d="M64 82L61 103M76 82L79 103" stroke="#27374e" strokeWidth="9" />
-      <path d="M56 105H65M75 105H84" stroke="#111827" strokeWidth="5" />
-      <path d="M59 55L44 42L32 22M81 55L96 42L108 22" fill="none" stroke="#27374e" strokeWidth="9" />
+      <path d="M58 78H69L67 102H56ZM71 78H82L84 102H73Z" fill="url(#menu-suit)" stroke="#101a2d" />
+      <path d="M55 102H66L67 106H51Q50 103 55 102ZM74 102H84Q89 103 89 106H73Z" fill="#101114" stroke="#05070a" />
+      <path d="M54 104H62M78 104H84" stroke="#6b7280" strokeWidth="0.8" />
+      <path d="M59 55L44 42L32 22M81 55L96 42L108 22" fill="none" stroke="url(#menu-suit)" strokeWidth="10" />
+      <path d="M31 21L34 26M106 26L109 21" stroke="#f8fafc" strokeWidth="8" />
       <path d="M32 22L29 17M108 22L111 17" stroke="#efb58f" strokeWidth="7" />
-      <path d="M59 52Q70 47 81 52L84 81Q70 88 56 81Z" fill="#27374e" stroke="#17202c" strokeWidth="1.5" />
+      <path d="M59 52Q70 47 81 52L84 81Q76 86 70 79Q64 86 56 81Z" fill="url(#menu-suit)" stroke="#101a2d" strokeWidth="1.5" />
       <path d="M64 51H76L70 77Z" fill="#f8fafc" />
-      <path d="M66 51L70 56L74 51M70 56L67 69L70 74L73 69Z" fill="#ef4444" />
-      <path d="M61 53L64 65L59 68L67 80M79 53L76 65L81 68L73 80" fill="none" stroke="#42536b" strokeWidth="1" />
+      <path d="M64 51L70 55L67 59ZM76 51L70 55L73 59Z" fill="#fff" stroke="#dce3ed" strokeWidth="0.5" />
+      <path d="M68 54H72L73 58L71 60L74 73L70 78L66 73L69 60L67 58Z" fill="#f50024" />
+      <path d="M61 52L60 59L63 60L59 64L68 79M79 52L80 59L77 60L81 64L72 79" fill="#1b2a45" stroke="#0d1627" strokeWidth="1" />
       <path d="M66 46V52H74V46" fill="#eab28e" />
       <ellipse cx="70" cy="35" rx="12" ry="14" fill="#fed7aa" stroke="#eab28e" strokeWidth="1.5" />
       <path d="M58 35Q54 32 56 39M82 35Q86 32 84 39" fill="none" stroke="#eab28e" strokeWidth="3" />

@@ -4,6 +4,7 @@ import { observeViewportHeight } from './viewportHeight';
 import { MenuHero } from './MenuHero';
 import { MenuChart } from './MenuChart';
 import { MenuCelebration } from './MenuCelebration';
+import { LandingScore } from './LandingScore';
 import { MobileDiagnostics } from './MobileDiagnostics';
 import { BoxingGame } from './BoxingGame';
 import type { BossArena } from './boxingRules';
@@ -23,6 +24,7 @@ import { Maximize, Minimize, Pause, Play, X, ChevronLeft, ChevronRight } from 'l
 export default function App() {
   const [mobileDevice, setMobileDevice] = useState(() => window.matchMedia('(pointer: coarse)').matches);
   const [state, setState] = useState<GameState>('menu');
+  const [landingScore] = useState(() => sharedScore(window.location.search));
   const mobilePlaying = mobileDevice && (state === 'play' || state === 'boxing');
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
     try {
@@ -151,14 +153,14 @@ export default function App() {
           app.style.setProperty('--content-edge-inset', edgeInset);
           app.dispatchEvent(new Event('hudlayoutchange'));
         }
-        header.style.paddingLeft = 'max(var(--content-edge-inset), env(safe-area-inset-left))';
+        header.style.paddingLeft = 'var(--content-left-inset)';
         const logo = app.querySelector('.stonktrooper-logo');
         if (logo) {
           app.style.setProperty('--home-logo-inset', `${Math.max(0, logo.getBoundingClientRect().left - app.getBoundingClientRect().left)}px`);
         }
       }
       if (header && (!fullscreenIcon || fullscreenIcon.getBoundingClientRect().width === 0)) {
-        header.style.paddingLeft = 'max(var(--content-edge-inset), env(safe-area-inset-left))';
+        header.style.paddingLeft = 'var(--content-left-inset)';
       }
       const headerFeed = Array.from(app.querySelectorAll('.mobile-header-feed, .desktop-live-feed')).find(feed => feed.getBoundingClientRect().width > 0);
       const desktopFeed = app.querySelector('.desktop-live-feed-bar');
@@ -274,14 +276,6 @@ export default function App() {
   const [currentResult, setCurrentResult] = useState(0);
   const boxingActive = useRef(false);
   const bossEncounter = useRef<BossArena | null>(null);
-
-  useEffect(() => {
-    const score = sharedScore(window.location.search);
-    if (score === null) return;
-    setCurrentResult(score);
-    setState('over');
-    setShareDDOpen(true);
-  }, []);
 
   const handleStateChange = useCallback((nextState: GameState) => {
     if (boxingActive.current) return;
@@ -571,14 +565,15 @@ export default function App() {
               {state === 'menu' && (
                 <div style={{ backgroundColor: 'color-mix(in srgb, var(--panel) 88%, transparent)' }} className="initial-guide desktop-initial-guide max-w-[1640px] w-full border border-[var(--line)] rounded-xl p-3 sm:p-5 shadow-2xl text-left">
                   <div className="how-to-layout flex flex-col items-stretch gap-3">
-                    <section className="landing-menu-panel rounded border border-[var(--line)]" aria-label="Game menu">
+                    <section className={`landing-menu-panel rounded border border-[var(--line)]${landingScore !== null ? ' landing-menu-shared-score' : ''}`} aria-label="Game menu">
                       <MenuChart theme={theme} />
+                      {landingScore !== null && <LandingScore score={landingScore} theme={theme} />}
                       <button className="coffee-link home-coffee-link" type="button" aria-label="Donate (opens in a new tab)" onClick={() => window.open('https://ko-fi.com/eon', '_blank', 'noopener,noreferrer')}>
                         <span className="coffee-cup" aria-hidden="true">♥</span>
                         <span className="donate-label">Donate</span>
                       </button>
                       <div className="landing-menu-actions how-to-controls w-full flex flex-col gap-1">
-                        <MenuCelebration theme={theme} />
+                        {landingScore === null && <MenuCelebration theme={theme} />}
                         <button type="button" onClick={() => setMobileGuideOpen(true)} aria-haspopup="dialog" className="landing-menu-guide-button menu-action-button w-full rounded border border-black bg-black text-white font-bold font-mono-term cursor-pointer">How to Play</button>
                         <button type="button" onClick={() => setSiteSection('Settings')} aria-haspopup="dialog" className="landing-menu-settings-button menu-action-button w-full rounded border border-[var(--line)] bg-[var(--panel)] text-[var(--text)] font-bold font-mono-term cursor-pointer">Settings</button>
                         <div className="how-to-mode-buttons">

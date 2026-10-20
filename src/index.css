@@ -3700,6 +3700,62 @@ html .game-app .landing-menu-panel > .landing-menu-actions {
   pointer-events: none;
 }
 
+html .game-app .landing-menu-shared-score > .landing-menu-actions {
+  padding-top: 0;
+}
+
+.landing-score {
+  position: absolute;
+  left: 8px;
+  bottom: 76px;
+  width: min(30%, 380px);
+  margin: 0;
+  pointer-events: none;
+}
+
+.landing-score canvas {
+  width: 100%;
+  height: auto;
+  max-height: calc(100dvh - 170px);
+  object-fit: contain;
+  object-position: left bottom;
+}
+
+.landing-score-fallback {
+  color: var(--text);
+  background: var(--panel);
+  padding: 8px;
+  border-radius: var(--ui-radius);
+}
+
+@media (max-width: 700px) and (orientation: portrait) {
+  .game-app .landing-menu-shared-score {
+    justify-content: flex-start;
+  }
+
+  html .game-app .landing-menu-shared-score > .landing-menu-actions {
+    transform: none;
+  }
+
+  .landing-score {
+    position: relative;
+    order: 1;
+    align-self: flex-start;
+    left: auto;
+    bottom: auto;
+    width: min(65%, 300px);
+    min-height: 0;
+    flex: 1 1 0;
+    margin-bottom: 80px;
+  }
+
+  .landing-score canvas {
+    height: 100%;
+    object-fit: contain;
+    object-position: left bottom;
+  }
+}
+
 .game-app .landing-menu-actions > .landing-menu-guide-button {
   background: #000000;
   border-color: #000000;
@@ -4540,6 +4596,8 @@ html .game-app {
   --chrome-height: 36px;
   /* Fallback for portrait, where the Fullscreen control is hidden. */
   --content-edge-inset: 12.1666666667px;
+  --content-left-inset: max(var(--content-edge-inset), env(safe-area-inset-left));
+  --content-bottom-inset: max(var(--content-edge-inset), env(safe-area-inset-bottom));
 }
 html .game-app header {
   box-sizing: border-box;
@@ -4549,7 +4607,7 @@ html .game-app header {
   flex: 0 0 var(--chrome-height);
   padding-block: 2px 1px;
   padding-right: max(2px, env(safe-area-inset-right));
-  padding-left: max(var(--content-edge-inset), env(safe-area-inset-left));
+  padding-left: var(--content-left-inset);
 }
 
 /* Boss status replaces the disabled wire without reserving another row. */
@@ -4626,8 +4684,8 @@ html[data-theme] .game-app :is(.mobile-how-to-header, .how-to-guide-header) > .d
 }
 
 html .game-app .landing-menu-panel .home-coffee-link {
-  left: max(var(--content-edge-inset), env(safe-area-inset-left));
-  bottom: calc(18px + max(var(--content-edge-inset), env(safe-area-inset-left)));
+  left: var(--content-left-inset);
+  bottom: calc(18px + var(--content-left-inset));
 }
 @media (orientation: portrait) and (pointer: coarse) {
   html .game-app .landing-menu-panel .home-coffee-link {
@@ -4731,8 +4789,15 @@ html .game-app .mechanics-guide .mechanics-guide-visuals canvas {
 }
 html .game-app .mobile-joystick,
 html .game-app:fullscreen .mobile-joystick {
-  left: max(var(--content-edge-inset), env(safe-area-inset-left));
-  bottom: max(var(--content-edge-inset), env(safe-area-inset-bottom));
+  left: var(--content-left-inset);
+  bottom: var(--content-bottom-inset);
+}
+/* Landscape mirrors the measured Fullscreen artwork, not the opposite notch. */
+@media (orientation: landscape) and (pointer: coarse) {
+  html .game-app {
+    --content-left-inset: var(--content-edge-inset);
+    --content-bottom-inset: var(--content-edge-inset);
+  }
 }
 @media (pointer: coarse) {
   html .game-app .pause-overlay > .game-result:not(.game-result-over) {

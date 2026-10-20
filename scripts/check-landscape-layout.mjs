@@ -13,6 +13,9 @@ try {
   server = await createServer({ root, plugins: [{
     name: 'countdown-regression-hook', enforce: 'pre',
     transform(code, id) {
+      if (process.env.CHECK_LANDSCAPE_EDGES === '1' && id.replaceAll('\\', '/').endsWith('/src/index.css')) {
+        return code.replace(/env\(safe-area-inset-(left|right|top|bottom)\)/g, (_, side) => `var(--test-safe-${side}, 0px)`);
+      }
       if (!id.replaceAll('\\', '/').endsWith('/src/CandleGame.tsx')) return;
       return code.replace('  const draw = useCallback', `  window.__checkVolumes = () => {
         const canvas = document.createElement('canvas'); canvas.width = W; canvas.height = H;
@@ -90,6 +93,140 @@ try {
     }
     throw new Error('Timed out waiting for '+selector);
   };
+  if (process.env.CHECK_LANDSCAPE_EDGES === '1') {
+    await call('Emulation.setDeviceMetricsOverride', { width: 844, height: 390, deviceScaleFactor: 1, mobile: true });
+    await call('Emulation.setTouchEmulationEnabled', { enabled: true });
+    for (const insets of [{ left: 0, right: 0, top: 0, bottom: 0 }, { left: 44, right: 0, top: 0, bottom: 21 }, { left: 0, right: 44, top: 0, bottom: 21 }]) {
+      await call('Page.navigate', { url: 'http://127.0.0.1:5537/' });
+      await waitForSelector('.landing-menu-panel');
+      await evaluate(`Object.entries(${JSON.stringify(insets)}).forEach(([side,value])=>document.documentElement.style.setProperty('--test-safe-'+side,value+'px')); window.dispatchEvent(new Event('resize'))`);
+      await settle();
+      const measure = async playing => evaluate(`(() => {
+        const app=document.querySelector('.game-app'), ar=app.getBoundingClientRect(), svg=document.querySelector('.desktop-fullscreen-control svg');
+        const r=svg.getBoundingClientRect(), b=svg.getBBox(), v=svg.viewBox.baseVal;
+        const gap=ar.right-(r.left+(b.x+b.width+parseFloat(getComputedStyle(svg).strokeWidth)/2-v.x)*r.width/v.width);
+        const logo=document.querySelector('.header-logo-frame').getBoundingClientRect().left-ar.left;
+        const values={gap,logo};
+        if (${playing}) {
+          const stage=document.querySelector('.game-stage'), sr=stage.getBoundingClientRect(), joystick=document.querySelector('.mobile-joystick').getBoundingClientRect();
+          values.pips=parseFloat(stage.style.getPropertyValue('--game-hud-inset'));
+          values.joystick=joystick.left-ar.left;
+          values.joystickBottom=sr.bottom-joystick.bottom;
+        } else {
+          const panel=document.querySelector('.landing-menu-panel').getBoundingClientRect(), donate=document.querySelector('.home-coffee-link').getBoundingClientRect();
+          values.donate=donate.left-panel.left;
+          values.donateBottom=panel.bottom-18-donate.bottom;
+        }
+        return values;
+      })()`);
+      const check = values => {
+        for (const [name, value] of Object.entries(values)) assert.ok(Math.abs(value-values.gap)<1, `${name} matches Fullscreen with ${JSON.stringify(insets)}: ${JSON.stringify(values)}`);
+      };
+      check(await measure(false));
+      await call('Runtime.evaluate', { expression: "document.querySelector('.desktop-fullscreen-control').click()", userGesture: true });
+      await settle();
+      check(await measure(false));
+      await call('Runtime.evaluate', { expression: "document.querySelector('.landing-menu-actions > button:last-child').click()", userGesture: true });
+      await waitForSelector('.mobile-joystick');
+      await settle();
+      check(await measure(true));
+      await evaluate("document.exitFullscreen()");
+      await settle();
+      if (await evaluate("document.querySelector('.game-app').dataset.state==='paused'")) {
+        await evaluate("document.querySelector('.header-pause-control').click()");
+        await waitForSelector('.mobile-joystick');
+        await settle();
+      }
+      check(await measure(true));
+      console.log('PASS mobile landscape Home/gameplay edges, fullscreen/windowed, safe area '+JSON.stringify(insets));
+    }
+  } else if (process.env.CHECK_JOYSTICK === '1') {
+    await call('Page.navigate', { url: 'http://127.0.0.1:5537/' });
+    await waitForSelector('.landing-menu-panel');
+    const result = await evaluate(`(async () => {
+      const {joystickDirection}=await import('/src/joystickGesture.ts');
+      const {createBossArena,stepBossArena}=await import('/src/boxingRules.ts');
+      const check=(condition,message)=>{if(!condition) throw new Error(message);};
+      for(const [x,y,expectedX,expectedY] of [[0,-1,0,-1],[-0.7,-0.7,-1,-1],[0.7,-0.7,1,-1],[-1,0,-1,0],[1,0,1,0],[0,0,0,0],[0,1,0,0],[-0.7,0.7,-1,0],[0.7,0.7,1,0],[0.1,-1,0,-1]]) {
+        const direction=joystickDirection(x,y);
+        check(direction.x===expectedX && direction.y===expectedY,'Sector '+x+','+y);
+      }
+      for(const direction of [-1,0,1]) {
+        const a=createBossArena();
+        a.left=-10000; a.right=10000; a.heightAt=()=>300; a.safeHeightAt=()=>300;
+        a.player.x=0; a.player.y=300; a.player.invulnerable=10000;
+        a.boss.x=9000; a.nextDrop=a.nextBird=a.nextCandleSurprise=Infinity;
+        a.joystickJumpHeld=true; a.doubleJumpAt=()=>true;
+        let jumps=0;
+        for(let frame=0;frame<200;frame++) {
+          const vy=a.player.vy;
+          stepBossArena(a,direction,()=>0.5);
+          if(vy>=0 && a.player.vy<0) jumps++;
+          check(a.player.jumps<=1,'Holding must not consume an airborne double jump');
+        }
+        check(jumps>=3,'Repeated jumps without further pointer events');
+        check(direction===0 ? a.player.x===0 : a.player.x*direction>0,'Jump plus movement');
+        a.joystickJumpHeld=false;
+        for(let frame=0;frame<100;frame++) stepBossArena(a,0,()=>0.5);
+        check(a.player.grounded && a.player.vy===0,'Release stops repeated jumping');
+      }
+      const {default:React}=await import('/node_modules/.vite/deps/react.js');
+      const {default:{createRoot}}=await import('/node_modules/.vite/deps/react-dom_client.js');
+      const {MobileJoystick}=await import('/src/MobileJoystick.tsx');
+      const host=document.createElement('div');document.body.append(host);
+      const root=createRoot(host), moves=[];let presses=0,releases=0;
+      const render=enabled=>root.render(React.createElement(MobileJoystick,{movementEnabled:enabled,onMove:(x,y)=>moves.push([x,y]),onPress:()=>presses++,onRelease:()=>releases++}));
+      render(true); await new Promise(r=>setTimeout(r,100));
+      const el=host.firstElementChild;el.setPointerCapture=()=>{};
+      const rect=el.getBoundingClientRect(),cx=rect.left+rect.width/2,cy=rect.top+rect.height/2,r=rect.width*0.29;
+      const send=(type,x,y)=>el.dispatchEvent(new PointerEvent(type,{bubbles:true,pointerId:1,clientX:cx+x*r,clientY:cy+y*r}));
+      send('pointerdown',-0.7,-0.7);check(JSON.stringify(moves.at(-1))==='[-1,-1]' && presses===0,'Upper diagonal works on initial touch');
+      send('pointermove',0,-1);check(JSON.stringify(moves.at(-1))==='[0,-1]','Slide to straight up');
+      send('pointermove',1,0);check(JSON.stringify(moves.at(-1))==='[1,0]','Middle line stops jumping');
+      send('pointermove',0.7,-0.7);check(JSON.stringify(moves.at(-1))==='[1,-1]','Slide to upper right');
+      send('pointerup',0.7,-0.7);check(JSON.stringify(moves.at(-1))==='[0,0]' && releases===1,'Release clears both axes');
+      send('pointerdown',0,-1);send('pointercancel',0,-1);check(JSON.stringify(moves.at(-1))==='[0,0]','Cancel clears input');
+      send('pointerdown',0,-1);window.dispatchEvent(new Event('blur'));check(JSON.stringify(moves.at(-1))==='[0,0]','Blur clears input');
+      render(false);await new Promise(r=>setTimeout(r,50));
+      send('pointerdown',0,0);check(presses===1,'Normal mode retains tap to jump');send('pointerup',0,0);
+      root.unmount();host.remove();return true;
+    })()`);
+    assert.equal(result,true);
+    console.log('PASS joystick sectors, initial touch, dragging, continuous jump physics, diagonal movement, release/cancel/blur and normal tap');
+  } else if (process.env.CHECK_LANDING_SCORE === '1') {
+    for (const [width, height, mobile] of [[1440, 900, false], [844, 390, true], [390, 844, true]]) {
+      await call('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile });
+      await call('Emulation.setTouchEmulationEnabled', { enabled: mobile });
+      for (const theme of ['light', 'dark']) {
+        await call('Page.navigate', { url: 'http://127.0.0.1:5537/' });
+        await waitForSelector('.landing-menu-panel');
+        await evaluate(`localStorage.setItem('cr_theme','${theme}')`);
+        await call('Page.navigate', { url: 'http://127.0.0.1:5537/?score=37135' });
+        await waitForSelector('.landing-score canvas:not([hidden])');
+        await settle();
+        assert.equal(await evaluate("document.querySelector('.game-app').dataset.state"), 'menu');
+        assert.equal(await evaluate("!!document.querySelector('.menu-celebration, .share-dd-dialog, .game-result')"), false);
+        assert.equal(await evaluate("document.querySelector('.landing-score').getAttribute('aria-label')"), 'Shared best score: 37,135');
+        const layout = await evaluate(`(() => {
+          const r=s=>document.querySelector(s).getBoundingClientRect();
+          const art=r('.landing-score canvas'), panel=r('.landing-menu-panel'), actions=r('.landing-menu-actions'), donate=r('.home-coffee-link');
+          const overlap=(a,b)=>a.left<b.right && a.right>b.left && a.top<b.bottom && a.bottom>b.top;
+          const canvas=document.querySelector('.landing-score canvas'), ctx=canvas.getContext('2d');
+          return { visible:art.width>0 && art.height>0, inside:art.left>=panel.left && art.right<=panel.right && art.top>=panel.top && art.bottom<=panel.bottom,
+            overlap:overlap(art,actions)||overlap(art,donate), painted:ctx.getImageData(640,640,1,1).data[3]>0 };
+        })()`);
+        if (layout.overlap) console.log(await evaluate("JSON.stringify(['.landing-score canvas','.landing-menu-panel','.landing-menu-actions','.home-coffee-link'].map(s=>[s,document.querySelector(s).getBoundingClientRect().toJSON()]))"));
+        assert.deepEqual(layout, { visible: true, inside: true, overlap: false, painted: true }, `${width}x${height} ${theme}: ${JSON.stringify(layout)}`);
+        console.log(`PASS shared score Home ${width}x${height} ${theme}`);
+      }
+    }
+    for (const query of ['', '?score=invalid', '?score=-1']) {
+      await call('Page.navigate', { url: `http://127.0.0.1:5537/${query}` });
+      await waitForSelector('.menu-celebration');
+      assert.equal(await evaluate("document.querySelector('.landing-score')"), null);
+    }
+    console.log('PASS normal Home and invalid score links keep the celebration hero');
+  } else {
   const checkGuideFrame = async () => {
     const frame = await evaluate(`(() => {
       const style = selector => getComputedStyle(document.querySelector(selector));
@@ -1324,6 +1461,7 @@ try {
     assert.equal(await evaluate("document.querySelector('.game-app').dataset.state"),'paused','Focus does not resume automatically');
   }
   console.log('PASS automatic pause on blur/hidden tab with explicit resume');
+  }
 } finally {
   for (const request of pending.values()) clearTimeout(request.timer);
   socket?.close();
