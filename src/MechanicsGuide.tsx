@@ -19,7 +19,7 @@ const cards: { asset: PreviewAsset; below?: PreviewAsset; title: string; text: s
 
 export function MechanicsGuide({ theme }: { theme: 'light' | 'dark' }) {
   return <div className="mechanics-guide min-w-0 flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1 text-xs leading-tight">
-    {cards.map(card => <div key={card.asset} className="rounded border border-[var(--line)] bg-[var(--alt)] overflow-hidden flex flex-col">
+    {cards.map(card => <div key={card.asset} data-paired-visuals={card.below ? 'true' : undefined} className="rounded border border-[var(--line)] bg-[var(--alt)] overflow-hidden flex flex-col">
       <div className="flex flex-1 items-stretch">
         <div className="mechanics-guide-visuals w-[88px] shrink-0 grid auto-rows-fr border-r border-[var(--line)] bg-[var(--bg)]/30">
           <div className="min-h-[72px] flex items-center justify-center px-1"><AssetPreview asset={card.asset} compact theme={theme} /></div>

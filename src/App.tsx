@@ -307,7 +307,7 @@ export default function App() {
     const favicon = document.getElementById('favicon') as HTMLLinkElement | null;
     if (favicon) {
       favicon.type = 'image/png';
-      favicon.href = `${import.meta.env.BASE_URL}images/${theme === 'dark' ? 'tab-icon-inverted.png' : 'tab-icon.png'}?v=2`;
+      favicon.href = `${import.meta.env.BASE_URL}images/${theme === 'dark' ? 'tab-icon-inverted-48.png' : 'tab-icon-48.png'}`;
     }
     try {
       localStorage.setItem('cr_theme', theme);
@@ -606,7 +606,7 @@ export default function App() {
               )}
 
               {/* PAUSE & GAME OVER WINDOWS */}
-              {state === 'over' && <LiquidatedBackdrop />}
+              {state === 'over' && <LiquidatedBackdrop theme={theme} shareOpen={shareDDOpen} />}
               {state !== 'menu' && (
                 <div className={`game-result ${state === 'over' ? 'game-result-over' : ''} relative isolate overflow-hidden max-w-md w-full text-center bg-[var(--panel)] border border-[var(--line)] rounded-xl p-6 sm:p-7 shadow-2xl`}>
                   <div className={`relative z-10 ${state === 'over' ? 'game-result-content pt-28 pb-4' : ''}`}>
@@ -615,7 +615,7 @@ export default function App() {
 
 
                     {/* Score summary on game over */}
-                    {state === 'over' && (
+                    {state === 'over' && !shareDDOpen && (
                       <div className="game-result-summary py-3 my-4 bg-[var(--alt)] border border-[var(--line)] rounded-lg font-mono-term text-xs">
                         <h2 className="font-black text-lg sm:text-xl text-red-400 mb-2">LIQUIDATED</h2>
                         <div>

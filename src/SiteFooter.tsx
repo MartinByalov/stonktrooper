@@ -12,6 +12,7 @@ const sectionAssets: Record<SiteSection, PreviewAsset> = { About: 'coin', Privac
 
 export function SiteFooter({ onOpen, theme, section, setSection, volume, onVolumeChange, animationsEnabled, onToggleAnimations, liveFeedEnabled, onToggleLiveFeed, onToggleTheme, highContrast, onToggleHighContrast, onResetDefaults }: { onOpen: () => void; theme: 'light' | 'dark'; section: SiteSection | null; setSection: (section: SiteSection | null) => void; volume: number; onVolumeChange: (volume: number) => void; animationsEnabled: boolean; onToggleAnimations: () => void; liveFeedEnabled: boolean; onToggleLiveFeed: () => void; onToggleTheme: () => void; highContrast: boolean; onToggleHighContrast: () => void; onResetDefaults: () => void }) {
   const [message, setMessage] = useState('');
+  useEffect(() => { setMessage(''); }, [section]);
   const [stonksOpen, setStonksOpen] = useState(false);
   useEffect(() => { if (section !== 'About') setStonksOpen(false); }, [section]);
   const dialog = useRef<HTMLDivElement>(null);
@@ -126,7 +127,6 @@ export function SiteFooter({ onOpen, theme, section, setSection, volume, onVolum
             <button type="button" role="switch" aria-label="Shmuck Feed" aria-checked={liveFeedEnabled} onClick={onToggleLiveFeed} className="settings-toggle"><span className="settings-label"><Radio aria-hidden="true" />Shmuck Feed</span><span className="settings-switch-state">{liveFeedEnabled ? 'On' : 'Off'}<span className="settings-switch-track" aria-hidden="true" /></span></button>
             <button type="button" role="switch" aria-label="Animations" aria-checked={animationsEnabled} onClick={onToggleAnimations} className="settings-toggle"><span className="settings-label"><Sparkles aria-hidden="true" />Animations</span><span className="settings-switch-state">{animationsEnabled ? 'On' : 'Off'}<span className="settings-switch-track" aria-hidden="true" /></span></button>
             <button type="button" role="switch" aria-label="High contrast" aria-checked={highContrast} onClick={onToggleHighContrast} className="settings-toggle"><span className="settings-label"><Moon aria-hidden="true" />High contrast</span><span className="settings-switch-state">{highContrast ? 'On' : 'Off'}<span className="settings-switch-track" aria-hidden="true" /></span></button>
-            {message && <p role="status">{message}</p>}
           </div>}
           {section === 'Privacy' && <>
             <p>The game does not use advertising trackers or tracking cookies, and does not upload your score to a game server.</p>
@@ -144,18 +144,17 @@ export function SiteFooter({ onOpen, theme, section, setSection, volume, onVolum
           {section === 'Preferences' && <>
             <p>The game saves only theme, volume, Shmuck Feed, high contrast and interface animation preferences in this browser. <br></br> You can remove them below or through your browser's site-data settings.</p>
             <p>Removing the saved settings does not interrupt the current game. <br></br>Defaults apply after your next reload. Later preference changes may save new settings.</p>
-            {message && <p role="status">{message}</p>}
           </>}
           </div>
           {section === 'About' && <p className="site-info-bottom about-copyright text-center font-mono-term text-[10px]"><button type="button" className="stonks-copyright-button" aria-label="Open The Stonks" title="The Stonks" onClick={event => { event.currentTarget.focus(); onOpen(); setStonksOpen(true); }}>©</button> Stonktrooper.lol<br />2026</p>}
           {section === 'Settings' && <div className="site-info-bottom pt-2">
-              <button type="button" className="settings-reset-button preferences-clear-button block mx-auto w-full py-2.5 px-3 rounded-lg border font-bold text-xs font-mono-term cursor-pointer" onClick={() => { onResetDefaults(); setMessage('Default settings restored.'); }}>Reset to defaults</button>
+              <button type="button" className="settings-reset-button preferences-clear-button block mx-auto w-full py-2.5 px-3 rounded-lg border font-bold text-xs font-mono-term cursor-pointer" onClick={() => { onResetDefaults(); setMessage('Default settings restored'); }}><span aria-live="polite">{message || 'Reset to defaults'}</span></button>
             </div>}
           {section === 'Preferences' && <div className="site-info-bottom pt-2">
               <button type="button" className="preferences-clear-button block mx-auto w-full py-2.5 px-3 rounded-lg border font-bold text-xs font-mono-term cursor-pointer" onClick={() => {
-                try { for (const key of ['cr_theme', 'stonker-sounds', 'cr_sound_enabled', 'cr_live_feed', 'cr_volume', 'cr_animations', 'cr_high_contrast']) localStorage.removeItem(key); setMessage('Saved theme, volume, Shmuck Feed, high contrast and interface animation preferences removed.'); }
+                try { for (const key of ['cr_theme', 'stonker-sounds', 'cr_sound_enabled', 'cr_live_feed', 'cr_volume', 'cr_animations', 'cr_high_contrast']) localStorage.removeItem(key); setMessage('Preferences removed'); }
                 catch { setMessage('Unable to access browser storage. Use your browser site-data settings.'); }
-              }}>Clear saved preferences</button>
+              }}><span aria-live="polite">{message || 'Clear saved preferences'}</span></button>
             </div>}
           </div>
         </div>

@@ -118,6 +118,7 @@ export class SoundController {
     return true;
   }
   private ctx: AudioContext | null = null;
+  private noiseBuffers = new WeakMap<AudioContext, Map<number, AudioBuffer>>();
   private soundEnabled = true;
   public musicEnabled: boolean = true;
   private playing = false;
@@ -180,12 +181,27 @@ export class SoundController {
     osc.start(now); osc.stop(now + duration + 0.01);
   }
 
+  private getNoiseBuffer(ctx: AudioContext, length: number): AudioBuffer {
+    let buffers = this.noiseBuffers.get(ctx);
+    if (!buffers) {
+      buffers = new Map();
+      this.noiseBuffers.set(ctx, buffers);
+    }
+    const cached = buffers.get(length);
+    if (cached) return cached;
+    const buffer = ctx.createBuffer(1, length, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+    // Bound retained PCM data; contexts with a different sample rate never share buffers.
+    if (buffers.size >= 24) buffers.delete(buffers.keys().next().value!);
+    buffers.set(length, buffer);
+    return buffer;
+  }
+
   private noise(duration: number, volume: number, frequency: number, endFrequency: number) {
     if (!this.ctx) return;
     const now = this.ctx.currentTime;
-    const buffer = this.ctx.createBuffer(1, Math.ceil(this.ctx.sampleRate * duration), this.ctx.sampleRate);
-    const data = buffer.getChannelData(0);
-    for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+    const buffer = this.getNoiseBuffer(this.ctx, Math.ceil(this.ctx.sampleRate * duration));
     const source = this.ctx.createBufferSource();
     const filter = this.ctx.createBiquadFilter();
     const gain = this.ctx.createGain();
@@ -369,12 +385,7 @@ export class SoundController {
     try {
       const now = this.ctx.currentTime;
       // White noise explosion burst
-      const bufferSize = this.ctx.sampleRate * 0.12;
-      const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
-      const data = buffer.getChannelData(0);
-      for (let i = 0; i < bufferSize; i++) {
-        data[i] = Math.random() * 2 - 1;
-      }
+      const buffer = this.getNoiseBuffer(this.ctx, Math.floor(this.ctx.sampleRate * 0.12));
 
       const noise = this.ctx.createBufferSource();
       noise.buffer = buffer;

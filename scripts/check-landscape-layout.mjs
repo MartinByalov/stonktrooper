@@ -13,6 +13,9 @@ try {
   server = await createServer({ root, plugins: [{
     name: 'countdown-regression-hook', enforce: 'pre',
     transform(code, id) {
+      if (process.env.CHECK_SHARE_LAYOUT === '1' && id.replaceAll('\\', '/').endsWith('/src/App.tsx')) {
+        return code.replace(/useState(?:<GameState>)?\(['"]menu['"]\)/, "useState('over')");
+      }
       if (process.env.CHECK_LANDSCAPE_EDGES === '1' && id.replaceAll('\\', '/').endsWith('/src/index.css')) {
         return code.replace(/env\(safe-area-inset-(left|right|top|bottom)\)/g, (_, side) => `var(--test-safe-${side}, 0px)`);
       }
@@ -93,7 +96,152 @@ try {
     }
     throw new Error('Timed out waiting for '+selector);
   };
-  if (process.env.CHECK_MUSIC_VOLUME === '1') {
+  if (process.env.CHECK_GUIDE_ALIGNMENT === '1') {
+    for (const [width,height,mobile] of [[1440,900,false],[844,390,true],[390,844,true],[360,640,true]]) {
+      await call('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile});
+      await call('Emulation.setTouchEmulationEnabled',{enabled:mobile});
+      for (const theme of ['light','dark']) {
+        await call('Page.navigate',{url:'http://127.0.0.1:5537/'});
+        await waitForSelector('.landing-menu-panel');
+        const results = await evaluate(`(async () => {
+          const {default:React}=await import('/node_modules/.vite/deps/react.js');
+          const {default:{createRoot}}=await import('/node_modules/.vite/deps/react-dom_client.js');
+          const {MechanicsGuide}=await import('/src/MechanicsGuide.tsx');
+          document.documentElement.dataset.theme='${theme}';
+          const host=document.createElement('div');host.className='game-app';
+          host.style.cssText='position:fixed;inset:0;overflow:auto;z-index:9999';
+          host.innerHTML='<div class="mobile-how-to-panel"><div class="how-to-dialog-content"></div></div>';
+          document.body.append(host);
+          const root=createRoot(host.querySelector('.how-to-dialog-content'));
+          root.render(React.createElement(MechanicsGuide,{theme:'${theme}'}));
+          await new Promise(r=>setTimeout(r,400));
+          const results=Array.from(host.querySelectorAll('.mechanics-guide > div')).map(card=>{
+            const p=card.querySelector('p').getBoundingClientRect();
+            const description=card.querySelector('.mechanics-guide-description').getBoundingClientRect();
+            const title=card.querySelector('h3').getBoundingClientRect();
+            const second=card.querySelector('.mechanics-guide-visuals > div:nth-child(2)');
+            return {title:card.querySelector('h3').textContent,paired:!!second,
+              error:Math.abs((p.top+p.bottom)/2-(second ? second.getBoundingClientRect().top : (description.top+description.bottom)/2)),
+              overlap:title.bottom-p.top};
+          });
+          root.unmount();host.remove();return results;
+        })()`);
+        assert.equal(results.length,12);
+        for(const result of results) {
+          assert.ok(result.error<=1,JSON.stringify({width,height,theme,...result}));
+          assert.ok(result.overlap<=1, 'Heading overlaps description: '+JSON.stringify({width,height,theme,...result}));
+        }
+        console.log('PASS guide text alignment '+width+'x'+height+' '+theme);
+      }
+    }
+  } else if (process.env.CHECK_SHARE_LAYOUT === '1') {
+    for (const [width,height,mobile] of [[1440,900,false],[844,390,true],[390,844,true],[360,640,true]]) {
+      await call('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile});
+      await call('Emulation.setTouchEmulationEnabled',{enabled:mobile});
+      for (const theme of ['light','dark']) {
+        await call('Page.navigate',{url:'http://127.0.0.1:5537/'});
+        await waitForSelector('.share-dd-open');
+        await evaluate(`localStorage.setItem('cr_theme','${theme}')`);
+        await call('Page.navigate',{url:'http://127.0.0.1:5537/'});
+        await waitForSelector('.game-result-summary');
+        await evaluate("document.querySelector('.share-dd-open').click()");
+        await waitForSelector('.share-dd-canvas');
+        await evaluate(`(async()=>{for(let i=0;i<100;i++){if(document.querySelector('.share-dd-dialog').style.getPropertyValue('--share-art-ratio'))return;await new Promise(r=>setTimeout(r,50));}throw new Error('Share artwork did not render');})()`);
+        await settle();
+        const result=await evaluate(`(() => {
+          const r=s=>document.querySelector(s).getBoundingClientRect(), actions=r('.game-result-actions'), overlay=r('.game-over-overlay'), art=r('.share-dd-image'), footer=r('.site-footer'), social=r('.share-dd-actions');
+          return {hidden:!document.querySelector('.game-result-summary'),centered:Math.abs(actions.top+actions.height/2-overlay.top-overlay.height/2)<2,bottom:Math.abs(art.bottom-footer.bottom)<2,beside:art.left>=social.right+7};
+        })()`);
+        assert.equal(result.hidden,true);assert.equal(result.centered,true,JSON.stringify(result));
+        if(mobile&&height>width){assert.equal(result.bottom,true,JSON.stringify(result));assert.equal(result.beside,true,JSON.stringify(result));}
+        await evaluate("document.querySelector('.share-dd-close').click()");
+        await waitForSelector('.game-result-summary');
+        console.log('PASS Share DD summary, centered controls and artwork '+width+'x'+height+' '+theme);
+      }
+    }
+  } else if (process.env.CHECK_IMAGE_LOADING === '1') {
+    for (const [width, height, mobile] of [[1440,900,false],[844,390,true],[390,844,true]]) {
+      await call('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile });
+      await call('Emulation.setTouchEmulationEnabled', { enabled: mobile });
+      for (const theme of ['light','dark']) for (const shareOpen of [false,true]) {
+        await call('Page.navigate', { url: 'http://127.0.0.1:5537/' });
+        await waitForSelector('.landing-menu-panel');
+        const result=await evaluate(`(async () => {
+          const {default:React}=await import('/node_modules/.vite/deps/react.js');
+          const {default:{createRoot}}=await import('/node_modules/.vite/deps/react-dom_client.js');
+          const {LiquidatedBackdrop}=await import('/src/LiquidatedBackdrop.tsx');
+          const host=document.createElement('div');document.body.append(host);
+          const root=createRoot(host);root.render(React.createElement(LiquidatedBackdrop,{theme:'${theme}',shareOpen:${shareOpen}}));
+          await new Promise(r=>setTimeout(r,100));
+          const img=host.querySelector('img');await img.decode();
+          const bounds=img.getBoundingClientRect();
+          const result={count:host.querySelectorAll('img').length,url:img.currentSrc,cover:getComputedStyle(img).objectFit,visible:bounds.width>0&&bounds.height>0};
+          root.unmount();host.remove();return result;
+        })()`);
+        const name=`crane${mobile && height>width && shareOpen ? '-portrait' : ''}${theme==='dark' ? '-inverted' : ''}`;
+        assert.equal(result.count,1);
+        assert.ok(new RegExp('/images/'+name+'(-small)?\\.webp$').test(result.url),JSON.stringify(result));
+        assert.equal(result.cover,'cover');assert.equal(result.visible,true);
+        console.log('PASS optimized image '+width+'x'+height+' '+theme+' share='+shareOpen+' '+result.url);
+      }
+    }
+  } else if (process.env.CHECK_FOOTER_TEXT === '1') {
+    for (const [width, height, mobile] of [[1920, 900, false], [844, 390, true], [359, 798, true], [320, 640, true]]) {
+      await call('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile });
+      await call('Emulation.setTouchEmulationEnabled', { enabled: mobile });
+      for (const theme of ['light', 'dark']) {
+        await call('Page.navigate', { url: 'http://127.0.0.1:5537/' });
+        await waitForSelector('.site-footer');
+        await evaluate(`localStorage.setItem('cr_theme','${theme}')`);
+        await call('Page.navigate', { url: 'http://127.0.0.1:5537/' });
+        await waitForSelector('.site-footer');
+        await evaluate('document.fonts.ready');
+        await settle();
+        const result = await evaluate(`(() => {
+          const nav=document.querySelector('.site-footer nav'), buttons=[...nav.querySelectorAll('button')];
+          return {
+            oneRow:new Set(buttons.map(b=>b.getBoundingClientRect().top)).size===1,
+            inside:buttons.every(b=>{const r=b.getBoundingClientRect();return r.left>=0&&r.right<=innerWidth;}),
+            plain:buttons.every(b=>{const s=getComputedStyle(b);return s.backgroundColor==='rgba(0, 0, 0, 0)'&&s.fontWeight==='400'&&s.textShadow==='none'&&s.fontSize==='11px'&&b.children.length===0;})
+          };
+        })()`);
+        assert.deepEqual(result, { oneRow: true, inside: true, plain: true });
+        await evaluate("[...document.querySelectorAll('.site-footer button')].find(b=>b.textContent==='Disclaimer').click()");
+        await waitForSelector('.site-info-dialog');
+        assert.equal(await evaluate("document.querySelector('.site-info-title').textContent"), 'Disclaimer');
+        if (mobile) {
+          await evaluate("document.querySelector('.info-artwork-button').click()");
+          await settle();
+          assert.equal(await evaluate(`(() => {
+            const clown=document.querySelector('.info-bag-clown'), bag=document.querySelector('.info-bag-front');
+            const canvas=clown.querySelector('canvas'), r=canvas.getBoundingClientRect();
+            const pixels=canvas.getContext('2d').getImageData(0,0,canvas.width,canvas.height);
+            const dialog=document.querySelector('.site-info-dialog').getBoundingClientRect();
+            let visible=true;
+            for(let y=0;y<canvas.height;y++) for(let x=0;x<canvas.width;x++) {
+              if(pixels.data[(y*canvas.width+x)*4+3]<=16) continue;
+              const px=r.left+(x+0.5)*r.width/canvas.width, py=r.top+(y+0.5)*r.height/canvas.height;
+              if(px<dialog.left||px>dialog.right||py<dialog.top||py>dialog.bottom) visible=false;
+            }
+            return visible && getComputedStyle(clown).opacity==='1' && Number(getComputedStyle(clown).zIndex)>Number(getComputedStyle(bag).zIndex);
+          })()`), true, 'Entire clown head is inside the dialog and layered in front of the bag');
+        }
+        await evaluate("document.querySelector('.site-info-close').click();document.querySelector('.landing-menu-settings-button').click()");
+        await waitForSelector('.settings-reset-button');
+        await evaluate("document.querySelector('.settings-reset-button').click()");
+        assert.equal(await evaluate("document.querySelector('.settings-reset-button').textContent"), 'Default settings restored');
+        assert.equal(await evaluate("!!document.querySelector('.site-info-main [role=status]')"), false);
+        await evaluate("document.querySelector('.site-info-close').click();[...document.querySelectorAll('.site-footer button')].find(b=>b.textContent==='Preferences').click()");
+        await waitForSelector('.preferences-clear-button');
+        assert.equal(await evaluate("document.querySelector('.preferences-clear-button').textContent"), 'Clear saved preferences');
+        await evaluate("localStorage.setItem('cr_volume','0.2');document.querySelector('.preferences-clear-button').click()");
+        assert.equal(await evaluate("document.querySelector('.preferences-clear-button').textContent"), 'Preferences removed');
+        assert.equal(await evaluate("localStorage.getItem('cr_volume')"), null);
+        assert.equal(await evaluate("!!document.querySelector('.site-info-main [role=status]')"), false);
+        console.log('PASS footer text and Disclaimer button '+width+'x'+height+' '+theme);
+      }
+    }
+  } else if (process.env.CHECK_MUSIC_VOLUME === '1') {
     await call('Page.navigate', { url: 'http://127.0.0.1:5537/' });
     await waitForSelector('.landing-menu-panel');
     const levels = await evaluate(`(async () => {
@@ -1314,7 +1462,7 @@ try {
           Math.abs(content.left+content.width/2-overlay.left-overlay.width/2)<1 &&
           Math.abs(panel.top+panel.height/2-overlay.top-overlay.height/2)<1 &&
           visible.length===1 && image.naturalWidth>0 && image.naturalHeight>0 &&
-          image.src.endsWith('/images/${theme === 'light' ? 'crane.png' : 'crane-inverted.png'}') &&
+          image.src.endsWith('/images/${theme === 'light' ? 'crane.webp' : 'crane-inverted.webp'}') &&
           getComputedStyle(image).objectFit==='cover' &&
           Math.abs(imageRect.width-r.width)<1 && Math.abs(imageRect.height-r.height)<1;
       })()`), 'Liquidated loads the correct themed crane artwork across the overlay without moving the centered controls');

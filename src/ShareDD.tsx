@@ -87,10 +87,6 @@ export function ShareDD({ score, theme, scoreTheme = theme, demo = false, onClos
     } finally { setSharing(false); }
   };
   return <div className="share-dd-overlay fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4" onPointerDown={event => event.stopPropagation()}>
-    <div className="share-dd-portrait-backdrop" aria-hidden="true">
-      <img className="share-dd-portrait-day" src={`${import.meta.env.BASE_URL}images/crane-portrait.png`} alt="" draggable={false} />
-      <img className="share-dd-portrait-night" src={`${import.meta.env.BASE_URL}images/crane-portrait-inverted.png`} alt="" draggable={false} />
-    </div>
     <div ref={dialog} role="dialog" aria-modal="false" aria-label={demo ? 'Share score demo — simulated result' : 'Share score'} className="share-dd-dialog" onKeyDown={event => {
       event.stopPropagation();
       if (event.key === 'Escape') { onClose(); return; }

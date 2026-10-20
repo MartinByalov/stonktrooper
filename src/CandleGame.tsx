@@ -210,8 +210,11 @@ export const CandleGame: React.FC<CandleGameProps> = ({
       if (headerFeed && headerFeedActive.current) {
         const rect = headerFeed.getBoundingClientRect();
         headerFeedLayout.current = { height: rect.height, width: rect.width, mainHeight: bounds.height };
-        headerFeed.width = Math.max(1, Math.round(rect.width * Math.min(window.devicePixelRatio || 1, 1.5)));
-        headerFeed.height = Math.max(1, Math.round(rect.height * Math.min(window.devicePixelRatio || 1, 1.5)));
+        const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+        const width = Math.max(1, Math.round(rect.width * dpr));
+        const height = Math.max(1, Math.round(rect.height * dpr));
+        if (headerFeed.width !== width) headerFeed.width = width;
+        if (headerFeed.height !== height) headerFeed.height = height;
       }
       const tapeHeight = !liveFeedEnabled ? 0 : headerFeedActive.current ? 1 / scale : headerHeight > 0 ? headerHeight / scale : TAPE_HEIGHT;
       feedLayout.current = { mobile, fontSize: mobile || headerFeedActive.current ? Math.min(64, Math.max(11, 14 / scale)) : 11, textScaleX, tapeHeight };

@@ -6,7 +6,7 @@ export const formatShareScore = (score: number): string =>
   Math.max(0, Math.round(Number.isFinite(score) ? score : 0)).toLocaleString('en-US');
 
 export function shareCardBackground(theme: 'light' | 'dark', baseUrl: string): string {
-  return `${baseUrl}images/${theme === 'dark' ? 'score-back-inverted.png' : 'score-back.png'}`;
+  return `${baseUrl}images/${theme === 'dark' ? 'score-back-inverted.webp' : 'score-back.webp'}`;
 }
 
 export function drawShareCard(ctx: CanvasRenderingContext2D, score: number, background: HTMLImageElement, _theme: 'light' | 'dark' = 'light'): void {
