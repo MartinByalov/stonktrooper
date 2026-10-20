@@ -34,5 +34,5 @@ export function MenuQuote({ liveFeedEnabled }: { liveFeedEnabled: boolean }) {
       document.removeEventListener('fullscreenchange', layout);
     };
   }, [liveFeedEnabled]);
-  return <blockquote ref={quote} className="landing-menu-quote"><em>“Next time for sure!”</em>{' - '}<span>Regard</span></blockquote>;
+  return <blockquote ref={quote} className="landing-menu-quote"><em>“Next time for sure!”</em>{' '}<span>- Regard</span></blockquote>;
 }

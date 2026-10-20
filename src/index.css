@@ -3704,7 +3704,7 @@ html .game-app .landing-menu-panel > .landing-menu-actions {
   pointer-events: none;
 }
 .landing-menu-quote em { font-style: italic; }
-.landing-menu-quote span { font-style: normal; }
+.landing-menu-quote span { display: block; font-style: normal; }
 
 .menu-celebration {
   position: absolute;
