@@ -6,7 +6,6 @@
   "scripts": {
     "dev": "vite --port=5500 --host=0.0.0.0",
     "build": "vite build",
-    "build:itch": "node scripts/build-itch.mjs",
     "preview": "vite preview",
     "clean": "node --input-type=module -e \"import { rmSync } from 'node:fs'; rmSync('dist', { recursive: true, force: true });\"",
     "lint": "tsc --noEmit"

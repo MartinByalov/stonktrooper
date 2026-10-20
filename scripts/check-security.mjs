@@ -14,7 +14,7 @@ try {
   }
   for (const score of [NaN, Infinity, -1]) {
     const url = new URL(resultUrl(score));
-    assert.equal(url.origin, 'https://stonktrooper.lol');
+    assert.equal(url.origin, 'https://www.stonktrooper.lol');
     assert.equal(url.searchParams.get('score'), '0');
   }
   for (const link of socialLinks(123)) assert.equal(new URL(link.href).protocol, 'https:');
