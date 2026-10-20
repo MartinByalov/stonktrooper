@@ -28,9 +28,9 @@ export default function App() {
   const mobilePlaying = mobileDevice && (state === 'play' || state === 'boxing');
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
     try {
-      return localStorage.getItem('cr_theme') === 'light' ? 'light' : 'dark';
+      return localStorage.getItem('cr_theme') === 'dark' ? 'dark' : 'light';
     } catch {
-      return 'dark';
+      return 'light';
     }
   });
 
@@ -95,7 +95,7 @@ export default function App() {
   }, [state]);
   useEffect(() => { if (state !== 'boxing') setBoxingPaused(false); }, [state]);
   const resetDefaults = () => {
-    setTheme('dark');
+    setTheme('light');
     changeVolume(100);
     setLiveFeedEnabled(true);
     setAnimationsEnabled(true);

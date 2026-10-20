@@ -96,7 +96,18 @@ try {
     }
     throw new Error('Timed out waiting for '+selector);
   };
-  if (process.env.CHECK_MENU_FEET === '1') {
+  if (process.env.CHECK_DEFAULT_THEME === '1') {
+    await call('Page.navigate',{url:'http://127.0.0.1:5537/'});
+    await waitForSelector('.landing-menu-panel');
+    for (const [saved,expected] of [[null,'light'],['dark','dark'],['light','light'],['invalid','light']]) {
+      await evaluate(saved === null ? "localStorage.removeItem('cr_theme')" : `localStorage.setItem('cr_theme',${JSON.stringify(saved)})`);
+      await call('Page.navigate',{url:'http://127.0.0.1:5537/'});
+      await waitForSelector('.landing-menu-panel');
+      await settle();
+      assert.equal(await evaluate('document.documentElement.dataset.theme'),expected);
+      console.log('PASS initial theme saved='+saved+' renders '+expected);
+    }
+  } else if (process.env.CHECK_MENU_FEET === '1') {
     for (const [width,height,mobile] of [[1920,1080,false],[1440,900,false],[844,390,true],[390,844,true],[360,640,true]]) {
       await call('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile});
       await call('Emulation.setTouchEmulationEnabled',{enabled:mobile});
