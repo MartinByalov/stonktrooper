@@ -96,7 +96,26 @@ try {
     }
     throw new Error('Timed out waiting for '+selector);
   };
-  if (process.env.CHECK_INFO_SURPRISES === '1') {
+  if (process.env.CHECK_MENU_FEET === '1') {
+    for (const [width,height,mobile] of [[1920,1080,false],[1440,900,false],[844,390,true],[390,844,true],[360,640,true]]) {
+      await call('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile});
+      await call('Emulation.setTouchEmulationEnabled',{enabled:mobile});
+      await call('Page.navigate',{url:'http://127.0.0.1:5537/'});
+      await waitForSelector('.menu-celebration');
+      await settle();
+      for (const theme of ['light','dark']) {
+        const result=await evaluate(`(() => {
+          document.documentElement.dataset.theme='${theme}';
+          const svg=document.querySelector('.menu-celebration'), r=svg.getBoundingClientRect();
+          const button=document.querySelector('.landing-menu-guide-button').getBoundingClientRect();
+          const shoeBottom=r.top+106.5/140*r.width;
+          return {gap:button.top-shoeBottom,center:Math.abs(r.left+r.width/2-button.left-button.width/2)};
+        })()`);
+        assert.ok(Math.abs(result.gap)<0.1 && result.center<1,JSON.stringify({width,height,theme,...result}));
+        console.log('PASS shoe baseline on How to Play border '+width+'x'+height+' '+theme);
+      }
+    }
+  } else if (process.env.CHECK_INFO_SURPRISES === '1') {
     for (const [width,height,mobile] of [[1440,900,false],[844,390,true],[390,844,true]]) {
       await call('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile});
       await call('Emulation.setTouchEmulationEnabled',{enabled:mobile});

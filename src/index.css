@@ -769,8 +769,8 @@ html[data-theme="light"] .game-app .game-result-over .game-result-summary {
 }
 
 .mobile-joystick {
-  --joystick-size: clamp(56px, min(14vw, 18vh), 78px);
-  --joystick-knob-size: clamp(26px, min(6.5vw, 8.5vh), 38px);
+  --joystick-size: clamp(61.6px, min(15.4vw, 19.8vh), 85.8px);
+  --joystick-knob-size: clamp(28.6px, min(7.15vw, 9.35vh), 41.8px);
   width: var(--joystick-size);
   height: var(--joystick-size);
   bottom: max(12px, env(safe-area-inset-bottom));
@@ -3691,7 +3691,8 @@ html .game-app .landing-menu-panel > .landing-menu-actions {
   position: absolute;
   width: var(--menu-hero-width);
   height: auto;
-  top: 2px;
+  /* Shoe sole ends at SVG y=106.5; the reserved height ends at y=107.5. */
+  top: calc(var(--menu-hero-width) / 140);
   left: 50%;
   transform: translateX(-50%);
   pointer-events: none;
