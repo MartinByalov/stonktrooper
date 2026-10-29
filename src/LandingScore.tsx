@@ -38,8 +38,8 @@ export function LandingScore({ score, theme }: { score: number; theme: 'light' |
       if (right >= left && bottom >= top) {
         const cropped = ctx.getImageData(left, top, right - left + 1, bottom - top + 1);
         artworkAnchor.current = {
-          x: (image.naturalWidth * 0.407 - left) / cropped.width,
-          baseline: (image.naturalHeight * 0.965 - top) / cropped.height,
+          x: (image.naturalWidth * (theme === 'dark' ? 0.40 : 0.41) - left) / cropped.width,
+          baseline: (image.naturalHeight * 0.98 - top) / cropped.height,
         };
         ctx.canvas.width = cropped.width; ctx.canvas.height = cropped.height;
         ctx.putImageData(cropped, 0, 0);

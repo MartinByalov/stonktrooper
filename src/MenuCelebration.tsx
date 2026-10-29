@@ -1,7 +1,9 @@
-// Front-facing celebration pose in the same suit/skin palette as the game.
+// Desktop uses the supplied artwork; touch layouts retain their compact SVG pose.
 export function MenuCelebration({ theme }: { theme: 'light' | 'dark' }) {
   const caseColor = theme === 'dark' ? '#ffffff' : '#05070a';
-  return <svg className="menu-celebration" viewBox="0 0 140 107.5" aria-hidden="true" focusable="false">
+  return <>
+    <img className="menu-celebration desktop-home-art" src={`${import.meta.env.BASE_URL}images/desktop-home-page${theme === 'dark' ? '-inverted' : ''}.webp`} width={1254} height={1254} alt="" aria-hidden="true" draggable={false} />
+    <svg className="menu-celebration touch-menu-celebration" viewBox="0 0 140 107.5" aria-hidden="true" focusable="false">
     <defs>
       <linearGradient id="menu-suit" x1="0" y1="0" x2="1" y2="1">
         <stop stopColor="#293d60" /><stop offset="1" stopColor="#101a2d" />
@@ -39,5 +41,6 @@ export function MenuCelebration({ theme }: { theme: 'light' | 'dark' }) {
         <path d="M-2 -2V1Q0 3 2 1V-2" fill="#efb58f" stroke="#d49570" strokeWidth="1" />
       </g>
     </g>
-  </svg>;
+    </svg>
+  </>;
 }

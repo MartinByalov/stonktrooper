@@ -38,7 +38,8 @@ export function ShareDD({ score, theme, scoreTheme = theme, demo = false, onClos
       if (cancelled) return;
       const ctx = canvas.current?.getContext('2d');
       if (!ctx || !canvas.current) { setError('Unable to generate the share image.'); return; }
-      drawShareCard(ctx, score, background, scoreTheme);
+      // Geometry follows the artwork theme, not the theme of the finished run.
+      drawShareCard(ctx, score, background, theme);
       // Ignore transparent rows below the shoes for display only; the exported
       // card retains the complete native image and its transparency.
       const pixels = ctx.getImageData(0, 0, background.naturalWidth, background.naturalHeight).data;

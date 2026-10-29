@@ -3725,6 +3725,25 @@ html .game-app .landing-menu-panel > .landing-menu-actions {
   pointer-events: none;
 }
 
+.desktop-home-art {
+  display: none;
+}
+
+@media (pointer: fine) {
+  html .game-app .landing-menu-panel > .landing-menu-actions {
+    --menu-hero-width: clamp(110px, 28dvh, 210px);
+    padding-top: var(--menu-hero-width);
+  }
+  .desktop-home-art {
+    display: block;
+    top: 0;
+    object-fit: contain;
+  }
+  .touch-menu-celebration {
+    display: none;
+  }
+}
+
 html .game-app .landing-menu-shared-score > .landing-menu-actions {
   padding-top: 0;
   transform: none;

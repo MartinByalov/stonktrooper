@@ -4,7 +4,8 @@ from PIL import Image
 
 root = Path(__file__).resolve().parents[1] / 'public' / 'images'
 for stem in ['crane', 'crane-inverted', 'crane-portrait', 'crane-portrait-inverted',
-             'menu-hero', 'menu-hero-inverted', 'score-back', 'score-back-inverted']:
+             'menu-hero', 'menu-hero-inverted', 'score-back', 'score-back-inverted',
+             'desktop-home-page', 'desktop-home-page-inverted']:
     image = Image.open(root / f'{stem}.png').convert('RGBA')
     if stem == 'crane-inverted':
         # The landscape night original has a 30px dark strip below the skyline.
