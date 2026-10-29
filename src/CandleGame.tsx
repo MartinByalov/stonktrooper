@@ -3124,9 +3124,9 @@ export const CandleGame: React.FC<CandleGameProps> = ({
         const metrics = ctx.measureText(label);
         const x = paddingX + metrics.actualBoundingBoxLeft;
         const y = TAPE_HEIGHT + scoreTopInset.current / scoreScaleY + metrics.actualBoundingBoxAscent;
-        ctx.fillStyle = theme === 'light' ? '#08795c' : '#54d3ac';
+        ctx.fillStyle = theme === 'light' ? '#54d3ac' : '#08795c';
         ctx.fillText(label, x, y);
-        ctx.fillStyle = theme === 'light' ? '#08795c' : '#54d3ac';
+        ctx.fillStyle = theme === 'light' ? '#54d3ac' : '#08795c';
         ctx.fillText(value, x + ctx.measureText(label).width, y);
         ctx.restore();
       }

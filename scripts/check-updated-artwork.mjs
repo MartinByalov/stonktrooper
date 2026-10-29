@@ -63,7 +63,8 @@ try {
     return {loaded:image.complete&&image.naturalWidth===1254,visible:a.width>0,top:a.top,bottom:a.bottom,buttonTop:b.top,src:image.currentSrc};
   })()`);
   assert.ok(home.loaded && home.visible, JSON.stringify(home));
-  assert.ok(home.top >= 0 && home.bottom <= home.buttonTop + 1, JSON.stringify(home));
+  assert.ok(home.top >= 0 && home.bottom <= home.buttonTop + 4, JSON.stringify(home));
+  assert.ok(home.bottom - home.top <= 150, 'Home artwork stays compact');
   await screenshot('desktop-home');
   for (const [width, height] of [[1280, 720], [1024, 600]]) {
     await call('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: false });
@@ -73,7 +74,7 @@ try {
       const guide=document.querySelector('.landing-menu-guide-button').getBoundingClientRect();
       return {top:art.top,bottom:art.bottom,guideTop:guide.top,width:art.width};
     })()`);
-    assert.ok(layout.width > 0 && layout.top >= 0 && layout.bottom <= layout.guideTop + 1, JSON.stringify({ width, height, layout }));
+    assert.ok(layout.width > 0 && layout.top >= 0 && layout.bottom <= layout.guideTop + 4, JSON.stringify({ width, height, layout }));
     await screenshot('desktop-home-' + width);
   }
   // Isolated component renders avoid editing game state or player storage.
@@ -94,11 +95,12 @@ try {
       const bg=await load(shareCardBackground(theme,'/'));
       const c=document.createElement('canvas');document.body.append(c);c.style.width='450px';
       const ctx=c.getContext('2d'),texts=[],fillText=ctx.fillText.bind(ctx);
-      ctx.fillText=(text,x,y,...rest)=>{texts.push({text,x,y,maxWidth:rest[0]});fillText(text,x,y,...rest);};
+      ctx.fillText=(text,x,y,...rest)=>{texts.push({text,x,y,maxWidth:rest[0],color:ctx.fillStyle,font:ctx.font});fillText(text,x,y,...rest);};
       drawShareCard(ctx,1234567,bg,theme);
       const expected=theme==='dark'?[1237,1271]:[1268,1240];
       if(c.width!==expected[0]||c.height!==expected[1])throw Error('Native size mismatch');
       if(texts[1].text!=='1,234,567'||texts[1].y<c.height*.44||texts[1].y>c.height*.50)throw Error('Score not in lid');
+      if(texts[1].color!==(theme==='dark'?'#08795c':'#54d3ac'))throw Error('Share score must match Android palette');
       window['card_'+theme]=c.toDataURL('image/png');
       drawShareCard(ctx,Number.MAX_SAFE_INTEGER,bg,theme);
       if(!Number.isFinite(texts.at(-1).maxWidth))throw Error('Invalid long score');
@@ -112,6 +114,14 @@ try {
     if(formatShareScore(-1)!=='0')throw Error('Score formatting regression');
     return results;
   })()`);
+  const buttonColors = await evaluate(`(()=>{
+    const host=document.createElement('div');host.className='game-app';
+    host.innerHTML='<div class="game-result-over"><button class="share-dd-open">Share DD</button></div>';document.body.append(host);
+    const colors={};
+    for(const theme of ['light','dark']){document.documentElement.dataset.theme=theme;colors[theme]=getComputedStyle(host.querySelector('button')).backgroundColor;}
+    host.remove();return colors;
+  })()`);
+  assert.deepEqual(buttonColors, {light:'rgb(3, 105, 161)',dark:'rgb(56, 189, 248)'});
   await settle();
   assert.ok(await evaluate(`Array.from(document.querySelectorAll('img')).every(i=>i.complete&&i.naturalWidth>0)`), 'All day/night hero assets load');
   assert.ok(await evaluate(`document.querySelector('img[src$="desktop-home-page-inverted.webp"]').naturalWidth===1254`), 'Night desktop artwork loads');

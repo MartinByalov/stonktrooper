@@ -72,7 +72,7 @@ export function LandingScore({ score, theme }: { score: number; theme: 'light' |
         ? Math.min((center - p.left) / axis, ((portrait ? p.right : a.left - 8) - center) / (1 - axis))
         : a.left - d.right - 16);
       const ratio = canvas.current ? canvas.current.width / canvas.current.height : 1;
-      const height = Math.min(availableHeight, availableWidth / ratio, mobile ? 320 : 480) * (mobile && portrait ? 0.9 : 1);
+      const height = Math.min(availableHeight, availableWidth / ratio, mobile ? 320 : 360) * (mobile && portrait ? 0.9 : 1);
       const left = mobile ? center - height * ratio * axis : d.right + 8;
       element.style.left = `${left}px`;
       element.style.top = `${bottom - height * (mobile ? artworkAnchor.current.baseline : 1)}px`;

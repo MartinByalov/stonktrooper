@@ -70,7 +70,7 @@ html .game-app .mechanics-guide .mechanics-guide-description {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  border: 1px solid var(--text);
+  border: 0;
   border-radius: var(--ui-radius);
   background: var(--panel);
   color: var(--text);
@@ -756,6 +756,11 @@ html[data-theme="light"] .game-app .game-result-over .game-result-summary {
   background: #38bdf8 !important;
   color: #ffffff !important;
   border-color: #38bdf8 !important;
+}
+
+html[data-theme="light"] .game-result-over .share-dd-open {
+  background: #0369a1 !important;
+  border-color: #0369a1 !important;
 }
 
 .how-to-grid > div {
@@ -3731,8 +3736,8 @@ html .game-app .landing-menu-panel > .landing-menu-actions {
 
 @media (pointer: fine) {
   html .game-app .landing-menu-panel > .landing-menu-actions {
-    --menu-hero-width: clamp(110px, 28dvh, 210px);
-    padding-top: var(--menu-hero-width);
+    --menu-hero-width: clamp(90px, 20dvh, 150px);
+    padding-top: calc(var(--menu-hero-width) - 3px);
   }
   .desktop-home-art {
     display: block;
