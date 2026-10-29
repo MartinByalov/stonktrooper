@@ -9,7 +9,7 @@ export const chartViewport = (mobile: boolean, width: number, height: number, ax
   // Cancel CSS stretching of the fixed-resolution canvas. Both world axes
   // then occupy the same CSS pixels per unit, using height as the reference.
   scaleX: (mobile ? MOBILE_WORLD_SCALE : 1) * (display.width > 0 && display.height > 0 ? (display.height / height) / (display.width / width) : 1),
-  x: (width - axisWidth) * (mobile ? 0.28 : 0),
+  x: (width - axisWidth) * (mobile ? 0.20 : 0),
   y: height * 0.62,
 });
 

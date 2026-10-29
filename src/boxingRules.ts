@@ -1,7 +1,9 @@
+import { clipBriefcaseStep } from './gameView';
 import { candleSurpriseDelay, SURPRISE_RETRY_FRAMES } from './candleSurprise';
 // Browser game module for boxingRules.
 import { aimedVelocity, AimPoint } from './aim';
-import type { Animal } from './types';
+import type { Animal, Swan } from './types';
+import { aimedHitDefeatsEnemy, dismountRider } from './gameRules';
 import { stepBellBirds } from './bellBirds';
 import type { BellBird } from './bellBirds';
 import type { PigeonDrop } from './pigeonEffects';
@@ -10,6 +12,8 @@ import { stepJanet, janetAttackPose } from './janetRules';
 import { stepPaul, paulHookPose, paulAttackContact } from './paulRules';
 import { bellAnimalBounds, bellSegmentHit } from './bellCombat';
 import { emitBellBlood, stepBellBlood, type BellBlood } from './bellBlood';
+import { stepChartBoss, BOSS_PLAYER_CLEARANCE } from './chartBossRules';
+import { alternatingPunchArm } from './jeromePunch';
 export const BELL_MAX_LIVES = 3;
 export type BossKind = 'jerome' | 'janet' | 'paul';
 export const bossMaxHealth = (kind: BossKind): number =>
@@ -50,6 +54,14 @@ export const sidewaysTops = (count: number, base: number, random = Math.random):
 
 export const createBossArena = (kind: BossKind = 'jerome') => ({
   left: 25, right: 1175,
+  bossLeft: -Infinity, bossRight: Infinity,
+  runnerOffset: null as number | null,
+  externalPlayer: false,
+  absorbBossHit: (): boolean => false,
+  onEnemyDefeated: (_enemy: Animal | Swan): void => {},
+  cameraX: 0,
+  briefcaseRight: Infinity,
+  lifeBirds: new WeakSet<object>(),
   heightAt: arenaHeightAt,
   aim: null as AimPoint | null,
   attackRequested: false,
@@ -64,7 +76,8 @@ export const createBossArena = (kind: BossKind = 'jerome') => ({
   blood: [] as BellBlood[],
   player: { x: 180, y: arenaHeightAt(180), vy: 0, grounded: true, facing: 1, lives: 3, invulnerable: 0, throwTimer: 0, walkPhase: 0, moving: false, coyote: 6, jumpBuffer: 0, jumps: 0, doubleReady: false, fallFrames: 0, clownHead: false, soiledHead: false },
   boss: { kind, attackKind: 'punch' as 'punch' | 'neck' | 'spin' | 'hook' | 'tail' | 'chase', attackCount: 0, spinAngle: 0, moving: false, walkPhase: 0, jumps: 0, chaseJump: false,
-    x: 900, y: arenaHeightAt(900), vy: 0, grounded: true, hopTimer: 45, facing: -1, health: bossMaxHealth(kind), attack: 0, cooldown: 80, hit: false, arm: 0, uppercut: false, aimY: arenaHeightAt(900) - 60 },
+    behavior: 'roam' as 'roam' | 'approach' | 'attack' | 'recover', behaviorTimer: 120, roamOffset: null as number | null, attackReachScale: 1,
+    x: 900, y: arenaHeightAt(900), vy: 0, grounded: true, hopTimer: 45, facing: -1, health: bossMaxHealth(kind), fedoraHats: 0, attack: 0, cooldown: 80, hit: false, arm: 0, uppercut: false, aimY: arenaHeightAt(900) - 60 },
   cases: [] as { x: number; y: number; vx: number; vy: number; life: number }[],
   drops: [] as { x: number; y: number; vy: number; kind: 'bat' | 'chainsaw' | 'bag' | 'tender' | 'life'; life: number }[],
   weapon: null as 'bat' | 'chainsaw' | null,
@@ -83,7 +96,7 @@ export const bossGlovePose = (boss: BossArena['boss']): { x: number; y: number }
   if (boss.kind === 'paul') return paulHookPose(boss);
   const progress = bossArmExtension(boss.attack) / 175;
   if (boss.uppercut) return { x: 26 + progress * 9, y: -29 - progress * 40 };
-  return { x: 30 + progress * 175, y: -60 + (boss.aimY - (boss.y - 60)) * progress };
+  return { x: (30 + progress * 175) * boss.attackReachScale, y: -60 + (boss.aimY - (boss.y - 60)) * progress };
 };
 
 export const jumpBossPlayer = (arena: BossArena): boolean => {
@@ -101,9 +114,26 @@ export const jumpBossPlayer = (arena: BossArena): boolean => {
   return true;
 };
 
+// Bell hits retain the normal run's defeat state and mounted-rider separation.
+export const defeatBellEnemy = (arena: BossArena, enemy: Animal | Swan): void => {
+  if (enemy.dead || enemy.dying) return;
+  if ('type' in enemy && !aimedHitDefeatsEnemy(enemy)) {
+    const rider = dismountRider(enemy);
+    if (rider) { arena.animals.push(rider); arena.onEnemyDefeated(rider); }
+    return;
+  }
+  enemy.dying = true;
+  enemy.dieTimer = 25;
+  enemy.dieVx = 3.5;
+  enemy.dieVy = -5;
+  enemy.dieAngle = 0;
+  arena.onEnemyDefeated(enemy);
+};
+
 export const throwBossCase = (arena: BossArena): boolean => {
   const p = arena.player;
   if (arena.result !== 'fight' || p.throwTimer > 0 || arena.bagTimer > 0) return false;
+  // Chart-owned runners can shoot too; pickups are routed by CandleGame.
   p.throwTimer = 28;
   if (arena.aim) p.facing = arena.aim.x >= p.x ? 1 : -1;
   if (arena.weapon) {
@@ -115,9 +145,7 @@ export const throwBossCase = (arena: BossArena): boolean => {
       const left = p.facing > 0 ? p.x - 10 : p.x - 85;
       const right = p.facing > 0 ? p.x + 85 : p.x + 10;
       if (bounds.right >= left && bounds.left <= right && bounds.bottom >= p.y - 65 && bounds.top <= p.y + 5) {
-        animal.dead = true;
-        emitBellBlood(arena.blood, animal.x, Math.max(bounds.top, Math.min(bounds.bottom, p.y - 35)),
-          p.facing, arena.weapon === 'chainsaw' ? 2.5 : 1.7);
+        defeatBellEnemy(arena, animal);
       }
     }
     const b = arena.boss;
@@ -151,8 +179,19 @@ export const stepBossArena = (arena: BossArena, direction: number, random = Math
   arena.swing = Math.max(0, arena.swing - 1);
   if (arena.swing === 0 && arena.uses === 0) arena.weapon = null;
   arena.bagTimer = Math.max(0, arena.bagTimer - 1);
-  stepBellBirds(arena, random);
-  for (const animal of arena.animals) {
+  if (!arena.externalPlayer) stepBellBirds(arena, random);
+  for (const animal of arena.externalPlayer ? [] : arena.animals) {
+    if (animal.dead) continue;
+    if (animal.dying) {
+      animal.dieTimer = (animal.dieTimer ?? 25) - 1;
+      animal.x += animal.dieVx ?? 0;
+      animal.feet += animal.dieVy ?? 0;
+      animal.y = animal.feet - 30;
+      animal.dieVy = (animal.dieVy ?? 0) + 0.35;
+      animal.dieAngle = (animal.dieAngle ?? 0) + 0.22;
+      if (animal.dieTimer <= 0) animal.dead = true;
+      continue;
+    }
     const floor = animal.type === 'whale' ? arena.safeHeightAt(animal.x) : arena.heightAt(animal.x);
     animal.phase += 0.12;
     if (animal.dropVelocity !== undefined) {
@@ -172,7 +211,7 @@ export const stepBossArena = (arena: BossArena, direction: number, random = Math
     }
   }
   arena.animals = arena.animals.filter(animal => !animal.dead && animal.x > arena.left - 100);
-  if (arena.frame >= arena.nextDrop) {
+  if (!arena.externalPlayer && arena.runnerOffset === null && arena.frame >= arena.nextDrop) {
     arena.nextDrop = arena.frame + 180 + Math.floor(random() * 180);
     const roll = random();
     if (roll < 0.55) arena.drops.push({ x: Math.max(arena.left, Math.min(arena.right, p.x + (random() - 0.5) * 220)), y: p.y - 260, vy: 0, kind: random() < 0.5 ? 'bat' : 'chainsaw', life: 900 });
@@ -196,6 +235,7 @@ export const stepBossArena = (arena: BossArena, direction: number, random = Math
   arena.drops = arena.drops.filter(d => d.life > 0);
   p.invulnerable = Math.max(0, p.invulnerable - 1);
   p.throwTimer = Math.max(0, p.throwTimer - 1);
+  if (!arena.externalPlayer) {
   const previousX = p.x;
   p.x = Math.max(arena.left, Math.min(arena.right, p.x + direction * 4.5));
   p.moving = p.x !== previousX;
@@ -245,7 +285,9 @@ export const stepBossArena = (arena: BossArena, direction: number, random = Math
     if (p.vy >= 0 && p.y >= floor) { p.y = floor; p.vy = 0; p.grounded = true; p.jumps = 0; p.doubleReady = arena.doubleJumpAt(p.x); }
   }
   if ((p.jumpBuffer > 0 || arena.joystickJumpHeld) && p.grounded) jumpBossPlayer(arena);
-  if (b.kind === 'janet') stepJanet(arena);
+  }
+  if (arena.runnerOffset !== null) stepChartBoss(arena, random);
+  else if (b.kind === 'janet') stepJanet(arena);
   else if (b.kind === 'paul') stepPaul(arena);
   else {
   if (!b.attack) {
@@ -255,7 +297,7 @@ export const stepBossArena = (arena: BossArena, direction: number, random = Math
       b.x + b.facing * Math.min(distance - 42, b.chaseJump ? 5.8 : 2.2)));
     b.cooldown = Math.max(0, b.cooldown - 1);
     if (!b.cooldown && !b.chaseJump && Math.abs(p.x - b.x) < 270) {
-      b.attack = 48; b.hit = false; b.arm = random() < 0.5 ? 0 : 1;
+      b.attack = 48; b.hit = false; b.arm = alternatingPunchArm(b.attackCount++);
       b.uppercut = Math.abs(p.x - b.x) < 85; b.aimY = p.y - 35;
     }
   } else { b.attack--; if (!b.attack) b.cooldown = 65; }
@@ -279,6 +321,8 @@ export const stepBossArena = (arena: BossArena, direction: number, random = Math
     }
   }
   }
+  b.x = Math.max(arena.bossLeft, Math.min(arena.bossRight, b.x));
+  if (arena.runnerOffset !== null) b.x = Math.max(p.x + BOSS_PLAYER_CLEARANCE, b.x);
   const glove = bossGlovePose(b);
   const gloveX = b.x + b.facing * glove.x;
   const gloveY = b.y + glove.y;
@@ -288,26 +332,43 @@ export const stepBossArena = (arena: BossArena, direction: number, random = Math
       && Math.abs(gloveX - p.x) < 28 && gloveY > p.y - 65 && gloveY < p.y;
   // Body proximity alone is safe; damage requires a glove, neck strike or active shell spin.
   if (p.invulnerable === 0 && contact && !b.hit) {
-    p.lives--; p.invulnerable = 90; b.hit = true;
-    p.x = Math.max(arena.left, Math.min(arena.right, p.x + b.facing * 25));
+    b.hit = true;
+    if (!arena.absorbBossHit()) {
+      p.lives--; p.invulnerable = 90;
+      if (arena.runnerOffset === null) p.x = Math.max(arena.left, Math.min(arena.right, p.x + b.facing * 25));
+    }
   }
   for (const c of arena.cases) {
     if (c.life <= 0) continue;
     const previousX = c.x, previousY = c.y;
+    if (previousX >= arena.briefcaseRight) { c.life = 0; continue; }
     c.x += c.vx; c.y += c.vy; c.vy += 0.045; c.life--;
+    const clipped = clipBriefcaseStep(previousX, previousY, c.x, c.y, arena.briefcaseRight);
+    c.x = clipped.x; c.y = clipped.y;
+    if (clipped.expired) c.life = 0;
     let firstHit = bellSegmentHit(previousX, previousY, c.x, c.y,
       { left: b.x - 22, right: b.x + 22, top: b.y - 85, bottom: b.y });
     let target: Animal | null = null;
+    let birdTarget: BellBird | null = null;
     for (const animal of arena.animals) {
       if (animal.dead || animal.dying) continue;
       const hit = bellSegmentHit(previousX, previousY, c.x, c.y, bellAnimalBounds(animal));
       if (hit !== null && (firstHit === null || hit < firstHit)) { firstHit = hit; target = animal; }
     }
+    for (const bird of arena.birds) {
+      if (bird.dead || bird.dying) continue;
+      const hit = bellSegmentHit(previousX, previousY, c.x, c.y,
+        { left: bird.x - 18, right: bird.x + 18, top: bird.y - 18, bottom: bird.y + 18 });
+      if (hit !== null && (firstHit === null || hit < firstHit)) { firstHit = hit; target = null; birdTarget = bird; }
+    }
     if (firstHit !== null) {
-      emitBellBlood(arena.blood, previousX + (c.x - previousX) * firstHit,
-        previousY + (c.y - previousY) * firstHit, c.vx, target ? 1.4 : 1);
-      if (target) target.dead = true;
-      else b.health = Math.max(0, b.health - 8);
+      if (birdTarget) defeatBellEnemy(arena, birdTarget);
+      else if (target) defeatBellEnemy(arena, target);
+      else {
+        emitBellBlood(arena.blood, previousX + (c.x - previousX) * firstHit,
+          previousY + (c.y - previousY) * firstHit, c.vx, 1);
+        b.health = Math.max(0, b.health - 8);
+      }
       c.life = 0;
     }
   }

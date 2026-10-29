@@ -2,8 +2,8 @@
 import { AssetPreview, PreviewAsset } from './AssetPreview';
 
 const cards: { asset: PreviewAsset; below?: PreviewAsset; title: string; text: string }[] = [
-  { asset: 'jump', title: 'Jump (Space Bar / W / ↑)', text: "Use the lighted zones for a double jump. \nYes, you need to click the jump button twice. \nAnd don't fall in gaps. \n\nFor Mobile tap the joystick." },
-  { asset: 'fedora', below: 'briefcase', title: 'Shoot (Left Mouse Click)', text: 'Aim and throw your suitcase at enemies. \nCollect and throw a hat at your enemies but beware, there is a 50% chance they might like your style. \n\nOn Mobile tap the screen.' },
+  { asset: 'jump', title: 'Jump (Space Bar / W / ↑)', text: 'Avoid the gaps. Use the highlighted zones for a double jump: press jump twice.\n\nOn a phone, tap the left 20% of the chart to jump. Tap again in a highlighted zone to double jump. The price column is not a control area.' },
+  { asset: 'fedora', below: 'briefcase', title: 'Shoot (Left Mouse Click)', text: 'Aim and throw your suitcase at enemies. Collect and throw a hat, but beware: there is a 35% chance enemies might like your style.\n\nOn a phone, tap the chart to the right of the jump zone to aim and shoot. You can jump with one finger and shoot with another. No joystick needed.' },
   { asset: 'coin', title: 'Coin (+10 pips)', text: 'Jump to collect.' },
   { asset: 'diamond', title: 'Diamond Hands (+250 pips)', text: "Don't drop it." },
   { asset: 'banknote', below: 'whale', title: 'To the Moon', text: "You can't jump on a Whale. \nShoot it for a guaranteed +500 pips or a small chance of a banknote ticket for a ride to the moon." },
@@ -11,7 +11,7 @@ const cards: { asset: PreviewAsset; below?: PreviewAsset; title: string; text: s
     , title: 'Money Printer Go Brrr (pips x 10)', text: 'Pigeon (+150 pips) \n\nAccept the challenge and ride the waves or walk out in shame.' },
   { asset: 'banana', below: 'ape', title: 'Apes Together Strong', text: 'Banana for scale.' },
   { asset: 'tender', below: 'hawk', title: 'Tendies (pips x 2)', text: 'Hawk (+150 pips) \n\nDodge the offer or take a dumbster ride.' },
-  { asset: 'bell', below: 'jerome', title: 'I Did Not Hear No Bell', text: "A / ← (Move Left)\n D / → (Move Right)\n S / ↓ (Does Nothing)\n\n3 lives.\n Difficulty rewards:\n+1000/+2000 /+3000 pips\n\nFor mobile use the joystick." },
+  { asset: 'bell', below: 'jerome', title: "I Didn't Hear No Bell", text: 'A mighty foe joins your ride. The chart keeps moving: jump to dodge and aim your shots at the boss. Your normal pickups and weapons stay active.\n\n3 lives. Watch your hearts; birds may drop an extra life.\nDifficulty rewards: +1000 / +2000 / +3000 pips.\n\nDesktop: Space / W / ↑ to jump, mouse to aim and shoot.\nPhone: left 20% to jump, right side to aim and shoot — the same controls as the normal run.' },
   { asset: 'bull', below: 'bear', title: 'Bull / Bear (+50 pips)', text: 'Shoot or stomp them.' },
   { asset: 'bull-rider', below: 'bear-rider', title: 'Trend Rider (+100 pips)', text: 'Shoot or stomp them. \nFirst hit drops the rider, next hit kills the mount.' },
   { asset: 'swan', below: 'white', title: 'Bag Holder', text: "Swan (+200 pips) \n\nYou found yourself holding the bag? \nGood. Now you can't shoot too." },

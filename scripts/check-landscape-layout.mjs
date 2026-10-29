@@ -831,6 +831,7 @@ try {
     }
   })()`);
   console.log('PASS bear/bull tail anatomy, matching preview leg profiles and seamless pigeon tail');
+  await waitForSelector('.landing-menu-chart');
   for (const width of [320, 390, 430]) {
     await call('Emulation.setTouchEmulationEnabled', {enabled:true});
     await call('Emulation.setDeviceMetricsOverride', {width,height:844,deviceScaleFactor:1,mobile:true});
@@ -1768,6 +1769,11 @@ try {
   }
 } finally {
   for (const request of pending.values()) clearTimeout(request.timer);
+  // Closing only the launcher can leave Edge children holding the profile on Windows.
+  if (socket?.readyState === WebSocket.OPEN) {
+    socket.send(JSON.stringify({ id: ++id, method: 'Browser.close' }));
+    await new Promise(resolve => setTimeout(resolve, 700));
+  }
   socket?.close();
   if (browser && browser.exitCode === null) {
     const exited = new Promise(resolve => browser.once('exit', resolve));

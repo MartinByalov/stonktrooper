@@ -294,7 +294,7 @@ export const drawApeAsset = (ctx: CanvasRenderingContext2D, phase = 0, seated = 
     const endX = holdingBag && arm ? (near ? 23 : 15) : throwing ? rootX + throwDirection * 28 * reach : seated ? (arm ? 17 : 12) : rootX + swing + (arm ? 7 : 0);
     const endY = holdingBag && arm ? 9 : throwing ? -15 + (1 - reach) * 18 : seated ? (arm ? 3 : 18) : (arm ? 17 : 25) - Math.max(0, swing) * (arm ? 0.25 : 0.45);
     ctx.strokeStyle = near ? '#754526' : '#4e301d';
-    ctx.lineWidth = arm ? 7 : 8; ctx.lineCap = 'round';
+    ctx.lineWidth = arm ? 7 : 8; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
     ctx.beginPath(); ctx.moveTo(rootX, rootY - bob);
     ctx.lineTo(throwing ? rootX + throwDirection * 13 * reach : rootX + swing * 0.45 + (arm ? -3 : 5), throwing ? -13 : arm ? 5 - bob : 18 - bob);
     ctx.lineTo(endX, endY); ctx.stroke();
@@ -725,7 +725,9 @@ export const drawSwanAsset = (ctx: CanvasRenderingContext2D, s: Swan, white = fa
         ctx.strokeStyle = '#475569'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(-20, -20); ctx.lineTo(-12, -19); ctx.stroke();
         ctx.fillStyle = '#64748b'; ctx.beginPath(); ctx.moveTo(9, 3); ctx.quadraticCurveTo(0, -15 - Math.sin(s.phase) * 17, -10, -3); ctx.quadraticCurveTo(-6, 13, 9, 3); ctx.fill();
         ctx.strokeStyle = '#334155'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(1, 0); ctx.lineTo(-4, -5); ctx.moveTo(5, -2); ctx.lineTo(0, -8); ctx.stroke();
-        ctx.strokeStyle = '#d99a78'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(-4, 19); ctx.lineTo(-6, 24); ctx.lineTo(-10, 24); ctx.moveTo(5, 20); ctx.lineTo(6, 24); ctx.lineTo(10, 24); ctx.stroke();
+        if (!s.cargo) {
+          ctx.strokeStyle = '#d99a78'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(-4, 19); ctx.lineTo(-6, 24); ctx.lineTo(-10, 24); ctx.moveTo(5, 20); ctx.lineTo(6, 24); ctx.lineTo(10, 24); ctx.stroke();
+        }
         for (let hat = 0; hat < (s.fedoraHats ?? 0); hat++) {
           ctx.save(); ctx.translate(-13, -18 - hat * 10); ctx.scale(0.52, 0.52);
           drawCharacterHat(ctx, false, false, darkMode); ctx.restore();

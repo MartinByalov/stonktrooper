@@ -26,10 +26,20 @@ export const drawAnimalHead = (ctx: CanvasRenderingContext2D, type: 'bear' | 'bu
   ctx.beginPath(); ctx.ellipse(-10, 4, 8, 5, 0, 0, Math.PI * 2); ctx.fill();
   ctx.fillStyle = '#090d16'; ctx.fillRect(-18, 1, 4, 3);
   ctx.fillStyle = charging ? '#ff0033' : '#ffffff'; ctx.fillRect(-8, -3, 3, 3);
+  // Shared profile mouth for upright and mounted Bull/Bear.
+  ctx.save(); ctx.translate(-10, 6.5); ctx.rotate(-.12);
+  const mouthWidth = charging ? 4 : 2.3;
+  const mouthHeight = charging ? 2.8 : 1.4;
+  ctx.fillStyle = '#351719';
+  ctx.beginPath(); ctx.ellipse(0, 0, mouthWidth, mouthHeight, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.clip();
   if (charging) {
-    ctx.fillStyle = '#dc2626'; ctx.fillRect(-14, 5, 8, 4);
-    ctx.fillStyle = '#ffffff'; ctx.fillRect(-13, 5, 2, 2);
+    ctx.fillStyle = '#c84b50';
+    ctx.beginPath(); ctx.ellipse(.7, 2.1, 2.6, 1.1, 0, 0, Math.PI * 2); ctx.fill();
   }
+  ctx.fillStyle = '#fff4de';
+  ctx.beginPath(); ctx.roundRect(-2.3, -mouthHeight-.2, charging ? 2 : 1.4, charging ? 2.2 : 1.2, .45); ctx.fill();
+  ctx.restore();
   ctx.restore();
 };
 

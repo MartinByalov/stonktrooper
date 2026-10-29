@@ -4,7 +4,7 @@ import { drawJointedArm } from './armRenderer';
 import { drawBoxingGlove } from './boxingGloveRenderer';
 import { bossGlovePose } from './boxingRules';
 import { drawBossWeapon } from './bossWeaponRenderer';
-import { briefcaseColors, drawSwanAsset, drawPickupAsset } from './assetRenderer';
+import { briefcaseColors, drawSwanAsset, drawPickupAsset, drawCharacterHat } from './assetRenderer';
 import { drawAnimalCharacter } from './animalRenderer';
 import { drawJanet } from './janetRenderer';
 import { drawPaul } from './paulRenderer';
@@ -97,6 +97,14 @@ export function drawBossEncounter(ctx: CanvasRenderingContext2D, a: BossArena, d
         drawBoxingGlove(ctx, handX, handY, arm === 1, 1.1);
       }
       ctx.restore();
+      }
+      if (b.fedoraHats > 0) {
+        ctx.save(); ctx.translate(b.x, b.y - (b.kind === 'janet' ? 90 : b.kind === 'paul' ? 65 : 72));
+        ctx.scale(b.facing * .7, .7);
+        for (let i = 0; i < b.fedoraHats; i++) {
+          ctx.save(); ctx.translate(0, -i * 6); drawCharacterHat(ctx, false, false, darkMode); ctx.restore();
+        }
+        ctx.restore();
       }
       const colors = briefcaseColors(darkMode);
       drawBellBlood(ctx, a.blood);

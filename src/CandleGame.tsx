@@ -12,7 +12,9 @@ import { compactChartWindow, ensureChartAhead } from './chartWindow';
 import { applyCandleSurprise, SURPRISE_MIN_GAP, SURPRISE_MAX_GAP, candleSurpriseDelay, SURPRISE_RETRY_FRAMES } from './candleSurprise';
 import { stepTenderFall, tenderLanding } from './tenderFall';
 import { randomBirdCargo, canReleaseBirdCargo } from './birdCargo';
-import { MobileJoystick } from './MobileJoystick';
+import { touchAction } from './touchInput';
+import { bellSegmentHit } from './bellCombat';
+import { emitBellBlood } from './bellBlood';
 import { renderBackingSize } from './renderBudget';
 import { drawDiagnosticsEnabled, recordDrawDuration } from './drawDiagnostics';
 import { drawDumpster } from './dumpsterRenderer';
@@ -36,10 +38,9 @@ import { hawkCandle, hawkDropBudget, hawkSpeedMultiplier } from './hawkTrack';
 import { zeroCrashCamera, zeroCrashComplete } from './zeroCrash';
 import { canSpawnEncounter, shouldPlaceBell, WARMUP_CANDLES, difficultyUnlocked, chartPrice, marketReachedZero } from './pacing';
 import { pigeonFlightY, stepPigeonDrop, PigeonDrop } from './pigeonEffects';
-import { createBossArena, sidewaysTops, bossName, randomBossKind, bossMaxHealth, bossWinPips, type BossArena } from './boxingRules';
+import { createBossArena, throwBossCase, stepBossArena, bossName, randomBossKind, bossMaxHealth, bossWinPips } from './boxingRules';
 import { drawBossEncounter } from './bossRenderer';
 import { bossColors } from './bossColors';
-import { drawBossHero } from './bossHeroRenderer';
 import { ApeCompanion, addCompanion, tickCompanions } from './companions';
 import { getRandomNews, getTickerNews, formatFeedHeadline, MarketNews } from './news';
 import { trackHeightAt, animalTrackHeightAt, animalFallsInGap, rocketTrackPose } from './track';
@@ -249,7 +250,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
   }, [state, liveFeedEnabled]);
   const tickerHoverPausedRef = useRef(false);
   const aimRef = useRef<AimPoint | null>(null);
-  const bossTrack = useRef<{ candles: Candle[]; length: number; encounter: BossArena | null } | null>(null);
+  const jumpPointers = useRef(new Set<number>());
   const gameRef = useRef({
     C: [] as Candle[],
     candleOffset: 0,
@@ -766,6 +767,39 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     sound.playRocket();
   }, []);
 
+  const spawnBoss = useCallback((kind = randomBossKind()) => {
+    const g = gameRef.current;
+    if (!g.p || g.falling || bossEncounter.current) return;
+    const encounter = createBossArena(kind);
+    encounter.externalPlayer = true;
+    // Boss attacks use the live run state, including pickups collected mid-fight.
+    // Each attack gets its own contact token: a diamond blocks one strike, not
+    // every subsequent attack from this boss.
+    encounter.absorbBossHit = () => !!g.p && (g.p.rocketTimer > 0
+      || !!g.p.whaleMount || absorbEnemyHit(g.p, {}));
+    encounter.nextDrop = Infinity;
+    encounter.boss.behaviorTimer = randomDelay(45, 360);
+    encounter.heightAt = x => {
+      const candle = g.C[Math.floor(x / CW)];
+      return candle && !candle.hole ? candle.top : Infinity;
+    };
+    encounter.safeHeightAt = x => trackHeightAt(g.C, x, CW, g.p!.y);
+    encounter.doubleJumpAt = x => !!g.C[Math.floor(x / CW)]?.sp;
+    Object.assign(encounter.player, { x: g.p.x, y: g.p.y, vy: g.p.vy,
+      grounded: !g.p.air, jumps: g.p.jumps, invulnerable: 100 });
+    encounter.runnerOffset = g.p.x - g.cx;
+    encounter.cameraX = g.cx;
+    encounter.left = g.cx;
+    encounter.right = g.cx + screenToChart({ x: W - AX, y: 0 }, currentChartViewport(canvasDisplay.current)).x;
+    encounter.bossLeft = g.cx + screenToChart({ x: (W - AX) * .17, y: 0 }, currentChartViewport(canvasDisplay.current)).x;
+    encounter.bossRight = encounter.right - 70;
+    encounter.boss.x = Math.min(encounter.bossRight, encounter.player.x + 550);
+    encounter.boss.y = encounter.safeHeightAt(encounter.boss.x);
+    encounter.boss.aimY = encounter.player.y - 35;
+    bossEncounter.current = encounter;
+    sound.playBell();
+  }, [bossEncounter]);
+
   const awardEnemy = useCallback((enemy: Animal | Swan) => {
     const g = gameRef.current;
     const points = enemyPips(enemy) * activityMultiplier(g.printerTimer, g.hawkTimer);
@@ -1119,6 +1153,15 @@ export const CandleGame: React.FC<CandleGameProps> = ({
       g.nextPigeon = g.score + randomDelay(80, g.difficultyActive ? 205 : 600);
     }
     for (const s of g.swans) {
+      const encounter = bossEncounter.current;
+      if (encounter) {
+        // Hearts supplement normal flight, cargo and death loot.
+        if (!s.dead && !s.dying && !encounter.lifeBirds.has(s)
+          && s.x <= g.p.x + 350 && s.x >= g.p.x) {
+          encounter.lifeBirds.add(s);
+          if (Math.random() < 0.35) encounter.drops.push({ x: s.x, y: s.y + 18, vy: 0, kind: 'life', life: 900 });
+        }
+      }
       if (s.dying) {
         if (!s.lootRolled) {
           s.lootRolled = true;
@@ -1271,7 +1314,8 @@ export const CandleGame: React.FC<CandleGameProps> = ({
         : g.p.rocketTimer > 0
         ? { x: g.p.x - 37 - apeIndex * 32, y: g.p.y - 46 }
         : { x: apeX, y: apeFeet - 43 * APE_SCALE };
-      const target = [...g.swans, ...g.animals]
+      const boss = bossEncounter.current?.boss;
+      const target = [...g.swans, ...g.animals, ...(boss ? [{ x: boss.x, y: boss.y - 35, dead: boss.health <= 0, dying: false }] : [])]
         .filter(enemy => !enemy.dead && !enemy.dying && Math.abs(enemy.x - origin.x) < 650)
         .sort((a, b) => Math.hypot(a.x - origin.x, a.y - origin.y) - Math.hypot(b.x - origin.x, b.y - origin.y))[0];
       if (target && ape.cooldown === 0) {
@@ -1302,6 +1346,21 @@ export const CandleGame: React.FC<CandleGameProps> = ({
       b.vy += 0.05;
       b.life--;
       b.angle += 0.38; // Dynamic rapid spin around center!
+      const encounter = bossEncounter.current;
+      if (encounter && bellSegmentHit(prevX, prevY, b.x, b.y, {
+        left: encounter.boss.x - 22, right: encounter.boss.x + 22,
+        top: encounter.boss.y - 85, bottom: encounter.boss.y,
+      }) !== null) {
+        encounter.boss.health = Math.max(0, encounter.boss.health - 8);
+        emitBellBlood(encounter.blood, b.x, b.y, b.vx, 1);
+        b.life = 0;
+        sound.playHit();
+        continue;
+      }
+
+
+
+
 
       for (const enemy of [...g.swans, ...g.animals]) {
         if (enemy.dying || enemy.dead) continue;
@@ -1337,6 +1396,14 @@ export const CandleGame: React.FC<CandleGameProps> = ({
       const hat = g.flyingFedora;
       const prevX = hat.x, prevY = hat.y;
       const caught = stepFlyingFedora(hat, g.p.x, g.C, CW, g.cx + W - AX);
+      const boss = bossEncounter.current?.boss;
+      if (boss && !hat.hitTargets?.has(boss) && bellSegmentHit(prevX, prevY, hat.x, hat.y,
+        { left: boss.x - 24, right: boss.x + 24, top: boss.y - 85, bottom: boss.y }) !== null) {
+        (hat.hitTargets ??= new Set()).add(boss);
+        if (Math.random() < .35) boss.fedoraHats++;
+        else boss.health = Math.max(0, boss.health - 16);
+        sound.playFedoraHit();
+      }
       for (const enemy of [...g.swans, ...g.animals]) {
         if (enemy.dead || enemy.dying || hat.hitTargets?.has(enemy)) continue;
         const dx = hat.x - prevX, dy = hat.y - prevY;
@@ -1509,12 +1576,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
         const closestY = Math.max(Math.min(previousCenterY, centerY), Math.min(d.y, Math.max(previousCenterY, centerY)));
         if (!d.taken && canCatchBossBell(g.p.rocketTimer, Math.hypot(d.x - g.p.x, d.y - closestY))) {
           d.taken = true;
-          g.popups = [];
-          g.activeNews = null;
-          g.p.whaleMount = undefined;
-          g.currentState = 'boxing';
-          onStateChange('boxing');
-          sound.playBell();
+          spawnBoss();
           return;
         }
         continue;
@@ -1606,7 +1668,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     g.swans = g.swans.filter((s) => !s.dead && s.x + 80 > g.p!.x - HX);
     g.animals = g.animals.filter((a) => !a.dead && a.x + 80 > g.p!.x - HX);
     g.cases = g.cases.filter((b) => b.life > 0);
-  }, [die, triggerSyntheticNews, onStateChange, activatePrinter, activateHawk, awardEnemy, whaleDemo]);
+  }, [die, triggerSyntheticNews, onStateChange, activatePrinter, activateHawk, awardEnemy, whaleDemo, spawnBoss]);
 
   const update = useCallback(() => {
     const g = gameRef.current;
@@ -1839,12 +1901,57 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     // Leave room for the separated whale train behind the rider.
     g.cx = (g.printerTimer > 0 ? g.printerProgress : g.p.x) - heroCameraOffset() - (g.p.whaleMount ? 90 : 0);
     if (g.printerTimer <= 0 && g.cx > g.printerEndX + 60) g.printerSaved = null;
-    // Never rebase a temporary boss arena: its callbacks capture chart indices.
-    if (!bossTrack.current) {
+    // Boss terrain callbacks capture chart indices until the fight ends.
+    if (!bossEncounter.current) {
       const removed = compactChartWindow(g, CW);
       if (removed && aimRef.current) aimRef.current.x -= removed * CW;
     }
     g.cy += (g.p.y - H * 0.62 - g.cy) * 0.08;
+
+    const encounter = bossEncounter.current;
+    if (encounter) {
+      const previousBossX = encounter.boss.x;
+      const previousWalkPhase = encounter.boss.walkPhase;
+      encounter.boss.x += g.cx - encounter.cameraX;
+      encounter.cameraX = g.cx;
+      encounter.left = g.cx;
+      encounter.right = g.cx + screenToChart({ x: W - AX, y: 0 }, currentChartViewport(canvasDisplay.current)).x;
+      encounter.briefcaseRight = g.cx + screenToChart({ x: (W - AX) * .8, y: 0 }, currentChartViewport(canvasDisplay.current)).x;
+      encounter.bossLeft = g.cx + screenToChart({ x: (W - AX) * .17, y: 0 }, currentChartViewport(canvasDisplay.current)).x;
+      encounter.bossRight = encounter.right - 70;
+      Object.assign(encounter.player, { x: g.p.x, y: g.p.y, vy: g.p.vy,
+        grounded: !g.p.air, jumps: g.p.jumps, moving: true, walkPhase: g.p.ph });
+      encounter.aim = aimRef.current;
+      encounter.onEnemyDefeated = enemy => { awardEnemy(enemy); sound.playHit(); };
+      // Melee and projectiles must see the same normal-run enemies.
+      encounter.animals = g.animals;
+      encounter.birds = g.swans;
+      if (encounter.attackRequested) {
+        encounter.attackRequested = false;
+        // Normal pickups keep their normal throwing restrictions and actions.
+        if (g.p.carry > 0 || g.fedoraTimer > 0 || g.flyingFedora || g.p.whaleMount
+          || g.p.rocketTimer > 0 || g.hawkTimer > 0 || g.printerTimer > 0) throwBriefcase();
+        else if (throwBossCase(encounter)) sound.playBriefcaseThrow();
+      }
+      const lives = encounter.player.lives;
+      // Reuse normal enemies for projectile collisions without simulating them twice.
+      stepBossArena(encounter, 0);
+      // Measure against the candles, including the runner's forward travel.
+      // AI-relative movement alone makes a scrolling boss appear to skate.
+      const walkingDistance = Math.abs(encounter.boss.x - previousBossX);
+      const spinning = encounter.boss.kind === 'janet' && encounter.boss.attack > 0
+        && encounter.boss.attackKind === 'spin';
+      encounter.boss.moving = encounter.boss.grounded && !spinning && walkingDistance > 0.01;
+      encounter.boss.walkPhase = previousWalkPhase + (encounter.boss.moving ? walkingDistance * 0.16 : 0);
+      encounter.animals = [];
+      encounter.birds = [];
+      if (encounter.player.lives < lives) sound.playHit();
+      if (encounter.result === 'lose') { bossEncounter.current = null; die('Boss encounter knockout'); return; }
+      if (encounter.result === 'win') {
+        g.activityPips += bossWinPips(encounter.boss.kind);
+        bossEncounter.current = null;
+      }
+    }
 
     const totalScoreVal = Math.max(0, g.score - g.penalty + g.activityPips);
     if (!g.difficultyActive && difficultyUnlocked(totalScoreVal)) {
@@ -1877,7 +1984,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
       isRocketMode: g.p.rocketTimer > 0,
       rocketRemainingFrames: g.p.rocketTimer
     });
-  }, [genCandle, updateEntities, die, onScoreUpdate, candleDemo]);
+  }, [genCandle, updateEntities, die, onScoreUpdate, candleDemo, awardEnemy, throwBriefcase, bossEncounter]);
 
   // ==========================================
   // SPRITE RENDERING
@@ -1897,12 +2004,6 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     if (g.printerTimer > 0) {
       ctx.rotate(g.printerRotation);
       ctx.scale(printerProfileFlip(g.printerRotation), 1);
-    }
-    if (g.currentState === 'boxing') {
-      const bossPlayer = bossEncounter.current?.player;
-      const boss = bossEncounter.current;
-      drawBossHero(ctx, bossPlayer?.moving ? stride : 0, g.p.air, g.p.vy, g.throwAnimTimer, !!boss?.cases.length, boss?.weapon, boss?.swing, boss?.bagTimer, theme === 'dark', bossPlayer?.clownHead, bossPlayer?.soiledHead);
-      ctx.restore(); return;
     }
     if (g.falling) {
       drawFallingCharacter(ctx, g.fallFrame, g.apeTimer > 0, false, theme === 'dark', g.playerHat !== 'none');
@@ -2176,7 +2277,10 @@ export const CandleGame: React.FC<CandleGameProps> = ({
       ctx.quadraticCurveTo(-10, -25 + tieFlutter, -24, -22 + tieFlutter);
       ctx.lineTo(-28, -26 + tieFlutter); ctx.lineTo(-22, -29 + tieFlutter);
       ctx.quadraticCurveTo(-9, -28 + tieFlutter, 5, -28); ctx.fill();
-      ctx.fillStyle = '#1e293b'; ctx.fillRect(-6, -7, 13, 8);
+      ctx.fillStyle = '#1e293b'; ctx.beginPath();
+      if (g.apeTimer > 0) ctx.roundRect(-4.5, -7, 10.5, 7, 2);
+      else ctx.ellipse(.5, -3, 6.5, 5, 0, 0, Math.PI * 2);
+      ctx.fill();
       drawWhaleRiderLeg(ctx, true, '#18212f', '#090d16');
       ctx.save(); ctx.translate(0, -38); ctx.scale(0.8, 0.8);
       if (g.apeTimer > 0) {
@@ -2590,11 +2694,11 @@ export const CandleGame: React.FC<CandleGameProps> = ({
 
 
       ctx.font = `bold ${feedFontSize}px monospace`;
-      if (g.currentState === 'boxing' || g.printerTimer > 0) {
+      if (bossEncounter.current || g.printerTimer > 0) {
         ctx.textAlign = 'center';
         ctx.fillStyle = theme === 'light' ? '#08795c' : '#55d6ae';
         ctx.font = `bold ${mobile || header ? feedFontSize : 13}px monospace`;
-        if (g.currentState === 'boxing') {
+        if (bossEncounter.current) {
           ctx.fillStyle = bossColors(bossEncounter.current?.boss.kind ?? 'jerome', theme === 'dark').foreground;
           writeCentered(bossName(bossEncounter.current?.boss.kind ?? 'jerome'), (W) / 2);
         } else {
@@ -2614,7 +2718,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
       }
       let tickerX = g.tickerScrollX;
       let itemIndex = 0;
-      while (g.currentState !== 'boxing' && g.printerTimer <= 0 && tickerX < W + 500) {
+      while (!bossEncounter.current && g.printerTimer <= 0 && tickerX < W + 500) {
         if (itemIndex >= g.tickerQueue.length) {
           g.tickerQueue.push({ news: getTickerNews(g.tickerQueue.at(-1)?.news.headline), width: 0 });
         }
@@ -2648,7 +2752,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
       ctx.scale(1, tapeH);
       tapeH = 3;
     }
-    if (g.currentState === 'boxing' && bossEncounter.current && liveFeedEnabled) {
+    if (bossEncounter.current && liveFeedEnabled) {
       const colors = bossColors(bossEncounter.current.boss.kind, theme === 'dark');
       ctx.fillStyle = colors.track; ctx.fillRect(0, tapeH - 3, W, 3);
       ctx.fillStyle = colors.foreground; ctx.fillRect(0, tapeH - 3, (W) * Math.max(0, Math.min(1, bossEncounter.current.boss.health / bossMaxHealth(bossEncounter.current.boss.kind))), 3);
@@ -2747,6 +2851,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     const b = Math.ceil((g.cx + visibleRight) / CW) + 2;
     if (layers.chart) {
       // Volume is anchored to the screen's time axis, not the zoomed price plot.
+      // Gap slots have no candle activity and must not draw volume.
       for (let i = a; i <= b; i++) {
         const c = chartHistory(g.C, i);
         if (!c || c.hole) continue;
@@ -2759,7 +2864,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     ctx.translate(viewport.x * (1 - viewport.scaleX), viewport.y * (1 - viewport.scale));
     ctx.scale(viewport.scaleX, viewport.scale);
 
-    if (g.invertedView && g.currentState !== 'boxing') {
+    if (g.invertedView) {
       ctx.translate(0, TAPE_HEIGHT + H - TIME_AXIS_HEIGHT);
       ctx.scale(1, -1);
     }
@@ -2794,7 +2899,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     }
 
     // Temporarily project the boss encounter onto this chart, retaining the run.
-    const encounter = g.currentState === 'boxing' ? bossEncounter.current : null;
+    const encounter = bossEncounter.current;
 
     if (layers.chart) {
     ctx.strokeStyle = palette.grid;
@@ -2855,7 +2960,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     }
     }
     if (layers.actors) {
-    if (!encounter) {
+    {
       if (actors.pickups) drawPickups(ctx);
       if (actors.enemies) {
         drawSwans(ctx);
@@ -2870,7 +2975,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     }
 
     // Spinning briefcases use the same theme palette as the carried case.
-    for (const bCase of encounter || !actors.effects ? [] : g.cases) {
+    for (const bCase of !actors.effects ? [] : g.cases) {
       if (bCase.kind === 'bag' && (bCase.windup ?? 0) > 0) continue;
       ctx.save();
       ctx.translate(bCase.x - g.cx, bCase.y - g.cy);
@@ -2916,7 +3021,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
 
       ctx.restore();
     }
-    if (actors.effects && !encounter && g.flyingFedora) {
+    if (actors.effects && g.flyingFedora) {
       ctx.save();
       ctx.translate(g.flyingFedora.x - g.cx, g.flyingFedora.y - g.cy);
       ctx.scale(0.7, 0.7);
@@ -2935,28 +3040,12 @@ export const CandleGame: React.FC<CandleGameProps> = ({
       ctx.restore();
     }
 
-    if (encounter) {
-      const originalPlayer = g.p;
-      const originalThrow = g.throwAnimTimer;
-      const originalApes = g.apeTimer;
-      const p = encounter.player;
-      if (actors.hero && originalPlayer) {
-        g.p = { ...originalPlayer, x: p.x, y: p.y, vy: p.vy, air: !p.grounded, ph: p.walkPhase, carry: 0, rocketTimer: 0 };
-        g.throwAnimTimer = p.throwTimer; g.apeTimer = 0;
-        ctx.save();
-        if (p.invulnerable && encounter.frame % 10 < 5) ctx.globalAlpha = 0.4;
-        // Mirror the very same running model around its feet, not a substitute fighter.
-        if (p.facing < 0) { ctx.translate(2 * (p.x - g.cx), 0); ctx.scale(-1, 1); }
-        drawHero(ctx); ctx.restore();
-        g.p = originalPlayer; g.throwAnimTimer = originalThrow; g.apeTimer = originalApes;
-      }
-      if (actors.enemies) {
-        // Boss renderer includes its projectiles and effects as one group.
-        ctx.save(); ctx.translate(-g.cx, -g.cy);
-        drawBossEncounter(ctx, encounter, theme === 'dark'); ctx.restore();
-      }
-    } else if (actors.hero) drawHero(ctx);
-    if (actors.hero && !encounter && g.p && !g.p.whaleMount && g.apeTimer > 0 && g.p.rocketTimer <= 0 && (g.hawkTimer <= 0 || g.falling)) {
+    if (encounter && actors.enemies) {
+      ctx.save(); ctx.translate(-g.cx, -g.cy);
+      drawBossEncounter(ctx, encounter, theme === 'dark'); ctx.restore();
+    }
+    if (actors.hero) drawHero(ctx);
+    if (actors.hero && g.p && !g.p.whaleMount && g.apeTimer > 0 && g.p.rocketTimer <= 0 && (g.hawkTimer <= 0 || g.falling)) {
       for (const [apeIndex, ape] of g.apes.entries()) {
       ctx.save();
       const apeX = g.p.x - 45 - apeIndex * 32;
@@ -2978,7 +3067,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
       ctx.translate(viewport.x * (1 - viewport.scaleX), viewport.y * (1 - viewport.scale));
       ctx.scale(viewport.scaleX, viewport.scale);
       const x = g.zeroCrashIndex * CW - g.cx + 1;
-      if (g.invertedView && !encounter) {
+      if (g.invertedView) {
         ctx.translate(0, TAPE_HEIGHT + H - TIME_AXIS_HEIGHT);
         ctx.scale(1, -1);
       }
@@ -3006,8 +3095,11 @@ export const CandleGame: React.FC<CandleGameProps> = ({
       if (encounter) {
         ctx.fillStyle = '#ef4444'; ctx.font = 'bold 25px sans-serif';
         const lives = Math.max(0, Math.min(3, encounter.player.lives));
-        ctx.fillText('♥'.repeat(lives) + '♡'.repeat(3 - lives), 14, TAPE_HEIGHT + 20);
-      } else {
+        ctx.textAlign = 'right';
+        ctx.fillText('♥'.repeat(lives) + '♡'.repeat(3 - lives), W - AX - 14, TAPE_HEIGHT + 26);
+        ctx.textAlign = 'left';
+      }
+      {
         const label = 'PIPS: ';
         const value = totalScoreVal.toLocaleString();
         const text = `${label}${value}`;
@@ -3065,13 +3157,13 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     ctx.font = 'bold 11px system-ui, monospace';
     ctx.fillStyle = palette.muted;
     for (let gridY = Math.floor(g.cy / 50) * 50; gridY < g.cy + H - TIME_AXIS_HEIGHT; gridY += 50) {
-      const labelY = chartToScreen({ x: 0, y: plotViewY(gridY - g.cy, g.invertedView && !encounter, TAPE_HEIGHT, H - TIME_AXIS_HEIGHT) }, viewport).y;
+      const labelY = chartToScreen({ x: 0, y: plotViewY(gridY - g.cy, g.invertedView, TAPE_HEIGHT, H - TIME_AXIS_HEIGHT) }, viewport).y;
       if (labelY >= TAPE_HEIGHT + 8 && labelY < H - TIME_AXIS_HEIGHT) ctx.fillText(price(gridY), W - AX + 6, labelY + 4);
     }
 
     if (hc) {
       const col = hc.c < hc.o ? GREEN : RED;
-      const y = chartToScreen({ x: 0, y: plotViewY(hc.c - g.cy, g.invertedView && !encounter, TAPE_HEIGHT, H - TIME_AXIS_HEIGHT) }, viewport).y;
+      const y = chartToScreen({ x: 0, y: plotViewY(hc.c - g.cy, g.invertedView, TAPE_HEIGHT, H - TIME_AXIS_HEIGHT) }, viewport).y;
       ctx.fillStyle = col;
       ctx.fillRect(W - AX, y - 9, AX, 18);
       ctx.fillStyle = '#fff';
@@ -3165,117 +3257,11 @@ export const CandleGame: React.FC<CandleGameProps> = ({
 
   useLayoutEffect(() => {
     const g = gameRef.current;
-    if (state === 'boxing' && !bossTrack.current && g.p) {
-      g.invertedView = false; g.printerExitInverted = false;
-      aimRef.current = null;
-      if (g.printerSaved) {
-        g.C = g.printerSaved.slice();
-        g.printerSaved = null;
-      }
-      g.printerTimer = 0; g.printerRotation = 0;
-      g.p.rocketTimer = 0;
-      g.fedoraTimer = 0; g.fedoraCount = 0; g.fedoraWindup = 0; g.flyingFedora = null;
-      g.swans = []; g.animals = []; g.cases = []; g.pigeonDrops = []; g.spits = [];
-      bossTrack.current = { candles: g.C.slice(), length: g.C.length, encounter: null };
-      const left = Math.max(0, g.cx);
-      const right = left + W - AX - 25;
-      const base = g.p.y;
-      const first = Math.max(0, Math.floor(left / CW));
-      const last = Math.ceil(right / CW) + 2;
-      const tops = sidewaysTops(last - first + 1, base);
-      for (let i = first; i <= last; i++) {
-        const old = g.C[i];
-        const top = tops[i - first];
-        const body = Math.random() < 0.13 ? R(28, 48) : R(2, 25);
-        const rising = i > first && top < tops[i - first - 1];
-        const green = Math.random() < (rising ? 0.72 : 0.28);
-        g.C[i] = { ...old, hole: false, top, bot: top + body, o: green ? top + body : top, c: green ? top : top + body, h: top - R(1, 14), l: top + body + R(1, 16), v: R(0.15, 1.4), sp: false, k: 'Sideways' };
-      }
-      const encounter = createBossArena(bossEncounter.current?.boss.kind ?? randomBossKind());
-      bossTrack.current.encounter = encounter;
-      encounter.left = left + 25; encounter.right = right;
-      const heroIndex = Math.floor(g.p.x / CW);
-      const bossIndex = Math.floor(Math.min(right - 60, g.p.x + 550) / CW);
-      for (let start = first + 30; start < last - 12; start += Math.floor(R(40, 65))) {
-        const width = Math.floor(R(5, 9));
-        if (Math.abs(start - heroIndex) < 14 || Math.abs(start - bossIndex) < 14) continue;
-        for (let i = start - 12; i < start; i++) g.C[i].sp = true;
-        for (let i = start; i < start + width; i++) g.C[i].hole = true;
-      }
-      encounter.heightAt = x => {
-        const candle = g.C[Math.max(first, Math.min(last, Math.floor(x / CW)))];
-        return candle.hole ? Infinity : candle.top;
-      };
-      encounter.safeHeightAt = x => trackHeightAt(g.C, x, CW, base);
-      encounter.triggerCandleSurprise = random => {
-        const candidates: number[] = [];
-        const start = Math.max(first + 6, Math.ceil((encounter.player.x + 500) / CW));
-        const end = Math.min(last - SURPRISE_MAX_GAP - 4, Math.floor((encounter.right - 80) / CW));
-        for (let index = start; index <= end; index++) {
-          const x = index * CW;
-          const clearance = (SURPRISE_MAX_GAP + 5) * CW;
-          if (Math.abs(x - encounter.boss.x) < clearance) continue;
-          if (encounter.animals.some(animal => Math.abs(animal.x - x) < clearance)) continue;
-          if (encounter.drops.some(drop => Math.abs(drop.x - x) < clearance)) continue;
-          candidates.push(index);
-        }
-        while (candidates.length) {
-          const index = candidates.splice(Math.floor(random() * candidates.length), 1)[0];
-          if (applyCandleSurprise(g.C, index, SURPRISE_MIN_GAP + Math.floor(random() * (SURPRISE_MAX_GAP - SURPRISE_MIN_GAP + 1)), 30 + random() * 90)) {
-            encounter.popups.push({ x: index * CW, y: g.C[index].top - 35, text: 'Paper Hands', life: 120 });
-            return true;
-          }
-        }
-        return false;
-      };
-      encounter.doubleJumpAt = x => !!g.C[Math.max(first, Math.min(last, Math.floor(x / CW)))].sp;
-      encounter.player.x = g.p.x;
-      encounter.player.y = Math.min(encounter.heightAt(g.p.x) - 240, g.cy + TAPE_HEIGHT - 60);
-      encounter.player.vy = 2;
-      encounter.player.grounded = false;
-      encounter.player.coyote = 0;
-      encounter.player.invulnerable = 100;
-      encounter.boss.x = Math.min(right - 60, g.p.x + 550); encounter.boss.y = encounter.heightAt(encounter.boss.x);
-      encounter.boss.aimY = encounter.boss.y - 60;
-      bossEncounter.current = encounter;
-    } else if (state !== 'boxing' && bossTrack.current) {
-      const completedEncounter = bossTrack.current.encounter;
-      g.C = bossTrack.current.candles;
-      g.C.length = bossTrack.current.length;
-      bossTrack.current = null; bossEncounter.current = null;
-      if (state === 'play' && g.p) {
-        if (completedEncounter?.result === 'win') g.activityPips += bossWinPips(completedEncounter.boss.kind);
-        // Return above solid normal-run terrain, then let ordinary gravity
-        // animate the descent. Never spawn directly over the saved gap.
-        let index = Math.max(0, Math.floor(g.p.x / CW));
-        while (index < g.C.length - 1 && g.C[index]?.hole) index++;
-        g.p.x = index * CW + CW / 2;
-        const ground = trackHeightAt(g.C, g.p.x, CW, g.p.y);
-        g.cy = ground - H * 0.62;
-        g.p.y = Math.min(ground - 240, g.cy + TAPE_HEIGHT - 60);
-        g.p.previousY = g.p.y;
-        g.p.vy = 2;
-        g.p.air = true;
-        g.p.buf = 0; g.p.coy = 0; g.p.jumps = 0;
-        g.p.rocketTimer = 0;
-        g.gapAirborne = false; g.falling = false;
-        g.popups = [];
-      }
-      if (state === 'over') {
-        g.cause = 'Bell challenge knockout';
-        g.held = false;
-        sound.playGameOver();
-        const pips = Math.max(0, g.score - g.penalty + g.activityPips);
-        const candle = g.C[Math.floor((g.p?.x ?? 0) / CW)];
-        onGameOver(g.cause, arcadeProfit(pips, candle ? Number(price(candle.c)) : 0));
-      }
-    }
     g.currentState = state;
-    g.accumulator = 0;
-    g.previousTime = 0;
-    g.held = false;
-  }, [state, bossEncounter, onGameOver]);
-
+    if (state === 'menu' || state === 'over') bossEncounter.current = null;
+    g.accumulator = 0; g.previousTime = 0; g.held = false;
+    jumpPointers.current.clear();
+  }, [state, bossEncounter]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -3383,7 +3369,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
         previousRenderMode = renderMode;
       }
       if (g.currentState === 'play' || g.currentState === 'boxing') {
-        sound.setMusicMode(g.currentState === 'boxing' ? 'kangaroo' : g.printerTimer > 0 ? 'pigeon' : g.hawkTimer > 0 ? 'hawk' : 'normal');
+        sound.setMusicMode(bossEncounter.current ? 'kangaroo' : g.printerTimer > 0 ? 'pigeon' : g.hawkTimer > 0 ? 'hawk' : 'normal');
       }
       const delta = g.previousTime ? Math.min((now - g.previousTime) / 1000, 0.1) : 0;
       g.previousTime = now;
@@ -3448,7 +3434,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
           tickerHoverPausedRef.current = !headerFeedActive.current && canvasY >= 0 && canvasY <= TAPE_HEIGHT;
           const chartPoint = screenToChart(canvasPoint, currentChartViewport(bounds));
           aimRef.current = pointerToWorld(chartPoint, { left: 0, top: 0, width: W, height: H }, W, H, { x: g.cx, y: g.cy });
-          aimRef.current.y = g.cy + plotViewY(aimRef.current.y - g.cy, g.invertedView && g.currentState !== 'boxing', TAPE_HEIGHT, H - TIME_AXIS_HEIGHT);
+          aimRef.current.y = g.cy + plotViewY(aimRef.current.y - g.cy, g.invertedView, TAPE_HEIGHT, H - TIME_AXIS_HEIGHT);
           if (bossEncounter.current) bossEncounter.current.aim = aimRef.current;
         }}
         onPointerLeave={() => { tickerHoverPausedRef.current = false; }}
@@ -3457,38 +3443,34 @@ export const CandleGame: React.FC<CandleGameProps> = ({
           e.preventDefault(); e.currentTarget.focus();
           const g = gameRef.current;
           const bounds = e.currentTarget.getBoundingClientRect();
+          if (g.currentState !== 'play') return;
+          if (e.pointerType !== 'mouse') {
+            const action = touchAction(e.clientX, bounds.left, bounds.width, AX / W);
+            if (action === null) return;
+            if (action === 'jump') {
+              jumpPointers.current.add(e.pointerId);
+              pressJump();
+              e.currentTarget.setPointerCapture(e.pointerId);
+              return;
+            }
+          }
           const canvasPoint = zoomCanvasPoint({ x: e.clientX, y: e.clientY }, bounds, mobileCanvasZoom());
           const chartPoint = screenToChart(canvasPoint, currentChartViewport(bounds));
           aimRef.current = pointerToWorld(chartPoint, { left: 0, top: 0, width: W, height: H }, W, H, { x: g.cx, y: g.cy });
-          aimRef.current.y = g.cy + plotViewY(aimRef.current.y - g.cy, g.invertedView && g.currentState !== 'boxing', TAPE_HEIGHT, H - TIME_AXIS_HEIGHT);
-          if (g.currentState === 'boxing' && bossEncounter.current) {
+          aimRef.current.y = g.cy + plotViewY(aimRef.current.y - g.cy, g.invertedView, TAPE_HEIGHT, H - TIME_AXIS_HEIGHT);
+          if (bossEncounter.current) {
             bossEncounter.current.aim = aimRef.current;
             bossEncounter.current.attackRequested = true;
           } else throwBriefcase();
         }}
+        onPointerUp={e => { if (jumpPointers.current.delete(e.pointerId) && !jumpPointers.current.size) releaseJump(); }}
+        onPointerCancel={e => { if (jumpPointers.current.delete(e.pointerId) && !jumpPointers.current.size) releaseJump(); }}
+        onLostPointerCapture={e => { if (jumpPointers.current.delete(e.pointerId) && !jumpPointers.current.size) releaseJump(); }}
         className="block w-full h-full touch-none cursor-crosshair outline-none focus-visible:ring-2 focus-visible:ring-[#55d6ae]"
         aria-label="Candlestick runner canvas"
       />
 
 
-      {(state === 'play' || state === 'boxing') && <MobileJoystick
-        movementEnabled={state === 'boxing'}
-        onPress={() => {
-          if (gameRef.current.currentState === 'boxing' && bossEncounter.current) bossEncounter.current.jumpRequested = true;
-          else pressJump();
-        }}
-        onMove={(x, y) => {
-          const arena = bossEncounter.current;
-          if (!arena) return;
-          arena.joystickX = x;
-          arena.joystickJumpHeld = y < 0;
-        }}
-        onRelease={() => {
-          releaseJump();
-          const arena = bossEncounter.current;
-          if (arena) { arena.joystickX = 0; arena.joystickJumpHeld = false; }
-        }}
-      />}
     </div>
   );
 };

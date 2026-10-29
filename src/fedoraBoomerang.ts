@@ -75,7 +75,7 @@ export interface FlyingFedora {
   y: number;
   angle: number;
   returning: boolean;
-  hitTargets?: Set<Animal | Swan>;
+  hitTargets?: Set<object>;
 }
 
 // The hat hugs the candle tops instead of following a ballistic arc.

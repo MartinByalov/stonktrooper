@@ -15,7 +15,7 @@ export function paulTailPose(b: Boss): { x: number; y: number; sweep: number } {
   const elapsed = 60 - b.attack;
   const sweep = b.attackKind === 'tail' && b.attack > 0
     ? Math.max(0, Math.sin(Math.max(0, elapsed - 18) / 42 * Math.PI)) : 0;
-  return { x: -48 + 250 * sweep, y: -28 - 9 * sweep, sweep };
+  return { x: (-48 + 250 * sweep) * b.attackReachScale, y: -28 - 9 * sweep, sweep };
 }
 
 export function paulAttackContact(b: Boss, p: BossArena['player']): boolean {
@@ -63,7 +63,7 @@ export function stepPaul(arena: BossArena): void {
       if (b.attackKind === 'hook') b.arm = 1 - b.arm;
     }
   }
-  b.x = Math.max(arena.left, Math.min(arena.right, b.x));
+  b.x = Math.max(arena.left, arena.bossLeft, Math.min(arena.right, arena.bossRight, b.x));
   b.moving = b.x !== previousX;
   if (b.moving) b.walkPhase += Math.abs(b.x - previousX) * 0.17;
   const rawFloor = arena.heightAt(b.x), safeFloor = arena.safeHeightAt(b.x);

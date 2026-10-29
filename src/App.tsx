@@ -7,7 +7,6 @@ import { MenuCelebration } from './MenuCelebration';
 import { MenuQuote } from './MenuQuote';
 import { LandingScore } from './LandingScore';
 import { MobileDiagnostics } from './MobileDiagnostics';
-import { BoxingGame } from './BoxingGame';
 import type { BossArena } from './boxingRules';
 import { useState, useEffect, useLayoutEffect, useCallback, useRef, type MouseEvent as ReactMouseEvent, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { GameState } from './types';
@@ -76,7 +75,6 @@ export default function App() {
   const [highContrast, setHighContrast] = useState(() => {
     try { return localStorage.getItem('cr_high_contrast') === 'true'; } catch { return false; }
   });
-  const [boxingPaused, setBoxingPaused] = useState(false);
   useEffect(() => {
     document.documentElement.dataset.highContrast = String(highContrast);
     try { localStorage.setItem('cr_high_contrast', String(highContrast)); } catch { }
@@ -84,7 +82,6 @@ export default function App() {
   useEffect(() => {
     const pause = () => {
       setState(current => current === 'play' ? 'paused' : current);
-      if (state === 'boxing') setBoxingPaused(true);
     };
     const visibility = () => { if (document.hidden) pause(); };
     window.addEventListener('blur', pause);
@@ -94,7 +91,6 @@ export default function App() {
       document.removeEventListener('visibilitychange', visibility);
     };
   }, [state]);
-  useEffect(() => { if (state !== 'boxing') setBoxingPaused(false); }, [state]);
   const resetDefaults = () => {
     setTheme('light');
     changeVolume(100);
@@ -557,8 +553,6 @@ export default function App() {
           />
 
           {/* OVERLAYS: START MENU / PAUSE / MARGIN CALL */}
-          {state === 'boxing' && <BoxingGame headerHud={!liveFeedVisible} theme={theme} paused={boxingPaused} encounter={bossEncounter} onDefeat={() => { boxingActive.current = false; setState('over'); }} onComplete={() => { bossEncounter.current = null; boxingActive.current = false; setState('play'); }} />}
-          {state === 'boxing' && boxingPaused && <div className="absolute inset-0 z-50 flex items-center justify-center bg-[var(--veil)]"><button type="button" className="preferences-clear-button p-4 rounded border font-bold" onClick={() => setBoxingPaused(false)}>Resume game</button></div>}
           {state !== 'play' && state !== 'boxing' && (
             <div className={`game-overlay ${state === 'menu' ? 'how-to-play-overlay' : ''} ${state === 'paused' ? 'pause-overlay' : ''} ${state === 'over' ? 'game-over-overlay' : ''} absolute inset-0 z-30 flex items-center justify-center p-3 sm:p-6 ${state === 'menu' ? (theme === 'light' ? 'bg-slate-100/20 backdrop-blur-xs' : 'bg-slate-950/25 backdrop-blur-xs') : state === 'over' ? (theme === 'light' ? 'bg-slate-100/45 backdrop-blur-sm' : 'bg-slate-950/55 backdrop-blur-xs') : 'bg-[var(--veil)] backdrop-blur-xs'} transition-opacity duration-200`}>
 

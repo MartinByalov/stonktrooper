@@ -34,10 +34,13 @@ export function drawWhaleRiderLeg(ctx: CanvasRenderingContext2D, near: boolean, 
   const kneeY = near ? 4 : 1;
   const footX = near ? 13 : 10;
   const footY = near ? 19 : 14;
-  ctx.strokeStyle = color; ctx.lineWidth = width; ctx.lineCap = 'round';
+  ctx.save();
+  ctx.strokeStyle = color; ctx.lineWidth = width; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
   ctx.beginPath(); ctx.moveTo(near ? 3 : -3, 0);
   ctx.lineTo(kneeX, kneeY); ctx.lineTo(footX, footY - 3); ctx.stroke();
-  ctx.fillStyle = shoe; ctx.fillRect(footX - 3, footY - 4, 10, 4);
+  ctx.fillStyle = shoe;
+  ctx.beginPath(); ctx.ellipse(footX + 2, footY - 2, 5.5, 2.5, -.08, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
 }
 
 // Left arm is a narrow, mostly occluded silhouette. The right arm is drawn
