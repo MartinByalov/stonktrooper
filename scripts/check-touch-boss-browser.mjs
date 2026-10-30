@@ -128,6 +128,14 @@ try {
     await call('Emulation.setTouchEmulationEnabled',{enabled:mobile});
     await call('Page.navigate',{url:`http://127.0.0.1:${server.httpServer.address().port}`});
     await wait(`!!window.__combat && !!document.querySelector('.landing-menu-guide-button')`);
+    assert.equal(await evaluate(`!!document.querySelector('.header-boss-control')`),false,'Bell is removed from browser header');
+    await evaluate(`document.querySelector('.landing-menu-settings-button').click()`);await settle();
+    await evaluate(`(()=>{const s=document.querySelector('[aria-label="Shmuck Feed"]');if(s.getAttribute('aria-checked')!=='true')s.click();})()`);await settle();
+    assert.ok(await evaluate(`document.querySelector('[aria-label="Shmuck Feed"]').textContent.includes('Running')`));
+    await evaluate(`document.querySelector('[aria-label="Shmuck Feed"]').click()`);await settle();
+    assert.ok(await evaluate(`document.querySelector('[aria-label="Shmuck Feed"]').textContent.includes('Off')`));
+    assert.equal(await evaluate(`document.querySelector('[aria-label="Shmuck Feed"]').getAttribute('aria-checked')`),'false');
+    await evaluate(`document.querySelector('[aria-label="Shmuck Feed"]').click();document.querySelector('.site-info-close').click()`);await settle();
     await evaluate(`document.querySelector('.landing-menu-guide-button').click()`);await settle();
     const guide=await evaluate(`document.querySelector('.mechanics-guide').textContent`);
     assert.ok(guide.includes('Space')&&guide.includes('tap the left of the screen')&&guide.includes('A mighty foe joins your ride.'));

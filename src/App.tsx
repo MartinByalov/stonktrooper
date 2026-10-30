@@ -19,7 +19,7 @@ import { ShareDD } from './ShareDD';
 import { SiteFooter } from './SiteFooter';
 import type { SiteSection } from './SiteFooter';
 import { sharedScore } from './shareLinks';
-import { Bell, Maximize, Minimize, Pause, Play, Settings, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Maximize, Minimize, Pause, Play, Settings, X, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export default function App() {
   const [mobileDevice, setMobileDevice] = useState(() => window.matchMedia('(pointer: coarse)').matches);
@@ -273,7 +273,6 @@ export default function App() {
   const [currentResult, setCurrentResult] = useState(0);
   const boxingActive = useRef(false);
   const bossEncounter = useRef<BossArena | null>(null);
-  const [bossRequest, setBossRequest] = useState(0);
 
   const handleStateChange = useCallback((nextState: GameState) => {
     if (boxingActive.current) return;
@@ -501,12 +500,6 @@ export default function App() {
             }} className="px-2.5 py-1.5 rounded border border-[var(--line)] bg-[var(--alt)] text-xs text-[var(--green)] disabled:opacity-40">↕ Inverted</button>
             <button type="button" title="Music styles" aria-expanded={soundMenuOpen} onClick={() => { if (state === 'play') setState('paused'); setSoundMenuOpen(true); }} className="px-2.5 py-1.5 rounded border border-[var(--line)] bg-[var(--alt)] text-xs text-[var(--green)]">♫ Music</button>
             </div>
-            <button type="button" title="Bell mode" aria-label="Activate Bell mode"
-              disabled={state !== 'play' || !!bossEncounter.current}
-              onClick={() => { sound.unlock(); setBossRequest(request => request + 1); }}
-              className="mobile-header-control header-boss-control px-2.5 py-1.5 rounded border border-[var(--line)] bg-[var(--alt)] text-[var(--green)] disabled:opacity-40 cursor-pointer">
-              <Bell className="w-3.5 h-3.5" aria-hidden="true" />
-            </button>
             {(state === 'play' || state === 'paused') && <button
               type="button"
               onClick={() => setState(current => current === 'play' ? 'paused' : 'play')}
@@ -554,7 +547,6 @@ export default function App() {
             onScoreUpdate={handleScoreUpdate}
             onGameOver={handleGameOver}
             bossEncounter={bossEncounter}
-            bossRequest={bossRequest}
             printerRequest={printerRequest}
             invertedRequest={invertedRequest}
             onInvertedActivated={() => setInvertedRequest(0)}
