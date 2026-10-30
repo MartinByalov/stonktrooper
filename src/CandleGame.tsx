@@ -44,7 +44,7 @@ import { hawkCandle, hawkDropBudget, hawkSpeedMultiplier } from './hawkTrack';
 import { zeroCrashCamera, zeroCrashComplete } from './zeroCrash';
 import { canSpawnEncounter, shouldPlaceBell, WARMUP_CANDLES, difficultyUnlocked, chartPrice, marketReachedZero } from './pacing';
 import { pigeonFlightY, stepPigeonDrop, PigeonDrop } from './pigeonEffects';
-import { createBossArena, throwBossCase, stepBossArena, randomBossKind, bossMaxHealth, bossWinPips } from './boxingRules';
+import { createBossArena, throwBossCase, stepBossArena, randomBossKind, bossMaxHealth, bossWinPips, bossName } from './boxingRules';
 import { drawBossEncounter } from './bossRenderer';
 import { bossColors } from './bossColors';
 import { ApeCompanion, addCompanion, tickCompanions } from './companions';
@@ -2651,7 +2651,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
       ctx.scale(1, tapeH);
       tapeH = 3;
     }
-    if (bossEncounter.current && liveFeedEnabled) {
+    if (bossEncounter.current) {
       const colors = bossColors(bossEncounter.current.boss.kind, theme === 'dark');
       ctx.fillStyle = colors.track; ctx.fillRect(0, tapeH - 3, W, 3);
       ctx.fillStyle = colors.foreground; ctx.fillRect(0, tapeH - 3, (W) * Math.max(0, Math.min(1, bossEncounter.current.boss.health / bossMaxHealth(bossEncounter.current.boss.kind))), 3);
@@ -2683,6 +2683,16 @@ export const CandleGame: React.FC<CandleGameProps> = ({
       ctx.fillRect(0, tapeH - 3, (W) * fraction, 3);
     }
     ctx.restore();
+    if (bossEncounter.current) {
+      // Bell runs on the chart, not in the legacy BoxingGame header portal.
+      // Keep its identity visible independently of the optional news feed.
+      ctx.save();
+      ctx.font = 'bold 18px monospace';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+      ctx.fillStyle = bossColors(bossEncounter.current.boss.kind, theme === 'dark').foreground;
+      ctx.fillText(bossName(bossEncounter.current.boss.kind), (W - AX) / 2, feedLayout.current.tapeHeight + 8);
+      ctx.restore();
+    }
     if (g.p?.whaleMount && g.currentState !== 'boxing') {
       ctx.save();
       ctx.font = 'bold 13px monospace'; ctx.textAlign = 'right'; ctx.textBaseline = 'top';

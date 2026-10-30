@@ -44,6 +44,9 @@ const hook = `
 `;
 const server = await createServer({ root, logLevel: 'error', server: { host: '127.0.0.1', port: 0 }, plugins: [{
   name: 'touch-boss-regression', enforce: 'pre', transform(code, id) {
+    if (id.replaceAll('\\','/').split('?')[0].endsWith('/src/App.tsx')) {
+      return code.replace('  const liveFeedVisible = liveFeedEnabled;', '  window.__setLiveFeed = setLiveFeedEnabled;\n  const liveFeedVisible = liveFeedEnabled;');
+    }
     if (!id.replaceAll('\\','/').split('?')[0].endsWith('/src/CandleGame.tsx')) return;
     return code.replaceAll('\r\n','\n')
       .replace('      if (disposed) return;', '      if (disposed) return;\n      return; // Regression test controls simulation frames.')
@@ -131,7 +134,7 @@ try {
     assert.equal(await evaluate(`!!document.querySelector('.header-boss-control')`),false,'Bell is removed from browser header');
     await evaluate(`document.querySelector('.landing-menu-settings-button').click()`);await settle();
     await evaluate(`(()=>{const s=document.querySelector('[aria-label="Shmuck Feed"]');if(s.getAttribute('aria-checked')!=='true')s.click();})()`);await settle();
-    assert.ok(await evaluate(`document.querySelector('[aria-label="Shmuck Feed"]').textContent.includes('Running')`));
+    assert.equal(await evaluate(`document.querySelector('[aria-label="Shmuck Feed"] .settings-switch-state').textContent`),'On');
     await evaluate(`document.querySelector('[aria-label="Shmuck Feed"]').click()`);await settle();
     assert.ok(await evaluate(`document.querySelector('[aria-label="Shmuck Feed"]').textContent.includes('Off')`));
     assert.equal(await evaluate(`document.querySelector('[aria-label="Shmuck Feed"]').getAttribute('aria-checked')`),'false');
@@ -170,6 +173,13 @@ try {
       await evaluate(`window.__combat.setup('${kind}')`);await settle();
       const feed=await evaluate('window.__combat.feed()');
       assert.ok(feed.some(text=>text.includes('REGRESSION: Bell feed stays visible')),`${kind}: enabled Live Feed remains rendered during boss fight`);
+      const name = {jerome:'Jeromé',janet:'Janét',paul:'Pául'}[kind];
+      assert.ok(feed.includes(name),`${kind}: boss name is drawn with Live Feed on`);
+      await evaluate('window.__setLiveFeed(false)');await settle();
+      const withoutFeed=await evaluate('window.__combat.feed()');
+      assert.ok(withoutFeed.includes(name),`${kind}: boss name is drawn with Live Feed off`);
+      assert.ok(!withoutFeed.some(text=>text.includes('REGRESSION: Bell feed stays visible')),'Disabled feed stays hidden');
+      await evaluate('window.__setLiveFeed(true)');await settle();
       const before=await evaluate('window.__combat.snapshot()');
       await evaluate('window.__combat.step(30)');
       const after=await evaluate('window.__combat.snapshot()');
