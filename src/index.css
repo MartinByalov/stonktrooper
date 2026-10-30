@@ -1,5 +1,52 @@
 @import "tailwindcss";
 
+.game-app .site-info-header > .about-rate-us {
+  position: absolute;
+  left: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  color: var(--ui-blue);
+}
+.about-rate-us:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+
+/* Android theme palette, shared by menus, result actions and Settings. */
+:root {
+  --ui-blue: #569DCC;
+  --primary-action: #54d3ac;
+  --primary-action-ink: #000000;
+  --liquidated-loss: #b91c1c;
+  --loss-action-ink: #ffffff;
+  --share-action-ink: #ffffff;
+}
+html[data-theme="dark"] {
+  --ui-blue: #38bdf8;
+  --primary-action: #08795c;
+  --primary-action-ink: #ffffff;
+  --liquidated-loss: #ff6467;
+  --loss-action-ink: #000000;
+  --share-action-ink: #000000;
+}
+html[data-theme] .game-app :is(.landing-menu-play-button, .continue-run) {
+  color: var(--primary-action-ink) !important;
+}
+html[data-theme] .game-app .margin-call-title { color: var(--primary-action); }
+html[data-theme] .game-app .game-result-summary > h2 { color: var(--liquidated-loss); }
+html[data-theme] .game-app .share-dd-open { color: var(--share-action-ink) !important; }
+html[data-theme] .game-app .how-to-mode-selector[data-mode="hard"] {
+  background: var(--liquidated-loss);
+  border-color: var(--liquidated-loss);
+  color: var(--primary-action-ink);
+}
+html[data-theme] .game-app .how-to-mode-selector[data-mode="easy"] {
+  background: #e6b13a;
+  border-color: #e6b13a;
+  color: var(--primary-action-ink);
+}
+
 .info-artwork-button {
   display: flex;
   padding: 0;
@@ -380,6 +427,12 @@ body {
   aspect-ratio: auto;
 }
 
+/* Home owns its SVG chart; never expose the previous gameplay frame beneath it.
+   Keep layout and the separate Live Feed canvas active. */
+.game-app[data-state="menu"] .game-stage > canvas {
+  visibility: hidden;
+}
+
 .game-app .game-stage > canvas {
   display: block;
   width: 100%;
@@ -753,14 +806,14 @@ html[data-theme="light"] .game-app .game-result-over .game-result-summary {
 }
 
 .game-result-over .share-dd-open {
-  background: #38bdf8 !important;
+  background: var(--ui-blue) !important;
   color: #ffffff !important;
-  border-color: #38bdf8 !important;
+  border-color: var(--ui-blue) !important;
 }
 
 html[data-theme="light"] .game-result-over .share-dd-open {
-  background: #0369a1 !important;
-  border-color: #0369a1 !important;
+  background: var(--ui-blue) !important;
+  border-color: var(--ui-blue) !important;
 }
 
 .how-to-grid > div {
@@ -2880,6 +2933,18 @@ kbd {
   }
 }
 
+/* Match Android's primary action colors in both themes. */
+html[data-theme="light"] .game-app .landing-menu-actions > .landing-menu-play-button,
+html[data-theme="light"] .game-app .game-result .continue-run {
+  background: #54d3ac;
+  border-color: #54d3ac;
+}
+html[data-theme="dark"] .game-app .landing-menu-actions > .landing-menu-play-button,
+html[data-theme="dark"] .game-app .game-result .continue-run {
+  background: #08795c;
+  border-color: #08795c;
+}
+
 /* Pause guide spacing must not grow with controls after the theme button. */
 .game-app .site-info-dialog > .site-info-content::after {
   content: '';
@@ -2950,6 +3015,30 @@ kbd {
     margin-inline: 0;
     padding-inline: 0;
     scrollbar-gutter: stable both-edges;
+  }
+}
+
+.rotate-phone-placeholder {
+  display: none;
+}
+
+@media (orientation: portrait) and (pointer: coarse) {
+  .game-app .rotate-phone-placeholder {
+    position: fixed;
+    inset: 0;
+    z-index: 20000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #000;
+    overflow: hidden;
+  }
+
+  .game-app .rotate-phone-placeholder > img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
   }
 }
 
@@ -3033,6 +3122,12 @@ html:not([data-theme="light"]) .game-app .share-dd-portrait-day {
   display: flex;
   align-items: flex-start;
   justify-content: center;
+}
+
+@media (pointer: fine) {
+  .game-app .share-dd-image {
+    width: min(42cqw, calc(62cqh * var(--share-art-ratio, 1)));
+  }
 }
 
 .game-app .share-dd-image > .share-dd-canvas {
@@ -3130,14 +3225,14 @@ html .game-app .preferences-clear-button {
 
 html .game-app .share-dd-actions > button.share-dd-copy {
   color: #ffffff !important;
-  background: #08795c !important;
+  background: var(--ui-blue) !important;
   border: 1px solid transparent !important;
   box-shadow: none;
 }
 
 html .game-app .share-dd-actions > button.share-dd-copy:hover {
   color: #ffffff !important;
-  background: #08795c !important;
+  background: var(--ui-blue) !important;
 }
 
 html .game-app .share-dd-actions > button.share-dd-copy:focus-visible {
@@ -3681,7 +3776,7 @@ html .game-app .landing-menu-panel > .landing-menu-actions {
   --menu-hero-width: clamp(64px, 21dvh, 126px);
   position: relative;
   overflow: visible;
-  padding-top: calc(var(--menu-hero-width) * 107.5 / 140);
+  padding-top: calc(var(--menu-hero-width) - 3px);
   display: flex;
   flex-direction: column;
   align-items: stretch;
@@ -3731,6 +3826,12 @@ html .game-app .landing-menu-panel > .landing-menu-actions {
 }
 
 .desktop-home-art {
+  display: block;
+  top: 0;
+  object-fit: contain;
+}
+
+.touch-menu-celebration {
   display: none;
 }
 
@@ -4202,7 +4303,7 @@ html:not([data-theme="light"]) .game-app :is(.landing-menu-guide-button, .landin
   flex-shrink: 0;
 }
 .settings-label, .settings-switch-state { display: flex; align-items: center; gap: 10px; }
-.settings-label svg { width: 18px; height: 18px; flex: 0 0 auto; color: #38bdf8; }
+.settings-label svg { width: 18px; height: 18px; flex: 0 0 auto; color: var(--ui-blue); }
 html .game-app .settings-toggle {
   display: flex;
   align-items: center;
@@ -4224,10 +4325,10 @@ html .game-app .settings-toggle {
   border-radius: 4px;
 }
 .settings-volume-row output, .settings-switch-state { font-size: 12px; font-variant-numeric: tabular-nums; }
-.settings-volume-row input { grid-column: 1 / -1; width: 100%; min-height: 24px; accent-color: #38bdf8; cursor: pointer; }
+.settings-volume-row input { grid-column: 1 / -1; width: 100%; min-height: 24px; accent-color: var(--ui-blue); cursor: pointer; }
 .settings-switch-track { position: relative; width: 32px; height: 18px; border-radius: 20px; background: var(--muted); flex: 0 0 auto; }
 .settings-switch-track::after { content: ''; position: absolute; top: 3px; left: 3px; width: 12px; height: 12px; background: white; border-radius: 50%; transition: transform 120ms; }
-[aria-checked="true"] .settings-switch-track { background: #38bdf8; }
+[aria-checked="true"] .settings-switch-track { background: var(--ui-blue); }
 [aria-checked="true"] .settings-switch-track::after { transform: translateX(14px); }
 
 html .game-app[data-animations="false"],
@@ -4330,6 +4431,17 @@ html .game-app .site-footer {
   html .game-app .game-stage { height: 100%; min-height: 0; }
   html .game-app .landing-menu-actions {
     --menu-hero-width: clamp(64px, 15dvh, 110px);
+  }
+  html .game-app .landing-menu-panel > .landing-menu-actions {
+    padding-top: calc(var(--menu-hero-width) - 3px);
+  }
+  html .game-app .desktop-home-art {
+    display: block;
+    top: 0;
+    object-fit: contain;
+  }
+  html .game-app .touch-menu-celebration {
+    display: none;
   }
   html .game-app .mobile-how-to-dialog.fixed.inset-0.z-50 {
     top: var(--desktop-feed-bottom, 0px);

@@ -1,4 +1,4 @@
-// Desktop uses the supplied artwork; touch layouts retain their compact SVG pose.
+// Every browser layout uses the supplied day/night artwork, including landscape touch.
 export function MenuCelebration({ theme }: { theme: 'light' | 'dark' }) {
   const caseColor = theme === 'dark' ? '#ffffff' : '#05070a';
   return <>

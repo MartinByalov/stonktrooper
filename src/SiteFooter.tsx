@@ -1,6 +1,6 @@
 // Browser game module for SiteFooter.
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { Mail, X, Volume2, VolumeX, Radio, Moon, Sparkles } from 'lucide-react';
+import { Mail, X, Volume2, VolumeX, Radio, Moon, Sparkles, Star } from 'lucide-react';
 import { AssetPreview, type PreviewAsset } from './AssetPreview';
 import { SettingsDiamond } from './SettingsDiamond';
 import { StonksDialog } from './StonksDialog';
@@ -84,6 +84,7 @@ export function SiteFooter({ onOpen, theme, section, setSection, volume, onVolum
         if (event.key === 'Escape') setSection(null);
       }}>
         <div className="site-info-header relative flex justify-center items-center min-h-10 mb-4 px-10">
+          {section === 'About' && <a className="about-rate-us" href="https://play.google.com/store/apps/details?id=com.stonktrooper.game&showAllReviews=true" target="_blank" rel="noopener noreferrer" aria-label="Rate Us on Google Play" title="Rate Us"><Star size={24} aria-hidden="true" /></a>}
           <h2 id="site-info-title" className="site-info-title font-bold text-xl">{section}</h2>
           <button ref={close} type="button" aria-label="Close site information" onClick={() => setSection(null)} className="dialog-close mobile-dialog-close site-info-close absolute right-0 top-0 p-2 border border-[var(--line)] rounded hover:bg-[var(--alt)] cursor-pointer"><X className="w-5 h-5" aria-hidden="true" /></button>
         </div>

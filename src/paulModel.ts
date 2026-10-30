@@ -1,4 +1,5 @@
 // Sculpted canvas surfaces: key light from upper left, cool shadows underneath.
+import { drawBlinkingEye } from './eyeAnimation';
 // All geometry is local right profile; the encounter mirrors the complete model.
 export function paulHookMotion(attack: number): { load: number; drive: number; lean: number } {
   if (attack <= 0) return { load: 0, drive: 0, lean: 0 };
@@ -58,11 +59,13 @@ export function drawPaulHead(ctx: CanvasRenderingContext2D, x: number, y: number
   // Recessed, narrow eye under a brow ridge; no oversized eyeball or exposed fang.
   ctx.fillStyle = '#263343'; ctx.beginPath(); ctx.moveTo(1, -7); ctx.lineTo(10, -5);
   ctx.lineTo(6, -2); ctx.lineTo(1, -3); ctx.closePath(); ctx.fill();
-  ctx.fillStyle = '#d8ad60'; ctx.beginPath(); ctx.ellipse(5.7, -4.1, 2.3, 1.2, 0.12, 0, Math.PI * 2); ctx.fill();
-  ctx.fillStyle = '#111b28'; ctx.fillRect(6, -5, 0.9, 2.1);
+  drawBlinkingEye(ctx,5.7,-4.1,()=>{
+    ctx.fillStyle = '#d8ad60'; ctx.beginPath(); ctx.ellipse(5.7, -4.1, 2.3, 1.2, 0.12, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#111b28'; ctx.fillRect(6, -5, 0.9, 2.1);
+  },16);
   if (depth > 0.12) {
     drawPaulMuscle(ctx, 9 + yaw * 3, 1, 6 + depth * 2, 8, 0.2);
-    ctx.fillStyle = '#d8ad60'; ctx.beginPath(); ctx.ellipse(10 + yaw * 2, -4, 1.1 + depth, 1, 0, 0, Math.PI * 2); ctx.fill();
+    drawBlinkingEye(ctx,10+yaw*2,-4,()=>{ctx.fillStyle = '#d8ad60'; ctx.beginPath(); ctx.ellipse(10 + yaw * 2, -4, 1.1 + depth, 1, 0, 0, Math.PI * 2); ctx.fill();},16);
   }
   ctx.strokeStyle = '#a4b3c0'; ctx.lineWidth = 1;
   ctx.beginPath(); ctx.moveTo(-1, -8); ctx.quadraticCurveTo(5, -8, 10, -5); ctx.stroke();

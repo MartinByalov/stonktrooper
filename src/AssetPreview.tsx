@@ -7,6 +7,7 @@ import { createBossArena } from './boxingRules';
 import { drawBossEncounter } from './bossRenderer';
 import { drawChickenTender } from './tenderRenderer';
 import { drawDumpster } from './dumpsterRenderer';
+import { jeromePreviewPunch } from './jeromePunch';
 
 export type PreviewAsset = 'dumpster' | 'tender' | 'jerome' | 'coin' | 'diamond' | 'banknote' | 'bag' | 'banana' | 'ape' | 'whale' | 'swan' | 'white' | 'hawk' | 'bell' | 'pigeon' | 'printer' | 'bull' | 'bear' | 'bull-rider' | 'bear-rider' | 'jump' | 'briefcase' | 'fedora';
 
@@ -14,13 +15,13 @@ export type PreviewAsset = 'dumpster' | 'tender' | 'jerome' | 'coin' | 'diamond'
 const previewCache = new Map<string, HTMLCanvasElement>();
 const PREVIEW_CACHE_LIMIT = 96;
 
-export function AssetPreview({ asset, compact = false, theme = 'light', grounded = false, coinLetter = 'M' }: { asset: PreviewAsset; compact?: boolean; theme?: 'light' | 'dark'; grounded?: boolean; coinLetter?: 'M' | 'B' }) {
+export function AssetPreview({ asset, compact = false, theme = 'light', grounded = false, coinLetter = 'M', animated = false }: { asset: PreviewAsset; compact?: boolean; theme?: 'light' | 'dark'; grounded?: boolean; coinLetter?: 'M' | 'B'; animated?: boolean }) {
   const canvas = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
     const output = canvas.current?.getContext('2d');
     if (!output) return;
     const key = `${asset}:${theme}:${grounded}:${coinLetter}`;
-    const cached = previewCache.get(key);
+    const cached = animated ? undefined : previewCache.get(key);
     if (cached) {
       previewCache.delete(key);
       previewCache.set(key, cached);
@@ -34,19 +35,36 @@ export function AssetPreview({ asset, compact = false, theme = 'light', grounded
     buffer.width = 512; buffer.height = 512;
     const ctx = buffer.getContext('2d');
     if (!ctx) return;
+    let request = 0;
+    let last = -Infinity;
+    const started = performance.now();
+    const arena = asset === 'jerome' ? createBossArena() : undefined;
+    const render = (now: number) => {
+    const moving = animated && !matchMedia('(prefers-reduced-motion: reduce)').matches && !canvas.current?.closest('[data-animations="false"]');
+    if (moving) request = requestAnimationFrame(render);
+    if (moving && now - last < 1000 / 24) return;
+    last = now;
+    const phase = moving ? now / 180 : .8;
+    ctx.clearRect(0, 0, 512, 512);
     ctx.save();
     ctx.translate(256, 256);
     if (asset === 'dumpster') {
       ctx.translate(0, 45);
       ctx.scale(1.6, 1.6);
-      drawDumpster(ctx, 1, 0.8, 0, theme === 'dark');
+      drawDumpster(ctx, 1, phase, 0, theme === 'dark', false, 1, phase * 10, false, moving ? 16 - (phase * 8 % 60) : 0);
     } else if (asset === 'jerome') {
-      const arena = createBossArena();
-      arena.boss.x = 0; arena.boss.y = 40;
-      arena.boss.facing = -1;
-      arena.boss.attack = 0;
-      ctx.scale(1.5, 1.5);
-      drawBossEncounter(ctx, arena);
+      const bossArena = arena ?? createBossArena();
+      bossArena.boss.x = 0; bossArena.boss.y = 40;
+      bossArena.boss.facing = -1;
+      bossArena.boss.walkPhase = phase;
+      bossArena.boss.moving = moving;
+      const punch = jeromePreviewPunch(moving ? Math.max(0, now - started) * .06 : 0);
+      bossArena.boss.attack = moving ? punch.attack : 0;
+      bossArena.boss.arm = punch.arm;
+      bossArena.boss.aimY = bossArena.boss.y - 60;
+      if (animated) { ctx.translate(26, 0); ctx.scale(.9, .9); }
+      else ctx.scale(1.5, 1.5);
+      drawBossEncounter(ctx, bossArena, theme === 'dark');
     } else if (asset === 'tender') {
       ctx.scale(2.5, 2.5);
       drawChickenTender(ctx);
@@ -54,10 +72,10 @@ export function AssetPreview({ asset, compact = false, theme = 'light', grounded
       ctx.translate(15, 55);
       const rider = asset.endsWith('-rider');
       ctx.scale(rider ? 1 : 1.3, rider ? 1 : 1.3);
-      drawAnimalCharacter(ctx, { type: rider ? asset.split('-')[0] : asset, mount: rider ? (asset === 'bull-rider' ? 'bear' : 'bull') : undefined, phase: 0.8, attackTimer: 0 } as Animal, false, false, theme === 'dark', asset === 'bull' || asset === 'bull-rider', false, false, rider);
+      drawAnimalCharacter(ctx, { type: rider ? asset.split('-')[0] : asset, mount: rider ? (asset === 'bull-rider' ? 'bear' : 'bull') : undefined, phase, attackTimer: moving ? Math.max(0, 20 - phase * 8 % 60) : 0 } as Animal, false, false, theme === 'dark', !moving && (asset === 'bull' || asset === 'bull-rider'), false, false, rider);
     } else if (asset === 'ape') {
       ctx.scale(1.6, 1.6);
-      drawApeAsset(ctx);
+      drawApeAsset(ctx, phase, false, moving ? Math.max(0, 16 - phase * 8 % 60) : 0);
     } else if (asset === 'swan' || asset === 'pigeon' || asset === 'white' || asset === 'hawk') {
       ctx.scale(2, 2);
       ctx.save();
@@ -66,7 +84,7 @@ export function AssetPreview({ asset, compact = false, theme = 'light', grounded
         ctx.shadowColor = '#334155';
         ctx.shadowBlur = 2;
       }
-      drawSwanAsset(ctx, { kind: asset, phase: 0.8, isCharging: false } as Swan);
+      drawSwanAsset(ctx, { kind: asset, phase, isCharging: false } as Swan);
       ctx.restore();
     } else if (asset === 'jump') {
       // Mixed candles remain intact; yellow marks the double-jump charge zone.
@@ -98,18 +116,35 @@ export function AssetPreview({ asset, compact = false, theme = 'light', grounded
       ctx.strokeStyle = 'rgba(224, 242, 254, 0.75)'; ctx.lineWidth = 3;
       ctx.beginPath(); ctx.ellipse(0, -4, 43, 56, 0, Math.PI * 1.05, Math.PI * 1.4); ctx.stroke();
       ctx.save(); ctx.translate(0, -4); ctx.scale(2 * 148 / 156, 2 * 148 / 156);
-      drawPickupAsset(ctx, { type: 'diamond', x: 0, y: 0, taken: false }, 0, 0);
+      drawPickupAsset(ctx, { type: 'diamond', x: 0, y: 0, taken: false }, 0, 0, moving ? phase * 10 : 0, theme === 'dark');
       ctx.restore();
+    } else if (asset === 'printer' && animated) {
+      ctx.scale(1.6, 1.6); ctx.translate(0, 10);
+      if (moving) {
+        // Android's visual cash-ejection trajectory; no game pickup is spawned.
+        const age = ((phase % 7.2) + 7.2) % 7.2 / 7.2;
+        ctx.save();
+        ctx.translate(-16 - age * 44, -19 - Math.sin(age * Math.PI) * 11 + age * 9);
+        ctx.rotate(-.2 - age * 1.5);
+        ctx.globalAlpha *= Math.min(1, (1 - age) * 4);
+        ctx.fillStyle = theme === 'dark' ? '#bbf7d0' : '#86cf96';
+        ctx.strokeStyle = '#21643b'; ctx.lineWidth = .7;
+        ctx.fillRect(-7, -3.5, 14, 7); ctx.strokeRect(-7, -3.5, 14, 7);
+        ctx.strokeRect(-5.5, -2.2, 11, 4.4);
+        ctx.beginPath(); ctx.ellipse(0, 0, 2, 2.6, 0, 0, Math.PI * 2); ctx.stroke();
+        ctx.restore();
+      }
+      drawPickupAsset(ctx, { type: 'printer', x: 0, y: 0, taken: false }, 0, -17, phase, theme === 'dark');
     } else if (asset === 'fedora') {
-      // Mirror the updated hero hat only in the guide preview.
-      ctx.scale(-2.4, 2.4);
+      // Use Android's corrected profile orientation in the guide as well.
+      ctx.scale(2.4, 2.4);
       drawCharacterHat(ctx, false, false, theme === 'dark');
     } else if (asset === 'briefcase') {
       drawBriefcase(ctx, theme === 'dark');
     } else {
       ctx.scale(2.4, 2.4);
       // Use the same orientation and theme-aware pickup renderer as the chart.
-      drawPickupAsset(ctx, { type: asset, x: 0, y: 0, taken: false }, 0, 0, 0, theme === 'dark', coinLetter);
+      drawPickupAsset(ctx, { type: asset, x: 0, y: 0, taken: false }, 0, 0, moving ? phase * 10 : 0, theme === 'dark', coinLetter);
     }
     ctx.restore();
     const pixels = ctx.getImageData(0, 0, 512, 512).data;
@@ -124,12 +159,19 @@ export function AssetPreview({ asset, compact = false, theme = 'light', grounded
     output.clearRect(0, 0, 160, 160);
     if (right < left) return;
     const width = right - left + 1, height = bottom - top + 1;
+    if (animated && asset !== 'coin') {
+      const scale = Math.min(.8, 156 / Math.max(width, height));
+      output.drawImage(buffer, left, top, width, height,
+        (160 - width * scale) / 2, (160 - height * scale) / 2, width * scale, height * scale);
+      return;
+    }
     const smallerPickup = ['banana', 'coin', 'briefcase', 'fedora'].includes(asset);
     const smallPickup = ['tender', 'bell'].includes(asset);
     const size = smallerPickup ? 86 : smallPickup ? 104 : asset === 'diamond' ? 156 : 136;
     const scale = size / Math.max(width, height);
     output.drawImage(buffer, left, top, width, height,
       (160 - width * scale) / 2, grounded ? 160 - height * scale : (160 - height * scale) / 2, width * scale, height * scale);
+    if (animated) return;
     const preview = document.createElement('canvas');
     preview.width = 160; preview.height = 160;
     const previewContext = preview.getContext('2d');
@@ -138,6 +180,9 @@ export function AssetPreview({ asset, compact = false, theme = 'light', grounded
       if (previewCache.size >= PREVIEW_CACHE_LIMIT) previewCache.delete(previewCache.keys().next().value!);
       previewCache.set(key, preview);
     }
-  }, [asset, theme, grounded, coinLetter]);
-  return <canvas ref={canvas} width={160} height={160} role="img" aria-label={`${asset} game asset`} className={`${compact ? 'w-[72px]' : 'w-24'} aspect-square h-auto shrink-0 max-w-full`} />;
+    };
+    render(performance.now());
+    return () => cancelAnimationFrame(request);
+  }, [asset, theme, grounded, coinLetter, animated]);
+  return <canvas ref={canvas} width={160} height={160} role="img" aria-label={`${asset} game asset`} data-animated={animated || undefined} className={`${compact ? 'w-[72px]' : 'w-24'} aspect-square h-auto shrink-0 max-w-full`} />;
 }

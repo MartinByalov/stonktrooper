@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import { AssetPreview, type PreviewAsset } from './AssetPreview';
 
 // Two small scenes frame the controls. Coordinates are local to each side,
@@ -27,10 +27,10 @@ export function MenuChart({ theme }: { theme: 'light' | 'dark' }) {
   const root = useRef<SVGSVGElement>(null);
   const [size, setSize] = useState({ width: 1040, height: 480, portrait: false });
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const element = root.current;
     if (!element) return;
-    const observer = new ResizeObserver(() => {
+    const measure = () => {
       const { width, height } = element.getBoundingClientRect();
       const portrait = window.matchMedia('(orientation: portrait) and (pointer: coarse)').matches;
       if (width > 0 && height > 0) {
@@ -38,7 +38,10 @@ export function MenuChart({ theme }: { theme: 'light' | 'dark' }) {
           && previous.portrait === portrait
           ? previous : { width, height, portrait });
       }
-    });
+    };
+    // Resolve the real Home geometry before paint, not one frame after mount.
+    measure();
+    const observer = new ResizeObserver(measure);
     observer.observe(element);
     for (const child of element.parentElement?.querySelectorAll('.landing-menu-actions, .home-coffee-link') ?? []) {
       observer.observe(child);

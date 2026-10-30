@@ -2,11 +2,12 @@ import type { BossArena } from './boxingRules';
 import { paulHookPose, paulTailPose } from './paulRules';
 import { drawJointedArm } from './armRenderer';
 import { paulSurface, drawPaulMuscle, drawPaulGlove, drawPaulHead, paulHookMotion } from './paulModel';
+import { drawBossHats } from './bossHatRenderer';
 
-export function drawPaul(ctx: CanvasRenderingContext2D, b: BossArena['boss']): void {
+export function drawPaul(ctx: CanvasRenderingContext2D, b: BossArena['boss'], dark = false, hatSkin = 'hats-classic'): void {
   ctx.save(); ctx.translate(b.x, b.y); ctx.scale(b.facing, 1);
   ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-  const chasing = b.attackKind === 'chase' && b.attack > 0;
+  const chasing = b.attackKind === 'chase' && b.attack > 0 || b.behavior === 'approach';
   const tailAttack = b.attackKind === 'tail' && b.attack > 0;
   const tail = paulTailPose(b);
   const gait = b.moving ? Math.sin(b.walkPhase) : 0;
@@ -94,6 +95,7 @@ export function drawPaul(ctx: CanvasRenderingContext2D, b: BossArena['boss']): v
     ctx.fillStyle = '#9fadb8'; ctx.beginPath(); ctx.moveTo(17, -44); ctx.lineTo(32, -45);
     ctx.lineTo(29, -24); ctx.lineTo(20, -19); ctx.closePath(); ctx.fill();
     drawPaulHead(ctx, 30, -46);
+    drawBossHats(ctx, b.fedoraHats, hatSkin, dark, 'paul', 30, -46);
     legs(true);
   } else {
     const leg = (near: boolean) => {
@@ -150,6 +152,7 @@ export function drawPaul(ctx: CanvasRenderingContext2D, b: BossArena['boss']): v
     const head = upperPoint((8 + shoulderShift * 0.5) * (1 - Math.abs(twist) * 0.18), -76);
     ctx.save(); ctx.translate(head.x, head.y); ctx.rotate(hook.lean);
     drawPaulHead(ctx, 0, 0, twist * 0.85 - hook.load * 0.42 + hook.drive * 0.28);
+    drawBossHats(ctx, b.fedoraHats, hatSkin, dark, 'paul', 0, 0);
     ctx.restore();
     leg(true); arm(true);
     if (tailAttack && tail.sweep > 0) {

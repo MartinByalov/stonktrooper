@@ -2,15 +2,37 @@
 import type { Pickup, Swan } from './types';
 import { drawChickenTender } from './tenderRenderer';
 import { drawSpinningFedora } from './fedoraRenderer';
+import { hatMetrics, hatItemPose, hatBirdGrip } from './hatPose';
+import { HEAD_HAT_CONTACTS, PAPER_HEAD_BOUNDS, headHatContact, hatArtworkContact, hatContactContext, type HatHead } from './hatContact';
+import { drawPigeonWing } from './pigeonWingRenderer';
+export { hatMetrics } from './hatPose';
 import { drawWhaleRiderArm, drawWhaleRiderLeg } from './whaleRider';
+import { skinColors } from './modelColors';
+import { drawNovelHat, drawEquippedBag, drawSuitPreview, drawShoe, suitShirtColor } from './cosmeticModels';
+
+// Shared equipped weapon artwork for pickups and outbound/returning shots.
+export function drawSpinningEquippedHat(ctx: CanvasRenderingContext2D, angle: number, darkMode: boolean, hatSkin = 'hats-classic'): void {
+  if (hatSkin === 'hats-classic') { drawSpinningFedora(ctx, angle, darkMode); return; }
+  if (['hats-gold','hats-ocean','hats-orchid'].includes(hatSkin)) {
+    drawSpinningFedora(ctx,angle,darkMode,skinColors(hatSkin,darkMode));return;
+  }
+  ctx.save();
+  const pose=hatItemPose(hatSkin,angle);
+  ctx.translate(0,pose.bob);ctx.rotate(pose.angle);
+  ctx.translate(0,-hatMetrics(hatSkin).centerY);
+  drawHatArtwork(ctx, false, false, darkMode, hatSkin, angle);
+  ctx.restore();
+}
+
+import { drawBlinkingEye } from './eyeAnimation';
 
 export const APE_SCALE = 0.6;
 
-export const briefcaseColors = (darkMode = false) => ({
-  body: darkMode ? '#ffffff' : '#05070a',
+export const briefcaseColors = (darkMode = false, skin = 'suitcase-classic') => ({
+  body: skinColors(skin, darkMode)[0],
   outline: darkMode ? '#cbd5e1' : '#1e293b',
-  handle: darkMode ? '#ffffff' : '#0f172a',
-  clasp: darkMode ? '#000000' : '#ffffff',
+  handle: skinColors(skin, darkMode)[0],
+  clasp: skinColors(skin, darkMode)[1],
 });
 
 // Shared guide-sized briefcase, centered on the body rather than its handle.
@@ -26,8 +48,11 @@ export function drawBriefcase(ctx: CanvasRenderingContext2D, darkMode = false): 
   ctx.restore();
 }
 
-export const drawCharacterHat = (ctx: CanvasRenderingContext2D, captain: boolean, frontFacing = false, darkMode = false): void => {
+// Raw artwork is also used for flying hats and beak cargo: no head fit there.
+export const drawHatArtwork = (ctx: CanvasRenderingContext2D, captain: boolean, frontFacing = false, darkMode = false, skin = 'hats-classic', phase = 0, showPropeller = true, showPaperEyes = true): void => {
+  if (!captain && drawNovelHat(ctx, skin, darkMode, frontFacing, phase, showPropeller, showPaperEyes)) return;
   ctx.save();
+  const custom = skin !== 'hats-classic' ? skinColors(skin, darkMode) : null;
   if (captain) {
     // Reduce the cap around its contact point on the head, not around the face.
     ctx.translate(0, -7); ctx.scale(0.84, 0.84); ctx.translate(0, 7);
@@ -41,11 +66,22 @@ export const drawCharacterHat = (ctx: CanvasRenderingContext2D, captain: boolean
       ctx.fillStyle = '#dbe4ec'; ctx.beginPath(); ctx.moveTo(-10, -11); ctx.quadraticCurveTo(1, -14, 13, -26); ctx.lineTo(11, -13); ctx.quadraticCurveTo(0, -8, -10, -9); ctx.closePath(); ctx.fill();
       ctx.strokeStyle = '#b8c2cb'; ctx.lineWidth = 0.5;
       ctx.beginPath(); ctx.moveTo(-10, -13); ctx.quadraticCurveTo(0, -20, 14, -27); ctx.stroke();
-      ctx.fillStyle = '#161b22'; ctx.beginPath(); ctx.moveTo(-10, -9); ctx.quadraticCurveTo(0, -9, 10, -14); ctx.lineTo(11, -10); ctx.quadraticCurveTo(0, -5, -9, -5); ctx.closePath(); ctx.fill();
-      ctx.fillStyle = '#202328'; ctx.beginPath(); ctx.moveTo(8, -11); ctx.quadraticCurveTo(15, -8, 23, -6); ctx.quadraticCurveTo(20, -2, 4, -5); ctx.closePath(); ctx.fill();
+      // Tuck the peak root into the band rather than outlining a separate plate.
+      // Only its exposed curved edges are stroked; the band covers the joint.
+      ctx.fillStyle = '#202328'; ctx.beginPath(); ctx.moveTo(8, -11); ctx.quadraticCurveTo(15, -8, 23, -6); ctx.quadraticCurveTo(20, -2, 4, -8); ctx.fill();
       ctx.strokeStyle = '#080b10'; ctx.lineWidth = 0.6; ctx.stroke();
-      ctx.strokeStyle = '#dcb759'; ctx.lineWidth = 0.8;
-      ctx.beginPath(); ctx.moveTo(0, -7); ctx.quadraticCurveTo(5, -9, 10, -11); ctx.stroke();
+      // Continuous wrap follows the crown base and overlaps the visor root.
+      // Keep the underside unchanged so the existing rigid head fit still seats.
+      ctx.fillStyle = '#161b22'; ctx.beginPath(); ctx.moveTo(-10, -9); ctx.quadraticCurveTo(0, -8, 11, -13); ctx.lineTo(11, -10); ctx.quadraticCurveTo(0, -5, -9, -5); ctx.closePath(); ctx.fill();
+      // Gold ribbon wraps the entire visible band, following its curvature.
+      // Both edges interpolate the black band's contours, keeping black trim
+      // above and below without a floating end at the middle of the cap.
+      ctx.fillStyle = '#dcb759';
+      ctx.beginPath(); ctx.moveTo(-9.65, -7.6);
+      ctx.quadraticCurveTo(0, -6.95, 11, -11.95);
+      ctx.lineTo(11, -11.05);
+      ctx.quadraticCurveTo(0, -6.05, -9.35, -6.4);
+      ctx.closePath(); ctx.fill();
       // Gold emblem on the forward-facing panel above the peak.
       ctx.fillStyle = '#facc15'; ctx.strokeStyle = '#b8860b'; ctx.lineWidth = 0.6;
       ctx.beginPath(); ctx.ellipse(9, -17, 1.8, 2.2, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
@@ -59,8 +95,8 @@ export const drawCharacterHat = (ctx: CanvasRenderingContext2D, captain: boolean
     ctx.strokeStyle = '#b7c7d8'; ctx.lineWidth = 0.7; ctx.stroke();
     ctx.fillStyle = '#10233d'; ctx.beginPath(); ctx.roundRect(-10, -11, 21, 4, 1); ctx.fill();
     ctx.fillStyle = '#080e19'; ctx.beginPath(); ctx.moveTo(-4, -7); ctx.quadraticCurveTo(7, -2, 15, -7); ctx.quadraticCurveTo(6, -10, -4, -7); ctx.fill();
+    ctx.fillStyle = '#dcb759'; ctx.fillRect(-10, -9.6, 21, 1.1);
     ctx.strokeStyle = '#dcb759'; ctx.lineWidth = 0.9;
-    ctx.beginPath(); ctx.moveTo(-8, -8); ctx.lineTo(9, -8); ctx.stroke();
     // Anchor and laurel retained around the small gold front emblem.
     ctx.beginPath(); ctx.moveTo(2, -16); ctx.lineTo(2, -11); ctx.moveTo(0, -14); ctx.lineTo(4, -14);
     ctx.moveTo(-1, -13); ctx.quadraticCurveTo(2, -9, 5, -13);
@@ -76,10 +112,10 @@ export const drawCharacterHat = (ctx: CanvasRenderingContext2D, captain: boolean
     // the curved front lip overlaps its base, giving the hat depth, not tilt.
     ctx.translate(0, -7); ctx.scale(0.86, 0.86); ctx.translate(0, 7);
     const outline = darkMode ? '#94a3b8' : '#64748b';
-    ctx.fillStyle = darkMode ? '#cbd5e1' : '#101115';
+    ctx.fillStyle = custom?.[0] ?? (darkMode ? '#cbd5e1' : '#101115');
     ctx.beginPath(); ctx.ellipse(0, -7, 17, 4, 0, 0, Math.PI * 2); ctx.fill();
     ctx.strokeStyle = outline; ctx.lineWidth = 0.65; ctx.stroke();
-    ctx.fillStyle = darkMode ? '#f8fafc' : '#24262b';
+    ctx.fillStyle = custom?.[0] ?? (darkMode ? '#f8fafc' : '#24262b');
     ctx.beginPath(); ctx.moveTo(-11, -8); ctx.lineTo(-9, -20);
     ctx.quadraticCurveTo(-6, -23, 0, -20.5);
     ctx.quadraticCurveTo(6, -23, 9, -20);
@@ -94,12 +130,12 @@ export const drawCharacterHat = (ctx: CanvasRenderingContext2D, captain: boolean
       ctx.beginPath(); ctx.moveTo(side * 9, -20); ctx.lineTo(side * 11, -8);
       ctx.lineTo(side * 7.5, -8); ctx.lineTo(side * 6.5, -17); ctx.closePath(); ctx.fill();
     }
-    ctx.fillStyle = darkMode ? '#111318' : '#f8fafc';
+    ctx.fillStyle = custom?.[1] ?? (darkMode ? '#111318' : '#f8fafc');
     ctx.beginPath(); ctx.moveTo(-10.5, -12);
     ctx.quadraticCurveTo(0, -9.5, 10.5, -12); ctx.lineTo(11, -8.5);
     ctx.quadraticCurveTo(0, -6, -11, -8.5); ctx.closePath(); ctx.fill();
     // Front of the brim is lower than its rear, but stays above the eyes.
-    ctx.fillStyle = darkMode ? '#e2e8f0' : '#111318';
+    ctx.fillStyle = custom?.[0] ?? (darkMode ? '#e2e8f0' : '#111318');
     ctx.beginPath(); ctx.moveTo(-17, -7);
     ctx.quadraticCurveTo(0, -5, 17, -7);
     ctx.quadraticCurveTo(14, -2.5, 0, -2.5);
@@ -112,11 +148,11 @@ export const drawCharacterHat = (ctx: CanvasRenderingContext2D, captain: boolean
   // Match the logo's slight forward tilt while keeping the hat anchored to the head.
   // Both crown ends are level; the forward rise comes only from the tilt.
   ctx.translate(0, -7); ctx.rotate(-0.12); ctx.scale(0.86, 0.86); ctx.translate(0, 7);
-  const hatColor = darkMode ? '#f8fafc' : '#111318';
-  const hatBandColor = darkMode ? '#111318' : '#ffffff';
+  const hatColor = custom?.[0] ?? (darkMode ? '#f8fafc' : '#111318');
+  const hatBandColor = custom?.[1] ?? (darkMode ? '#111318' : '#ffffff');
   ctx.fillStyle = hatColor;
   ctx.beginPath(); ctx.ellipse(1, -7, 20, 4.5, -0.06, 0, Math.PI * 2); ctx.fill();
-  ctx.fillStyle = darkMode ? '#e2e8f0' : '#24262b';
+  ctx.fillStyle = custom?.[0] ?? (darkMode ? '#e2e8f0' : '#24262b');
   ctx.beginPath(); ctx.moveTo(-10, -8); ctx.lineTo(-8, -21);
   ctx.quadraticCurveTo(-4, -22, 0, -20); ctx.quadraticCurveTo(4, -22, 9, -21);
   ctx.lineTo(11, -8); ctx.closePath(); ctx.fill();
@@ -139,30 +175,83 @@ export const drawCharacterHat = (ctx: CanvasRenderingContext2D, captain: boolean
   ctx.restore();
 };
 
+export function drawHeadHat(ctx: CanvasRenderingContext2D, head: HatHead, captain = false, dark = false, skin = 'hats-classic', phase = 0, stack = 0, front = false, showPropeller = true): void {
+  const contact=headHatContact(head,captain,skin);
+  const fedora = !captain && ['hats-classic','hats-gold','hats-ocean','hats-orchid'].includes(skin);
+  // Ape hats and naval caps are rigid: anatomy determines placement and
+  // uniform size, never local bending of the brim, band or crown.
+  const fitted=hatContactContext(ctx,hatArtworkContact(skin,captain,front),contact,stack*hatMetrics(skin).stackHeight*contact.height,!captain && !fedora && head !== 'ape');
+  ctx.save();
+  try {
+    const paper = !captain && skin==='hats-paper';
+    if (paper) {
+      const bounds=PAPER_HEAD_BOUNDS[head];
+      const lift=stack*hatMetrics(skin).stackHeight*contact.height;
+      // Fit the unmodified bag artwork around the entire head. Keep the torn
+      // lower edge below the chin, rather than sizing a bag like a narrow brim.
+      // At its narrowest the artwork spans x=-8.8..9.6; y=-26.8..10.6.
+      const sx=(bounds.right-bounds.left)/18.4;
+      const sy=(bounds.bottom-bounds.top)/37.4;
+      ctx.save();
+      // Anatomy supplies the local profile. Existing caller mirrors still apply
+      // to both head and bag (including bosses and reversed movement poses).
+      const facing=contact.facing;
+      ctx.translate(facing===-1 ? bounds.right-8.8*sx : bounds.left+8.8*sx,bounds.top+26.8*sy-lift);
+      ctx.scale(sx*facing,sy);
+      drawHatArtwork(ctx,false,false,dark,skin,phase,showPropeller,true);
+      ctx.restore();
+    } else if (fedora && head === 'human') {
+      // Restore the original human artwork without re-fitting or flattening it.
+      ctx.translate(0,-stack*hatMetrics(skin).stackHeight);
+      drawHatArtwork(ctx,false,front,dark,skin,phase,showPropeller,true);
+    } else drawHatArtwork(fitted,captain,front,dark,skin,phase,showPropeller,true);
+  } finally { ctx.restore(); }
+}
+
+// Existing human callers share the same anatomy instead of duplicating fits.
+export const drawCharacterHat = (ctx: CanvasRenderingContext2D, captain: boolean, frontFacing = false, darkMode = false, skin = 'hats-classic', phase = 0, showPropeller = true): void => {
+  drawHeadHat(ctx,'human',captain,darkMode,skin,phase,0,frontFacing,showPropeller);
+};
+
 // Shared rounded right-profile head for running and seated poses.
-export const drawHumanHead = (ctx: CanvasRenderingContext2D, hat = true, darkMode = false): void => {
+export const drawHumanHead = (ctx: CanvasRenderingContext2D, hat = true, darkMode = false, hatSkin = 'hats-classic', phase = 0, showPropeller = true): void => {
   ctx.save();
   // Overlap both the jaw and shirt/shoulders, including scaled seated poses.
   // Draw behind the face so the chin keeps its rounded profile.
-  ctx.fillStyle = '#eab28e'; ctx.fillRect(-2, 4, 5, 10);
+  // Same skin and tapered base as the bare torso. Clothing simply covers the
+  // lower neck; Swim Shady does not need to repaint a separate skin contour.
   ctx.fillStyle = '#fed7aa';
+  // The cervical column sits beneath the ear/back of the jaw, not the chin.
+  // Keep the face/hat origin fixed; move the neck itself back into the shoulder.
+  ctx.beginPath(); ctx.moveTo(-3.25,3); ctx.lineTo(1.25,3);
+  ctx.quadraticCurveTo(.65,7,1.65,10.8);
+  ctx.quadraticCurveTo(1.45,11.4,.75,11.75);
+  ctx.quadraticCurveTo(-1.25,11.8,-3.5,10);
+  ctx.quadraticCurveTo(-3.25,9,-3.25,3);ctx.closePath();ctx.fill();
   ctx.beginPath(); ctx.moveTo(-7, -4); ctx.bezierCurveTo(-7, -12, 5, -13, 7, -5);
-  ctx.quadraticCurveTo(7, -2, 8.5, 0); ctx.quadraticCurveTo(9, 1.5, 7, 2);
-  ctx.bezierCurveTo(8, 10, -2, 11, -5, 5); ctx.closePath(); ctx.fill();
-  ctx.fillStyle = '#eab28e'; ctx.beginPath(); ctx.ellipse(-4, 1, 2, 3, 0, 0, Math.PI * 2); ctx.fill();
-  ctx.fillStyle = '#17202c'; ctx.beginPath(); ctx.arc(5, -3, 1.1, 0, Math.PI * 2); ctx.fill();
-  ctx.strokeStyle = '#ad735c'; ctx.lineWidth = 0.8;
-  ctx.beginPath(); ctx.moveTo(4, 6); ctx.quadraticCurveTo(6, 7, 7, 5); ctx.stroke();
-  if (hat) drawCharacterHat(ctx, false, false, darkMode);
+  ctx.quadraticCurveTo(6.8,-2.5,8.3,-.8); ctx.quadraticCurveTo(8.8,.2,6.7,.7);
+  ctx.lineTo(6.5,3); ctx.quadraticCurveTo(6.2,6.4,2.8,6.5);
+  ctx.quadraticCurveTo(-3,6.6,-5,2.8); ctx.closePath(); ctx.fill();
+  // One near ear/eye: keep the jaw compact instead of stretching the face down.
+  ctx.fillStyle = '#eab28e'; ctx.beginPath(); ctx.ellipse(-3.8,-.3,1.6,2.2,-.1,0,Math.PI*2); ctx.fill();
+  ctx.strokeStyle='#c78667'; ctx.lineWidth=.5;
+  ctx.beginPath(); ctx.moveTo(-4.2,-1.2); ctx.quadraticCurveTo(-2.6,-1.4,-3.5,.8); ctx.stroke();
+  drawBlinkingEye(ctx,4.8,-3,()=>{ctx.fillStyle = '#17202c'; ctx.beginPath(); ctx.arc(4.8,-3, .85,0,Math.PI*2); ctx.fill();});
+  ctx.strokeStyle='#70442d'; ctx.lineWidth=.65;
+  ctx.beginPath(); ctx.moveTo(3.6,-5); ctx.lineTo(5.5,-4.7); ctx.stroke();
+  ctx.strokeStyle = '#ad735c'; ctx.lineWidth = .65;
+  ctx.beginPath(); ctx.moveTo(4.7,3); ctx.quadraticCurveTo(5.8,3.5,6.7,2.8); ctx.stroke();
+  if (hat) drawCharacterHat(ctx, false, false, darkMode, hatSkin, phase, showPropeller);
   ctx.restore();
 };
 
 // Front-facing meme pose; feet are at the local origin.
-export const drawFallingCharacter = (ctx: CanvasRenderingContext2D, frame: number, apeHead = false, companion = false, darkMode = false, hat = true): void => {
+export const drawFallingCharacter = (ctx: CanvasRenderingContext2D, frame: number, apeHead = false, companion = false, darkMode = false, hat = true, hatSkin = 'hats-classic', suitcaseSkin = 'suitcase-classic', suitSkin = 'suits-classic', shoeSkin = 'shoes-classic'): void => {
   ctx.save();
   const raisedSide = Math.floor(frame / 10) % 2 === 0 ? -1 : 1;
   const skin = apeHead ? '#d6a573' : '#efb58f';
-  const body = companion ? '#754526' : '#27374e';
+  const [suitBody, tie] = skinColors(suitSkin, darkMode);
+  const body = companion ? '#754526' : suitBody;
   ctx.lineCap = 'round';
   ctx.strokeStyle = body; ctx.lineWidth = 7;
   for (const side of [-1, 1]) {
@@ -180,8 +269,8 @@ export const drawFallingCharacter = (ctx: CanvasRenderingContext2D, frame: numbe
   }
   ctx.fill();
   if (!companion) {
-    ctx.fillStyle = '#f8fafc'; ctx.beginPath(); ctx.moveTo(-5, -41); ctx.lineTo(5, -41); ctx.lineTo(0, -24); ctx.fill();
-    ctx.fillStyle = '#ef4444'; ctx.fillRect(-1.5, -37, 3, 11);
+    ctx.fillStyle = suitShirtColor(suitSkin,darkMode); ctx.beginPath(); ctx.moveTo(-5, -41); ctx.lineTo(5, -41); ctx.lineTo(0, -24); ctx.fill();
+    ctx.fillStyle = tie; ctx.fillRect(-1.5, -37, 3, 11);
     if (!apeHead) {
       ctx.strokeStyle = '#42536b'; ctx.lineWidth = 0.7;
       for (const side of [-1, 1]) {
@@ -189,6 +278,11 @@ export const drawFallingCharacter = (ctx: CanvasRenderingContext2D, frame: numbe
         ctx.lineTo(side * 8, -28); ctx.lineTo(side * 2, -19); ctx.stroke();
       }
     }
+  }
+  if (!companion) {
+    // Reuse the complete garment, including special shoulders, shirt and patterns.
+    ctx.save(); ctx.translate(0, -22); ctx.scale(.65, .62); drawSuitPreview(ctx, suitSkin, darkMode); ctx.restore();
+    for (const side of [-1, 1]) drawShoe(ctx, shoeSkin, darkMode, side * (8 + Math.sin(frame * .2) * 2) - 4, -2, 9);
   }
   for (const side of [-1, 1]) {
     const handY = side === raisedSide ? -47 : -29;
@@ -216,12 +310,12 @@ export const drawFallingCharacter = (ctx: CanvasRenderingContext2D, frame: numbe
   ctx.beginPath(); ctx.ellipse(0, -50, apeHead ? 8 : 9, apeHead ? 9 : 10.5, 0, 0, Math.PI * 2); ctx.fill();
   if (apeHead) {
     ctx.fillStyle = '#111827';
-    for (const side of [-1, 1]) { ctx.beginPath(); ctx.arc(side * 3.5, -53, 1.5, 0, Math.PI * 2); ctx.fill(); }
+    for (const side of [-1, 1]) drawBlinkingEye(ctx,side*3.5,-53,()=>{ctx.beginPath(); ctx.arc(side * 3.5, -53, 1.5, 0, Math.PI * 2); ctx.fill();},1);
   } else {
     // Home face at gameplay scale; both eyes remain below the hat brim.
     ctx.fillStyle = '#17202c';
     for (const side of [-1, 1]) {
-      ctx.beginPath(); ctx.arc(side * 3.4, -51.5, 1.1, 0, Math.PI * 2); ctx.fill();
+      drawBlinkingEye(ctx,side*3.4,-51.5,()=>{ctx.beginPath(); ctx.arc(side * 3.4, -51.5, 1.1, 0, Math.PI * 2); ctx.fill();});
     }
     ctx.strokeStyle = '#d49570'; ctx.lineWidth = 0.75;
     ctx.beginPath(); ctx.moveTo(0, -50); ctx.lineTo(-1.1, -47); ctx.lineTo(0.75, -47); ctx.stroke();
@@ -231,21 +325,27 @@ export const drawFallingCharacter = (ctx: CanvasRenderingContext2D, frame: numbe
   if (!companion) {
     // The hero is bald during the fall; his belongings tumble to opposite sides.
     const time = Math.max(0, frame);
-    if (!apeHead && hat) {
+    if (hat) {
       ctx.save(); ctx.translate(-14 - time * 2.2, -61 - time * 3.2);
-      ctx.rotate(-time * 0.09); drawCharacterHat(ctx, false, false, darkMode); ctx.restore();
+      ctx.rotate(-time * 0.09); drawHatArtwork(ctx, false, false, darkMode, hatSkin, frame / 60); ctx.restore();
     }
     ctx.save(); ctx.translate(27 + time * 2.5, -31 - time * 2.4);
-    ctx.rotate(time * 0.11); ctx.scale(0.34, 0.34);
-    drawBriefcase(ctx, darkMode); ctx.restore();
+    ctx.rotate(time * 0.11); ctx.translate(-8, -7);
+    drawEquippedBag(ctx, suitcaseSkin, darkMode); ctx.restore();
   }
   ctx.restore();
 };
 
+export function drawApeHat(ctx: CanvasRenderingContext2D, captain = false, dark = false, skin = 'hats-classic', phase = 0, showPropeller = true): void {
+  drawHeadHat(ctx,'ape',captain,dark,skin,phase,0,false,showPropeller);
+}
+
 export const drawApeHead = (ctx: CanvasRenderingContext2D, hat = true): void => {
   ctx.save();
   // A short fur-covered neck joins the head to either the suit or ape torso.
-  ctx.fillStyle = '#754526'; ctx.fillRect(-3, 6, 6, 8);
+  ctx.fillStyle = '#754526'; ctx.beginPath();ctx.moveTo(-3.25,3);
+  ctx.quadraticCurveTo(-2.5,8,-3,10.5);ctx.quadraticCurveTo(-1,12,2.5,11.75);
+  ctx.quadraticCurveTo(1,8,2.5,5);ctx.closePath();ctx.fill();
   ctx.fillStyle = '#754526';
   ctx.beginPath(); ctx.ellipse(0, 0, 9, 10, 0, 0, Math.PI * 2); ctx.fill();
   ctx.fillStyle = '#432918'; ctx.beginPath(); ctx.arc(-7, 0, 3.5, 0, Math.PI * 2); ctx.fill();
@@ -253,38 +353,42 @@ export const drawApeHead = (ctx: CanvasRenderingContext2D, hat = true): void => 
   ctx.fillStyle = '#d6a573';
   ctx.beginPath(); ctx.ellipse(4, 2, 7, 6, 0, 0, Math.PI * 2); ctx.fill();
   ctx.fillStyle = '#432918'; ctx.beginPath(); ctx.ellipse(9, 1, 2, 1.5, 0, 0, Math.PI * 2); ctx.fill();
-  ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.ellipse(4, -3, 3, 2, 0, 0, Math.PI * 2); ctx.fill();
-  ctx.fillStyle = '#111827'; ctx.beginPath(); ctx.arc(5, -3, 1.3, 0, Math.PI * 2); ctx.fill();
+  drawBlinkingEye(ctx,4,-3,()=>{
+    ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.ellipse(4, -3, 3, 2, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#111827'; ctx.beginPath(); ctx.arc(5, -3, 1.3, 0, Math.PI * 2); ctx.fill();
+  },1);
   ctx.strokeStyle = '#432918'; ctx.lineWidth = 1.5;
   ctx.beginPath(); ctx.moveTo(1, -6); ctx.lineTo(7, -5); ctx.moveTo(4, 5); ctx.quadraticCurveTo(8, 7, 11, 4); ctx.stroke();
-  if (hat) drawCharacterHat(ctx, true);
+  if (hat) drawApeHat(ctx, true);
   ctx.restore();
 };
 
-export const drawApeAsset = (ctx: CanvasRenderingContext2D, phase = 0, seated = false, throwTimer = 0, throwDirection = 1, airborne = false, holdingBag = false, whaleRider = false): void => {
+export const drawApeAsset = (ctx: CanvasRenderingContext2D, phase = 0, seated = false, throwTimer = 0, throwDirection = 1, airborne = false, holdingBag = false, whaleRider = false, frogRider = false): void => {
   ctx.save();
   if (airborne && !seated) { ctx.rotate(Math.sin(phase) * 0.1); ctx.scale(1.04, 0.94); }
   const bob = seated ? 0 : Math.abs(Math.sin(phase)) * 1.5;
   const limb = (near: boolean, arm: boolean) => {
     if (whaleRider && arm) {
+      const gripX=frogRider?(near?19:16):(near?23:19);
+      const gripY=frogRider?(near?11:9):(near?1:-1);
       if (near && throwTimer > 0) {
         // Only the foreground/right hand releases its grip. Blend back to
         // the same palm position as the holding pose when the throw ends.
         const reach = Math.min(1, throwTimer / 8);
-        const handX = 27 + (2 + throwDirection * 28 - 27) * reach;
-        const handY = 3 - 18 * reach;
+        const handX = gripX + (2 + throwDirection * 28 - gripX) * reach;
+        const handY = gripY + (-15 - gripY) * reach;
         ctx.strokeStyle = '#754526'; ctx.lineWidth = 6; ctx.lineCap = 'round';
         ctx.beginPath(); ctx.moveTo(2, -14);
-        ctx.lineTo(13 + throwDirection * 4 * reach, -6 - 7 * reach);
+        ctx.lineTo((frogRider?6:11) + throwDirection * 4 * reach, (frogRider?3:-7) + (-13-(frogRider?3:-7))*reach);
         ctx.lineTo(handX, handY); ctx.stroke();
         ctx.fillStyle = '#d6a573';
         ctx.beginPath(); ctx.ellipse(handX, handY, 4, 3, 0, 0, Math.PI * 2); ctx.fill();
         return { x: handX, y: handY };
       }
       ctx.save(); ctx.translate(0, 11);
-      drawWhaleRiderArm(ctx, near, near ? '#754526' : '#4e301d', near ? '#d6a573' : '#a7774d', 6);
+      drawWhaleRiderArm(ctx, near, near ? '#754526' : '#4e301d', near ? '#d6a573' : '#a7774d', 6, frogRider);
       ctx.restore();
-      return { x: near ? 27 : 23, y: near ? 3 : 1 };
+      return { x: gripX, y: gripY };
     }
     const swing = seated ? 0 : Math.sin(phase + (near ? 0 : Math.PI)) * (arm ? -11 : 9);
     const rootX = near ? 2 : -2;
@@ -333,12 +437,12 @@ export const drawApeAsset = (ctx: CanvasRenderingContext2D, phase = 0, seated = 
   ctx.restore();
 };
 
-export const drawPickupAsset = (ctx: CanvasRenderingContext2D, d: Pickup, x: number, y: number, frame = 0, darkMode = false, coinLetter: 'M' | 'B' = 'M'): void => {
+export const drawPickupAsset = (ctx: CanvasRenderingContext2D, d: Pickup, x: number, y: number, frame = 0, darkMode = false, coinLetter: 'M' | 'B' = 'M', decorated = true, hatSkin = 'hats-classic'): void => {
   if (d.type === 'fedora') {
     ctx.save();
     ctx.translate(x, y);
     ctx.scale(0.7, 0.7);
-    drawSpinningFedora(ctx, -frame * 0.07 + d.x * 0.01, darkMode);
+    drawSpinningEquippedHat(ctx, -frame * 0.07 + d.x * 0.01, darkMode, hatSkin);
     ctx.restore();
     return;
   }
@@ -347,13 +451,13 @@ export const drawPickupAsset = (ctx: CanvasRenderingContext2D, d: Pickup, x: num
     ctx.rotate(d.rotation ?? 0);
     ctx.scale(0.85, 0.85);
     // Chunky retro desktop printer, with a paper feed and projecting cash tray.
-    ctx.fillStyle = '#8c9985'; ctx.beginPath(); ctx.roundRect(-16, -15, 32, 9, 2); ctx.fill();
+    ctx.fillStyle = darkMode ? '#64748b' : '#8c9985'; ctx.beginPath(); ctx.roundRect(-16, -15, 32, 9, 2); ctx.fill();
     ctx.fillStyle = '#fff8df'; ctx.fillRect(-10, -25, 19, 14);
     ctx.strokeStyle = '#c6cbb4'; ctx.lineWidth = 1;
     ctx.beginPath(); ctx.moveTo(-7, -21); ctx.lineTo(6, -21); ctx.moveTo(-7, -18); ctx.lineTo(3, -18); ctx.stroke();
     ctx.fillStyle = '#f0e6c9'; ctx.beginPath(); ctx.moveTo(-19, -7); ctx.lineTo(-14, -14); ctx.lineTo(16, -14); ctx.lineTo(21, -6); ctx.closePath(); ctx.fill();
-    ctx.fillStyle = '#c8bea4'; ctx.beginPath(); ctx.roundRect(-19, -7, 40, 23, 3); ctx.fill();
-    ctx.fillStyle = '#a1977f'; ctx.fillRect(15, -5, 6, 18);
+    ctx.fillStyle = darkMode ? '#94a3b8' : '#c8bea4'; ctx.beginPath(); ctx.roundRect(-19, -7, 40, 23, 3); ctx.fill();
+    ctx.fillStyle = darkMode ? '#475569' : '#a1977f'; ctx.fillRect(15, -5, 6, 18);
     ctx.fillStyle = '#26352e'; ctx.fillRect(-14, 1, 24, 5);
     ctx.fillStyle = '#7c8874'; ctx.beginPath(); ctx.moveTo(-14, 6); ctx.lineTo(10, 6); ctx.lineTo(15, 20); ctx.lineTo(-19, 20); ctx.closePath(); ctx.fill();
     ctx.fillStyle = '#86efac'; ctx.beginPath(); ctx.moveTo(-11, 4); ctx.lineTo(7, 4); ctx.lineTo(9, 18); ctx.lineTo(-14, 18); ctx.closePath(); ctx.fill();
@@ -367,17 +471,20 @@ export const drawPickupAsset = (ctx: CanvasRenderingContext2D, d: Pickup, x: num
   if (d.type === 'bell') {
     ctx.save(); ctx.translate(x, y);
     ctx.rotate(Math.sin(frame * 0.065) * 0.12);
-    ctx.strokeStyle = `rgba(250, 204, 21, ${0.2 + (Math.sin(frame * 0.07) + 1) * 0.12})`;
-    ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(0, 0, 23 + Math.sin(frame * 0.07) * 3, 0, Math.PI * 2); ctx.stroke();
+    if (decorated) {
+      ctx.strokeStyle = `rgba(250, 204, 21, ${0.2 + (Math.sin(frame * 0.07) + 1) * 0.12})`;
+      ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(0, 0, 23 + Math.sin(frame * 0.07) * 3, 0, Math.PI * 2); ctx.stroke();
+    }
     ctx.fillStyle = '#fbbf24'; ctx.beginPath(); ctx.arc(0, 9, 3, 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle = '#92400e'; ctx.fillRect(-13, 6, 26, 3);
     const brass = ctx.createLinearGradient(-12, 0, 12, 0);
     brass.addColorStop(0, '#a16207'); brass.addColorStop(0.45, '#fef08a'); brass.addColorStop(1, '#ca8a04');
     ctx.fillStyle = brass;
     ctx.beginPath(); ctx.moveTo(-13, 6); ctx.quadraticCurveTo(-8, 2, -8, -6); ctx.quadraticCurveTo(-8, -14, 0, -14); ctx.quadraticCurveTo(8, -14, 8, -6); ctx.quadraticCurveTo(8, 2, 13, 6); ctx.closePath(); ctx.fill();
-    ctx.fillStyle = '#facc15'; ctx.fillRect(-2, -12, 4, 4);
-    ctx.strokeStyle = '#fef3c7'; ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(16, -9); ctx.lineTo(21, -13); ctx.moveTo(-16, -9); ctx.lineTo(-21, -13); ctx.stroke();
+    if (decorated) {
+      ctx.strokeStyle = '#fef3c7'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(16, -9); ctx.lineTo(21, -13); ctx.moveTo(-16, -9); ctx.lineTo(-21, -13); ctx.stroke();
+    }
     ctx.restore(); return;
   }
   if (d.type === 'diamond') {
@@ -502,9 +609,12 @@ export const drawPickupAsset = (ctx: CanvasRenderingContext2D, d: Pickup, x: num
         ctx.stroke();
         ctx.fillStyle = '#98600f';
         ctx.font = 'bold 11px monospace';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(coinLetter, 0, 0.5);
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'alphabetic';
+        const letterMetrics = ctx.measureText(coinLetter);
+        const letterX = (letterMetrics.actualBoundingBoxLeft - letterMetrics.actualBoundingBoxRight) / 2;
+        const letterY = (letterMetrics.actualBoundingBoxAscent - letterMetrics.actualBoundingBoxDescent) / 2;
+        ctx.fillText(coinLetter, letterX, letterY);
         // Moving reflection across the face, without rotating or scaling the coin.
         const sweep = ((frame * 0.35 + d.x * 0.15) % 40) - 20;
         ctx.save(); ctx.beginPath(); ctx.arc(0, 0, 10, 0, Math.PI * 2); ctx.clip();
@@ -639,7 +749,26 @@ export const drawPickupAsset = (ctx: CanvasRenderingContext2D, d: Pickup, x: num
       }
 };
 
-export const drawSwanAsset = (ctx: CanvasRenderingContext2D, s: Swan, white = false, darkMode = false): void => {
+export function drawStolenBirdHat(ctx: CanvasRenderingContext2D, s: Swan, darkMode = false, hatSkin = 'hats-classic'): void {
+  if (!s.stolenHat) return;
+  ctx.save();
+  if (s.kind === 'hawk') { ctx.scale(.8,.8); ctx.rotate(Math.sin(s.phase)*.025); ctx.translate(-30, 0); }
+  else if (s.kind === 'pigeon') { ctx.rotate(s.isCharging ? -.12 : Math.sin(s.phase)*.05); ctx.translate(-26,-7); }
+  else { ctx.scale(.4,s.kind==='white'?-.4:.4); ctx.translate(s.isCharging?-65:-50,s.isCharging?2:-36); }
+  // Pin the actual visor/rim to the beak, including backwards-cap artwork.
+  const grip = hatBirdGrip(hatSkin,s.stolenHat==='captain');
+  const scale = s.kind === 'hawk' || s.kind === 'pigeon' ? .75 : 1.5;
+  ctx.rotate(-.7);ctx.scale(grip.facing*scale,scale);ctx.translate(-grip.x,-grip.y);
+  drawHatArtwork(ctx,s.stolenHat==='captain',false,darkMode,hatSkin,s.phase);
+  ctx.restore();
+}
+
+export const drawSwanAsset = (ctx: CanvasRenderingContext2D, s: Swan, white = false, darkMode = false, hatSkin = 'hats-classic'): void => {
+  drawBirdAsset(ctx,s,white,darkMode,hatSkin);
+  drawStolenBirdHat(ctx,s,darkMode,hatSkin);
+};
+
+const drawBirdAsset = (ctx: CanvasRenderingContext2D, s: Swan, white = false, darkMode = false, hatSkin = 'hats-classic'): void => {
       if (s.kind === 'hawk') {
         ctx.save(); ctx.scale(0.8, 0.8);
         ctx.rotate(Math.sin(s.phase) * 0.025);
@@ -647,12 +776,14 @@ export const drawSwanAsset = (ctx: CanvasRenderingContext2D, s: Swan, white = fa
         // Far wing and rounded, individually banded tail feathers.
         ctx.save(); ctx.translate(4, -3); ctx.rotate(-flap * 0.7);
         ctx.fillStyle = '#6d4935'; ctx.beginPath(); ctx.ellipse(12, -13, 9, 21, 0.5, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+        ctx.save(); ctx.translate(10, 2); ctx.rotate(Math.sin(s.phase * .8) * .09); ctx.translate(-10, -2);
         for (let i = 0; i < 4; i++) {
           ctx.fillStyle = i % 2 ? '#9b7451' : '#765039';
           ctx.beginPath(); ctx.ellipse(21, 1 + i * 2, 13, 2.6, 0.15 + i * 0.04, 0, Math.PI * 2); ctx.fill();
           ctx.strokeStyle = '#50382c'; ctx.lineWidth = 1.2;
           ctx.beginPath(); ctx.moveTo(25, i * 2); ctx.lineTo(24, 4 + i * 2); ctx.stroke();
         }
+        ctx.restore();
         const plumage = ctx.createLinearGradient(-10, -12, 9, 13);
         plumage.addColorStop(0, '#c29a6a'); plumage.addColorStop(0.45, '#936541'); plumage.addColorStop(1, '#563c2e');
         ctx.fillStyle = plumage; ctx.beginPath(); ctx.ellipse(0, 0, 18, 11, -0.08, 0, Math.PI * 2); ctx.fill();
@@ -671,36 +802,33 @@ export const drawSwanAsset = (ctx: CanvasRenderingContext2D, s: Swan, white = fa
         ctx.fillStyle = '#bb9365'; ctx.beginPath(); ctx.ellipse(-15, -6, 9, 8, -0.15, 0, Math.PI * 2); ctx.fill();
         ctx.fillStyle = '#f0d5ac'; ctx.beginPath(); ctx.ellipse(-18, -2, 6, 4, 0, 0, Math.PI * 2); ctx.fill();
         ctx.fillStyle = '#d8a334'; ctx.beginPath(); ctx.moveTo(-21, -5); ctx.quadraticCurveTo(-31, -5, -30, 1); ctx.quadraticCurveTo(-27, -1, -23, 1); ctx.closePath(); ctx.fill();
-        ctx.fillStyle = '#34302a'; ctx.beginPath(); ctx.moveTo(-29, -2); ctx.quadraticCurveTo(-33, 0, -29, 3); ctx.lineTo(-27, -1); ctx.fill();
         // Hawk carries the same chicken tender that it drops, held in its beak.
-        if (!s.lootRolled) {
+        if (!s.lootRolled && !s.stolenHat) {
           ctx.save(); ctx.translate(-31, 2); ctx.rotate(0.18); ctx.scale(0.34, 0.34); drawChickenTender(ctx); ctx.restore();
         }
+        drawBlinkingEye(ctx,-18,-8,()=>{
         ctx.fillStyle = '#f4c34d'; ctx.beginPath(); ctx.ellipse(-18, -8, 3, 2.7, 0, 0, Math.PI * 2); ctx.fill();
         ctx.fillStyle = '#171b22'; ctx.beginPath(); ctx.arc(-19, -8, 1.5, 0, Math.PI * 2); ctx.fill();
         ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(-19.5, -8.8, 0.6, 0, Math.PI * 2); ctx.fill();
+        },3);
         ctx.strokeStyle = '#684733'; ctx.lineWidth = 1.5;
         ctx.beginPath(); ctx.moveTo(-22, -11); ctx.quadraticCurveTo(-17, -12, -14, -9); ctx.stroke();
         for (let hat = 0; hat < (s.fedoraHats ?? 0); hat++) {
-          ctx.save(); ctx.translate(-17, -13 - hat * 10); ctx.scale(0.52, 0.52);
-          drawCharacterHat(ctx, false, false, darkMode); ctx.restore();
+          drawHeadHat(ctx,'hawk',false,darkMode,hatSkin,s.phase,hat,false,hat === (s.fedoraHats ?? 0)-1);
         }
         ctx.restore(); return;
       }
       if (s.kind === 'white') {
         ctx.save();
         ctx.scale(1, -1);
-        drawSwanAsset(ctx, { ...s, kind: 'swan', fedoraHats: 0 }, true, darkMode);
+        drawBirdAsset(ctx, { ...s, kind: 'swan' }, true, darkMode, hatSkin);
         ctx.restore();
-        for (let hat = 0; hat < (s.fedoraHats ?? 0); hat++) {
-          ctx.save(); ctx.translate(-13, 10 - hat * 6.4); ctx.scale(0.32, 0.32);
-          drawCharacterHat(ctx, false, false, darkMode); ctx.restore();
-        }
         return;
       }
       if (s.kind === 'pigeon') {
         ctx.save();
         ctx.rotate(s.isCharging ? -0.12 : Math.sin(s.phase) * 0.05);
+        drawPigeonWing(ctx, s.phase, false);
         const feathers = ctx.createLinearGradient(-18, -18, 18, 20);
         feathers.addColorStop(0, '#cbd5e1'); feathers.addColorStop(1, '#64748b');
         // A single rounded body/tail silhouette avoids a pasted-on triangular join.
@@ -720,17 +848,23 @@ export const drawSwanAsset = (ctx: CanvasRenderingContext2D, s: Swan, white = fa
         ctx.fillStyle = '#648c85'; ctx.beginPath(); ctx.ellipse(-11, -7, 9, 6, -0.3, 0, Math.PI * 2); ctx.fill();
         ctx.fillStyle = '#a5b4c3'; ctx.beginPath(); ctx.arc(-13, -12, 9, 0, Math.PI * 2); ctx.fill();
         ctx.fillStyle = '#e7b784'; ctx.beginPath(); ctx.moveTo(-20, -11); ctx.lineTo(-28, -7); ctx.lineTo(-20, -5); ctx.closePath(); ctx.fill();
+        drawBlinkingEye(ctx,-16,-14,()=>{
         ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.ellipse(-16, -14, 4, 5, -0.15, 0, Math.PI * 2); ctx.fill();
         ctx.fillStyle = '#111827'; ctx.beginPath(); ctx.arc(-18, -13, 1.8, 0, Math.PI * 2); ctx.fill();
+        },4);
         ctx.strokeStyle = '#475569'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(-20, -20); ctx.lineTo(-12, -19); ctx.stroke();
-        ctx.fillStyle = '#64748b'; ctx.beginPath(); ctx.moveTo(9, 3); ctx.quadraticCurveTo(0, -15 - Math.sin(s.phase) * 17, -10, -3); ctx.quadraticCurveTo(-6, 13, 9, 3); ctx.fill();
-        ctx.strokeStyle = '#334155'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(1, 0); ctx.lineTo(-4, -5); ctx.moveTo(5, -2); ctx.lineTo(0, -8); ctx.stroke();
-        if (!s.cargo) {
-          ctx.strokeStyle = '#d99a78'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(-4, 19); ctx.lineTo(-6, 24); ctx.lineTo(-10, 24); ctx.moveTo(5, 20); ctx.lineTo(6, 24); ctx.lineTo(10, 24); ctx.stroke();
+        drawPigeonWing(ctx, s.phase, true);
+        ctx.strokeStyle = '#d99a78'; ctx.lineWidth = 2;
+        for (const near of s.cargo ? [] : [false, true]) {
+          const hip = near ? { x: 5, y: 20 } : { x: -4, y: 19 };
+          ctx.save(); ctx.translate(hip.x, hip.y);
+          ctx.rotate(Math.sin(s.phase * .9 + (near ? Math.PI : 0)) * .12);
+          ctx.beginPath(); ctx.moveTo(0, 0);
+          ctx.lineTo(near ? 1 : -2, near ? 4 : 5);
+          ctx.lineTo(near ? 5 : -6, near ? 4 : 5); ctx.stroke(); ctx.restore();
         }
         for (let hat = 0; hat < (s.fedoraHats ?? 0); hat++) {
-          ctx.save(); ctx.translate(-13, -18 - hat * 10); ctx.scale(0.52, 0.52);
-          drawCharacterHat(ctx, false, false, darkMode); ctx.restore();
+          drawHeadHat(ctx,'pigeon',false,darkMode,hatSkin,s.phase,hat,false,hat === (s.fedoraHats ?? 0)-1);
         }
         ctx.restore();
         return;
@@ -777,9 +911,7 @@ export const drawSwanAsset = (ctx: CanvasRenderingContext2D, s: Swan, white = fa
 
         // Piercing flared red eye
         ctx.fillStyle = '#ff0033';
-        ctx.beginPath();
-        ctx.arc(-48, 1, 3.0, 0, Math.PI * 2);
-        ctx.fill();
+        drawBlinkingEye(ctx,-48,1,()=>{ctx.beginPath();ctx.arc(-48, 1, 3, 0, Math.PI * 2);ctx.fill();},5);
 
         // Wings swept back tightly in dive
         ctx.fillStyle = wing;
@@ -834,9 +966,7 @@ export const drawSwanAsset = (ctx: CanvasRenderingContext2D, s: Swan, white = fa
         ctx.fill();
 
         ctx.fillStyle = '#ff0033';
-        ctx.beginPath();
-        ctx.arc(-34, -39, 2.2, 0, Math.PI * 2);
-        ctx.fill();
+        drawBlinkingEye(ctx,-34,-39,()=>{ctx.beginPath();ctx.arc(-34, -39, 2.2, 0, Math.PI * 2);ctx.fill();},5);
 
         const wingFlap = -28 - Math.sin(s.phase) * 16;
         ctx.fillStyle = wing;
@@ -848,11 +978,10 @@ export const drawSwanAsset = (ctx: CanvasRenderingContext2D, s: Swan, white = fa
         ctx.fill();
       }
       for (let hat = 0; hat < (s.fedoraHats ?? 0); hat++) {
-        ctx.save(); ctx.translate(s.isCharging ? -46 : -33, (s.isCharging ? -4 : -44) - hat * 16); ctx.scale(0.8, 0.8);
-        drawCharacterHat(ctx, false, false, darkMode); ctx.restore();
+        drawHeadHat(ctx,s.isCharging?'swanCharging':'swan',false,darkMode,hatSkin,s.phase,hat,false,hat === (s.fedoraHats ?? 0)-1);
       }
       ctx.restore();
-      if (!s.lootRolled && !s.dead && !s.dying) {
+      if (!s.lootRolled && !s.stolenHat && !s.dead && !s.dying) {
         ctx.save();
         const beakX = (s.isCharging ? -68 : -52) * 0.4;
         const beakY = (s.isCharging ? 2 : -36) * 0.4;

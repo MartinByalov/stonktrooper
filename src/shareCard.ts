@@ -22,12 +22,13 @@ export function drawShareCard(ctx: CanvasRenderingContext2D, score: number, back
   const centerX = width * (theme === 'dark' ? 0.71 : 0.70);
   const artworkScale = Math.min(width, height) / 1254;
   ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
+  ctx.textBaseline = 'alphabetic';
   ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
   ctx.shadowBlur = 12;
   ctx.fillStyle = '#f8fafc';
   ctx.font = `700 ${32 * artworkScale}px "Space Grotesk", sans-serif`;
-  ctx.fillText('BEST SCORE', centerX, height * (theme === 'dark' ? 0.405 : 0.414));
+  const headingFont = ctx.font;
+  const headingMetrics = ctx.measureText('BEST SCORE');
 
   const fullScore = formatShareScore(score);
   // A single line remains legible up to a safe integer; avoid microscopic type
@@ -38,7 +39,16 @@ export function drawShareCard(ctx: CanvasRenderingContext2D, score: number, back
   ctx.font = `700 ${baseFontSize}px "Space Grotesk", sans-serif`;
   const fontSize = Math.max(32 * artworkScale, Math.min(baseFontSize, baseFontSize * maxWidth / Math.max(1, ctx.measureText(value).width)));
   ctx.font = `700 ${fontSize}px "Space Grotesk", sans-serif`;
+  const scoreMetrics = ctx.measureText(value);
+  const headingHeight = headingMetrics.actualBoundingBoxAscent + headingMetrics.actualBoundingBoxDescent;
+  const scoreHeight = scoreMetrics.actualBoundingBoxAscent + scoreMetrics.actualBoundingBoxDescent;
+  const gap = 22 * artworkScale;
+  const centerY = height * (theme === 'dark' ? .435 : .445);
+  const top = centerY - (headingHeight + gap + scoreHeight) / 2;
+  ctx.font = headingFont;
+  ctx.fillText('BEST SCORE', centerX, top + headingMetrics.actualBoundingBoxAscent);
+  ctx.font = `700 ${fontSize}px "Space Grotesk", sans-serif`;
   ctx.fillStyle = theme === 'dark' ? '#08795c' : '#54d3ac';
-  ctx.fillText(value, centerX, height * (theme === 'dark' ? 0.462 : 0.472), maxWidth);
+  ctx.fillText(value, centerX, top + headingHeight + gap + scoreMetrics.actualBoundingBoxAscent, maxWidth);
   ctx.restore();
 }

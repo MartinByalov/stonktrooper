@@ -1,9 +1,11 @@
 import type { BossArena } from './boxingRules';
+import { drawBlinkingEye } from './eyeAnimation';
 import { janetAttackPose, JANET_SCALE } from './janetRules';
 import { drawJointedArm } from './armRenderer';
 import { drawBoxingGlove } from './boxingGloveRenderer';
+import { drawBossHats } from './bossHatRenderer';
 
-export function drawJanet(ctx: CanvasRenderingContext2D, b: BossArena['boss'], frame: number): void {
+export function drawJanet(ctx: CanvasRenderingContext2D, b: BossArena['boss'], frame: number, dark = false, hatSkin = 'hats-classic'): void {
   ctx.save(); ctx.translate(b.x, b.y); ctx.scale(b.facing * JANET_SCALE, JANET_SCALE);
   const shell = () => {
     const gradient = ctx.createLinearGradient(-30, -60, 24, -5);
@@ -19,6 +21,7 @@ export function drawJanet(ctx: CanvasRenderingContext2D, b: BossArena['boss'], f
   };
   if (b.attackKind === 'spin' && b.attack > 0) {
     ctx.save(); ctx.translate(0, -28); ctx.rotate(b.spinAngle); ctx.translate(0, 31); shell();
+    drawBossHats(ctx, b.fedoraHats, hatSkin, dark, 'janetShell', 0, 0);
     ctx.restore();
     ctx.strokeStyle = '#b5cf8e'; ctx.lineWidth = 2;
     for (const radius of [35, 40]) {
@@ -60,8 +63,9 @@ export function drawJanet(ctx: CanvasRenderingContext2D, b: BossArena['boss'], f
   ctx.beginPath(); ctx.moveTo(5, -51); ctx.quadraticCurveTo((headX + 5) / 2, headY + 9, headX, headY + 3); ctx.stroke();
   ctx.fillStyle = '#a1b96b'; ctx.strokeStyle = '#405b31'; ctx.lineWidth = 1.3;
   ctx.beginPath(); ctx.ellipse(headX, headY, 15, 11, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+  drawBossHats(ctx, b.fedoraHats, hatSkin, dark, 'janet', headX, headY);
   ctx.fillStyle = '#f8fafc'; ctx.beginPath(); ctx.ellipse(headX + 6, headY - 4, 4, 3.5, 0, 0, Math.PI * 2); ctx.fill();
-  ctx.fillStyle = '#15241b'; ctx.beginPath(); ctx.arc(headX + 8, headY - 4, 1.7, 0, Math.PI * 2); ctx.fill();
+  drawBlinkingEye(ctx,headX+8,headY-4,()=>{ctx.fillStyle = '#15241b'; ctx.beginPath(); ctx.arc(headX + 8, headY - 4, 1.7, 0, Math.PI * 2); ctx.fill();},15);
   ctx.strokeStyle = '#405b31'; ctx.lineWidth = 1.4;
   ctx.beginPath(); ctx.moveTo(headX + 2, headY - 9); ctx.lineTo(headX + 10, headY - 8);
   ctx.moveTo(headX + 5, headY + 5); ctx.quadraticCurveTo(headX + 12, headY + 7, headX + 14, headY + 2); ctx.stroke();

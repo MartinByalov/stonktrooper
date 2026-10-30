@@ -1,21 +1,29 @@
+import { drawLifeHeart } from './lifeHeart';
 // Browser game module for bossRenderer.
 import type { BossArena } from './boxingRules';
+import { drawBlinkingEye } from './eyeAnimation';
 import { drawJointedArm } from './armRenderer';
 import { drawBoxingGlove } from './boxingGloveRenderer';
 import { bossGlovePose } from './boxingRules';
 import { drawBossWeapon } from './bossWeaponRenderer';
-import { briefcaseColors, drawSwanAsset, drawPickupAsset, drawCharacterHat } from './assetRenderer';
+import { drawSwanAsset, drawPickupAsset } from './assetRenderer';
+import { drawEquippedBag } from './cosmeticModels';
 import { drawAnimalCharacter } from './animalRenderer';
 import { drawJanet } from './janetRenderer';
 import { drawPaul } from './paulRenderer';
 import { drawBellBlood } from './bellBlood';
+import { drawBossHats } from './bossHatRenderer';
 
-export function drawBossEncounter(ctx: CanvasRenderingContext2D, a: BossArena, darkMode = false): void {
+export function drawBossEncounter(ctx: CanvasRenderingContext2D, a: BossArena, darkMode = false, suitcaseSkin = 'suitcase-classic', hatSkin = 'hats-classic'): void {
       ctx.save(); ctx.font = 'bold 16px monospace'; ctx.textAlign = 'center'; ctx.fillStyle = '#facc15';
       for (const popup of a.popups) ctx.fillText(popup.text, popup.x, popup.y);
       ctx.restore();
       for (const bird of a.birds) {
         ctx.save(); ctx.translate(bird.x, bird.y);
+        if (bird.dying) {
+          ctx.rotate(bird.dieAngle ?? 0);
+          ctx.globalAlpha = Math.max(0, (bird.dieTimer ?? 0) / 25);
+        }
         if (bird.cargo) {
           ctx.save(); ctx.translate(0, 84);
           drawAnimalCharacter(ctx, { type: bird.cargo, x: 0, y: 0, feet: 0, phase: 0, dead: false }, true); ctx.restore();
@@ -30,14 +38,17 @@ export function drawBossEncounter(ctx: CanvasRenderingContext2D, a: BossArena, d
         drawSwanAsset(ctx, bird.kind === 'hawk' ? { ...bird, lootRolled: true } : bird); ctx.restore();
       }
       for (const animal of a.animals) {
-        ctx.save(); ctx.translate(animal.x, animal.feet); drawAnimalCharacter(ctx, animal); ctx.restore();
+        ctx.save(); ctx.translate(animal.x, animal.feet);
+        if (animal.dying) {
+          ctx.rotate(animal.dieAngle ?? 0);
+          ctx.globalAlpha = Math.max(0, (animal.dieTimer ?? 0) / 25);
+        }
+        drawAnimalCharacter(ctx, animal); ctx.restore();
       }
       for (const drop of a.drops) {
         if (drop.kind === 'life') {
           ctx.save(); ctx.translate(drop.x, drop.y);
-          ctx.fillStyle = '#ef4444'; ctx.strokeStyle = darkMode ? '#fecaca' : '#7f1d1d'; ctx.lineWidth = 1.5;
-          ctx.beginPath(); ctx.moveTo(0, 9); ctx.bezierCurveTo(-19, -2, -10, -17, 0, -8);
-          ctx.bezierCurveTo(10, -17, 19, -2, 0, 9); ctx.fill(); ctx.stroke(); ctx.restore();
+          drawLifeHeart(ctx, darkMode); ctx.restore();
         }
         else if (drop.kind === 'bag' || drop.kind === 'tender') drawPickupAsset(ctx, { type: drop.kind, x: drop.x, y: drop.y, taken: false }, drop.x, drop.y, a.frame);
         else { ctx.save(); ctx.translate(drop.x, drop.y); ctx.scale(0.65, 0.65); drawBossWeapon(ctx, drop.kind); ctx.restore(); }
@@ -47,17 +58,24 @@ export function drawBossEncounter(ctx: CanvasRenderingContext2D, a: BossArena, d
         ctx.beginPath(); ctx.ellipse(drop.x, drop.y, 4, 7, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); ctx.restore();
       }
       const b = a.boss;
-      if (b.kind === 'janet') drawJanet(ctx, b, a.frame);
-      else if (b.kind === 'paul') drawPaul(ctx, b);
+      if (b.kind === 'janet') drawJanet(ctx, b, a.frame, darkMode, hatSkin);
+      else if (b.kind === 'paul') drawPaul(ctx, b, darkMode, hatSkin);
       else {
       const scale = 0.53; // Bull/Bear-sized body, with the taller kangaroo ears above it.
       ctx.save(); ctx.translate(b.x, b.y); ctx.scale(b.facing * scale, scale);
+      const legPose = (side: number) => {
+        const phase = b.walkPhase + (side > 0 ? 0 : Math.PI);
+        const stride = b.grounded && b.moving ? Math.sin(phase) * 15 : 0;
+        const lift = b.grounded && b.moving ? Math.max(0, Math.cos(phase)) * 10 : 0;
+        return { kneeX: side * 22 + stride * 0.45, kneeY: b.grounded ? -14 - lift * 0.4 : -27,
+          footX: side * 20 + stride, footY: b.grounded ? -3 - lift : -15 };
+      };
       const tailLift = b.grounded ? Math.sin(a.frame * 0.08) * 2 : Math.max(-8, Math.min(14, -b.vy * 2));
       ctx.fillStyle = '#946039'; ctx.beginPath(); ctx.moveTo(-11, -29);
       ctx.bezierCurveTo(-28, -17, -56, -5 + tailLift, -86, -2 + tailLift);
       ctx.bezierCurveTo(-58, 1 + tailLift, -28, -7, -4, -18); ctx.closePath(); ctx.fill();
       ctx.strokeStyle = '#b77b47'; ctx.lineWidth = 13; ctx.lineCap = 'round';
-      for (const side of [-1, 1]) { ctx.beginPath(); ctx.moveTo(side * 10, -30); ctx.lineTo(side * 22, b.grounded ? -14 : -27); ctx.lineTo(side * 20 + Math.sin(a.frame * 0.16 + side) * 5, b.grounded ? -3 : -15); ctx.stroke(); }
+      for (const side of [-1, 1]) { const leg = legPose(side); ctx.beginPath(); ctx.moveTo(side * 10, -30); ctx.lineTo(leg.kneeX, leg.kneeY); ctx.lineTo(leg.footX, leg.footY); ctx.stroke(); }
       const fur = ctx.createLinearGradient(-20, -90, 20, -20);
       fur.addColorStop(0, '#dca56d'); fur.addColorStop(0.55, '#ba7c49'); fur.addColorStop(1, '#815332');
       ctx.fillStyle = fur; ctx.beginPath(); ctx.ellipse(0, -53, 29, 35, -0.15, 0, Math.PI * 2); ctx.fill();
@@ -68,14 +86,18 @@ export function drawBossEncounter(ctx: CanvasRenderingContext2D, a: BossArena, d
       for (const x of [-10, 5]) { ctx.beginPath(); ctx.ellipse(x + 1, -115, 2, 15, 0.15, 0, Math.PI * 2); ctx.fill(); }
       ctx.fillStyle = fur;
       ctx.beginPath(); ctx.ellipse(4, -93, 17, 22, 0, 0, Math.PI * 2); ctx.fill();
+      drawBossHats(ctx, b.fedoraHats, hatSkin, darkMode, 'jerome', 4, -93);
       ctx.fillStyle = '#edbf8a'; ctx.beginPath(); ctx.ellipse(20, -87, 18, 10, 0, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = '#231b19'; ctx.beginPath(); ctx.arc(15, -100, 2.6, 0, Math.PI * 2); ctx.ellipse(35, -88, 4, 3, 0, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(16, -101, 0.9, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#231b19'; ctx.beginPath(); ctx.ellipse(35, -88, 4, 3, 0, 0, Math.PI * 2); ctx.fill();
+      drawBlinkingEye(ctx,15,-100,()=>{
+        ctx.fillStyle = '#231b19'; ctx.beginPath(); ctx.arc(15, -100, 2.6, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(16, -101, 0.9, 0, Math.PI * 2); ctx.fill();
+      },17);
       ctx.strokeStyle = '#6b422c'; ctx.lineWidth = 1.6;
       ctx.beginPath(); ctx.moveTo(9, -105); ctx.lineTo(19, -104); ctx.moveTo(20, -80); ctx.quadraticCurveTo(30, -76, 35, -82); ctx.stroke();
       // Long hind feet and a defined pouch distinguish a kangaroo from an upright bear.
       ctx.fillStyle = '#8d5d37';
-      for (const side of [-1, 1]) { ctx.beginPath(); ctx.ellipse(side * 20 + 8, b.grounded ? -2 : -14, 15, 4, b.grounded ? 0 : -0.2, 0, Math.PI * 2); ctx.fill(); }
+      for (const side of [-1, 1]) { const leg = legPose(side); ctx.beginPath(); ctx.ellipse(leg.footX + 8, leg.footY + 1, 15, 4, b.grounded ? 0 : -0.2, 0, Math.PI * 2); ctx.fill(); }
       ctx.strokeStyle = '#b78353'; ctx.lineWidth = 1.5;
       ctx.beginPath(); ctx.moveTo(-6, -39); ctx.quadraticCurveTo(7, -31, 17, -39); ctx.stroke();
       for (const arm of [0, 1]) {
@@ -98,22 +120,10 @@ export function drawBossEncounter(ctx: CanvasRenderingContext2D, a: BossArena, d
       }
       ctx.restore();
       }
-      if (b.fedoraHats > 0) {
-        ctx.save(); ctx.translate(b.x, b.y - (b.kind === 'janet' ? 90 : b.kind === 'paul' ? 65 : 72));
-        ctx.scale(b.facing * .7, .7);
-        for (let i = 0; i < b.fedoraHats; i++) {
-          ctx.save(); ctx.translate(0, -i * 6); drawCharacterHat(ctx, false, false, darkMode); ctx.restore();
-        }
-        ctx.restore();
-      }
-      const colors = briefcaseColors(darkMode);
       drawBellBlood(ctx, a.blood);
       for (const c of a.cases) {
         ctx.save(); ctx.translate(c.x, c.y); ctx.rotate(a.frame * 0.3);
-        ctx.fillStyle = colors.body; ctx.fillRect(-10, -7, 20, 14);
-        ctx.strokeStyle = colors.outline; ctx.lineWidth = 1.2; ctx.strokeRect(-10, -7, 20, 14);
-        ctx.strokeStyle = colors.handle; ctx.lineWidth = 2; ctx.strokeRect(-4, -10, 8, 3);
-        ctx.fillStyle = colors.clasp; ctx.fillRect(-2, -2, 4, 4); ctx.restore();
+        ctx.translate(-7.5,-6.5);drawEquippedBag(ctx,suitcaseSkin,darkMode);ctx.restore();
       }
 
 }

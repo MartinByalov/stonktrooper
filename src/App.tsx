@@ -10,7 +10,7 @@ import { MobileDiagnostics } from './MobileDiagnostics';
 import type { BossArena } from './boxingRules';
 import { useState, useEffect, useLayoutEffect, useCallback, useRef, type MouseEvent as ReactMouseEvent, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { GameState } from './types';
-import { CandleGame, mobileCanvasZoom } from './CandleGame';
+import { CandleGame } from './CandleGame';
 import { AssetPreview } from './AssetPreview';
 import { sound } from './audio';
 import { SoundMenu } from './SoundMenu';
@@ -19,7 +19,7 @@ import { ShareDD } from './ShareDD';
 import { SiteFooter } from './SiteFooter';
 import type { SiteSection } from './SiteFooter';
 import { sharedScore } from './shareLinks';
-import { Maximize, Minimize, Pause, Play, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Bell, Maximize, Minimize, Pause, Play, Settings, X, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export default function App() {
   const [mobileDevice, setMobileDevice] = useState(() => window.matchMedia('(pointer: coarse)').matches);
@@ -163,7 +163,7 @@ export default function App() {
       const desktopFeed = app.querySelector('.desktop-live-feed-bar');
       app.style.setProperty('--desktop-feed-bottom', `${desktopFeed && desktopFeed.getBoundingClientRect().height > 0 ? desktopFeed.getBoundingClientRect().bottom : rect.top}px`);
       const feedInHeader = !!headerFeed && headerFeed.getBoundingClientRect().width > 0;
-      const feedHeight = !liveFeedVisible || feedInHeader ? 0 : headerHeight > 0 ? headerHeight : rect.height * 48 / 840 * mobileCanvasZoom();
+      const feedHeight = !liveFeedVisible || feedInHeader ? 0 : headerHeight > 0 ? headerHeight : rect.height * 48 / 840;
       app.style.setProperty('--live-feed-bottom', `${rect.top + feedHeight}px`);
       app.style.setProperty('--live-feed-height', `${feedHeight}px`);
       const footerRect = footer?.getBoundingClientRect();
@@ -273,6 +273,7 @@ export default function App() {
   const [currentResult, setCurrentResult] = useState(0);
   const boxingActive = useRef(false);
   const bossEncounter = useRef<BossArena | null>(null);
+  const [bossRequest, setBossRequest] = useState(0);
 
   const handleStateChange = useCallback((nextState: GameState) => {
     if (boxingActive.current) return;
@@ -500,6 +501,12 @@ export default function App() {
             }} className="px-2.5 py-1.5 rounded border border-[var(--line)] bg-[var(--alt)] text-xs text-[var(--green)] disabled:opacity-40">↕ Inverted</button>
             <button type="button" title="Music styles" aria-expanded={soundMenuOpen} onClick={() => { if (state === 'play') setState('paused'); setSoundMenuOpen(true); }} className="px-2.5 py-1.5 rounded border border-[var(--line)] bg-[var(--alt)] text-xs text-[var(--green)]">♫ Music</button>
             </div>
+            <button type="button" title="Bell mode" aria-label="Activate Bell mode"
+              disabled={state !== 'play' || !!bossEncounter.current}
+              onClick={() => { sound.unlock(); setBossRequest(request => request + 1); }}
+              className="mobile-header-control header-boss-control px-2.5 py-1.5 rounded border border-[var(--line)] bg-[var(--alt)] text-[var(--green)] disabled:opacity-40 cursor-pointer">
+              <Bell className="w-3.5 h-3.5" aria-hidden="true" />
+            </button>
             {(state === 'play' || state === 'paused') && <button
               type="button"
               onClick={() => setState(current => current === 'play' ? 'paused' : 'play')}
@@ -509,6 +516,11 @@ export default function App() {
               className="mobile-header-control header-pause-control"
             >
               {state === 'paused' ? <Play className="w-3.5 h-3.5" /> : <Pause className="w-3.5 h-3.5" />}
+            </button>}
+            {state === 'over' && <button type="button" title="Settings" aria-label="Settings" aria-haspopup="dialog"
+              onClick={() => setSiteSection('Settings')}
+              className="result-settings-control px-2.5 py-1.5 rounded border border-[var(--line)] bg-[var(--alt)] hover:border-[var(--green)] text-[var(--green)] transition-colors cursor-pointer">
+              <Settings className="w-3.5 h-3.5" />
             </button>}
             <button
               type="button"
@@ -542,6 +554,7 @@ export default function App() {
             onScoreUpdate={handleScoreUpdate}
             onGameOver={handleGameOver}
             bossEncounter={bossEncounter}
+            bossRequest={bossRequest}
             printerRequest={printerRequest}
             invertedRequest={invertedRequest}
             onInvertedActivated={() => setInvertedRequest(0)}
@@ -579,7 +592,8 @@ export default function App() {
                             aria-live="polite"
                             onClick={handleModeSelectorClick}
                             onKeyDown={handleModeSelectorKeyDown}
-                            className={`menu-action-button mobile-portrait-action-button how-to-mode-selector w-full rounded-lg border-0 text-white transition-all hover:brightness-105 ${selectedMode === 'easy' ? 'bg-[#38bdf8]' : 'bg-[#ef5350]'}`}
+                            data-mode={selectedMode}
+                            className="menu-action-button mobile-portrait-action-button how-to-mode-selector w-full rounded-lg border-0 transition-all hover:brightness-105"
                           >
                             {selectedMode === 'hard' && <ChevronLeft className="how-to-mode-selector-arrow how-to-mode-selector-arrow-left" aria-hidden="true" />}
                             {selectedMode === 'easy' ? 'Git Gud' : 'Hard Mode'}
@@ -590,7 +604,7 @@ export default function App() {
                           type="button"
                           onClick={handleStartOrResume}
                           disabled={selectedMode !== 'hard'}
-                          className="menu-action-button mobile-portrait-action-button w-full rounded-lg bg-[#08795c] hover:brightness-110 active:brightness-95 text-white font-bold text-sm sm:text-base transition-all shadow-lg flex items-center justify-center gap-2 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                          className="landing-menu-play-button menu-action-button mobile-portrait-action-button w-full rounded-lg bg-[#08795c] hover:brightness-110 active:brightness-95 text-white font-bold text-sm sm:text-base transition-all shadow-lg flex items-center justify-center gap-2 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                         >
                           <span>Start</span>
                           <svg className="new-game-space-key" viewBox="0 0 36 6" aria-hidden="true" focusable="false"><path d="M1 1V5H35V1" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
@@ -607,7 +621,7 @@ export default function App() {
                 <div className={`game-result ${state === 'over' ? 'game-result-over' : ''} relative isolate overflow-hidden max-w-md w-full text-center bg-[var(--panel)] border border-[var(--line)] rounded-xl p-6 sm:p-7 shadow-2xl`}>
                   <div className={`relative z-10 ${state === 'over' ? 'game-result-content pt-28 pb-4' : ''}`}>
 
-                    {state === 'paused' && <h2 className="font-black tracking-tight mb-2 font-mono-term text-3xl sm:text-4xl" style={{ color: theme === 'dark' ? '#54d3ac' : '#08795c' }}>Margin Call</h2>}
+                    {state === 'paused' && <h2 className="margin-call-title font-black tracking-tight mb-2 font-mono-term text-3xl sm:text-4xl">Margin Call</h2>}
 
 
                     {/* Score summary on game over */}
@@ -633,7 +647,7 @@ export default function App() {
                       <button
                         type="button"
                         onClick={handleStartOrResume}
-                        className="margin-call-action w-full rounded-lg bg-[#08795c] hover:brightness-110 active:brightness-95 text-white font-bold font-mono-term text-sm transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer"
+                        className="continue-run margin-call-action w-full rounded-lg bg-[#08795c] hover:brightness-110 active:brightness-95 text-white font-bold font-mono-term text-sm transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer"
                       >
                         <span>{state === 'paused' ? 'Continue' : 'New Game'}</span>
                         <svg className="new-game-space-key" viewBox="0 0 36 6" aria-hidden="true" focusable="false"><path d="M1 1V5H35V1" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
@@ -678,6 +692,11 @@ export default function App() {
         {/* Global Footer */}
         <SiteFooter highContrast={highContrast} onToggleHighContrast={() => setHighContrast(current => !current)} onResetDefaults={resetDefaults} volume={soundEnabled ? volume : 0} onVolumeChange={changeVolume} animationsEnabled={animationsEnabled} onToggleAnimations={() => setAnimationsEnabled(current => !current)} liveFeedEnabled={liveFeedEnabled} onToggleLiveFeed={() => setLiveFeedEnabled(current => !current)} onToggleTheme={() => setTheme(current => current === 'dark' ? 'light' : 'dark')} theme={theme} section={siteSection} setSection={setSiteSection} onOpen={() => { if (state === 'play') setState('paused'); }} />
         <MobileDiagnostics />
+
+        <div className="rotate-phone-placeholder" role="status">
+          <img src={`${import.meta.env.BASE_URL}images/rotate-phone.png`}
+            width={941} height={1672} alt="Rotate your phone to landscape to play Stonktrooper" draggable={false} />
+        </div>
 
 
       </div>

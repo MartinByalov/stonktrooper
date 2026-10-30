@@ -1,6 +1,11 @@
+import { drawBellLives } from './bellLivesHud';
+import { drawNearBriefcaseArm, drawSuitDetails, drawSuitCollar, drawRunnerLeg, drawFarRunnerArm, drawJointedSuitArm } from './cosmeticModels';
+import { actionArmPose, runnerCarryPose, runnerBagThrowPose } from './characterPose';
+import { drawProfileBackLayers } from './profileLayers';
+import { hatMetrics } from './hatPose';
 // Browser game module for CandleGame.
 import { drawPigeonStain } from './pigeonStain';
-import { briefcaseColors, drawCharacterHat, drawPickupAsset, drawSwanAsset, drawApeAsset, drawApeHead, drawHumanHead, drawFallingCharacter, APE_SCALE } from './assetRenderer';
+import { briefcaseColors, drawCharacterHat, drawPickupAsset, drawSwanAsset, drawApeAsset, drawApeHead, drawHumanHead, drawApeHat, drawFallingCharacter, APE_SCALE } from './assetRenderer';
 import React, { useEffect, useLayoutEffect, useRef, useCallback } from 'react';
 import { briefcaseArmPose } from './characterPose';
 import { randomDelay } from './randomTiming';
@@ -59,6 +64,7 @@ interface CandleGameProps {
   whaleDemo?: boolean;
   candleDemo?: boolean;
   printerRequest?: number;
+  bossRequest?: number;
   invertedRequest?: number;
   onInvertedActivated?: () => void;
   hawkRequest?: number;
@@ -166,6 +172,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
   onGameOver,
   bossEncounter,
   printerRequest = 0,
+  bossRequest = 0,
   invertedRequest = 0,
   onInvertedActivated,
   onPrinterActivated,
@@ -178,6 +185,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
   const canvasDisplay = useRef({ width: W, height: H });
   const scoreInset = useRef(14);
   const scoreTopInset = useRef(14);
+  const desktopHud = useRef({ left: 14, width: 160 });
   const renderViewport = useRef(currentChartViewport());
   const headerFeedRef = useRef<HTMLCanvasElement | null>(null);
   const headerFeedActive = useRef(false);
@@ -192,6 +200,10 @@ export const CandleGame: React.FC<CandleGameProps> = ({
       const bounds = canvas.getBoundingClientRect();
       canvasDisplay.current = { width: bounds.width, height: bounds.height };
       const logo = canvas.closest('.game-app')?.querySelector('.header-logo-frame');
+      if (logo) {
+        const rect = logo.getBoundingClientRect();
+        desktopHud.current = { left: Math.max(0, rect.left - bounds.left), width: rect.width };
+      }
       scoreTopInset.current = parseFloat(getComputedStyle(canvas).getPropertyValue('--content-edge-inset')) || 12.1666666667;
       const header = canvas.closest('.game-app')?.querySelector('header');
       scoreInset.current = mobile ? Math.max(scoreTopInset.current, header ? parseFloat(getComputedStyle(header).paddingLeft) || 0 : 0)
@@ -226,6 +238,8 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     observer.observe(canvas);
     const header = canvas.closest('.game-app')?.querySelector('header');
     if (header) observer.observe(header);
+    const logo = canvas.closest('.game-app')?.querySelector('.header-logo-frame');
+    if (logo) observer.observe(logo);
     const headerFeeds = canvas.closest('.game-app')?.querySelectorAll('.mobile-header-feed, .desktop-live-feed') ?? [];
     const pauseTicker = () => { tickerHoverPausedRef.current = true; };
     const resumeTicker = () => { tickerHoverPausedRef.current = false; };
@@ -799,6 +813,15 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     bossEncounter.current = encounter;
     sound.playBell();
   }, [bossEncounter]);
+
+  // Do not replay a previous header request when New Game remounts the canvas.
+  const handledBossRequest = useRef(bossRequest);
+  useLayoutEffect(() => {
+    if (bossRequest > 0 && handledBossRequest.current !== bossRequest) {
+      handledBossRequest.current = bossRequest;
+      if (gameRef.current.currentState === 'play') spawnBoss();
+    }
+  }, [bossRequest, spawnBoss]);
 
   const awardEnemy = useCallback((enemy: Animal | Swan) => {
     const g = gameRef.current;
@@ -2329,88 +2352,41 @@ export const CandleGame: React.FC<CandleGameProps> = ({
       ctx.scale(1 + Math.sin(g.p.ph) * 0.025, 1 - Math.sin(g.p.ph) * 0.035);
     }
     if (g.p.carry > 0 && g.p.shieldKind === 'bag') ctx.rotate(0.08);
-    const backLegX = -stride * 9;
-    const frontLegX = stride * 9;
-
-    // Back leg
-    ctx.strokeStyle = '#18212f';
-    ctx.lineWidth = 5;
-    ctx.lineCap = 'round';
-    ctx.beginPath();
-    ctx.moveTo(-2, -18);
-    ctx.lineTo(1 + backLegX * 0.5, -9);
-    ctx.lineTo(-3 + backLegX, g.p.air ? -5 : -2);
-    ctx.stroke();
-
-    // Back shoe
-    ctx.fillStyle = '#090d16';
-    ctx.fillRect(-5 + backLegX, g.p.air ? -5 : -3, 8, 3.5);
-
-    // Suit Jacket Torso
-    if (g.p.carry > 0 && g.p.shieldKind !== 'bag') {
-      // Far arm is occluded by the torso and head drawn afterward.
-      ctx.strokeStyle = '#18212f'; ctx.lineWidth = 3.5; ctx.lineCap = 'round';
-      ctx.beginPath(); ctx.moveTo(-1, -32); ctx.lineTo(0, -46); ctx.lineTo(2, -60); ctx.stroke();
-      ctx.fillStyle = '#eab28e'; ctx.fillRect(0, -63, 3.5, 4);
+    const wingPhase=window.matchMedia('(prefers-reduced-motion: reduce)').matches?0:g.globalFrame/60;
+    const carryPose=runnerCarryPose(g.p.shieldKind==='bag'?'bag':'diamond',g.p.ph);
+    const actionArm=(front:boolean,target:{x:number;y:number},palm=true)=>{
+      const arm=actionArmPose(front,target,front?1:-1);
+      drawJointedSuitArm(ctx,'suits-classic',theme==='dark',arm.shoulder,arm.elbow,arm.hand,front?4.5:3.5,3);
+      if(palm){ctx.fillStyle=front?'#fed7aa':'#eab28e';ctx.beginPath();ctx.ellipse(arm.hand.x,arm.hand.y,1.8,2.25,0,0,Math.PI*2);ctx.fill();}
+      return arm.hand;
+    };
+    drawProfileBackLayers(() => {
+    if(!g.p)return;
+    // Match the reference back-arm poses: the far arm swings while running,
+    // braces the diamond during its overhead hold, and trails during a throw.
+    if (g.p.carry > 0 && g.bagThrowAnimTimer <= 0) {
+      actionArm(false,carryPose.far.hand);
+    } else if (g.p.carry <= 0 && g.throwAnimTimer > 0 && g.bagThrowAnimTimer <= 0) {
+      actionArm(false,{x:-8,y:-20});
+    } else if (g.p.carry <= 0 && g.throwAnimTimer <= 0 && g.bagThrowAnimTimer <= 0) {
+      drawFarRunnerArm(ctx,'suits-classic',theme==='dark',stride);
     }
-    // Far-side left arm stays behind the torso, opposite the right-hand stride.
-    if (g.p.carry <= 0 && g.throwAnimTimer > 0 && g.bagThrowAnimTimer <= 0) {
-      ctx.strokeStyle = '#18212f'; ctx.lineWidth = 4;
-      ctx.beginPath(); ctx.moveTo(0, -31); ctx.lineTo(-10, -23); ctx.lineTo(-15, -15); ctx.stroke();
-    }
-    if (g.p.carry <= 0 && g.throwAnimTimer <= 0 && g.bagThrowAnimTimer <= 0) {
-      ctx.strokeStyle = '#18212f';
-      ctx.lineWidth = 4;
-      ctx.beginPath();
-      ctx.moveTo(0, -31);
-      ctx.lineTo(stride * 4, -21);
-      ctx.lineTo(stride * 8, -13);
-      ctx.stroke();
-    }
-    ctx.fillStyle = '#1e293b';
-    ctx.beginPath();
-    ctx.moveTo(-3, -35);
-    ctx.quadraticCurveTo(4, -38, 8, -32);
-    ctx.lineTo(5, -17);
-    ctx.lineTo(-5, -17);
-    ctx.closePath();
-    ctx.fill();
 
-    // White Shirt Collar
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(4, -34, 3, 7);
+    }, () => {
+      if(!g.p)return;
+      drawRunnerLeg(ctx, 'suits-classic', 'shoes-classic', theme === 'dark', stride, false, g.p.air, wingPhase);
+      drawRunnerLeg(ctx, 'suits-classic', 'shoes-classic', theme === 'dark', stride, true, g.p.air, wingPhase);
+    });
 
-    // Flowing Tie
-    const tieWave = Math.sin(g.p.ph * 1.5) * 2.5;
-    ctx.fillStyle = '#e11d48';
-    ctx.beginPath();
-    ctx.moveTo(5, -33);
-    ctx.lineTo(7, -33);
-    ctx.lineTo(5 - tieWave, -23);
-    ctx.lineTo(3 - tieWave, -23);
-    ctx.closePath();
-    ctx.fill();
-
-    // Front leg
-    ctx.strokeStyle = '#334155';
-    ctx.lineWidth = 5.2;
-    ctx.beginPath();
-    ctx.moveTo(2, -18);
-    ctx.lineTo(3 + frontLegX * 0.5, -9);
-    ctx.lineTo(2 + frontLegX, g.p.air ? -7 : -2);
-    ctx.stroke();
-
-    // Front shoe
-    ctx.fillStyle = '#090d16';
-    ctx.fillRect(2 + frontLegX, g.p.air ? -7 : -3, 9, 3.5);
+    // Torso and legs both occlude the entire far arm, including its hand.
+    drawSuitDetails(ctx, 'suits-classic', theme === 'dark', g.p.ph);
 
     // Head
     if (g.apeTimer > 0) {
-      ctx.save(); ctx.translate(3, -42); ctx.scale(0.8, 0.8); drawApeHead(ctx, g.playerHat === 'default' && g.fedoraTimer <= 0);
-      if (g.playerHat === 'standard') drawCharacterHat(ctx, false, false, theme === 'dark'); ctx.restore();
-      ctx.fillStyle = '#ffffff'; ctx.fillRect(-3, -35, 8, 2);
+      ctx.save(); ctx.translate(3, -42); ctx.scale(0.8, 0.8); drawApeHead(ctx, false);
+      if (g.playerHat !== 'none' && g.fedoraTimer <= 0 && g.fedoraWindup <= 0 && !g.flyingFedora) drawApeHat(ctx, true, theme === 'dark'); ctx.restore();
     } else {
-    ctx.save(); ctx.translate(3, -42); ctx.scale(0.8, 0.8); drawHumanHead(ctx, g.playerHat !== 'none', theme === 'dark');
+    ctx.save(); ctx.translate(3, -42); ctx.scale(0.8, 0.8); drawHumanHead(ctx, g.playerHat !== 'none', theme === 'dark', 'hats-classic', g.globalFrame / 60, weaponHatCount(g.fedoraTimer, g.fedoraWindup, !!g.flyingFedora) === 0);
     if (g.hawkTimer > 0) {
       ctx.fillStyle = '#fff7ed'; ctx.beginPath(); ctx.ellipse(3, 0, 7, 9, 0, 0, Math.PI * 2); ctx.fill();
       ctx.fillStyle = '#ef4444'; ctx.beginPath(); ctx.arc(10, 0, 3, 0, Math.PI * 2); ctx.fill();
@@ -2419,15 +2395,14 @@ export const CandleGame: React.FC<CandleGameProps> = ({
       ctx.fillStyle = '#fb923c'; ctx.beginPath(); ctx.arc(-4, -2, 4, 0, Math.PI * 2); ctx.fill();
     }
     ctx.restore();
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(-3, -35, 8, 2);
 
     }
 
     for (let i = 0; i < weaponHatCount(g.fedoraTimer, g.fedoraWindup, !!g.flyingFedora); i++) {
-      // Replace the monkey's captain cap with the weapon fedora at head level.
-      ctx.save(); ctx.translate(3, (g.apeTimer > 0 ? -42 : -50) - i * 11); ctx.scale(0.8, 0.8);
-      drawCharacterHat(ctx, false, false, theme === 'dark'); ctx.restore();
+      // Weapon hats replace the ape captain cap; humans retain their worn hat.
+      ctx.save(); ctx.translate(3, -42 - (i + (g.apeTimer <= 0 && g.playerHat !== 'none' ? 1 : 0)) * hatMetrics('hats-classic').stackHeight * .8); ctx.scale(0.8, 0.8);
+      if(g.apeTimer>0)drawApeHat(ctx,false,theme==='dark','hats-classic',g.globalFrame/60,i === weaponHatCount(g.fedoraTimer, g.fedoraWindup, !!g.flyingFedora)-1);
+      else drawCharacterHat(ctx, false, false, theme === 'dark', 'hats-classic', g.globalFrame / 60, i === weaponHatCount(g.fedoraTimer, g.fedoraWindup, !!g.flyingFedora)-1); ctx.restore();
     }
 
     if (g.hatSoiled && (g.playerHat !== 'none' || g.fedoraTimer > 0)) {
@@ -2437,85 +2412,49 @@ export const CandleGame: React.FC<CandleGameProps> = ({
       drawPigeonStain(ctx, captain ? 6 : 3, stainY, !captain && theme === 'light');
     }
 
+    // Complete neck/chest layers before every foreground arm pose, including
+    // throws and overhead holds. Repainting them afterwards cuts the sleeve.
+    drawSuitCollar(ctx, 'suits-classic', theme === 'dark', g.p.ph, g.p.air, g.p.vy);
+
     // --- CASE A: DIAMOND HANDS — HOLDING DIAMOND PROUDLY OVERHEAD WITH RAISED ARMS ---
     if (g.bagThrowAnimTimer > 0) {
-      const reach = Math.min(1, g.bagThrowAnimTimer / 8);
-      ctx.strokeStyle = '#334155'; ctx.lineWidth = 4.5; ctx.lineCap = 'round';
-      ctx.beginPath();
-      ctx.moveTo(3, -31);
-      ctx.lineTo(3 - 10 * reach, -47 - 7 * reach);
-      ctx.lineTo(3 + 9 * reach, -64 - 15 * reach);
-      ctx.stroke();
-      ctx.fillStyle = '#fed7aa';
-      ctx.beginPath(); ctx.arc(3 + 9 * reach, -64 - 15 * reach, 3, 0, Math.PI * 2); ctx.fill();
-    } else if (g.p.carry > 0 && g.p.shieldKind === 'bag') {
-      // Heavy load is carried low in front, with bent elbows and both hands.
-      const loadBob = Math.sin(g.p.ph * 2) * 0.8;
-      ctx.save();
-      ctx.translate(0, loadBob);
-      ctx.strokeStyle = '#18212f'; ctx.lineWidth = 4;
-      ctx.beginPath(); ctx.moveTo(-3, -31); ctx.lineTo(5, -21); ctx.lineTo(17, -17); ctx.stroke();
-      ctx.save(); ctx.translate(21, -12);
-      drawPickupAsset(ctx, { type: 'bag', x: 0, y: 0, taken: false }, 0, 0);
-      ctx.restore();
-      ctx.strokeStyle = '#334155'; ctx.lineWidth = 4.5;
-      ctx.beginPath(); ctx.moveTo(3, -31); ctx.lineTo(10, -20); ctx.lineTo(24, -17); ctx.stroke();
-      ctx.fillStyle = '#fed7aa';
-      ctx.beginPath(); ctx.arc(17, -17, 2.5, 0, Math.PI * 2); ctx.fill();
-      ctx.beginPath(); ctx.arc(24, -17, 2.5, 0, Math.PI * 2); ctx.fill();
-      ctx.restore();
-    } else if (g.p.carry > 0) {
-      ctx.strokeStyle = '#334155';
-      ctx.lineWidth = 4.5;
-      ctx.lineCap = 'round';
-      ctx.beginPath();
-      // Near right arm is the only fully visible arm in this profile.
-      ctx.moveTo(3, -32);
-      ctx.lineTo(7, -46);
-      ctx.lineTo(5, -60);
-      ctx.stroke();
-
-      // Hands holding bottom tip of diamond
-      ctx.fillStyle = '#fed7aa';
-      ctx.fillRect(3.5, -63, 4.5, 4.5);
-
-      // Identical translucent 3D asset for pickups and the carried shield.
-      drawPickupAsset(ctx, { type: 'diamond', x: 0, y: 0, taken: false }, 0, -74, g.globalFrame);
-
+      const pose=runnerBagThrowPose(g.bagThrowAnimTimer,g.bagThrowDirection);
+      if(pose.holding) {
+        ctx.save();ctx.translate(pose.asset.x,pose.asset.y);ctx.scale(pose.asset.scale,pose.asset.scale);
+        drawPickupAsset(ctx,{type:'bag',x:0,y:0,taken:false},0,0,g.globalFrame,theme==='dark');ctx.restore();
+      }
+      actionArm(true,pose.near.hand);
     } else if (g.fedoraWindup > 0) {
-      const arm = fedoraArmPose(g.fedoraWindup);
-      ctx.strokeStyle = '#334155'; ctx.lineWidth = 4.5;
-      ctx.lineCap = 'round';
-      ctx.beginPath(); ctx.moveTo(3, -31); ctx.lineTo(arm.elbowX, arm.elbowY);
-      ctx.lineTo(arm.handX, arm.handY); ctx.stroke();
-      ctx.fillStyle = '#fed7aa';
-      ctx.beginPath(); ctx.arc(arm.handX, arm.handY, 3, 0, Math.PI * 2); ctx.fill();
-      ctx.save(); ctx.translate(arm.handX, arm.handY - 3);
-      ctx.scale(0.65, 0.65);
-      ctx.translate(0, 12);
-      drawCharacterHat(ctx, false, false, theme === 'dark'); ctx.restore();
+      const arm=fedoraArmPose(g.fedoraWindup);
+      const hand=actionArm(true,{x:arm.handX,y:arm.handY},false);
+      const grab=Math.max(0,Math.min(1,(1-g.fedoraWindup/FEDORA_WINDUP)/.4));
+      const stack=weaponHatCount(g.fedoraTimer,g.fedoraWindup,!!g.flyingFedora);
+      const headY=-42-stack*hatMetrics('hats-classic').stackHeight*.8;
+      ctx.save();ctx.translate(3+(hand.x-3)*grab,headY+(hand.y+5-headY)*grab);
+      ctx.scale(.8,.8);
+      drawCharacterHat(ctx,false,false,theme==='dark','hats-classic',g.globalFrame/60);ctx.restore();
+      ctx.fillStyle='#fed7aa';ctx.beginPath();ctx.ellipse(hand.x,hand.y,1.8,2.25,0,0,Math.PI*2);ctx.fill();
+    } else if (g.p.carry > 0 && g.p.shieldKind === 'bag') {
+      const {asset,near}=carryPose;
+      ctx.save();ctx.translate(asset.x,asset.y);ctx.scale(asset.scale,asset.scale);
+      drawPickupAsset(ctx,{type:'bag',x:0,y:0,taken:false},0,0,g.globalFrame,theme==='dark');ctx.restore();
+      actionArm(true,near.hand);
+    } else if (g.p.carry > 0) {
+      const {asset,near}=carryPose;
+      actionArm(true,near.hand,false);
+      ctx.save();ctx.translate(asset.x,asset.y);ctx.scale(asset.scale,asset.scale);
+      drawPickupAsset(ctx,{type:'diamond',x:0,y:0,taken:false},0,0,g.globalFrame,theme==='dark');ctx.restore();
+      ctx.fillStyle='#fed7aa';ctx.beginPath();ctx.ellipse(near.hand.x,near.hand.y,1.8,2.25,0,0,Math.PI*2);ctx.fill();
     } else if (g.fedoraTimer > 0 || g.flyingFedora) {
-      const arm = fedoraArmPose(0);
-      ctx.strokeStyle = '#334155'; ctx.lineWidth = 4.5;
-      ctx.lineCap = 'round';
-      ctx.beginPath(); ctx.moveTo(3, -31); ctx.lineTo(arm.elbowX, arm.elbowY);
-      ctx.lineTo(arm.handX, arm.handY); ctx.stroke();
-      ctx.fillStyle = '#fed7aa'; ctx.fillRect(arm.handX - 2, arm.handY - 2, 5, 4);
+      const release=fedoraArmPose(.000001),rest=briefcaseArmPose(g.p.air,g.p.vy,stride);
+      const follow=Math.max(0,Math.min(1,g.throwAnimTimer/8));
+      const arm={handX:rest.handX+(release.handX-rest.handX)*follow,handY:rest.handY+(release.handY-rest.handY)*follow};
+      if(follow>0) actionArm(true,{x:arm.handX,y:arm.handY});
+      else drawNearBriefcaseArm(ctx,'suits-classic','suitcase-classic',theme==='dark',stride,g.p.air,g.p.vy,false);
     } else if (g.throwAnimTimer > 0) {
       const reach = Math.min(1, g.throwAnimTimer / 8);
       // --- CASE B: THROW ANIMATION (Pitching arm thrusting forward to launch briefcase) ---
-      ctx.strokeStyle = '#334155';
-      ctx.lineWidth = 4.5;
-      ctx.lineCap = 'round';
-      ctx.beginPath();
-      ctx.moveTo(3, -31);
-      ctx.lineTo(3 + 11 * reach, -21 - 5 * reach);
-      ctx.lineTo(3 + 21 * reach, -12 - 10 * reach);
-      ctx.stroke();
-
-      // Throwing hand
-      ctx.fillStyle = '#fed7aa';
-      ctx.fillRect(1 + 21 * reach, -14 - 10 * reach, 5, 4.5);
+      actionArm(true,{x:3+15*reach,y:-16-12*reach});
 
 
     }
@@ -2523,45 +2462,9 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     // Visible right arm holds the case in the right-profile view.
     // Draw after the torso: the near-side right hand and case remain visible.
     if (g.p.carry <= 0 && g.throwAnimTimer <= 0 && g.bagThrowAnimTimer <= 0 && g.fedoraWindup <= 0 && g.fedoraTimer <= 0 && !g.flyingFedora) {
-      const arm = briefcaseArmPose(g.p.air, g.p.vy, stride);
-      const rightHandX = arm.handX;
-      const rightHandY = arm.handY;
-      ctx.strokeStyle = '#334155';
-      ctx.lineWidth = 4.5;
-      ctx.beginPath();
-      ctx.moveTo(3, -31);
-      ctx.lineTo(arm.elbowX, arm.elbowY);
-      ctx.lineTo(rightHandX, rightHandY);
-      ctx.stroke();
-
-      ctx.fillStyle = '#fed7aa';
-      ctx.fillRect(rightHandX - 2.5, rightHandY - 1, 4.5, 4);
-
       // Briefcase held low (hidden if currently in flight)
       const isBriefcaseFlying = g.cases.some((c) => c.life > 0 && c.kind !== 'banana');
-      if (!isBriefcaseFlying) {
-        ctx.save();
-        ctx.translate(rightHandX - 8, rightHandY + 3);
-        ctx.rotate(arm.angle);
-
-        const colors = briefcaseColors(theme === 'dark');
-        ctx.fillStyle = colors.body;
-        ctx.fillRect(-2, 0, 19, 13);
-        ctx.strokeStyle = colors.outline;
-        ctx.lineWidth = 1;
-        ctx.strokeRect(-2, 0, 19, 13);
-
-        // Handle follows the current theme.
-        ctx.strokeStyle = colors.handle;
-        ctx.lineWidth = 2;
-        ctx.strokeRect(5, -3, 7, 3);
-
-        // Contrasting clasp in the middle.
-        ctx.fillStyle = colors.clasp;
-        ctx.fillRect(6, 4, 3.5, 2.5);
-
-        ctx.restore();
-      }
+      drawNearBriefcaseArm(ctx, 'suits-classic', 'suitcase-classic', theme === 'dark', stride, g.p.air, g.p.vy, !isBriefcaseFlying);
     }
 
     ctx.restore();
@@ -2694,11 +2597,13 @@ export const CandleGame: React.FC<CandleGameProps> = ({
 
 
       ctx.font = `bold ${feedFontSize}px monospace`;
-      if (bossEncounter.current || g.printerTimer > 0) {
+      // The active boss owns the enabled header feed on every browser layout.
+      const bossReplacesNews = !!bossEncounter.current;
+      if (bossReplacesNews || g.printerTimer > 0) {
         ctx.textAlign = 'center';
         ctx.fillStyle = theme === 'light' ? '#08795c' : '#55d6ae';
         ctx.font = `bold ${mobile || header ? feedFontSize : 13}px monospace`;
-        if (bossEncounter.current) {
+        if (bossReplacesNews) {
           ctx.fillStyle = bossColors(bossEncounter.current?.boss.kind ?? 'jerome', theme === 'dark').foreground;
           writeCentered(bossName(bossEncounter.current?.boss.kind ?? 'jerome'), (W) / 2);
         } else {
@@ -2718,7 +2623,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
       }
       let tickerX = g.tickerScrollX;
       let itemIndex = 0;
-      while (!bossEncounter.current && g.printerTimer <= 0 && tickerX < W + 500) {
+      while (!bossReplacesNews && g.printerTimer <= 0 && tickerX < W + 500) {
         if (itemIndex >= g.tickerQueue.length) {
           g.tickerQueue.push({ news: getTickerNews(g.tickerQueue.at(-1)?.news.headline), width: 0 });
         }
@@ -2731,7 +2636,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
         }
         const message = cached.message;
         item.width = cached.width;
-        ctx.fillStyle = item.news.sentiment === 'bearish' ? (theme === 'light' ? '#b91c1c' : '#f87171') : item.news.sentiment === 'bullish' ? (theme === 'light' ? '#15803d' : '#4ade80') : (theme === 'light' ? '#0369a1' : '#38bdf8');
+        ctx.fillStyle = theme === 'light' ? '#569DCC' : '#38bdf8';
         writeCentered(message, tickerX);
         tickerX += item.width;
       }
@@ -3087,43 +2992,63 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     const hi = Math.min(g.C.length - 1, Math.floor((g.p ? g.p.x : 0) / CW));
     const hc = g.C[hi];
     const totalScoreVal = Math.max(0, g.score - g.penalty + g.activityPips);
+    let desktopPipsHeight = 0;
 
     if (hc) {
       ctx.font = '900 15px monospace';
       ctx.textAlign = 'left';
       ctx.fillStyle = '#08795c';
-      if (encounter) {
-        ctx.fillStyle = '#ef4444'; ctx.font = 'bold 25px sans-serif';
+      if (encounter && feedLayout.current.mobile) {
+        ctx.save();
+        ctx.font = 'bold 25px sans-serif';
+        const heartsWidth = ctx.measureText('♥♥♥').width + 20;
+        ctx.fillStyle = theme === 'light' ? '#000000' : '#ffffff';
+        ctx.beginPath();
+        ctx.roundRect(W - AX - heartsWidth - 4, TAPE_HEIGHT, heartsWidth, 34, [0, 0, 4, 4]);
+        ctx.fill();
+        ctx.restore();
         const lives = Math.max(0, Math.min(3, encounter.player.lives));
-        ctx.textAlign = 'right';
-        ctx.fillText('♥'.repeat(lives) + '♡'.repeat(3 - lives), W - AX - 14, TAPE_HEIGHT + 26);
+        ctx.save();
+        ctx.translate(W - AX - heartsWidth - 4, TAPE_HEIGHT);
+        drawBellLives(ctx, lives, heartsWidth, 34, 25, theme === 'dark');
+        ctx.restore();
         ctx.textAlign = 'left';
       }
       {
         const label = 'PIPS: ';
         const value = totalScoreVal.toLocaleString();
         const text = `${label}${value}`;
-        const padding = scoreInset.current;
         const bounds = canvasDisplay.current;
         const scoreZoom = mobileCanvasZoom();
         const scoreScaleX = Math.max(0.01, bounds.width / W * scoreZoom);
         const scoreScaleY = Math.max(0.01, bounds.height / H * scoreZoom);
         const mobileScore = feedLayout.current.mobile;
         const textScaleX = mobileScore ? scoreScaleY / scoreScaleX : 1;
-        const paddingX = (padding - bounds.width / 2 * (1 - scoreZoom)) / (scoreScaleX * textScaleX);
         ctx.save();
         ctx.scale(textScaleX, 1);
         const scoreFontFamily = '"JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace';
-        const maxScoreWidth = mobileScore ? (W - AX) / textScaleX - padding * 2 / (scoreScaleX * textScaleX) : W - AX - padding * 2;
+        // Convert measured CSS logo bounds through both mobile canvas zoom and
+        // the text aspect correction, so the strip shares the logo's edges.
+        const desktopStripLeft = (desktopHud.current.left - bounds.width / 2 * (1 - scoreZoom)) / (scoreScaleX * textScaleX);
+        const desktopStripWidth = desktopHud.current.width / (scoreScaleX * textScaleX);
+        const maxScoreWidth = Math.max(1, desktopStripWidth - 16 / (scoreScaleX * textScaleX));
         const baseFontSize = mobileScore ? 16 / scoreScaleY : 15;
         ctx.font = `900 ${baseFontSize}px ${scoreFontFamily}`;
         const baseWidth = ctx.measureText(text).width;
         const fontSize = Math.min(baseFontSize, baseFontSize * maxScoreWidth / Math.max(1, baseWidth));
         ctx.font = `900 ${Math.max(10, fontSize)}px ${scoreFontFamily}`;
         ctx.textBaseline = 'alphabetic';
-        const metrics = ctx.measureText(label);
-        const x = paddingX + metrics.actualBoundingBoxLeft;
-        const y = TAPE_HEIGHT + scoreTopInset.current / scoreScaleY + metrics.actualBoundingBoxAscent;
+        const metrics = ctx.measureText(text);
+        const x = desktopStripLeft + (desktopStripWidth - metrics.actualBoundingBoxRight + metrics.actualBoundingBoxLeft) / 2;
+        const stripPadding = 8 / scoreScaleY;
+        const stripHeight = metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent + stripPadding * 2;
+        if (!mobileScore) desktopPipsHeight = stripHeight;
+        const y = TAPE_HEIGHT + (stripHeight + metrics.actualBoundingBoxAscent - metrics.actualBoundingBoxDescent) / 2;
+        ctx.fillStyle = theme === 'light' ? '#000000' : '#ffffff';
+        ctx.beginPath();
+        ctx.roundRect(desktopStripLeft, TAPE_HEIGHT, desktopStripWidth,
+          stripHeight, !mobileScore && encounter ? [0, 0, 0, 0] : [0, 0, 4, 4]);
+        ctx.fill();
         ctx.fillStyle = theme === 'light' ? '#54d3ac' : '#08795c';
         ctx.fillText(label, x, y);
         ctx.fillStyle = theme === 'light' ? '#54d3ac' : '#08795c';
@@ -3168,6 +3093,26 @@ export const CandleGame: React.FC<CandleGameProps> = ({
       ctx.fillRect(W - AX, y - 9, AX, 18);
       ctx.fillStyle = '#fff';
       ctx.fillText(price(hc.c), W - AX + 6, y + 4);
+    }
+    // A separate lives tab sits below Pips, with a one-CSS-pixel theme divider.
+    if (encounter && !feedLayout.current.mobile && desktopPipsHeight > 0) {
+      ctx.save();
+      const scaleX = Math.max(.01, canvasDisplay.current.width / W);
+      const scaleY = Math.max(.01, canvasDisplay.current.height / H);
+      const width = desktopHud.current.width / scaleX;
+      const left = desktopHud.current.left / scaleX;
+      const height = desktopPipsHeight;
+      const dividerHeight = 1 / scaleY;
+      const dividerTop = TAPE_HEIGHT + desktopPipsHeight;
+      const top = dividerTop + dividerHeight;
+      ctx.fillStyle = theme === 'light' ? '#000000' : '#ffffff';
+      ctx.beginPath(); ctx.roundRect(left, top, width, height, [0, 0, 4, 4]); ctx.fill();
+      ctx.fillStyle = theme === 'light' ? '#ffffff' : '#000000';
+      ctx.fillRect(left, dividerTop, width, dividerHeight);
+      const lives = Math.max(0, Math.min(3, encounter.player.lives));
+      ctx.translate(left, top);
+      drawBellLives(ctx, lives, width, height, 25, theme === 'dark');
+      ctx.restore();
     }
     ctx.restore();
     // Draw last while the mobile zoom is still active so the Live Feed scales

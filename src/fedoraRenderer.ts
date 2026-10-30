@@ -2,7 +2,7 @@
 // The brim retains its width while the pinched crown and contrasting band turn.
 type Point = { x: number; y: number; z: number };
 
-export function drawSpinningFedora(ctx: CanvasRenderingContext2D, angle: number, darkMode: boolean): void {
+export function drawSpinningFedora(ctx: CanvasRenderingContext2D, angle: number, darkMode: boolean, colors?: readonly [string, string]): void {
   ctx.save();
   const project = ({ x, y, z }: Point) => {
     const horizontal = x * Math.cos(angle) + z * Math.sin(angle);
@@ -30,10 +30,10 @@ export function drawSpinningFedora(ctx: CanvasRenderingContext2D, angle: number,
     return { x: Math.cos(a) * rx, y, z: Math.sin(a) * rz };
   };
   const front = (p: Point) => -p.x * Math.sin(angle) + p.z * Math.cos(angle) > 0;
-  const brimTop = darkMode ? '#f8fafc' : '#111318';
-  const brimEdge = darkMode ? '#cbd5e1' : '#080a0e';
-  const crown = darkMode ? ['#ffffff', '#f8fafc', '#e2e8f0'] : ['#303239', '#17191d', '#080a0e'];
-  const band = darkMode ? '#111318' : '#ffffff';
+  const brimTop = colors?.[0] ?? (darkMode ? '#f8fafc' : '#111318');
+  const brimEdge = colors?.[0] ?? (darkMode ? '#cbd5e1' : '#080a0e');
+  const crown = colors ? [colors[0],colors[0],colors[0]] : darkMode ? ['#ffffff', '#f8fafc', '#e2e8f0'] : ['#303239', '#17191d', '#080a0e'];
+  const band = colors?.[1] ?? (darkMode ? '#111318' : '#ffffff');
 
   // Keep the flying weapon compact: the brim is short and the crown is rounded
   // so the silhouette reads as a fedora rather than a cowboy hat.
@@ -60,7 +60,7 @@ export function drawSpinningFedora(ctx: CanvasRenderingContext2D, angle: number,
   const crownTop: Point[] = [];
   // Level crown rim; the visible height difference comes from projection and tilt.
   for (let i = 0; i < segments; i++) crownTop.push(ring(i, 8.5, 7.2, crownY));
-  polygon(crownTop, darkMode ? '#ffffff' : '#24262b');
+  polygon(crownTop, colors?.[0] ?? (darkMode ? '#ffffff' : '#24262b'));
   // Recessed central dent follows the orientation of the crown.
   polygon([{ x: -5, y: crownY, z: -1 }, { x: 0, y: crownY + 4, z: -3 },
     { x: 5, y: crownY, z: -1 }, { x: 0, y: crownY + 1, z: 2 }], darkMode ? '#cbd5e1' : '#080a0e');
@@ -70,7 +70,7 @@ export function drawSpinningFedora(ctx: CanvasRenderingContext2D, angle: number,
   const ribbon: Point = { x: 10, y: 0, z: 0 };
   if (front(ribbon)) {
     polygon([{ x: 10.2, y: -1, z: -2 }, { x: 12, y: -2, z: 0 },
-      { x: 10.2, y: -1, z: 2 }, { x: 11, y: 2, z: 0 }], darkMode ? '#111318' : '#ffffff');
+      { x: 10.2, y: -1, z: 2 }, { x: 11, y: 2, z: 0 }], band);
   }
   for (let i = 0; i < segments; i++) {
     const outer = ring(i + 0.5, 18.5, 14.5, 4);

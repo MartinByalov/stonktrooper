@@ -45,13 +45,13 @@ export function drawWhaleRiderLeg(ctx: CanvasRenderingContext2D, near: boolean, 
 
 // Left arm is a narrow, mostly occluded silhouette. The right arm is drawn
 // last, in front of the torso and lap luggage, with its palm on the back.
-export function drawWhaleRiderArm(ctx: CanvasRenderingContext2D, near: boolean, sleeve: string, skin: string, width = 4): void {
+export function drawWhaleRiderArm(ctx: CanvasRenderingContext2D, near: boolean, sleeve: string, skin: string, width = 4, frog = false): void {
   ctx.strokeStyle = sleeve; ctx.lineWidth = near ? width : width * 0.65; ctx.lineCap = 'round';
   ctx.beginPath(); ctx.moveTo(near ? 2 : -2, -25);
-  ctx.lineTo(near ? 13 : 10, near ? -17 : -19);
-  ctx.lineTo(near ? 26 : 22, near ? -9 : -11); ctx.stroke();
+  ctx.lineTo(frog?(near?6:4):(near ? 11 : 8), frog?(near?-8:-10):(near ? -18 : -20));
+  ctx.lineTo(frog?(near?19:16):(near ? 22 : 18), frog?(near?0:-2):(near ? -11 : -13)); ctx.stroke();
   ctx.fillStyle = skin;
-  ctx.beginPath(); ctx.ellipse(near ? 27 : 23, near ? -8 : -10, near ? 3 : 2, 1.8, 0.2, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(frog?(near?19:16):(near ? 23 : 19), frog?(near?0:-2):(near ? -10 : -12), near ? 3 : 2, 1.8, 0.2, 0, Math.PI * 2); ctx.fill();
 }
 
 // Each companion rides a separate smaller visual whale behind the player.
