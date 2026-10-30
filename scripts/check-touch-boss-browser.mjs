@@ -146,6 +146,17 @@ try {
     assert.ok(Math.abs(gutters.left-gutters.right)<1,'Logo/fullscreen symmetric gutters: '+JSON.stringify(gutters));
     assert.ok(Math.abs(gutters.donateLeft-gutters.donateBottom)<2,'Donate symmetric left/bottom gutters: '+JSON.stringify(gutters));
     assert.equal(gutters.paddingTop,gutters.paddingBottom,'Plain action text has vertically symmetric padding');
+    const readChrome = () => evaluate(`(()=>{const rect=s=>{const r=document.querySelector(s).getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height}};return {logo:rect('.header-logo-frame'),fullscreen:rect('.desktop-fullscreen-control'),donate:rect('.home-coffee-link'),feed:rect(${mobile ? "'.mobile-header-feed'" : "'.desktop-live-feed'"})};})()`);
+    await settle();
+    const stableChrome=await readChrome();
+    for(let pass=0;pass<8;pass++){
+      await evaluate(`window.dispatchEvent(new Event('resize'))`);
+      await settle();
+      const current=await readChrome();
+      for(const key of Object.keys(stableChrome))for(const axis of ['x','y','width','height'])assert.ok(Math.abs(current[key][axis]-stableChrome[key][axis])<1,'Chrome must not drift after layout updates: '+JSON.stringify({key,axis,before:stableChrome[key],after:current[key]}));
+    }
+    assert.ok(stableChrome.logo.x<32,'Logo stays at screen edge');
+    assert.ok(width-stableChrome.fullscreen.x-stableChrome.fullscreen.width<32,'Fullscreen stays at screen edge');
     if(mobile){
       const chrome=await evaluate(`(()=>{const h=document.querySelector('header').getBoundingClientRect();const b=document.querySelector('.desktop-fullscreen-control').getBoundingClientRect();const f=document.querySelector('.desktop-live-feed-bar').getBoundingClientRect();const m=document.querySelector('.mobile-header-feed').getBoundingClientRect();return {header:h.height,button:b.width,feed:f.height,inlineWidth:m.width,inlineTop:m.top,inlineBottom:m.bottom,top:h.top,bottom:h.bottom};})()`);
       assert.ok(chrome.button>=40,'Touch fullscreen control is at least 40px');

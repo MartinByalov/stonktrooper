@@ -137,28 +137,8 @@ export default function App() {
       if (!canvas) return;
       const rect = canvas.getBoundingClientRect();
       const headerHeight = header?.getBoundingClientRect().height ?? 0;
-      const fullscreenIcon = fullscreenControl?.querySelector('svg');
-      if (header && fullscreenIcon && fullscreenIcon.getBoundingClientRect().width > 0) {
-        const iconRect = fullscreenIcon.getBoundingClientRect();
-        const bounds = fullscreenIcon.getBBox();
-        const viewBox = fullscreenIcon.viewBox.baseVal;
-        const scale = iconRect.width / viewBox.width;
-        const stroke = parseFloat(getComputedStyle(fullscreenIcon).strokeWidth) || 0;
-        const paintedRight = iconRect.left + (bounds.x + bounds.width + stroke / 2 - viewBox.x) * scale;
-        const edgeInset = `${Math.max(0, header.getBoundingClientRect().right - paintedRight)}px`;
-        if (app.style.getPropertyValue('--content-edge-inset') !== edgeInset) {
-          app.style.setProperty('--content-edge-inset', edgeInset);
-          app.dispatchEvent(new Event('hudlayoutchange'));
-        }
-        header.style.paddingLeft = 'var(--content-left-inset)';
-        const logo = app.querySelector('.stonktrooper-logo');
-        if (logo) {
-          app.style.setProperty('--home-logo-inset', `${Math.max(0, logo.getBoundingClientRect().left - app.getBoundingClientRect().left)}px`);
-        }
-      }
-      if (header && (!fullscreenIcon || fullscreenIcon.getBoundingClientRect().width === 0)) {
-        header.style.paddingLeft = 'var(--content-left-inset)';
-      }
+      // Edge gutters are CSS inputs, never outputs of fullscreen-icon geometry.
+      // Measuring the inset and feeding it back into header padding causes drift.
       const headerFeed = Array.from(app.querySelectorAll('.mobile-header-feed, .desktop-live-feed')).find(feed => feed.getBoundingClientRect().width > 0);
       const desktopFeed = app.querySelector('.desktop-live-feed-bar');
       app.style.setProperty('--desktop-feed-bottom', `${desktopFeed && desktopFeed.getBoundingClientRect().height > 0 ? desktopFeed.getBoundingClientRect().bottom : rect.top}px`);
