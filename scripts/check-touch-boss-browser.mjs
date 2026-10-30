@@ -184,6 +184,11 @@ try {
     assert.ok(await evaluate(`(()=>{const a=document.querySelector('.donate-home-art .desktop-home-art').getBoundingClientRect(),d=document.querySelector('.home-coffee-link').getBoundingClientRect();return Math.abs(a.top+a.height*1235/1254-d.top)<1;})()`),'Visible shoes stand on Donate in fullscreen');
     await evaluate(`document.querySelector('.landing-menu-settings-button').click()`);await settle();
     await checkFullPanel('.site-info-dialog','.site-info-close');
+    if(await evaluate(`matchMedia('(pointer: coarse)').matches`)){
+      const gaps=await evaluate(`(()=>{const r=s=>document.querySelector(s).getBoundingClientRect(),high=r('[aria-label="High contrast"]'),diamond=r('.settings-diamond-button canvas'),reset=r('.settings-reset-button');return {above:diamond.top-high.bottom,below:reset.top-diamond.bottom};})()`);
+      assert.ok(gaps.above>=0 && Math.abs(gaps.above-gaps.below)<1,'Settings diamond has equal gaps above and below: '+JSON.stringify(gaps));
+    }
+    assert.equal(await evaluate(`document.querySelector('.settings-diamond-button canvas').dataset.animated`),'true','Settings easter egg animates');
     await evaluate(`document.querySelector('.site-info-close').click();document.querySelector('.landing-menu-guide-button').click()`);await settle();
     await checkFullPanel('.mobile-how-to-panel','.mobile-how-to-close');
     await evaluate(`document.querySelector('.mobile-how-to-close').click()`);await settle();
@@ -213,6 +218,12 @@ try {
       }
     };
     await checkWideActions('.landing-menu-actions .menu-action-button');
+    const pickupAssets=['coin','printer','tender','banana','banknote','diamond','bag','bell'];
+    const homeFrames=await evaluate(`Array.from(document.querySelectorAll('[data-menu-asset] canvas[data-animated="true"]')).map(c=>({asset:c.closest('[data-menu-asset]').dataset.menuAsset,pixels:c.toDataURL()}))`);
+    assert.deepEqual([...new Set(homeFrames.map(f=>f.asset))].sort(),[...pickupAssets].sort(),'All requested home pickups are animated');
+    await new Promise(resolve=>setTimeout(resolve,450));
+    const homeLater=await evaluate(`Array.from(document.querySelectorAll('[data-menu-asset] canvas[data-animated="true"]')).map(c=>c.toDataURL())`);
+    assert.ok(homeFrames.every((f,i)=>f.pixels!==homeLater[i]),'Every requested home pickup changes animation frame');
     const gutters=await evaluate(`(()=>{const logo=document.querySelector('.header-logo-frame').getBoundingClientRect(),full=document.querySelector('.desktop-fullscreen-control').getBoundingClientRect(),donate=document.querySelector('.home-coffee-link'),panel=donate.offsetParent.getBoundingClientRect(),d=donate.getBoundingClientRect();const button=document.querySelector('.landing-menu-play-button'),s=getComputedStyle(button);return {left:logo.left,right:innerWidth-full.right,donateLeft:d.left-panel.left,donateBottom:panel.bottom-d.bottom,paddingTop:s.paddingTop,paddingBottom:s.paddingBottom};})()`);
     assert.ok(gutters.right<= (mobile?3:2)+.1,'Fullscreen retains compact right gutter: '+JSON.stringify(gutters));
     if(!mobile)assert.ok(Math.abs(gutters.donateLeft-gutters.donateBottom)<2,'Donate symmetric left/bottom gutters: '+JSON.stringify(gutters));

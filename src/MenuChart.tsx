@@ -18,6 +18,7 @@ const scenery: { asset: PreviewAsset; side: 'left' | 'right'; x: number; y: numb
   { asset: 'banknote', side: 'right', x: 0.61, y: 0.85, size: 0.14 },
   { asset: 'whale', side: 'right', x: 0.72, y: 0.40, size: 0.33 },
   { asset: 'diamond', side: 'right', x: 0.40, y: 0.38, size: 0.12 },
+  { asset: 'bag', side: 'right', x: 0.55, y: 0.65, size: 0.13 },
   { asset: 'bear', side: 'right', x: 0.81, y: 0.74, size: 0.27 },
   { asset: 'jerome', side: 'right', x: 0.13, y: 0.70, size: 0.25 },
   { asset: 'bell', side: 'right', x: 0.96, y: 0.85, size: 0.13 },
@@ -155,7 +156,7 @@ export function MenuChart({ theme }: { theme: 'light' | 'dark' }) {
         : Math.max(4, ground - extent - lift);
       return <foreignObject key={index} data-menu-asset={asset} data-grounded={grounded} data-candle-top={ground}
         x={positionX} y={positionY} width={extent} height={extent}>
-        <AssetPreview asset={asset} theme={theme} grounded={grounded} />
+        <AssetPreview asset={asset} theme={theme} grounded={grounded} animated={['coin', 'printer', 'tender', 'banana', 'banknote', 'diamond', 'bag', 'bell'].includes(asset)} />
       </foreignObject>;
     })}
     </g>

@@ -39,10 +39,13 @@ export function AssetPreview({ asset, compact = false, theme = 'light', grounded
     let last = -Infinity;
     const started = performance.now();
     const arena = asset === 'jerome' ? createBossArena() : undefined;
+    let wasMoving: boolean | undefined;
     const render = (now: number) => {
     const moving = animated && !matchMedia('(prefers-reduced-motion: reduce)').matches && !canvas.current?.closest('[data-animations="false"]');
-    if (moving) request = requestAnimationFrame(render);
+    if (animated) request = requestAnimationFrame(render);
+    if (!moving && wasMoving === false) return;
     if (moving && now - last < 1000 / 24) return;
+    wasMoving = moving;
     last = now;
     const phase = moving ? now / 180 : .8;
     ctx.clearRect(0, 0, 512, 512);
@@ -67,6 +70,7 @@ export function AssetPreview({ asset, compact = false, theme = 'light', grounded
       drawBossEncounter(ctx, bossArena, theme === 'dark');
     } else if (asset === 'tender') {
       ctx.scale(2.5, 2.5);
+      if (moving) ctx.rotate(Math.sin(phase) * .12);
       drawChickenTender(ctx);
     } else if (asset === 'bull' || asset === 'bear' || asset === 'whale' || asset === 'bull-rider' || asset === 'bear-rider') {
       ctx.translate(15, 55);
@@ -140,9 +144,11 @@ export function AssetPreview({ asset, compact = false, theme = 'light', grounded
       ctx.scale(2.4, 2.4);
       drawCharacterHat(ctx, false, false, theme === 'dark');
     } else if (asset === 'briefcase') {
+      if (moving) ctx.rotate(Math.sin(phase) * .08);
       drawBriefcase(ctx, theme === 'dark');
     } else {
       ctx.scale(2.4, 2.4);
+      if (moving && asset === 'bag') ctx.rotate(Math.sin(phase) * .1);
       // Use the same orientation and theme-aware pickup renderer as the chart.
       drawPickupAsset(ctx, { type: asset, x: 0, y: 0, taken: false }, 0, 0, moving ? phase * 10 : 0, theme === 'dark', coinLetter);
     }

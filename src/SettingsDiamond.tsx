@@ -73,7 +73,7 @@ export function SettingsDiamond({ theme, animationsEnabled }: { theme: 'light' |
         pointer.current = event.detail === 0 ? { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 } : { x: event.clientX, y: event.clientY };
         rotationStarted.current = null;
         setPhase('holding');
-      }}><AssetPreview asset="diamond" theme={theme} /></button>}
+      }}><AssetPreview asset="diamond" theme={theme} animated /></button>}
     {active && createPortal(<div className="settings-diamond-effect" data-phase={phase} data-theme={theme} aria-hidden="true">
       <div ref={floating} className="settings-diamond-floating"><canvas ref={diamond} width={160} height={160} className="settings-diamond-bare" /></div>
       {phase === 'falling' && <div ref={label} className="settings-diamond-paper-hands">Paper Hands</div>}

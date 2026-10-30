@@ -26,12 +26,12 @@ export function InfoArtwork({ asset, theme, animationsEnabled }: { asset: 'coin'
       if (asset === 'bag') setClownVisible(true);
     }}>
     {asset === 'coin' ? <span className="info-coin-rotation" style={{ transform: `rotateY(${clicks * 180}deg)` }}>
-      <span className="info-coin-front"><AssetPreview asset="coin" theme={theme} /></span>
-      <span className="info-coin-back"><AssetPreview asset="coin" theme={theme} coinLetter="B" /></span>
-    </span> : asset === 'briefcase' ? <span className="info-briefcase-scale" style={{ transform: `scale(${scale})` }}><AssetPreview asset="briefcase" theme={theme} /></span>
-      : asset === 'banana' ? fruit === 'banana' ? <AssetPreview asset="banana" theme={theme} /> : <InfoSurprisePreview kind={fruit as InfoFruit} />
+      <span className="info-coin-front"><AssetPreview asset="coin" theme={theme} animated /></span>
+      <span className="info-coin-back"><AssetPreview asset="coin" theme={theme} coinLetter="B" animated /></span>
+    </span> : asset === 'briefcase' ? <span className="info-briefcase-scale" style={{ transform: `scale(${scale})` }}><AssetPreview asset="briefcase" theme={theme} animated /></span>
+      : asset === 'banana' ? fruit === 'banana' ? <AssetPreview asset="banana" theme={theme} animated /> : <InfoSurprisePreview kind={fruit as InfoFruit} />
       : <span className="info-bag-surprise">
-        <span className="info-bag-front"><AssetPreview asset="bag" theme={theme} /></span>
+        <span className="info-bag-front"><AssetPreview asset="bag" theme={theme} animated /></span>
         <span className="info-bag-clown" aria-hidden="true"><InfoSurprisePreview kind="clown" /></span>
       </span>}
   </button>;

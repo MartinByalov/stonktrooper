@@ -4867,6 +4867,11 @@ html .game-app .landing-menu-panel .home-coffee-link {
     /* Keep controls directly below the heading; spare height belongs below them. */
     grid-template-rows: 8px auto minmax(88px, 1fr) auto;
   }
+  html .game-app .site-info-body[data-info-section="Settings"] > .site-info-bottom {
+    /* The diamond's centered row spans exactly between controls and reset. */
+    margin: 0;
+    padding-top: 0;
+  }
   html .game-app .site-info-body:is([data-info-section="Settings"], [data-info-section="About"], [data-info-section="Disclaimer"]) > .site-info-main {
     grid-row: 2;
   }
