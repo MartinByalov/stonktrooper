@@ -1,6 +1,20 @@
 // Browser game module for MechanicsGuide.
 import { AssetPreview, PreviewAsset } from './AssetPreview';
 import { skinColors } from './modelColors';
+import { useSyncExternalStore } from 'react';
+import { TouchControlPreview, type TouchControl } from './TouchControlPreview';
+
+const subscribeTouch = (notify: () => void) => {
+  const media = window.matchMedia('(pointer: coarse)');
+  media.addEventListener('change', notify);
+  return () => media.removeEventListener('change', notify);
+};
+const touchCards: { control: TouchControl; title: string; text: string }[] = [
+  { control: 'jump', title: 'Jump', text: 'Avoid the gaps!' },
+  { control: 'double-jump', title: 'Double Jump', text: 'Use the highlighted zones to double jump.' },
+  { control: 'shoot', title: 'Shoot', text: 'Aim and shoot ahead your suitcase. Aim...' },
+  { control: 'hat-weapon', title: 'Throw', text: 'Fabulous weapon acquired. Throw your hat and pray, as your enemies may like your style.' },
+];
 
 const cards: { asset: PreviewAsset; below?: PreviewAsset; title: string; text: string }[] = [
   { asset: 'jump', title: 'Jump (Space Bar / W / ↑)', text: 'Avoid the gaps and use the highlighted zones for a double jump.\n\nOn mobile, tap the left of the screen to jump. Tap again in a highlighted zone to double jump.' },
@@ -19,9 +33,17 @@ const cards: { asset: PreviewAsset; below?: PreviewAsset; title: string; text: s
 ];
 
 export function MechanicsGuide({ theme }: { theme: 'light' | 'dark' }) {
+  const mobile = useSyncExternalStore(subscribeTouch, () => window.matchMedia('(pointer: coarse)').matches, () => false);
   const [, heartColor] = skinColors('candles-classic', theme === 'dark');
   return <div className="mechanics-guide min-w-0 flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1 text-xs leading-tight">
-    {cards.map(card => <div key={card.asset} data-paired-visuals={card.below ? 'true' : undefined} className="rounded border border-[var(--line)] bg-[var(--alt)] overflow-hidden flex flex-col">
+    {mobile && touchCards.map(card => <div key={card.control} data-touch-control={card.control} className="mechanics-touch-card border border-[var(--line)] bg-[var(--alt)]">
+      <div className="mechanics-control-heading text-center">
+        <h3 className="uppercase text-xs font-bold">{card.title}</h3>
+        <p>{card.text}</p>
+      </div>
+      <TouchControlPreview action={card.control} theme={theme} />
+    </div>)}
+    {(mobile ? cards.slice(2) : cards).map(card => <div key={card.asset} data-paired-visuals={card.below ? 'true' : undefined} className="rounded border border-[var(--line)] bg-[var(--alt)] overflow-hidden flex flex-col">
       <div className="flex flex-1 items-stretch">
         <div className="mechanics-guide-visuals w-[88px] shrink-0 grid auto-rows-fr border-r border-[var(--line)] bg-[var(--bg)]/30">
           <div className="min-h-[72px] flex items-center justify-center px-1"><AssetPreview asset={card.asset} compact theme={theme} animated /></div>

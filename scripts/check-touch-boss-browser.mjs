@@ -45,7 +45,7 @@ const hook = `
 const server = await createServer({ root, logLevel: 'error', server: { host: '127.0.0.1', port: 0 }, plugins: [{
   name: 'touch-boss-regression', enforce: 'pre', transform(code, id) {
     if (id.replaceAll('\\','/').split('?')[0].endsWith('/src/App.tsx')) {
-      return code.replace('  const liveFeedVisible = liveFeedEnabled;', '  window.__setLiveFeed = setLiveFeedEnabled;\n  const liveFeedVisible = liveFeedEnabled;');
+      return code.replace('  const liveFeedVisible = liveFeedEnabled;', '  window.__setTheme = setTheme;\n  window.__setLiveFeed = setLiveFeedEnabled;\n  const liveFeedVisible = liveFeedEnabled;');
     }
     if (!id.replaceAll('\\','/').split('?')[0].endsWith('/src/CandleGame.tsx')) return;
     return code.replaceAll('\r\n','\n')
@@ -124,6 +124,27 @@ try {
   closeBrowser=()=>call('Browser.close');
   const evaluate=async expression=>{const r=await call('Runtime.evaluate',{expression,returnByValue:true,awaitPromise:true});if(r.exceptionDetails)throw Error(JSON.stringify(r.exceptionDetails));return r.result.value;};
   const settle=()=>new Promise(r=>setTimeout(r,200));
+  const checkTouchGutters=async fullscreen=>{
+    const gutters=await evaluate(`(()=>{const logo=document.querySelector('.header-logo-frame').getBoundingClientRect(),donate=document.querySelector('.home-coffee-link').getBoundingClientRect(),panel=document.querySelector('.landing-menu-panel').getBoundingClientRect();return {logo:logo.left,donate:donate.left-panel.left,bottom:panel.bottom-18-donate.bottom};})()`);
+    assert.ok(Math.abs(gutters.logo-gutters.donate)<1,'Logo and Donate share left gutter: '+JSON.stringify(gutters));
+    assert.ok(Math.abs(gutters.bottom-gutters.logo)<1,'Donate bottom gutter is measured above timestamp strip: '+JSON.stringify({fullscreen,...gutters}));
+  };
+  const checkFullPanel=async (panelSelector,closeSelector)=>{
+    const layout=await evaluate(`(()=>{const rect=s=>{const r=document.querySelector(s).getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height};};const b=document.querySelector(${JSON.stringify(closeSelector)}),r=b.getBoundingClientRect(),hit=document.elementFromPoint(r.x+r.width/2,r.y+r.height/2);return {panel:rect(${JSON.stringify(panelSelector)}),close:rect(${JSON.stringify(closeSelector)}),full:rect('.desktop-fullscreen-control'),hit:!!hit&&(hit===b||b.contains(hit)),width:innerWidth,height:innerHeight};})()`);
+    const touch=await evaluate(`matchMedia('(pointer: coarse)').matches`);
+    if(touch){
+      assert.ok(Math.abs(layout.panel.x)<1 && Math.abs(layout.panel.y)<1 && Math.abs(layout.panel.width-layout.width)<1 && Math.abs(layout.panel.height-layout.height)<1,'Mobile panel covers full viewport: '+JSON.stringify(layout));
+      for(const axis of ['x','y','width','height'])assert.ok(Math.abs(layout.close[axis]-layout.full[axis])<1,'Mobile close matches fullscreen geometry: '+JSON.stringify(layout));
+    }else{
+      assert.ok(layout.panel.height<layout.height && layout.panel.y>0 && layout.panel.y+layout.panel.height<layout.height,'Desktop retains its original dialog below browser game chrome, not a fullscreen panel: '+JSON.stringify(layout));
+    }
+    assert.ok(layout.hit,'Close button is hit-testable');
+    if(panelSelector==='.mobile-how-to-panel'){
+      const columns=await evaluate(`(()=>{const rect=s=>{const r=document.querySelector(s).getBoundingClientRect();return {top:r.top,bottom:r.bottom,left:r.left,right:r.right,height:r.height};};return {mobile:matchMedia('(pointer: coarse)').matches,hero:rect('.how-to-dialog-hero'),guide:rect('.how-to-dialog-content > .mechanics-guide'),header:rect('.mobile-how-to-header')};})()`);
+      if(columns.mobile)assert.ok(columns.hero.height===0 && Math.abs(columns.guide.left)<1 && Math.abs(columns.guide.right-layout.width)<1 && Math.abs(columns.guide.top-columns.header.bottom)<1,'Mobile guide uses full width without artwork: '+JSON.stringify(columns));
+      else assert.ok(columns.hero.height>0 && columns.hero.right<=columns.guide.left+1 && Math.abs(columns.hero.top-columns.header.top)<1 && columns.guide.top>columns.header.top,'Desktop guide retains side artwork alongside its original header and instructions: '+JSON.stringify(columns));
+    }
+  };
   const wait=async expression=>{for(let i=0;i<100;i++){if(await evaluate(expression))return;await new Promise(r=>setTimeout(r,100));}throw Error('Timed out: '+expression);};
   await call('Runtime.enable');await call('Page.enable');
   for(const [width,height] of [[740,240],[800,260],[915,300]]){
@@ -140,20 +161,32 @@ try {
       });
       const art=document.querySelector('.donate-home-art .desktop-home-art').getBoundingClientRect();
       const donate=document.querySelector('.home-coffee-link').getBoundingClientRect();
-      return {fullscreen:!!document.fullscreenElement,panel:{top:panel.top,bottom:panel.bottom},art:{top:art.top,bottom:art.bottom,center:art.x+art.width/2},donate:{top:donate.top,center:donate.x+donate.width/2},buttons};
+      const q=document.querySelector('.landing-menu-quote'),quote=q.getBoundingClientRect();
+      return {fullscreen:!!document.fullscreenElement,panel:{top:panel.top,bottom:panel.bottom},quote:{top:quote.top,bottom:quote.bottom,left:quote.left,right:quote.right,visible:q.checkVisibility()},art:{top:art.top,bottom:art.top+art.height*1235/1254,center:art.x+art.width/2},donate:{top:donate.top,center:donate.x+donate.width/2},buttons};
     })()`);
     assert.equal(layout.fullscreen,false,'Compact menu is checked outside fullscreen');
+    await checkTouchGutters(false);
     assert.ok(layout.art.top>=layout.panel.top && Math.abs(layout.art.bottom-layout.donate.top)<1 && Math.abs(layout.art.center-layout.donate.center)<1,'Trader fits and stands centered on Donate: '+JSON.stringify(layout));
     assert.equal(await evaluate(`getComputedStyle(document.querySelector('.landing-menu-actions > .desktop-home-art')).display`),'none','No trader above windowed landscape actions');
     assert.equal(layout.buttons.length,4);
+    assert.ok(Math.abs((layout.buttons[0].top+layout.buttons.at(-1).bottom)/2-(layout.panel.top+layout.panel.bottom-18)/2)<1,'Actions centered above timestamp strip: '+JSON.stringify(layout));
+    assert.equal(layout.quote.visible,false,'Quote hidden in windowed landscape touch mode');
     assert.ok(layout.buttons.every(b=>b.top>=layout.panel.top && b.bottom<=layout.panel.bottom && b.hit && b.textFits),'All four compact actions fit and remain hit-testable: '+JSON.stringify(layout));
     assert.ok(layout.buttons.every(b=>b.height<=44),'Short browser viewport respects available action height');
     assert.equal(await evaluate(`!!Array.from(document.querySelectorAll('[role="status"]')).find(e=>/fullscreen|horizontal/i.test(e.textContent))`),false,'No fullscreen status strip on mobile');
     await call('Runtime.evaluate',{expression:`document.querySelector('.game-app').requestFullscreen()`,awaitPromise:true,userGesture:true});
     await settle();
     assert.equal(await evaluate(`!!document.fullscreenElement`),true,'Check actual fullscreen home layout');
-    assert.equal(await evaluate(`getComputedStyle(document.querySelector('.donate-home-art')).display`),'none','Donate trader hidden in fullscreen');
-    assert.notEqual(await evaluate(`getComputedStyle(document.querySelector('.landing-menu-actions > .desktop-home-art')).display`),'none','Original trader remains above actions in fullscreen');
+    await checkTouchGutters(true);
+    assert.equal(await evaluate(`document.querySelector('.landing-menu-quote').checkVisibility()`),false,'Mobile quote hidden in fullscreen');
+    assert.notEqual(await evaluate(`getComputedStyle(document.querySelector('.donate-home-art')).display`),'none','Donate trader visible in fullscreen');
+    assert.equal(await evaluate(`getComputedStyle(document.querySelector('.landing-menu-actions > .desktop-home-art')).display`),'none','No trader above mobile fullscreen actions');
+    assert.ok(await evaluate(`(()=>{const a=document.querySelector('.donate-home-art .desktop-home-art').getBoundingClientRect(),d=document.querySelector('.home-coffee-link').getBoundingClientRect();return Math.abs(a.top+a.height*1235/1254-d.top)<1;})()`),'Visible shoes stand on Donate in fullscreen');
+    await evaluate(`document.querySelector('.landing-menu-settings-button').click()`);await settle();
+    await checkFullPanel('.site-info-dialog','.site-info-close');
+    await evaluate(`document.querySelector('.site-info-close').click();document.querySelector('.landing-menu-guide-button').click()`);await settle();
+    await checkFullPanel('.mobile-how-to-panel','.mobile-how-to-close');
+    await evaluate(`document.querySelector('.mobile-how-to-close').click()`);await settle();
     await evaluate('document.exitFullscreen()');
     await settle();
     console.log(`PASS ${width}x${height}: non-fullscreen home art and four responsive actions fit`);
@@ -164,7 +197,13 @@ try {
     await call('Page.navigate',{url:`http://127.0.0.1:${server.httpServer.address().port}`});
     await wait(`!!window.__combat && !!document.querySelector('.landing-menu-guide-button')`);
     assert.equal(await evaluate(`!!document.querySelector('.header-boss-control')`),false,'Bell is removed from browser header');
+    const priceColumn=await evaluate(`(()=>{const chart=document.querySelector('.landing-menu-chart'),plot=chart.querySelector('clipPath rect'),labels=[...chart.querySelectorAll('[data-menu-price-label]')],width=chart.viewBox.baseVal.width,plotWidth=plot.width.baseVal.value;return {width:width-plotWidth,gutters:labels.map(label=>{const b=label.getBBox();return {left:b.x-plotWidth,right:width-b.x-b.width};})};})()`);
+    assert.equal(priceColumn.width,mobile?28:54,'Only mobile Home price column is narrowed');
+    if(mobile)assert.ok(priceColumn.gutters.every(g=>Math.abs(g.left-g.right)<1),'Mobile Home prices have equal left/right gutters: '+JSON.stringify(priceColumn));
     const checkWideActions = async selector => {
+      const alignment=await evaluate(`Array.from(document.querySelectorAll(${JSON.stringify(selector)})).filter(b=>b.getClientRects().length).map(b=>{const s=getComputedStyle(b),key=b.querySelector('.new-game-space-key');return {align:s.alignItems,justify:s.justifyContent,line:parseFloat(s.lineHeight),font:parseFloat(s.fontSize),keyBottom:key?getComputedStyle(key).bottom:null};})`);
+      assert.ok(alignment.every(b=>b.align==='center' && b.justify==='center' && Math.abs(b.line-b.font)<.1),'Action labels use a centered single-line box: '+JSON.stringify(alignment));
+      assert.ok(alignment.every(b=>b.keyBottom===null || b.keyBottom==='5px'),'Space symbol raised by 2px');
       const buttons=await evaluate(`Array.from(document.querySelectorAll(${JSON.stringify(selector)})).filter(b=>b.getClientRects().length).map(b=>{const r=b.getBoundingClientRect();return {width:r.width,height:r.height,font:parseFloat(getComputedStyle(b).fontSize)};})`);
       assert.ok(buttons.length,'Wide actions exist: '+selector);
       for(const button of buttons){
@@ -201,6 +240,7 @@ try {
       assert.ok(chrome.header<=56 && chrome.inlineWidth>0 && chrome.inlineTop>=chrome.top && chrome.inlineBottom<=chrome.bottom,'Feed fits inside compact header');
     }
     await evaluate(`document.querySelector('.landing-menu-settings-button').click()`);await settle();
+    await checkFullPanel('.site-info-dialog','.site-info-close');
     await evaluate(`(()=>{const s=document.querySelector('[aria-label="Shmuck Feed"]');if(s.getAttribute('aria-checked')!=='true')s.click();})()`);await settle();
     assert.equal(await evaluate(`document.querySelector('[aria-label="Shmuck Feed"] .settings-switch-state').textContent`),'On');
     await evaluate(`document.querySelector('[aria-label="Shmuck Feed"]').click()`);await settle();
@@ -208,8 +248,23 @@ try {
     assert.equal(await evaluate(`document.querySelector('[aria-label="Shmuck Feed"]').getAttribute('aria-checked')`),'false');
     await evaluate(`document.querySelector('[aria-label="Shmuck Feed"]').click();document.querySelector('.site-info-close').click()`);await settle();
     await evaluate(`document.querySelector('.landing-menu-guide-button').click()`);await settle();
+    await checkFullPanel('.mobile-how-to-panel','.mobile-how-to-close');
     const guide=await evaluate(`document.querySelector('.mechanics-guide').textContent`);
-    assert.ok(guide.includes('Space')&&guide.includes('tap the left of the screen')&&guide.includes('A mighty foe joins your ride.'));
+    assert.ok(guide.includes('A mighty foe joins your ride.'));
+    if(mobile){
+      const dividers=await evaluate(`(()=>{const guide=document.querySelector('.mechanics-guide'),art=guide.querySelector('.mechanics-guide-visuals'),a=art.getBoundingClientRect();return Array.from(guide.querySelectorAll('.touch-control-preview')).map(p=>{const d=p.querySelector('.touch-aligned-divider').getBoundingClientRect();return Math.abs((d.left-p.getBoundingClientRect().left)-(a.width-parseFloat(getComputedStyle(art).borderRightWidth)));});})()`);
+      assert.ok(dividers.length===4 && dividers.every(delta=>delta<1),'All four touch dividers align with the artwork/description border: '+JSON.stringify(dividers));
+      assert.deepEqual(await evaluate(`Array.from(document.querySelectorAll('[data-touch-control]')).map(e=>e.dataset.touchControl)`),['jump','double-jump','shoot','hat-weapon'],'Four Android touch demonstrations replace desktop controls');
+      const frames=await evaluate(`Array.from(document.querySelectorAll('.touch-control-preview canvas')).map(c=>({width:c.getBoundingClientRect().width,height:c.getBoundingClientRect().height,pixels:c.toDataURL()}))`);
+      assert.ok(frames.every(f=>f.width>0 && f.height>0 && Math.abs(f.width/f.height-360/220)<.01),'All demonstrations have visible correctly proportioned canvases');
+      await new Promise(resolve=>setTimeout(resolve,650));
+      const later=await evaluate(`Array.from(document.querySelectorAll('.touch-control-preview canvas')).map(c=>c.toDataURL())`);
+      assert.ok(frames.every((f,i)=>f.pixels!==later[i]),'All four demonstrations animate');
+      assert.ok(!guide.includes('Space Bar')&&!guide.includes('Left Mouse Click'),'No desktop control cards on mobile');
+    }else{
+      assert.ok(guide.includes('Space')&&guide.includes('tap the left of the screen'));
+      assert.equal(await evaluate(`document.querySelectorAll('[data-touch-control]').length`),0,'Desktop guide unchanged');
+    }
     assert.ok(!guide.includes('use the joystick')&&!guide.includes('Move Left'));
     await evaluate(`document.querySelector('.mobile-how-to-close').click();window.__combat.setup()`);await settle();
     assert.equal(await evaluate(`!!document.querySelector('.mobile-joystick')`),false);
@@ -291,6 +346,13 @@ try {
     const share=await evaluate(`(()=>{const a=document.querySelector('.share-dd-actions');return {display:getComputedStyle(a).display,buttons:[...a.querySelectorAll('button')].map(b=>{const r=b.getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height};})};})()`);
     assert.equal(share.display,'grid','Shares replace wide Share DD with one row');
     assert.equal(share.buttons.length,4);
+    for(const theme of ['light','dark']){
+      await evaluate(`window.__setTheme(${JSON.stringify(theme)})`);
+      await new Promise(resolve=>setTimeout(resolve,500));
+      const colors=await evaluate(`Array.from(document.querySelectorAll('.share-dd-actions-host button')).map(b=>{const s=getComputedStyle(b);return {background:s.backgroundColor,ink:s.color};})`);
+      const expected=theme==='light'?{background:'rgb(86, 157, 204)',ink:'rgb(255, 255, 255)'}:{background:'rgb(56, 189, 248)',ink:'rgb(0, 0, 0)'};
+      assert.ok(colors.every(c=>c.background===expected.background && c.ink===expected.ink),'Share buttons use theme blue with contrasting icons: '+JSON.stringify({theme,colors}));
+    }
     const shareVisibility=await evaluate(`Array.from(document.querySelectorAll('.share-dd-actions-host button')).map(b=>{const r=b.getBoundingClientRect();const hit=document.elementFromPoint(r.x+r.width/2,r.y+r.height/2);return {label:b.getAttribute('aria-label'),width:r.width,height:r.height,visible:b.checkVisibility({checkOpacity:true,checkVisibilityCSS:true}),hit:!!hit&&(hit===b||b.contains(hit)),cover:hit?.outerHTML.slice(0,300)};})`);
     assert.ok(shareVisibility.every(b=>b.visible&&b.hit&&b.width>20&&b.height>20),'Share buttons visibly painted and hit-testable: '+JSON.stringify(shareVisibility));
     assert.equal(await evaluate(`!!document.querySelector('.share-dd-open, .share-dd-close')`),false,'No duplicate Share DD or close X');

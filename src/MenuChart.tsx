@@ -25,7 +25,7 @@ const scenery: { asset: PreviewAsset; side: 'left' | 'right'; x: number; y: numb
 
 export function MenuChart({ theme }: { theme: 'light' | 'dark' }) {
   const root = useRef<SVGSVGElement>(null);
-  const [size, setSize] = useState({ width: 1040, height: 480, portrait: false });
+  const [size, setSize] = useState({ width: 1040, height: 480, portrait: false, mobile: false });
 
   useLayoutEffect(() => {
     const element = root.current;
@@ -33,10 +33,11 @@ export function MenuChart({ theme }: { theme: 'light' | 'dark' }) {
     const measure = () => {
       const { width, height } = element.getBoundingClientRect();
       const portrait = window.matchMedia('(orientation: portrait) and (pointer: coarse)').matches;
+      const mobile = window.matchMedia('(pointer: coarse)').matches;
       if (width > 0 && height > 0) {
         setSize(previous => previous.width === width && previous.height === height
-          && previous.portrait === portrait
-          ? previous : { width, height, portrait });
+          && previous.portrait === portrait && previous.mobile === mobile
+          ? previous : { width, height, portrait, mobile });
       }
     };
     // Resolve the real Home geometry before paint, not one frame after mount.
@@ -50,9 +51,10 @@ export function MenuChart({ theme }: { theme: 'light' | 'dark' }) {
   }, []);
 
   // Render in CSS pixels: candles, volume and labels never stretch with the panel.
-  const { width, height, portrait } = size;
+  const { width, height, portrait, mobile } = size;
   const candleWidth = portrait ? 3.6 : 2.6;
-  const plotWidth = Math.max(1, width - (portrait ? 0 : 54));
+  const priceColumnWidth = portrait ? 0 : mobile ? 28 : 54;
+  const plotWidth = Math.max(1, width - priceColumnWidth);
   // Put portrait's outer candle centres on the screen edges. The plot clips
   // their bodies and volume bars, so neither side ends in an empty gutter.
   const portraitIntervals = Math.max(1, Math.ceil(plotWidth / 6));
@@ -158,7 +160,7 @@ export function MenuChart({ theme }: { theme: 'light' | 'dark' }) {
     })}
     </g>
     <g fill="var(--menu-chart-text, #52677d)" fontFamily="system-ui, monospace">
-      {!portrait && priceTicks.map((y, index) => <text key={y} x={plotWidth + 5} y={y + 3} fontSize={9}>{150 - index * 10}</text>)}
+      {!portrait && priceTicks.map((y, index) => <text key={y} data-menu-price-label x={mobile ? plotWidth + priceColumnWidth / 2 : plotWidth + 5} textAnchor={mobile ? 'middle' : 'start'} y={y + 3} fontSize={9}>{150 - index * 10}</text>)}
       {timeTicks.filter(tick => tick.x >= 18 && tick.x <= plotWidth - 18).map(tick => <text key={tick.minute} x={tick.x} y={height - 5} fontSize={portrait ? 10 : 8} textAnchor="middle">{timeLabel(tick.minute)}</text>)}
     </g>
   </svg>;

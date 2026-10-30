@@ -4296,7 +4296,7 @@ html:not([data-theme="light"]) .game-app :is(.landing-menu-guide-button, .landin
 .new-game-space-key {
   position: absolute;
   left: 50%;
-  bottom: 3px;
+  bottom: 5px;
   transform: translateX(-50%);
   width: 64px;
   height: 5px;
@@ -5128,7 +5128,7 @@ html[data-theme] .game-app .share-dd-actions-host .share-dd-actions > button:is(
   max-height: none;
   aspect-ratio: 1;
   padding: 0;
-  background: var(--share-dd-blue) !important;
+  background: var(--ui-blue) !important;
   color: var(--share-action-ink) !important;
   border: 1px solid transparent !important;
   border-radius: var(--ui-radius);
@@ -5148,6 +5148,9 @@ html[data-theme] .game-app .landing-menu-actions .menu-action-button,
 html[data-theme] .game-app .game-result :is(.margin-call-action, .share-dd-open, .liquidated-how-to-play),
 html[data-theme] .game-app .site-info-dialog .preferences-clear-button {
   padding-block: 6px;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
 }
 /* One safe-area-aware gutter on all four relevant edges. */
 html .game-app {
@@ -5172,6 +5175,10 @@ html .game-app .landing-menu-panel .home-coffee-link {
 @media (pointer: coarse) {
   html .game-app .landing-menu-panel .home-coffee-link {
     left: max(var(--mobile-logo-edge-inset, var(--content-edge-inset)), env(safe-area-inset-left, 0px));
+  }
+  html .game-app .landing-menu-panel .home-coffee-link {
+    /* Match the logo gutter above the chart's 18px timestamp band. */
+    bottom: calc(18px + max(var(--mobile-logo-edge-inset, var(--content-edge-inset)), env(safe-area-inset-bottom, 0px)));
   }
 }
 
@@ -5198,30 +5205,150 @@ html .game-app .landing-menu-panel .home-coffee-link {
   }
 }
 
-/* Only windowed landscape touch: put the trader on Donate, not on the stack. */
+/* Landscape touch: put the trader on Donate in both browser display modes. */
 @media (pointer: coarse) and (orientation: landscape) {
+  html .game-app .landing-menu-panel { container-type: size; }
   html[data-theme] .game-app:not(:fullscreen) .landing-menu-panel > .landing-menu-actions {
-    --home-action-height: min(clamp(44px, 11dvh, 54px), calc((100cqh - 3 * var(--result-action-gap) - 16px) / 4));
+    --home-action-height: min(clamp(44px, 11dvh, 54px), calc((100cqh - 18px - 3 * var(--result-action-gap) - 16px) / 4));
     padding-top: 0;
+    transform: translateY(-9px);
   }
-  html .game-app:not(:fullscreen) .landing-menu-actions > .menu-celebration {
+  html[data-theme] .game-app:fullscreen .landing-menu-panel > .landing-menu-actions {
+    padding-top: 0;
+    transform: translateY(-9px);
+  }
+  html .game-app .landing-menu-actions > .menu-celebration {
     display: none;
   }
-  html .game-app:not(:fullscreen) .home-coffee-link > .donate-home-art {
+  html .game-app .home-coffee-link > .donate-home-art {
     display: block;
     position: absolute;
     bottom: calc(100% + 1px);
     left: 50%;
-    width: min(100%, calc(100cqh - 36px - var(--corner-ui-inset) - 8px));
+    width: min(100%, calc(100cqh - 18px - 36px - max(var(--mobile-logo-edge-inset, var(--content-edge-inset)), env(safe-area-inset-bottom, 0px)) - 8px));
     transform: translateX(-50%);
     pointer-events: none;
     line-height: 0;
   }
-  html .game-app:not(:fullscreen) .donate-home-art > .desktop-home-art {
+  html .game-app .donate-home-art > .desktop-home-art {
     position: static;
     display: block;
     width: 100%;
     height: auto;
-    transform: none;
+    /* Visible shoe soles end at row 1235 of the 1254px artwork. */
+    transform: translateY(1.5151515%);
   }
+  html .game-app .landing-menu-quote {
+    display: none;
+  }
+}
+
+@media (pointer: coarse) {
+  html .game-app .landing-menu-quote { display: none; }
+  html[data-theme] .game-app .mobile-how-to-dialog > .mobile-how-to-panel {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: var(--chrome-height) minmax(0, 1fr);
+  }
+  html[data-theme] .game-app .how-to-dialog-content > .how-to-dialog-hero {
+    display: none;
+  }
+  html[data-theme] .game-app .mobile-how-to-panel > .mobile-how-to-header {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  html[data-theme] .game-app .how-to-dialog-content > .mechanics-guide {
+    grid-column: 1;
+    grid-row: 2;
+  }
+}
+
+/* Only touch browsers replace the entire game surface with settings/guides. */
+@media (pointer: coarse) {
+html[data-theme] .game-app .site-info-overlay.fixed.inset-0.z-50:has([data-info-section="Settings"]) > .site-info-dialog {
+  padding: 0 !important;
+  border: 0 !important;
+}
+html .game-app :is(.site-info-overlay:has([data-info-section="Settings"]), .mobile-how-to-dialog.fixed.inset-0.z-50, .paused-guide-overlay) {
+  position: fixed;
+  inset: 0 !important;
+  width: 100%;
+  height: 100%;
+  max-height: none;
+  padding: 0 !important;
+  z-index: 60;
+}
+html[data-theme] .game-app :is(.site-info-overlay:has([data-info-section="Settings"]) > .site-info-dialog, .mobile-how-to-dialog > .mobile-how-to-panel, .paused-guide-overlay > .paused-guide-dialog) {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  max-width: none;
+  max-height: none;
+  padding: 0 !important;
+  margin: 0;
+  border: 0 !important;
+  border-radius: 0 !important;
+  transform: none;
+}
+html[data-theme] .game-app :is(.site-info-dialog:has([data-info-section="Settings"]) > .site-info-header, .mobile-how-to-header, .how-to-guide-header) {
+  box-sizing: border-box;
+  height: var(--chrome-height);
+  min-height: var(--chrome-height);
+  flex: 0 0 var(--chrome-height);
+  margin: 0;
+  padding: 0 calc(var(--fullscreen-control-width, 32px) + 8px);
+}
+html[data-theme] .game-app :is(.site-info-overlay.fixed.inset-0.z-50:has([data-info-section="Settings"]) > .site-info-dialog > .site-info-header > .site-info-close, .mobile-how-to-header > .dialog-close, .how-to-guide-header > .dialog-close) {
+  position: absolute;
+  top: calc(var(--fullscreen-control-bottom, 34px) - var(--fullscreen-control-height, 32px));
+  right: var(--fullscreen-control-right, 2px);
+  width: var(--fullscreen-control-width, 32px);
+  min-width: var(--fullscreen-control-width, 32px);
+  height: var(--fullscreen-control-height, 32px);
+  min-height: var(--fullscreen-control-height, 32px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid transparent !important;
+  background: transparent;
+  transform: none;
+}
+html[data-theme] .game-app :is(.site-info-close, .mobile-how-to-header > .dialog-close, .how-to-guide-header > .dialog-close) svg {
+  width: 70%;
+  height: 70%;
+}
+}
+
+/* Mobile guide demonstrations share Android's animated touch-zone layout. */
+@media (pointer: coarse) {
+  html .game-app .mechanics-guide {
+    --guide-artwork-width: 100px;
+    --guide-artwork-divider: calc(var(--guide-artwork-width) - 1px);
+    grid-auto-rows: auto;
+    align-content: start;
+  }
+  html .game-app .mechanics-guide .mechanics-guide-visuals { width: var(--guide-artwork-width); }
+  html .game-app .mechanics-guide > .mechanics-touch-card {
+    display: grid;
+    grid-row: span 2;
+    grid-template-rows: subgrid;
+    gap: 0;
+    min-height: 0;
+    overflow: hidden;
+  }
+  .game-app .mechanics-control-heading { display: flex; flex-direction: column; min-height: 64px; padding: 8px; }
+  .game-app .mechanics-control-heading h3 { margin: 0; line-height: 1.25; }
+  .game-app .mechanics-control-heading p { flex: 1; display: flex; align-items: center; justify-content: center; margin: 0; padding: 4px 0; }
+  .game-app .touch-control-preview { position: relative; width: 100%; align-self: end; overflow: hidden; line-height: 0; }
+  html .game-app .mechanics-guide .touch-control-preview canvas { display: block; width: 100%; height: auto; max-width: none; aspect-ratio: 360 / 220; }
+  .game-app .touch-input-overlay { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+  .game-app .touch-tap-ring { fill: none; stroke: #569dcc; stroke-width: 3; }
+  .game-app .touch-demo-hand { transform-origin: 0 0; }
+  .game-app .touch-aligned-divider { position: absolute; top: 0; bottom: 0; left: var(--touch-zone-boundary); border-left: 2px dashed #569dcc; pointer-events: none; }
+  .game-app .touch-zone-highlight { position: absolute; inset: 0 auto 0 0; width: var(--touch-zone-boundary); background: #569dcc14; pointer-events: none; }
+  .game-app :is([data-action="shoot"], [data-action="hat-weapon"]) .touch-zone-highlight { left: var(--touch-zone-boundary); right: 0; width: auto; }
 }
