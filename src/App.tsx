@@ -256,7 +256,7 @@ export default function App() {
 
   useEffect(() => {
     let wasLandscape = window.innerWidth > window.innerHeight;
-    let awaitingGesture = false;
+    let awaitingGesture = window.matchMedia('(pointer: coarse)').matches && wasLandscape;
     let requesting = false;
     const enter = async () => {
       if (requesting || document.fullscreenElement || !appRef.current?.requestFullscreen) return;
@@ -265,6 +265,8 @@ export default function App() {
       try {
         await appRef.current.requestFullscreen();
         setFullscreenError('');
+        const orientation = screen.orientation as ScreenOrientation & { lock?: (orientation: 'landscape') => Promise<void> };
+        try { await orientation?.lock?.('landscape'); } catch { /* Manual rotation remains available. */ }
       } catch {
         // Rotation is not a user activation in every browser. Retry on a tap,
         // but never force re-entry after the user explicitly leaves fullscreen.
@@ -279,19 +281,24 @@ export default function App() {
       if (!landscape) awaitingGesture = false;
       wasLandscape = landscape;
     };
-    const tap = (event: PointerEvent) => {
-      if (event.target instanceof Element && event.target.closest('button, a, input, [role="switch"]')) return;
+    const tap = (event: Event) => {
+      // Start and fullscreen controls already make their own activation-bound request.
+      if (event.target instanceof Element && event.target.closest('.desktop-fullscreen-control, .landing-menu-play-button, .continue-run, a, input')) return;
       if (awaitingGesture && window.innerWidth > window.innerHeight) void enter();
     };
     const fullscreenChanged = () => { if (!document.fullscreenElement) awaitingGesture = false; };
     window.addEventListener('resize', rotate);
     screen.orientation?.addEventListener('change', rotate);
-    window.addEventListener('pointerup', tap);
+    window.visualViewport?.addEventListener('resize', rotate);
+    window.addEventListener('pointerup', tap, true);
+    window.addEventListener('click', tap, true);
     document.addEventListener('fullscreenchange', fullscreenChanged);
     return () => {
       window.removeEventListener('resize', rotate);
       screen.orientation?.removeEventListener('change', rotate);
-      window.removeEventListener('pointerup', tap);
+      window.visualViewport?.removeEventListener('resize', rotate);
+      window.removeEventListener('pointerup', tap, true);
+      window.removeEventListener('click', tap, true);
       document.removeEventListener('fullscreenchange', fullscreenChanged);
     };
   }, []);
@@ -443,7 +450,10 @@ export default function App() {
     if (state === 'menu' && selectedMode !== 'hard') return;
     sound.unlock();
     if (!window.matchMedia('(pointer: coarse)').matches) { startOrResume(); return; }
-    if (mobileStartPending.current) return;
+    if (mobileStartPending.current) {
+      if (document.fullscreenElement !== appRef.current) return;
+      mobileStartPending.current = false;
+    }
     mobileStartPending.current = true;
     setFullscreenError('');
     try {
@@ -682,7 +692,7 @@ export default function App() {
                       </>}
                       {state === 'over' && <>
                         <button type="button" onClick={() => setState('menu')} className="margin-call-action liquidated-home how-to-play-action w-full rounded font-bold font-mono-term cursor-pointer">Home</button>
-                        <button type="button" onClick={() => setShareDDOpen(true)} className="share-dd-open w-full py-2.5 px-3 rounded border border-[#38bdf8] bg-[#38bdf8] text-white hover:brightness-110 font-bold text-xs font-mono-term transition-colors cursor-pointer">Share DD</button>
+                        {shareDDOpen ? <div className="share-dd-actions-host" /> : <button type="button" onClick={() => setShareDDOpen(true)} className="share-dd-open w-full py-2.5 px-3 rounded border border-[#38bdf8] bg-[#38bdf8] text-white hover:brightness-110 font-bold text-xs font-mono-term transition-colors cursor-pointer">Share DD</button>}
                       </>}
                       <button
                         type="button"

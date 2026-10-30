@@ -5095,3 +5095,59 @@ html[data-theme] .game-app .site-info-dialog .preferences-clear-button {
   font-size: clamp(12px, 3.2dvh, 16px);
   line-height: 1.2;
 }
+
+/* Share controls replace Share DD inline, with Android geometry. */
+.game-app .share-dd-actions-host { width: var(--home-action-width); min-width: 0; }
+html[data-theme] .game-app .share-dd-actions-host > .share-dd-actions {
+  position: static;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--result-action-gap);
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  pointer-events: auto;
+}
+html[data-theme] .game-app .share-dd-actions-host .share-dd-actions > button,
+html[data-theme] .game-app .share-dd-actions-host .share-dd-actions > button:is(:hover, :focus-visible) {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  max-width: none;
+  height: auto;
+  min-height: 0;
+  max-height: none;
+  aspect-ratio: 1;
+  padding: 0;
+  background: var(--share-dd-blue) !important;
+  color: var(--share-action-ink) !important;
+  border: 1px solid transparent !important;
+  border-radius: var(--ui-radius);
+}
+html[data-theme] .game-app .share-dd-actions-host .share-dd-actions > button:focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: 2px;
+}
+html[data-theme] .game-app .share-dd-image {
+  left: calc(var(--share-left-space, 50cqw) / 2);
+  bottom: 0;
+  transform: translateX(-50%);
+  width: min(calc(var(--share-left-space, 50cqw) - 16px), calc(70cqh * var(--share-art-ratio, 1)));
+}
+/* Plain browser text uses symmetric padding; Android's painted labels differ. */
+html[data-theme] .game-app .landing-menu-actions .menu-action-button,
+html[data-theme] .game-app .game-result :is(.margin-call-action, .share-dd-open, .liquidated-how-to-play),
+html[data-theme] .game-app .site-info-dialog .preferences-clear-button {
+  padding-block: 6px;
+}
+/* One safe-area-aware gutter on all four relevant edges. */
+html .game-app {
+  --corner-ui-inset: max(var(--content-edge-inset), env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px), env(safe-area-inset-bottom, 0px));
+}
+html .game-app header {
+  padding-inline: var(--corner-ui-inset);
+}
+html .game-app .landing-menu-panel .home-coffee-link {
+  left: var(--corner-ui-inset);
+  bottom: var(--corner-ui-inset);
+}

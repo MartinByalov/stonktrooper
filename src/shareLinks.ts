@@ -18,9 +18,8 @@ export function socialLinks(score: number) {
   const url = resultUrl(score);
   const text = `My Stonktrooper best score: ${formatShareScore(score)}. Can you beat it?`;
   return [
-    { name: 'X', href: `https://twitter.com/intent/tweet?${new URLSearchParams({ text, url })}` },
-    { name: 'Facebook', href: `https://www.facebook.com/sharer/sharer.php?${new URLSearchParams({ u: url })}` },
-    { name: 'WhatsApp', href: `https://wa.me/?${new URLSearchParams({ text: `${text} ${url}` })}` },
     { name: 'Telegram', href: `https://t.me/share/url?${new URLSearchParams({ url, text })}` },
+    { name: 'Facebook', href: `https://www.facebook.com/sharer/sharer.php?${new URLSearchParams({ u: url })}` },
+    { name: 'X', href: `https://twitter.com/intent/tweet?${new URLSearchParams({ text, url })}` },
   ];
 }

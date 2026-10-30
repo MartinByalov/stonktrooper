@@ -1,6 +1,7 @@
 // Browser game module for ShareDD.
 import { useEffect, useRef, useState } from 'react';
-import { Check, Share2, X } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { Check, Share2} from 'lucide-react';
 import { drawShareCard, formatShareScore, shareCardBackground, SHARE_CARD_WIDTH, SHARE_CARD_HEIGHT } from './shareCard';
 import { resultUrl, socialLinks } from './shareLinks';
 import { SocialIcon } from './SocialIcon';
@@ -9,11 +10,27 @@ import { copyText } from './copyText';
 export function ShareDD({ score, theme, scoreTheme = theme, demo = false, onClose }: { score: number; theme: 'light' | 'dark'; scoreTheme?: 'light' | 'dark'; demo?: boolean; onClose: () => void }) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const dialog = useRef<HTMLDivElement>(null);
-  const closeButton = useRef<HTMLButtonElement>(null);
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState('');
   const [sharing, setSharing] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [actionsHost, setActionsHost] = useState<HTMLElement | null>(null);
+  useEffect(() => {
+    const host = document.querySelector<HTMLElement>('.share-dd-actions-host');
+    setActionsHost(host);
+    const update = () => {
+      if (!host || !dialog.current) return;
+      const bounds = dialog.current.getBoundingClientRect();
+      const buttons = host.getBoundingClientRect();
+      dialog.current.style.setProperty('--share-left-space', `${Math.max(0, buttons.left - bounds.left)}px`);
+    };
+    update();
+    const observer = new ResizeObserver(update);
+    if (host) observer.observe(host);
+    if (dialog.current) observer.observe(dialog.current);
+    window.addEventListener('resize', update);
+    return () => { observer.disconnect(); window.removeEventListener('resize', update); };
+  }, []);
   const url = resultUrl(score);
   useEffect(() => {
     setCopied(false);
@@ -38,7 +55,7 @@ export function ShareDD({ score, theme, scoreTheme = theme, demo = false, onClos
       if (cancelled) return;
       const ctx = canvas.current?.getContext('2d');
       if (!ctx || !canvas.current) { setError('Unable to generate the share image.'); return; }
-      // Geometry follows the artwork theme, not the theme of the finished run.
+      // Lid geometry follows the loaded artwork, not the finished run's theme.
       drawShareCard(ctx, score, background, theme);
       // Ignore transparent rows below the shoes for display only; the exported
       // card retains the complete native image and its transparency.
@@ -87,6 +104,12 @@ export function ShareDD({ score, theme, scoreTheme = theme, demo = false, onClos
       setError(`Unable to open the ${platform} share link.`);
     } finally { setSharing(false); }
   };
+  const actions = <div className="share-dd-actions">
+    <button type="button" aria-label={error || (copied ? 'Score link copied' : 'Copy score link')} title={error || (copied ? 'Copied!' : 'Copy score link')} disabled={sharing} onClick={() => { void share(); }} className="share-dd-copy flex items-center justify-center gap-2 rounded-lg p-3 font-bold disabled:opacity-40">
+      {copied ? <Check className="w-5 h-5" aria-hidden="true" /> : <Share2 className="w-5 h-5" aria-hidden="true" />}
+    </button>
+    {socialLinks(score).map(platform => <button key={platform.name} type="button" disabled={sharing} onClick={() => { void shareSocial(platform.name); }} aria-label={`Share score link to ${platform.name}`} title={`Share score on ${platform.name}`} className="share-dd-social-button flex items-center justify-center rounded-lg border border-[var(--line)] bg-[var(--alt)] p-3 disabled:opacity-40 cursor-pointer"><SocialIcon name={platform.name} /></button>)}
+  </div>;
   return <div className="share-dd-overlay fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4" onPointerDown={event => event.stopPropagation()}>
     <div ref={dialog} role="dialog" aria-modal="false" aria-label={demo ? 'Share score demo — simulated result' : 'Share score'} className="share-dd-dialog" onKeyDown={event => {
       event.stopPropagation();
@@ -101,16 +124,10 @@ export function ShareDD({ score, theme, scoreTheme = theme, demo = false, onClos
         else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
       }
     }}>
-      <button ref={closeButton} type="button" aria-label="Close Share DD" title="Close" onClick={onClose} className="dialog-close mobile-dialog-close share-dd-close p-2 rounded border border-[var(--line)] hover:bg-[var(--alt)] cursor-pointer"><X className="w-5 h-5" aria-hidden="true" /></button>
       <div className="share-dd-image">
         <canvas ref={canvas} width={SHARE_CARD_WIDTH} height={SHARE_CARD_HEIGHT} role="img" aria-label={`Stonktrooper best score: ${formatShareScore(score)}`} className="share-dd-canvas" />
       </div>
-      <div className="share-dd-actions">
-        {socialLinks(score).map(platform => <button key={platform.name} type="button" disabled={sharing} onClick={() => { void shareSocial(platform.name); }} aria-label={`Share score link to ${platform.name}`} title={`Share score on ${platform.name}`} className="share-dd-social-button flex items-center justify-center rounded-lg border border-[var(--line)] bg-[var(--alt)] p-3 disabled:opacity-40 cursor-pointer"><SocialIcon name={platform.name} /></button>)}
-        <button type="button" aria-label={error || (copied ? 'Score link copied' : 'Copy score link')} title={error || (copied ? 'Copied!' : 'Copy score link')} disabled={sharing} onClick={() => { void share(); }} className="share-dd-copy flex items-center justify-center gap-2 rounded-lg p-3 font-bold disabled:opacity-40">
-          {copied ? <Check className="w-5 h-5" aria-hidden="true" /> : <Share2 className="w-5 h-5" aria-hidden="true" />}
-        </button>
-      </div>
+      {actionsHost ? createPortal(actions, actionsHost) : actions}
     </div>
   </div>;
 }

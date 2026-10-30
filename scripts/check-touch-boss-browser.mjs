@@ -142,6 +142,10 @@ try {
       }
     };
     await checkWideActions('.landing-menu-actions .menu-action-button');
+    const gutters=await evaluate(`(()=>{const logo=document.querySelector('.header-logo-frame').getBoundingClientRect(),full=document.querySelector('.desktop-fullscreen-control').getBoundingClientRect(),donate=document.querySelector('.home-coffee-link'),panel=donate.offsetParent.getBoundingClientRect(),d=donate.getBoundingClientRect();const button=document.querySelector('.landing-menu-play-button'),s=getComputedStyle(button);return {left:logo.left,right:innerWidth-full.right,donateLeft:d.left-panel.left,donateBottom:panel.bottom-d.bottom,paddingTop:s.paddingTop,paddingBottom:s.paddingBottom};})()`);
+    assert.ok(Math.abs(gutters.left-gutters.right)<1,'Logo/fullscreen symmetric gutters: '+JSON.stringify(gutters));
+    assert.ok(Math.abs(gutters.donateLeft-gutters.donateBottom)<2,'Donate symmetric left/bottom gutters: '+JSON.stringify(gutters));
+    assert.equal(gutters.paddingTop,gutters.paddingBottom,'Plain action text has vertically symmetric padding');
     if(mobile){
       const chrome=await evaluate(`(()=>{const h=document.querySelector('header').getBoundingClientRect();const b=document.querySelector('.desktop-fullscreen-control').getBoundingClientRect();const f=document.querySelector('.desktop-live-feed-bar').getBoundingClientRect();const m=document.querySelector('.mobile-header-feed').getBoundingClientRect();return {header:h.height,button:b.width,feed:f.height,inlineWidth:m.width,inlineTop:m.top,inlineBottom:m.bottom,top:h.top,bottom:h.bottom};})()`);
       assert.ok(chrome.button>=40,'Touch fullscreen control is at least 40px');
@@ -228,16 +232,18 @@ try {
     await evaluate('window.__combat.lose();window.__combat.step()');await settle();
     assert.equal(await evaluate('window.__combat.snapshot().state'),'over','Boss knockout uses normal game over');
     assert.equal(await evaluate('window.__combat.snapshot().boss'),null);
+    const beforeShare=await evaluate(`(()=>{const r=document.querySelector('.share-dd-open').getBoundingClientRect();return {width:r.width,left:r.left};})()`);
     await evaluate(`document.querySelector('.share-dd-open').click()`);await settle();
     await checkWideActions('.game-result-over .game-result-actions > button');
     const share=await evaluate(`(()=>{const a=document.querySelector('.share-dd-actions');return {display:getComputedStyle(a).display,buttons:[...a.querySelectorAll('button')].map(b=>{const r=b.getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height};})};})()`);
-    if(mobile){
-      assert.equal(share.display,'flex','Landscape shares use a vertical column');
-      assert.ok(share.buttons.every(b=>b.width>=40 && b.height>=40 && b.x>=0 && b.y>=0 && b.y+b.height<=height),'Share touch controls fit viewport');
-      assert.equal(new Set(share.buttons.map(b=>Math.round(b.x))).size,1,'Share controls share one left edge');
-      assert.ok(share.buttons.every(b=>b.x>=36),'Column is inset from camera edge even without safe-area values');
-      assert.ok(share.buttons.every((b,i,all)=>i===0 || b.y>=all[i-1].y+all[i-1].height),'Social buttons stack above the final Share button without overlap');
-    }
+    assert.equal(share.display,'grid','Shares replace wide Share DD with one row');
+    assert.equal(share.buttons.length,4);
+    assert.equal(await evaluate(`!!document.querySelector('.share-dd-open, .share-dd-close')`),false,'No duplicate Share DD or close X');
+    assert.ok(share.buttons.every(b=>Math.abs(b.width-b.height)<1),'All share buttons square');
+    assert.ok(Math.abs(share.buttons[0].x-beforeShare.left)<1,'Shares retain action left edge');
+    assert.ok(Math.abs(share.buttons.at(-1).x+share.buttons.at(-1).width-share.buttons[0].x-beforeShare.width)<1,'Share row matches wide action width');
+    const art=await evaluate(`(()=>{const r=document.querySelector('.share-dd-image').getBoundingClientRect();return {left:r.left,right:r.right};})()`);
+    assert.ok(Math.abs((art.left+art.right)/2-beforeShare.left/2)<1,'Artwork centered in left space');
     console.log(`PASS ${width}x${height}: guide, ${mobile?'multitouch jump/shoot/double jump/cancel':'keyboard/mouse'}, three live-chart bosses, damage, pause/resume, victory, knockout and preserved pickups`);
   }
   assert.deepEqual(errors,[],'No browser exceptions');
