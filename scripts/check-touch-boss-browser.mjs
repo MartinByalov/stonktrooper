@@ -144,7 +144,12 @@ try {
     await checkWideActions('.landing-menu-actions .menu-action-button');
     const gutters=await evaluate(`(()=>{const logo=document.querySelector('.header-logo-frame').getBoundingClientRect(),full=document.querySelector('.desktop-fullscreen-control').getBoundingClientRect(),donate=document.querySelector('.home-coffee-link'),panel=donate.offsetParent.getBoundingClientRect(),d=donate.getBoundingClientRect();const button=document.querySelector('.landing-menu-play-button'),s=getComputedStyle(button);return {left:logo.left,right:innerWidth-full.right,donateLeft:d.left-panel.left,donateBottom:panel.bottom-d.bottom,paddingTop:s.paddingTop,paddingBottom:s.paddingBottom};})()`);
     assert.ok(gutters.right<= (mobile?3:2)+.1,'Fullscreen retains compact right gutter: '+JSON.stringify(gutters));
-    assert.ok(Math.abs(gutters.donateLeft-gutters.donateBottom)<2,'Donate symmetric left/bottom gutters: '+JSON.stringify(gutters));
+    if(!mobile)assert.ok(Math.abs(gutters.donateLeft-gutters.donateBottom)<2,'Donate symmetric left/bottom gutters: '+JSON.stringify(gutters));
+    if(mobile){
+      const painted=await evaluate(`(()=>{const icon=document.querySelector('.desktop-fullscreen-control svg'),r=icon.getBoundingClientRect(),b=icon.getBBox(),v=icon.viewBox.baseVal,s=r.width/v.width,stroke=parseFloat(getComputedStyle(icon).strokeWidth)||0;const right=innerWidth-(r.left+(b.x+b.width+stroke/2-v.x)*s);const logo=document.querySelector('.header-logo-frame').getBoundingClientRect();const donate=document.querySelector('.home-coffee-link').getBoundingClientRect();return {right,logo:logo.left,donate:donate.left};})()`);
+      assert.ok(Math.abs(painted.logo-painted.right)<1,'Logo left matches painted fullscreen right: '+JSON.stringify(painted));
+      assert.ok(Math.abs(painted.donate-painted.logo)<1,'Donate left aligns with logo: '+JSON.stringify(painted));
+    }
     assert.equal(gutters.paddingTop,gutters.paddingBottom,'Plain action text has vertically symmetric padding');
     const readChrome = () => evaluate(`(()=>{const rect=s=>{const r=document.querySelector(s).getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height}};return {logo:rect('.header-logo-frame'),fullscreen:rect('.desktop-fullscreen-control'),donate:rect('.home-coffee-link'),feed:rect(${mobile ? "'.mobile-header-feed'" : "'.desktop-live-feed'"})};})()`);
     await settle();

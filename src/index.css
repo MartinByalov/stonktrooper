@@ -5161,8 +5161,16 @@ html .game-app header {
 }
 @media (pointer: coarse) {
   html .game-app { --fullscreen-edge-inset: 3px; }
+  html .game-app header {
+    padding-left: max(var(--mobile-logo-edge-inset, var(--content-edge-inset)), env(safe-area-inset-left, 0px));
+  }
 }
 html .game-app .landing-menu-panel .home-coffee-link {
   left: var(--corner-ui-inset);
   bottom: var(--corner-ui-inset);
+}
+@media (pointer: coarse) {
+  html .game-app .landing-menu-panel .home-coffee-link {
+    left: max(var(--mobile-logo-edge-inset, var(--content-edge-inset)), env(safe-area-inset-left, 0px));
+  }
 }

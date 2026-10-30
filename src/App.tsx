@@ -137,8 +137,23 @@ export default function App() {
       if (!canvas) return;
       const rect = canvas.getBoundingClientRect();
       const headerHeight = header?.getBoundingClientRect().height ?? 0;
-      // Edge gutters are CSS inputs, never outputs of fullscreen-icon geometry.
-      // Measuring the inset and feeding it back into header padding causes drift.
+      // Mirror the painted fullscreen symbol only on the LEFT. The right padding
+      // stays fixed in CSS, so this measurement cannot feed back into itself.
+      if (window.matchMedia('(pointer: coarse)').matches) {
+        const icon = fullscreenControl?.querySelector('svg');
+        if (icon && icon.getBoundingClientRect().width > 0) {
+          const iconRect = icon.getBoundingClientRect();
+          const bounds = icon.getBBox();
+          const viewBox = icon.viewBox.baseVal;
+          const scale = iconRect.width / viewBox.width;
+          const stroke = parseFloat(getComputedStyle(icon).strokeWidth) || 0;
+          const paintedRight = iconRect.left + (bounds.x + bounds.width + stroke / 2 - viewBox.x) * scale;
+          const inset = `${Math.max(0, app.getBoundingClientRect().right - paintedRight)}px`;
+          if (app.style.getPropertyValue('--mobile-logo-edge-inset') !== inset) {
+            app.style.setProperty('--mobile-logo-edge-inset', inset);
+          }
+        }
+      }
       const headerFeed = Array.from(app.querySelectorAll('.mobile-header-feed, .desktop-live-feed')).find(feed => feed.getBoundingClientRect().width > 0);
       const desktopFeed = app.querySelector('.desktop-live-feed-bar');
       app.style.setProperty('--desktop-feed-bottom', `${desktopFeed && desktopFeed.getBoundingClientRect().height > 0 ? desktopFeed.getBoundingClientRect().bottom : rect.top}px`);
