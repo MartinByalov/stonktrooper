@@ -15,13 +15,15 @@ export type PreviewAsset = 'dumpster' | 'tender' | 'jerome' | 'coin' | 'diamond'
 const previewCache = new Map<string, HTMLCanvasElement>();
 const PREVIEW_CACHE_LIMIT = 96;
 
-export function AssetPreview({ asset, compact = false, theme = 'light', grounded = false, coinLetter = 'M', animated = false }: { asset: PreviewAsset; compact?: boolean; theme?: 'light' | 'dark'; grounded?: boolean; coinLetter?: 'M' | 'B'; animated?: boolean }) {
+export function AssetPreview({ asset, compact = false, theme = 'light', grounded = false, coinLetter = 'M', animated = false, motionRate = 0 }: { asset: PreviewAsset; compact?: boolean; theme?: 'light' | 'dark'; grounded?: boolean; coinLetter?: 'M' | 'B'; animated?: boolean; motionRate?: number }) {
   const canvas = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
     const output = canvas.current?.getContext('2d');
     if (!output) return;
     const key = `${asset}:${theme}:${grounded}:${coinLetter}`;
-    const cached = animated ? undefined : previewCache.get(key);
+    // motionRate: in-game walk/flight rhythm (phase per second), never attacking.
+    const live = animated || motionRate > 0;
+    const cached = live ? undefined : previewCache.get(key);
     if (cached) {
       previewCache.delete(key);
       previewCache.set(key, cached);
@@ -40,14 +42,17 @@ export function AssetPreview({ asset, compact = false, theme = 'light', grounded
     const started = performance.now();
     const arena = asset === 'jerome' ? createBossArena() : undefined;
     let wasMoving: boolean | undefined;
+    let crop: { left: number; top: number; width: number; height: number } | undefined;
     const render = (now: number) => {
-    const moving = animated && !matchMedia('(prefers-reduced-motion: reduce)').matches && !canvas.current?.closest('[data-animations="false"]');
-    if (animated) request = requestAnimationFrame(render);
+    const moving = live && !matchMedia('(prefers-reduced-motion: reduce)').matches && !canvas.current?.closest('[data-animations="false"]');
+    if (live) request = requestAnimationFrame(render);
     if (!moving && wasMoving === false) return;
-    if (moving && now - last < 1000 / 24) return;
+    // Game-motion sprites draw every frame; their fitted crop makes that cheap.
+    if (moving && !motionRate && now - last < 1000 / 24) return;
     wasMoving = moving;
     last = now;
-    const phase = moving ? now / 180 : .8;
+    const phase = moving ? (motionRate ? now / 1000 * motionRate : now / 180) : .8;
+    const attacking = moving && !motionRate;
     ctx.clearRect(0, 0, 512, 512);
     ctx.save();
     ctx.translate(256, 256);
@@ -61,11 +66,11 @@ export function AssetPreview({ asset, compact = false, theme = 'light', grounded
       bossArena.boss.facing = -1;
       bossArena.boss.walkPhase = phase;
       bossArena.boss.moving = moving;
-      const punch = jeromePreviewPunch(moving ? Math.max(0, now - started) * .06 : 0);
-      bossArena.boss.attack = moving ? punch.attack : 0;
+      const punch = jeromePreviewPunch(attacking ? Math.max(0, now - started) * .06 : 0);
+      bossArena.boss.attack = attacking ? punch.attack : 0;
       bossArena.boss.arm = punch.arm;
       bossArena.boss.aimY = bossArena.boss.y - 60;
-      if (animated) { ctx.translate(26, 0); ctx.scale(.9, .9); }
+      if (live) { ctx.translate(26, 0); ctx.scale(.9, .9); }
       else ctx.scale(1.5, 1.5);
       drawBossEncounter(ctx, bossArena, theme === 'dark');
     } else if (asset === 'tender') {
@@ -76,10 +81,10 @@ export function AssetPreview({ asset, compact = false, theme = 'light', grounded
       ctx.translate(15, 55);
       const rider = asset.endsWith('-rider');
       ctx.scale(rider ? 1 : 1.3, rider ? 1 : 1.3);
-      drawAnimalCharacter(ctx, { type: rider ? asset.split('-')[0] : asset, mount: rider ? (asset === 'bull-rider' ? 'bear' : 'bull') : undefined, phase, attackTimer: moving ? Math.max(0, 20 - phase * 8 % 60) : 0 } as Animal, false, false, theme === 'dark', !moving && (asset === 'bull' || asset === 'bull-rider'), false, false, rider);
+      drawAnimalCharacter(ctx, { type: rider ? asset.split('-')[0] : asset, mount: rider ? (asset === 'bull-rider' ? 'bear' : 'bull') : undefined, phase, attackTimer: attacking ? Math.max(0, 20 - phase * 8 % 60) : 0 } as Animal, false, false, theme === 'dark', !moving && (asset === 'bull' || asset === 'bull-rider'), false, false, rider);
     } else if (asset === 'ape') {
       ctx.scale(1.6, 1.6);
-      drawApeAsset(ctx, phase, false, moving ? Math.max(0, 16 - phase * 8 % 60) : 0);
+      drawApeAsset(ctx, phase, false, attacking ? Math.max(0, 16 - phase * 8 % 60) : 0);
     } else if (asset === 'swan' || asset === 'pigeon' || asset === 'white' || asset === 'hawk') {
       ctx.scale(2, 2);
       ctx.save();
@@ -153,18 +158,27 @@ export function AssetPreview({ asset, compact = false, theme = 'light', grounded
       drawPickupAsset(ctx, { type: asset, x: 0, y: 0, taken: false }, 0, 0, moving ? phase * 10 : 0, theme === 'dark', coinLetter);
     }
     ctx.restore();
-    const pixels = ctx.getImageData(0, 0, 512, 512).data;
     let left = 512, top = 512, right = -1, bottom = -1;
-    for (let y = 0; y < 512; y++) {
-      for (let x = 0; x < 512; x++) {
-        if (pixels[(y * 512 + x) * 4 + 3] === 0) continue;
-        left = Math.min(left, x); right = Math.max(right, x);
-        top = Math.min(top, y); bottom = Math.max(bottom, y);
+    if (!crop) {
+      const pixels = ctx.getImageData(0, 0, 512, 512).data;
+      for (let y = 0; y < 512; y++) {
+        for (let x = 0; x < 512; x++) {
+          if (pixels[(y * 512 + x) * 4 + 3] === 0) continue;
+          left = Math.min(left, x); right = Math.max(right, x);
+          top = Math.min(top, y); bottom = Math.max(bottom, y);
+        }
       }
     }
     output.clearRect(0, 0, 160, 160);
-    if (right < left) return;
-    const width = right - left + 1, height = bottom - top + 1;
+    if (!crop && right < left) return;
+    let width = right - left + 1, height = bottom - top + 1;
+    if (motionRate) {
+      // Fit once; later frames keep the same scale and ground line, so the
+      // sprite walks/flaps in place instead of re-centering every frame.
+      const pad = Math.round(Math.max(width, height) * .08);
+      crop ??= { left: Math.max(0, left - pad), top: Math.max(0, top - pad), width: Math.min(512, width + pad * 2), height: Math.min(512, height + pad) };
+      ({ left, top, width, height } = crop);
+    }
     if (animated && asset !== 'coin') {
       const scale = Math.min(.8, 156 / Math.max(width, height));
       output.drawImage(buffer, left, top, width, height,
@@ -177,7 +191,7 @@ export function AssetPreview({ asset, compact = false, theme = 'light', grounded
     const scale = size / Math.max(width, height);
     output.drawImage(buffer, left, top, width, height,
       (160 - width * scale) / 2, grounded ? 160 - height * scale : (160 - height * scale) / 2, width * scale, height * scale);
-    if (animated) return;
+    if (live) return;
     const preview = document.createElement('canvas');
     preview.width = 160; preview.height = 160;
     const previewContext = preview.getContext('2d');

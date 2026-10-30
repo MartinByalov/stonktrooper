@@ -44,10 +44,14 @@ try {
       assert.equal(Math.abs(shoulder.x - otherShoulder.x), 3, 'Profile shoulders overlap in projection');
     }
   }
-  for (const phase of [0, 1, 2, 3, 4, 5]) {
-    const weapon = animalWeaponPose(false, phase, 0);
+  const tips = [];
+  for (let i = 0; i < 360; i++) {
+    const weapon = animalWeaponPose(false, i * Math.PI / 180, 0);
     const tip = { x: weapon.x + 35 * Math.sin(weapon.angle), y: weapon.y - 35 * Math.cos(weapon.angle) };
-    assert.ok(tip.x < weapon.x && Math.abs(tip.y) < 2, 'Resting bat slopes forward down to the ground');
+    assert.ok(tip.x < weapon.x && tip.y < 2 && tip.y > -5, 'Walking bat slopes forward and only lifts slightly off the ground');
+    tips.push(tip.y);
   }
+  assert.ok(Math.max(...tips) - Math.min(...tips) > 3, 'Walking bat visibly lifts and taps with the stride');
+  assert.ok(Math.abs(animalWeaponPose(false, 0, 0).angle - animalWeaponPose(false, Math.PI / 2, 0).angle) > .1, 'Bat moves while the bull walks');
   console.log('PASS biped gait, shortened reachable left arm and two-handed ground-level bat:', checks);
 } finally { await server.close(); }

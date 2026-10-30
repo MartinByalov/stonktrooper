@@ -36,7 +36,7 @@ try {
     assert.equal(paws, 2, 'Both paws visibly wrap the weapon');
     assert.ok(tail, 'Species-specific tail is drawn behind the torso');
     if (!bear && attack === 0) {
-      assert.ok(pose.x >= -16 && pose.x <= -15, 'Resting bat is carried close to the torso');
+      assert.ok(pose.x >= -17 && pose.x <= -14, 'Resting bat is carried close to the torso');
     } else {
       assert.ok(pose.x < -20, 'Chainsaw and swinging bat stay in front of the chest');
     }

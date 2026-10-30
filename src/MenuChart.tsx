@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { AssetPreview, type PreviewAsset } from './AssetPreview';
 
 // Two small scenes frame the controls. Coordinates are local to each side,
@@ -23,10 +23,65 @@ const scenery: { asset: PreviewAsset; side: 'left' | 'right'; x: number; y: numb
   { asset: 'jerome', side: 'right', x: 0.13, y: 0.70, size: 0.25 },
   { asset: 'bell', side: 'right', x: 0.96, y: 0.85, size: 0.13 },
 ];
+// Home characters move like their in-game counterparts: game speed (world px
+// per 60fps frame, scaled to the sprite) and walk/wing phase per second.
+// They travel right to left and re-enter from the right edge.
+const characterMotion: Partial<Record<PreviewAsset, { speed: number; phaseRate: number }>> = {
+  pigeon: { speed: 2, phaseRate: 5.4 }, hawk: { speed: 2, phaseRate: 5.4 }, swan: { speed: 2, phaseRate: 5.4 }, white: { speed: 2, phaseRate: 5.4 },
+  bull: { speed: 1.5, phaseRate: 9.6 }, bear: { speed: .9, phaseRate: 9.6 }, whale: { speed: .9, phaseRate: 9.6 },
+  ape: { speed: 1.2, phaseRate: 9 }, jerome: { speed: .9, phaseRate: 9.6 },
+};
+// In-game height that a Home sprite's extent stands for.
+const GAME_SPRITE_SIZE = 64;
+// Home is a calm backdrop: characters keep their game gait at a slower pace.
+const HOME_PACE = .4;
+type Mover = {
+  node: SVGForeignObjectElement; startX: number; startY: number; extent: number; lift: number;
+  bird: boolean; speed: number; phaseRate: number; y?: number; x?: number;
+};
 
 export function MenuChart({ theme }: { theme: 'light' | 'dark' }) {
   const root = useRef<SVGSVGElement>(null);
   const [size, setSize] = useState({ width: 1040, height: 480, portrait: false, mobile: false });
+  const movers = useRef(new Map<number, Mover>());
+  const geometry = useRef<{ groundAt: (x: number) => number; plotWidth: number; plotHeight: number; volumeHeight: number }>({ groundAt: () => 0, plotWidth: 1, plotHeight: 1, volumeHeight: 0 });
+  useEffect(() => {
+    const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    let frame = 0, last = performance.now();
+    const started = last;
+    const place = (mover: Mover, x: number, now: number, dt: number) => {
+      let y: number;
+      if (mover.bird) {
+        // Birds hold their altitude with the game's gentle wing-synced bob,
+        // instead of tracing the chart.
+        y = mover.startY + Math.sin(now / 1000 * mover.phaseRate) * 5 * mover.extent / GAME_SPRITE_SIZE;
+      } else {
+        const target = Math.max(4, geometry.current.groundAt(x + mover.extent / 2) - mover.extent - mover.lift);
+        // Ease between candle tops; snap after wrapping or on the first frame.
+        const wrapped = mover.x !== undefined && x > mover.x;
+        y = mover.y === undefined || wrapped || !dt ? target : mover.y + (target - mover.y) * (1 - Math.exp(-dt / 160));
+      }
+      mover.x = x; mover.y = y;
+      mover.node.setAttribute('x', x.toFixed(2));
+      mover.node.setAttribute('y', y.toFixed(2));
+    };
+    const tick = (now: number) => {
+      frame = requestAnimationFrame(tick);
+      const dt = Math.min(100, now - last);
+      last = now;
+      const still = motion.matches || !!root.current?.closest('[data-animations="false"]');
+      const { plotWidth } = geometry.current;
+      for (const mover of movers.current.values()) {
+        if (still) { place(mover, mover.startX, 0, 0); continue; }
+        // Wrap over the plot plus the sprite width, so it fully leaves before re-entering.
+        const span = plotWidth + mover.extent;
+        const travelled = mover.speed * (now - started) / 1000;
+        place(mover, ((mover.startX + mover.extent - travelled) % span + span) % span - mover.extent, now, dt);
+      }
+    };
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, []);
 
   useLayoutEffect(() => {
     const element = root.current;
@@ -99,6 +154,10 @@ export function MenuChart({ theme }: { theme: 'light' | 'dark' }) {
     const volume = Math.min(volumeHeight, 3 + (0.15 + activity * 0.5 + random() * 0.35) * Math.max(0, volumeHeight - 3));
     return { x: (portrait ? 0 : 2) + index * candleSpacing, open, close, volume, upperWick, lowerWick };
   });
+  geometry.current = {
+    groundAt: x => { const candle = candles[Math.max(0, Math.min(count - 1, Math.round((x - 2) / candleSpacing)))]; return Math.min(candle.open, candle.close); },
+    plotWidth, plotHeight, volumeHeight,
+  };
   const priceTickSpacing = portrait ? 64 : 48;
   const priceTicks = Array.from({ length: Math.max(1, Math.floor(priceHeight / priceTickSpacing)) }, (_, index) => 24 + index * priceTickSpacing);
   const timeStep = Math.max(1, Math.ceil(count / Math.max(1, Math.floor(plotWidth / 70)) / 10)) * 10;
@@ -154,9 +213,20 @@ export function MenuChart({ theme }: { theme: 'light' | 'dark' }) {
       const positionY = asset === 'white'
         ? Math.min(plotHeight - volumeHeight - extent, ground + extent * 0.85)
         : Math.max(4, ground - extent - lift);
+      const motion = characterMotion[asset];
+      const speed = motion ? motion.speed * 60 * extent / GAME_SPRITE_SIZE * HOME_PACE : 0;
       return <foreignObject key={index} data-menu-asset={asset} data-grounded={grounded} data-candle-top={ground}
+        data-moving={speed ? true : undefined}
+        ref={node => {
+          if (node && speed && motion) movers.current.set(index, { node, startX: positionX, startY: positionY, extent, lift, bird, speed, phaseRate: motion.phaseRate });
+          else movers.current.delete(index);
+        }}
         x={positionX} y={positionY} width={extent} height={extent}>
-        <AssetPreview asset={asset} theme={theme} grounded={grounded} animated={['coin', 'printer', 'tender', 'banana', 'banknote', 'diamond', 'bag', 'bell'].includes(asset)} />
+        {/* The ape runs right in the game; mirror it so it walks, not backpedals, leftwards. */}
+        <div className="menu-character" style={asset === 'ape' ? { transform: 'scaleX(-1)' } : undefined}>
+          <AssetPreview asset={asset} theme={theme} grounded={grounded} motionRate={motion?.phaseRate}
+            animated={['coin', 'printer', 'tender', 'banana', 'banknote', 'diamond', 'bag', 'bell'].includes(asset)} />
+        </div>
       </foreignObject>;
     })}
     </g>

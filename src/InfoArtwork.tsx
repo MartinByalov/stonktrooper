@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { AssetPreview } from './AssetPreview';
 import { InfoSurprisePreview, type InfoFruit } from './InfoSurprisePreview';
+import { FruitShine } from './FruitShine';
 
 export function InfoArtwork({ asset, theme, animationsEnabled }: { asset: 'coin' | 'briefcase' | 'bag' | 'banana'; theme: 'light' | 'dark'; animationsEnabled: boolean }) {
   const [clicks, setClicks] = useState(0);
@@ -29,7 +30,7 @@ export function InfoArtwork({ asset, theme, animationsEnabled }: { asset: 'coin'
       <span className="info-coin-front"><AssetPreview asset="coin" theme={theme} animated /></span>
       <span className="info-coin-back"><AssetPreview asset="coin" theme={theme} coinLetter="B" animated /></span>
     </span> : asset === 'briefcase' ? <span className="info-briefcase-scale" style={{ transform: `scale(${scale})` }}><AssetPreview asset="briefcase" theme={theme} /></span>
-      : asset === 'banana' ? <span className="info-fruit-shine">{fruit === 'banana' ? <AssetPreview asset="banana" theme={theme} /> : <InfoSurprisePreview kind={fruit as InfoFruit} />}</span>
+      : asset === 'banana' ? <FruitShine animate={animationsEnabled}>{fruit === 'banana' ? <AssetPreview asset="banana" theme={theme} /> : <InfoSurprisePreview kind={fruit as InfoFruit} />}</FruitShine>
       : <span className="info-bag-surprise">
         <span className="info-bag-front"><AssetPreview asset="bag" theme={theme} /></span>
         <span className="info-bag-clown" aria-hidden="true"><InfoSurprisePreview kind="clown" /></span>

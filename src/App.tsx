@@ -524,7 +524,7 @@ export default function App() {
           <canvas className="mobile-header-feed" aria-label="Live Feed" />
           <div className="header-controls flex items-center gap-2 ml-auto">
             {/* Retain manual testing controls without exposing them on the site. */}
-            <div hidden style={{ display: 'none' }} data-testid="hidden-mode-controls">
+            {import.meta.env.DEV && <div hidden style={{ display: 'none' }} data-testid="hidden-mode-controls">
             <button
               type="button"
               title="Start Whale mode: Whale, two bananas, then Bear and Bull targets"
@@ -565,7 +565,7 @@ export default function App() {
               setInvertedRequest(1); setState('play');
             }} className="px-2.5 py-1.5 rounded border border-[var(--line)] bg-[var(--alt)] text-xs text-[var(--green)] disabled:opacity-40">↕ Inverted</button>
             <button type="button" title="Music styles" aria-expanded={soundMenuOpen} onClick={() => { if (state === 'play') setState('paused'); setSoundMenuOpen(true); }} className="px-2.5 py-1.5 rounded border border-[var(--line)] bg-[var(--alt)] text-xs text-[var(--green)]">♫ Music</button>
-            </div>
+            </div>}
             {(state === 'play' || state === 'paused') && <button
               type="button"
               onClick={() => setState(current => current === 'play' ? 'paused' : 'play')}
