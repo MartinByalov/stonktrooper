@@ -23,6 +23,14 @@ const hook = `
       if(kind)spawnBoss(kind);
     },
     step(count=1){for(let i=0;i<count;i++)update();const c=canvasRef.current;draw(c.getContext('2d'));},
+    feed(){
+      const g=gameRef.current;
+      g.tickerScrollX=0;g.tickerQueue=[{news:{source:'REGRESSION',headline:'Bell feed stays visible'},width:0}];
+      const texts=[],original=CanvasRenderingContext2D.prototype.fillText;
+      CanvasRenderingContext2D.prototype.fillText=function(text,...args){texts.push(String(text));return original.call(this,text,...args);};
+      try{const c=canvasRef.current;draw(c.getContext('2d'));}finally{CanvasRenderingContext2D.prototype.fillText=original;}
+      return texts;
+    },
     snapshot(){const g=gameRef.current,a=bossEncounter.current;return {state:g.currentState,x:g.p.x,y:g.p.y,held:g.held,buffer:g.p.buf,jumps:g.p.jumps,cases:g.cases.length,score:g.score,activity:g.activityPips,candles:g.C.length,carry:g.p.carry,hat:g.fedoraTimer,coins:g.coins,boss:a?{kind:a.boss.kind,health:a.boss.health,attack:a.boss.attack,behavior:a.boss.behavior,lives:a.player.lives,cases:a.cases.length,external:a.externalPlayer}:null};},
     pickups(){const g=gameRef.current;g.pickups.push({type:'coin',x:g.p.x,y:g.p.y-25,taken:false});},
     equip(){const g=gameRef.current;g.p.carry=200;g.p.shieldKind='diamond';g.fedoraTimer=400;g.fedoraCount=3;},
@@ -49,7 +57,42 @@ try {
   assert.equal(touchAction(289,100,1000,.05),'jump');
   assert.equal(touchAction(290,100,1000,.05),'shoot');
   assert.equal(touchAction(1050,100,1000,.05),null);
-  const { createBossArena, stepBossArena } = await server.ssrLoadModule('/src/boxingRules.ts');
+  const { createBossArena, stepBossArena, bossGlovePose } = await server.ssrLoadModule('/src/boxingRules.ts');
+  const { bossAttackBoundary, stepChartBoss } = await server.ssrLoadModule('/src/chartBossRules.ts');
+  const { paulTailPose } = await server.ssrLoadModule('/src/paulRules.ts');
+  const { chartViewport, chartToScreen, screenToChart } = await server.ssrLoadModule('/src/chartViewport.ts');
+  for (const mobile of [false,true]) for (const display of [{width:740,height:360},{width:915,height:412},{width:1440,height:900}]) {
+    const view=chartViewport(mobile,1920,840,86,display),plot=1834;
+    const playerX=mobile?view.x:250;
+    for (const kind of ['jerome','paul','janet']) {
+      const a=createBossArena(kind);
+      Object.assign(a,{externalPlayer:true,runnerOffset:playerX,left:0,right:screenToChart({x:plot,y:0},view).x,heightAt:()=>400,safeHeightAt:()=>400,nextDrop:Infinity});
+      a.bossLeft=bossAttackBoundary(playerX,0,plot,view.scaleX);a.bossRight=a.right-70;
+      Object.assign(a.player,{x:playerX,y:400,grounded:true,invulnerable:0});
+      Object.assign(a.boss,{x:a.bossRight,y:400,grounded:true,behavior:'approach'});
+      for(let i=0;i<1500 && a.boss.behavior!=='attack';i++)stepChartBoss(a,()=>.5);
+      assert.equal(a.boss.behavior,'attack');
+      if(kind==='janet') {
+        for(let i=0;i<90;i++){stepChartBoss(a,()=>.5);assert.ok(a.boss.x>=a.player.x+48);}
+        continue;
+      }
+      a.boss.attack=kind==='jerome'?24:21;
+      const pose=kind==='jerome'?bossGlovePose(a.boss):paulTailPose(a.boss);
+      const tip=chartToScreen({x:a.boss.x-pose.x,y:0},view).x;
+      const playerScreen=chartToScreen({x:playerX,y:0},view).x;
+      assert.ok(Math.abs(tip-(playerScreen-plot*.03))<view.scaleX+1e-7,`Visible strike extends behind actual runner anchor (within AI arrival tolerance): ${JSON.stringify({kind,mobile,display,tip,playerScreen,bossX:a.boss.x,pose})}`);
+      a.boss.attack=kind==='jerome'?48:60;
+      for(let i=0;i<60;i++)stepBossArena(a,0,()=>.5);
+      assert.equal(a.player.lives,2,'Grounded runner is hit by visible strike');
+      const dodge=createBossArena(kind);
+      Object.assign(dodge,{externalPlayer:true,runnerOffset:playerX,left:0,right:a.right,bossLeft:a.bossLeft,bossRight:a.bossRight,heightAt:()=>400,safeHeightAt:()=>400,nextDrop:Infinity});
+      Object.assign(dodge.player,{x:playerX,y:250,grounded:false,invulnerable:0});
+      Object.assign(dodge.boss,{x:a.boss.x,y:400,behavior:'attack',attackKind:kind==='paul'?'tail':'punch',attack:kind==='paul'?60:48,facing:-1,aimY:365,attackReachScale:a.boss.attackReachScale});
+      for(let i=0;i<60;i++)stepBossArena(dodge,0,()=>.5);
+      assert.equal(dodge.player.lives,3,'Jump avoids the same visible strike');
+    }
+  }
+  console.log('PASS Bell attack reach, visible contact and jump dodge across desktop/mobile camera anchors');
   for (const kind of ['jerome', 'janet', 'paul']) {
     const a=createBossArena(kind);
     a.externalPlayer=true; a.runnerOffset=180; a.bossLeft=0; a.bossRight=1175;
@@ -86,8 +129,8 @@ try {
     await call('Page.navigate',{url:`http://127.0.0.1:${server.httpServer.address().port}`});
     await wait(`!!window.__combat && !!document.querySelector('.landing-menu-guide-button')`);
     await evaluate(`document.querySelector('.landing-menu-guide-button').click()`);await settle();
-    const guide=await evaluate(`document.querySelector('.mechanics-guide').innerText`);
-    assert.ok(guide.includes('Space')&&guide.includes('left 20%')&&guide.includes('chart keeps moving'));
+    const guide=await evaluate(`document.querySelector('.mechanics-guide').textContent`);
+    assert.ok(guide.includes('Space')&&guide.includes('tap the left of the screen')&&guide.includes('A mighty foe joins your ride.'));
     assert.ok(!guide.includes('use the joystick')&&!guide.includes('Move Left'));
     await evaluate(`document.querySelector('.mobile-how-to-close').click();window.__combat.setup()`);await settle();
     assert.equal(await evaluate(`!!document.querySelector('.mobile-joystick')`),false);
@@ -117,6 +160,8 @@ try {
     }
     for(const kind of ['jerome','janet','paul']){
       await evaluate(`window.__combat.setup('${kind}')`);await settle();
+      const feed=await evaluate('window.__combat.feed()');
+      assert.ok(feed.some(text=>text.includes('REGRESSION: Bell feed stays visible')),`${kind}: enabled Live Feed remains rendered during boss fight`);
       const before=await evaluate('window.__combat.snapshot()');
       await evaluate('window.__combat.step(30)');
       const after=await evaluate('window.__combat.snapshot()');

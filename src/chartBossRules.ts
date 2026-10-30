@@ -2,6 +2,11 @@ import type { BossArena } from './boxingRules';
 import { alternatingPunchArm } from './jeromePunch';
 export const BOSS_PLAYER_CLEARANCE = 48;
 
+// Android's attack line is 3% of the plot behind the runner. Desktop uses a
+// different camera anchor, so derive this from the player, not a fixed 17% line.
+export const bossAttackBoundary = (playerX: number, cameraX: number, plotWidth: number, scaleX: number): number =>
+  Math.max(cameraX, playerX - plotWidth * .03 / scaleX);
+
 // Targets are relative to the runner, so chart scrolling never changes an AI
 // destination or masquerades as the boss walking across the screen.
 const chooseRoamTarget = (arena: BossArena, random: () => number, retreat: boolean): void => {

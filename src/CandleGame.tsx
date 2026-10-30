@@ -7,6 +7,7 @@ import { hatMetrics } from './hatPose';
 import { drawPigeonStain } from './pigeonStain';
 import { briefcaseColors, drawCharacterHat, drawPickupAsset, drawSwanAsset, drawApeAsset, drawApeHead, drawHumanHead, drawApeHat, drawFallingCharacter, APE_SCALE } from './assetRenderer';
 import React, { useEffect, useLayoutEffect, useRef, useCallback } from 'react';
+import { bossAttackBoundary } from './chartBossRules';
 import { briefcaseArmPose } from './characterPose';
 import { randomDelay } from './randomTiming';
 import { lethalBirdContact } from './birdCollision';
@@ -43,7 +44,7 @@ import { hawkCandle, hawkDropBudget, hawkSpeedMultiplier } from './hawkTrack';
 import { zeroCrashCamera, zeroCrashComplete } from './zeroCrash';
 import { canSpawnEncounter, shouldPlaceBell, WARMUP_CANDLES, difficultyUnlocked, chartPrice, marketReachedZero } from './pacing';
 import { pigeonFlightY, stepPigeonDrop, PigeonDrop } from './pigeonEffects';
-import { createBossArena, throwBossCase, stepBossArena, bossName, randomBossKind, bossMaxHealth, bossWinPips } from './boxingRules';
+import { createBossArena, throwBossCase, stepBossArena, randomBossKind, bossMaxHealth, bossWinPips } from './boxingRules';
 import { drawBossEncounter } from './bossRenderer';
 import { bossColors } from './bossColors';
 import { ApeCompanion, addCompanion, tickCompanions } from './companions';
@@ -805,7 +806,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     encounter.cameraX = g.cx;
     encounter.left = g.cx;
     encounter.right = g.cx + screenToChart({ x: W - AX, y: 0 }, currentChartViewport(canvasDisplay.current)).x;
-    encounter.bossLeft = g.cx + screenToChart({ x: (W - AX) * .17, y: 0 }, currentChartViewport(canvasDisplay.current)).x;
+    encounter.bossLeft = bossAttackBoundary(g.p.x, g.cx, W - AX, currentChartViewport(canvasDisplay.current).scaleX);
     encounter.bossRight = encounter.right - 70;
     encounter.boss.x = Math.min(encounter.bossRight, encounter.player.x + 550);
     encounter.boss.y = encounter.safeHeightAt(encounter.boss.x);
@@ -1940,7 +1941,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
       encounter.left = g.cx;
       encounter.right = g.cx + screenToChart({ x: W - AX, y: 0 }, currentChartViewport(canvasDisplay.current)).x;
       encounter.briefcaseRight = g.cx + screenToChart({ x: (W - AX) * .8, y: 0 }, currentChartViewport(canvasDisplay.current)).x;
-      encounter.bossLeft = g.cx + screenToChart({ x: (W - AX) * .17, y: 0 }, currentChartViewport(canvasDisplay.current)).x;
+      encounter.bossLeft = bossAttackBoundary(g.p.x, g.cx, W - AX, currentChartViewport(canvasDisplay.current).scaleX);
       encounter.bossRight = encounter.right - 70;
       Object.assign(encounter.player, { x: g.p.x, y: g.p.y, vy: g.p.vy,
         grounded: !g.p.air, jumps: g.p.jumps, moving: true, walkPhase: g.p.ph });
@@ -2597,33 +2598,26 @@ export const CandleGame: React.FC<CandleGameProps> = ({
 
 
       ctx.font = `bold ${feedFontSize}px monospace`;
-      // The active boss owns the enabled header feed on every browser layout.
-      const bossReplacesNews = !!bossEncounter.current;
-      if (bossReplacesNews || g.printerTimer > 0) {
-        ctx.textAlign = 'center';
+      // Bell encounters retain the enabled news feed; boss health has its own strip.
+      if (g.printerTimer > 0) {
+        ctx.textAlign = 'left';
         ctx.fillStyle = theme === 'light' ? '#08795c' : '#55d6ae';
         ctx.font = `bold ${mobile || header ? feedFontSize : 13}px monospace`;
-        if (bossReplacesNews) {
-          ctx.fillStyle = bossColors(bossEncounter.current?.boss.kind ?? 'jerome', theme === 'dark').foreground;
-          writeCentered(bossName(bossEncounter.current?.boss.kind ?? 'jerome'), (W) / 2);
-        } else {
-          ctx.textAlign = 'left';
-          // The prefix never wraps; only the trailing R stream repeats.
-          const prefix = 'MONEY PRINTER GO B';
-          const prefixWidth = ctx.measureText(prefix).width * textScaleX;
-          if (g.printerTickerX + prefixWidth > 0) writeCentered(prefix, g.printerTickerX);
-          const letterWidth = Math.max(1, ctx.measureText('R').width * textScaleX);
-          const tailX = g.printerTickerX + prefixWidth;
-          const visibleTailX = tailX < 0 ? -((-tailX) % letterWidth) : tailX;
-          if (visibleTailX < W) {
-            const count = Math.ceil((W - visibleTailX) / letterWidth) + 1;
-            writeCentered('R'.repeat(count), visibleTailX);
-          }
+        // The prefix never wraps; only the trailing R stream repeats.
+        const prefix = 'MONEY PRINTER GO B';
+        const prefixWidth = ctx.measureText(prefix).width * textScaleX;
+        if (g.printerTickerX + prefixWidth > 0) writeCentered(prefix, g.printerTickerX);
+        const letterWidth = Math.max(1, ctx.measureText('R').width * textScaleX);
+        const tailX = g.printerTickerX + prefixWidth;
+        const visibleTailX = tailX < 0 ? -((-tailX) % letterWidth) : tailX;
+        if (visibleTailX < W) {
+          const count = Math.ceil((W - visibleTailX) / letterWidth) + 1;
+          writeCentered('R'.repeat(count), visibleTailX);
         }
       }
       let tickerX = g.tickerScrollX;
       let itemIndex = 0;
-      while (!bossReplacesNews && g.printerTimer <= 0 && tickerX < W + 500) {
+      while (g.printerTimer <= 0 && tickerX < W + 500) {
         if (itemIndex >= g.tickerQueue.length) {
           g.tickerQueue.push({ news: getTickerNews(g.tickerQueue.at(-1)?.news.headline), width: 0 });
         }
