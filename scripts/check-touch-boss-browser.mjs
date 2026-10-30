@@ -132,6 +132,16 @@ try {
     await call('Page.navigate',{url:`http://127.0.0.1:${server.httpServer.address().port}`});
     await wait(`!!window.__combat && !!document.querySelector('.landing-menu-guide-button')`);
     assert.equal(await evaluate(`!!document.querySelector('.header-boss-control')`),false,'Bell is removed from browser header');
+    const checkWideActions = async selector => {
+      const buttons=await evaluate(`Array.from(document.querySelectorAll(${JSON.stringify(selector)})).filter(b=>b.getClientRects().length).map(b=>{const r=b.getBoundingClientRect();return {width:r.width,height:r.height,font:parseFloat(getComputedStyle(b).fontSize)};})`);
+      assert.ok(buttons.length,'Wide actions exist: '+selector);
+      for(const button of buttons){
+        assert.ok(Math.abs(button.width-Math.min(260,Math.max(148,width*.22)))<1,'Action width matches Android: '+JSON.stringify(button));
+        assert.ok(Math.abs(button.height-Math.min(54,Math.max(44,height*.11)))<1,'Action height matches Android: '+JSON.stringify(button));
+        assert.ok(Math.abs(button.font-Math.min(16,Math.max(12,height*.032)))<.1,'Action font matches Android');
+      }
+    };
+    await checkWideActions('.landing-menu-actions .menu-action-button');
     if(mobile){
       const chrome=await evaluate(`(()=>{const h=document.querySelector('header').getBoundingClientRect();const b=document.querySelector('.desktop-fullscreen-control').getBoundingClientRect();const f=document.querySelector('.desktop-live-feed-bar').getBoundingClientRect();const m=document.querySelector('.mobile-header-feed').getBoundingClientRect();return {header:h.height,button:b.width,feed:f.height,inlineWidth:m.width,inlineTop:m.top,inlineBottom:m.bottom,top:h.top,bottom:h.bottom};})()`);
       assert.ok(chrome.button>=40,'Touch fullscreen control is at least 40px');
@@ -195,6 +205,7 @@ try {
       assert.ok((await evaluate('window.__combat.snapshot().boss.health'))<before.boss.health,'Projectile damages '+kind);
       await evaluate(`document.querySelector('.header-pause-control').click()`);await settle();
       const paused=await evaluate('window.__combat.snapshot()');
+      await checkWideActions('.pause-overlay .game-result-actions > button');
       if(mobile) assert.ok(await evaluate(`parseFloat(getComputedStyle(document.querySelector('.pause-overlay > .game-result')).paddingTop)>=16`),'Margin Call has expanded vertical padding');
       await evaluate('window.__combat.step(10)');
       assert.deepEqual(await evaluate('window.__combat.snapshot()'),paused,'Pause freezes both run and boss');
@@ -218,6 +229,7 @@ try {
     assert.equal(await evaluate('window.__combat.snapshot().state'),'over','Boss knockout uses normal game over');
     assert.equal(await evaluate('window.__combat.snapshot().boss'),null);
     await evaluate(`document.querySelector('.share-dd-open').click()`);await settle();
+    await checkWideActions('.game-result-over .game-result-actions > button');
     const share=await evaluate(`(()=>{const a=document.querySelector('.share-dd-actions');return {display:getComputedStyle(a).display,buttons:[...a.querySelectorAll('button')].map(b=>{const r=b.getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height};})};})()`);
     if(mobile){
       assert.equal(share.display,'flex','Landscape shares use a vertical column');
