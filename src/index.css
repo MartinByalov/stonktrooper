@@ -5176,6 +5176,7 @@ html .game-app .landing-menu-panel .home-coffee-link {
 }
 
 /* Browser chrome can leave much less room than the fullscreen action stack. */
+.game-app .donate-home-art { display: none; }
 @media (pointer: coarse) {
   html .game-app:not(:fullscreen) .landing-menu-panel {
     container-type: size;
@@ -5194,5 +5195,33 @@ html .game-app .landing-menu-panel .home-coffee-link {
   }
   html[data-theme] .game-app:not(:fullscreen) .landing-menu-shared-score > .landing-menu-actions {
     padding-top: 0;
+  }
+}
+
+/* Only windowed landscape touch: put the trader on Donate, not on the stack. */
+@media (pointer: coarse) and (orientation: landscape) {
+  html[data-theme] .game-app:not(:fullscreen) .landing-menu-panel > .landing-menu-actions {
+    --home-action-height: min(clamp(44px, 11dvh, 54px), calc((100cqh - 3 * var(--result-action-gap) - 16px) / 4));
+    padding-top: 0;
+  }
+  html .game-app:not(:fullscreen) .landing-menu-actions > .menu-celebration {
+    display: none;
+  }
+  html .game-app:not(:fullscreen) .home-coffee-link > .donate-home-art {
+    display: block;
+    position: absolute;
+    bottom: calc(100% + 1px);
+    left: 50%;
+    width: min(100%, calc(100cqh - 36px - var(--corner-ui-inset) - 8px));
+    transform: translateX(-50%);
+    pointer-events: none;
+    line-height: 0;
+  }
+  html .game-app:not(:fullscreen) .donate-home-art > .desktop-home-art {
+    position: static;
+    display: block;
+    width: 100%;
+    height: auto;
+    transform: none;
   }
 }

@@ -138,15 +138,24 @@ try {
         const r=b.getBoundingClientRect(),hit=document.elementFromPoint(r.x+r.width/2,r.y+r.height/2);
         return {top:r.top,bottom:r.bottom,height:r.height,hit:!!hit&&(hit===b||b.contains(hit)),textFits:b.scrollHeight<=b.clientHeight+1};
       });
-      const art=document.querySelector('.desktop-home-art').getBoundingClientRect();
-      return {fullscreen:!!document.fullscreenElement,panel:{top:panel.top,bottom:panel.bottom},art:{top:art.top,bottom:art.bottom},buttons};
+      const art=document.querySelector('.donate-home-art .desktop-home-art').getBoundingClientRect();
+      const donate=document.querySelector('.home-coffee-link').getBoundingClientRect();
+      return {fullscreen:!!document.fullscreenElement,panel:{top:panel.top,bottom:panel.bottom},art:{top:art.top,bottom:art.bottom,center:art.x+art.width/2},donate:{top:donate.top,center:donate.x+donate.width/2},buttons};
     })()`);
     assert.equal(layout.fullscreen,false,'Compact menu is checked outside fullscreen');
-    assert.ok(layout.art.top>=layout.panel.top && layout.art.bottom<=layout.buttons[0].top+1,'Home art fits above actions: '+JSON.stringify(layout));
+    assert.ok(layout.art.top>=layout.panel.top && Math.abs(layout.art.bottom-layout.donate.top)<1 && Math.abs(layout.art.center-layout.donate.center)<1,'Trader fits and stands centered on Donate: '+JSON.stringify(layout));
+    assert.equal(await evaluate(`getComputedStyle(document.querySelector('.landing-menu-actions > .desktop-home-art')).display`),'none','No trader above windowed landscape actions');
     assert.equal(layout.buttons.length,4);
     assert.ok(layout.buttons.every(b=>b.top>=layout.panel.top && b.bottom<=layout.panel.bottom && b.hit && b.textFits),'All four compact actions fit and remain hit-testable: '+JSON.stringify(layout));
-    assert.ok(layout.buttons.every(b=>b.height<44),'Short browser viewport shrinks action height');
+    assert.ok(layout.buttons.every(b=>b.height<=44),'Short browser viewport respects available action height');
     assert.equal(await evaluate(`!!Array.from(document.querySelectorAll('[role="status"]')).find(e=>/fullscreen|horizontal/i.test(e.textContent))`),false,'No fullscreen status strip on mobile');
+    await call('Runtime.evaluate',{expression:`document.querySelector('.game-app').requestFullscreen()`,awaitPromise:true,userGesture:true});
+    await settle();
+    assert.equal(await evaluate(`!!document.fullscreenElement`),true,'Check actual fullscreen home layout');
+    assert.equal(await evaluate(`getComputedStyle(document.querySelector('.donate-home-art')).display`),'none','Donate trader hidden in fullscreen');
+    assert.notEqual(await evaluate(`getComputedStyle(document.querySelector('.landing-menu-actions > .desktop-home-art')).display`),'none','Original trader remains above actions in fullscreen');
+    await evaluate('document.exitFullscreen()');
+    await settle();
     console.log(`PASS ${width}x${height}: non-fullscreen home art and four responsive actions fit`);
   }
   for(const [width,height,mobile] of [[740,360,true],[915,412,true],[1440,900,false]]){

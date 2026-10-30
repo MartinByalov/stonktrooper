@@ -637,6 +637,7 @@ export default function App() {
                       <MenuChart theme={theme} />
                       {landingScore !== null && <LandingScore score={landingScore} theme={theme} />}
                       <button className="coffee-link home-coffee-link" type="button" aria-label="Donate (opens in a new tab)" onClick={() => window.open('https://ko-fi.com/eon', '_blank', 'noopener,noreferrer')}>
+                        {landingScore === null && <span className="donate-home-art" aria-hidden="true"><MenuCelebration theme={theme} /></span>}
                         <span className="coffee-cup" aria-hidden="true">♥</span>
                         <span className="donate-label">Donate</span>
                       </button>
