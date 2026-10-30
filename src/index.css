@@ -5022,19 +5022,44 @@ html .game-app:fullscreen .mobile-joystick {
     overflow-y: auto;
   }
 }
-/* Horizontal groups avoid the central camera cutout on either landscape edge. */
+/* One compact header row on phones; retain the larger touch targets. */
+@media (pointer: coarse) {
+  html .game-app header {
+    flex-wrap: nowrap;
+    gap: 8px;
+    padding-block: 2px;
+    height: calc(var(--touch-control) + 4px);
+    min-height: calc(var(--touch-control) + 4px);
+    flex-basis: calc(var(--touch-control) + 4px);
+  }
+  html .game-app header > div:first-child,
+  html .game-app .header-controls { flex: 0 0 auto; }
+  html .game-app .header-controls { margin-left: 0; }
+  html .game-app .mobile-header-feed {
+    position: static;
+    display: block;
+    flex: 1 1 0;
+    width: 0;
+    min-width: 0;
+    max-width: none;
+    height: var(--touch-control);
+    margin: 0;
+    transform: none;
+  }
+  html[data-theme] .game-app .desktop-live-feed-bar { display: none; }
+  html .game-app .share-dd-dialog > .share-dd-actions {
+    top: auto;
+    bottom: max(8px, env(safe-area-inset-bottom, 0px));
+    width: var(--touch-control);
+    display: flex;
+    flex-direction: column;
+    gap: clamp(4px, 1.5dvh, 8px);
+  }
+}
+/* Some browsers report zero safe-area for hole-punch cameras. Keep the
+   entire column inward, rather than trying to guess an exact camera Y. */
 @media (pointer: coarse) and (orientation: landscape) {
   html .game-app .share-dd-dialog > .share-dd-actions {
-    top: max(8px, env(safe-area-inset-top, 0px));
-    bottom: max(8px, env(safe-area-inset-bottom, 0px));
-    width: calc(var(--touch-control) * 3 + 16px);
-    max-width: calc(100% - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px) - 16px);
-    display: grid;
-    grid-template-columns: repeat(3, var(--touch-control));
-    grid-template-rows: var(--touch-control) var(--touch-control);
-    align-content: space-between;
-    gap: 8px;
-    pointer-events: none;
+    left: max(36px, calc(env(safe-area-inset-left, 0px) + 8px));
   }
-  html .game-app .share-dd-actions > button { pointer-events: auto; }
 }

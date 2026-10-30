@@ -133,9 +133,10 @@ try {
     await wait(`!!window.__combat && !!document.querySelector('.landing-menu-guide-button')`);
     assert.equal(await evaluate(`!!document.querySelector('.header-boss-control')`),false,'Bell is removed from browser header');
     if(mobile){
-      const chrome=await evaluate(`(()=>{const h=document.querySelector('header').getBoundingClientRect();const b=document.querySelector('.desktop-fullscreen-control').getBoundingClientRect();const f=document.querySelector('.desktop-live-feed-bar').getBoundingClientRect();return {header:h.height,button:b.width,feed:f.height};})()`);
+      const chrome=await evaluate(`(()=>{const h=document.querySelector('header').getBoundingClientRect();const b=document.querySelector('.desktop-fullscreen-control').getBoundingClientRect();const f=document.querySelector('.desktop-live-feed-bar').getBoundingClientRect();const m=document.querySelector('.mobile-header-feed').getBoundingClientRect();return {header:h.height,button:b.width,feed:f.height,inlineWidth:m.width,inlineTop:m.top,inlineBottom:m.bottom,top:h.top,bottom:h.bottom};})()`);
       assert.ok(chrome.button>=40,'Touch fullscreen control is at least 40px');
-      assert.ok(chrome.header>=46 && chrome.feed>=46,'Touch header and feed use enlarged chrome');
+      assert.equal(chrome.feed,0,'No separate feed row on mobile');
+      assert.ok(chrome.header<=56 && chrome.inlineWidth>0 && chrome.inlineTop>=chrome.top && chrome.inlineBottom<=chrome.bottom,'Feed fits inside compact header');
     }
     await evaluate(`document.querySelector('.landing-menu-settings-button').click()`);await settle();
     await evaluate(`(()=>{const s=document.querySelector('[aria-label="Shmuck Feed"]');if(s.getAttribute('aria-checked')!=='true')s.click();})()`);await settle();
@@ -219,9 +220,11 @@ try {
     await evaluate(`document.querySelector('.share-dd-open').click()`);await settle();
     const share=await evaluate(`(()=>{const a=document.querySelector('.share-dd-actions');return {display:getComputedStyle(a).display,buttons:[...a.querySelectorAll('button')].map(b=>{const r=b.getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height};})};})()`);
     if(mobile){
-      assert.equal(share.display,'grid','Landscape shares are grouped above and below the cutout');
+      assert.equal(share.display,'flex','Landscape shares use a vertical column');
       assert.ok(share.buttons.every(b=>b.width>=40 && b.height>=40 && b.x>=0 && b.y>=0 && b.y+b.height<=height),'Share touch controls fit viewport');
-      assert.equal(new Set(share.buttons.map(b=>Math.round(b.y))).size,2,'Share controls occupy two rows, not the camera-side middle');
+      assert.equal(new Set(share.buttons.map(b=>Math.round(b.x))).size,1,'Share controls share one left edge');
+      assert.ok(share.buttons.every(b=>b.x>=36),'Column is inset from camera edge even without safe-area values');
+      assert.ok(share.buttons.every((b,i,all)=>i===0 || b.y>=all[i-1].y+all[i-1].height),'Social buttons stack above the final Share button without overlap');
     }
     console.log(`PASS ${width}x${height}: guide, ${mobile?'multitouch jump/shoot/double jump/cancel':'keyboard/mouse'}, three live-chart bosses, damage, pause/resume, victory, knockout and preserved pickups`);
   }
