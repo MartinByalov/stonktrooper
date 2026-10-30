@@ -5174,3 +5174,25 @@ html .game-app .landing-menu-panel .home-coffee-link {
     left: max(var(--mobile-logo-edge-inset, var(--content-edge-inset)), env(safe-area-inset-left, 0px));
   }
 }
+
+/* Browser chrome can leave much less room than the fullscreen action stack. */
+@media (pointer: coarse) {
+  html .game-app:not(:fullscreen) .landing-menu-panel {
+    container-type: size;
+  }
+  html[data-theme] .game-app:not(:fullscreen) .landing-menu-panel > .landing-menu-actions {
+    --menu-hero-width: min(clamp(64px, 21dvh, 126px), 24cqh);
+    --result-action-gap: min(clamp(5px, 1.5dvh, 10px), 2cqh);
+    --home-action-height: min(clamp(44px, 11dvh, 54px), calc((100cqh - var(--menu-hero-width) - 3 * var(--result-action-gap) - 16px) / 4));
+    --home-action-width: min(clamp(148px, 22vw, 260px), calc(var(--home-action-height) * 4.5));
+    padding-top: var(--menu-hero-width);
+    transform: none;
+  }
+  html[data-theme] .game-app:not(:fullscreen) .landing-menu-actions .menu-action-button {
+    padding-block: min(6px, 1cqh);
+    font-size: min(clamp(12px, 3.2dvh, 16px), calc(var(--home-action-height) * 0.38));
+  }
+  html[data-theme] .game-app:not(:fullscreen) .landing-menu-shared-score > .landing-menu-actions {
+    padding-top: 0;
+  }
+}

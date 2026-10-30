@@ -599,7 +599,7 @@ export default function App() {
           <canvas className="desktop-live-feed" aria-label="Live Feed" />
         </div>
         {soundMenuOpen && <SoundMenu onClose={() => setSoundMenuOpen(false)} />}
-        {fullscreenError && <p role="status" className="px-4 text-xs text-[var(--red)]">{fullscreenError}</p>}
+        {!mobileDevice && fullscreenError && <p role="status" className="px-4 text-xs text-[var(--red)]">{fullscreenError}</p>}
 
         {/* PRIMARY GAME ARENA (Clean, Uncluttered, Prominently on Top) */}
         <section

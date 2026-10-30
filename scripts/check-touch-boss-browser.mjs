@@ -126,6 +126,29 @@ try {
   const settle=()=>new Promise(r=>setTimeout(r,200));
   const wait=async expression=>{for(let i=0;i<100;i++){if(await evaluate(expression))return;await new Promise(r=>setTimeout(r,100));}throw Error('Timed out: '+expression);};
   await call('Runtime.enable');await call('Page.enable');
+  for(const [width,height] of [[740,240],[800,260],[915,300]]){
+    await call('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:2,mobile:true});
+    await call('Emulation.setTouchEmulationEnabled',{enabled:true});
+    await call('Page.navigate',{url:`http://127.0.0.1:${server.httpServer.address().port}`});
+    await wait(`!!window.__combat && !!document.querySelector('.landing-menu-guide-button')`);
+    await settle();
+    const layout=await evaluate(`(()=>{
+      const panel=document.querySelector('.landing-menu-panel').getBoundingClientRect();
+      const buttons=[...document.querySelectorAll('.landing-menu-actions .menu-action-button')].map(b=>{
+        const r=b.getBoundingClientRect(),hit=document.elementFromPoint(r.x+r.width/2,r.y+r.height/2);
+        return {top:r.top,bottom:r.bottom,height:r.height,hit:!!hit&&(hit===b||b.contains(hit)),textFits:b.scrollHeight<=b.clientHeight+1};
+      });
+      const art=document.querySelector('.desktop-home-art').getBoundingClientRect();
+      return {fullscreen:!!document.fullscreenElement,panel:{top:panel.top,bottom:panel.bottom},art:{top:art.top,bottom:art.bottom},buttons};
+    })()`);
+    assert.equal(layout.fullscreen,false,'Compact menu is checked outside fullscreen');
+    assert.ok(layout.art.top>=layout.panel.top && layout.art.bottom<=layout.buttons[0].top+1,'Home art fits above actions: '+JSON.stringify(layout));
+    assert.equal(layout.buttons.length,4);
+    assert.ok(layout.buttons.every(b=>b.top>=layout.panel.top && b.bottom<=layout.panel.bottom && b.hit && b.textFits),'All four compact actions fit and remain hit-testable: '+JSON.stringify(layout));
+    assert.ok(layout.buttons.every(b=>b.height<44),'Short browser viewport shrinks action height');
+    assert.equal(await evaluate(`!!Array.from(document.querySelectorAll('[role="status"]')).find(e=>/fullscreen|horizontal/i.test(e.textContent))`),false,'No fullscreen status strip on mobile');
+    console.log(`PASS ${width}x${height}: non-fullscreen home art and four responsive actions fit`);
+  }
   for(const [width,height,mobile] of [[740,360,true],[915,412,true],[1440,900,false]]){
     await call('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:2,mobile});
     await call('Emulation.setTouchEmulationEnabled',{enabled:mobile});
