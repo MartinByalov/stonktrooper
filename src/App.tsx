@@ -234,9 +234,7 @@ export default function App() {
       setIsFullscreen(fullscreen);
       if (fullscreen && window.matchMedia('(pointer: coarse)').matches) {
         const orientation = screen.orientation as ScreenOrientation & { lock?: (value: 'landscape') => Promise<void> };
-        void orientation?.lock?.('landscape').catch(() => {
-          setFullscreenError('Landscape lock is unavailable. Keep your phone horizontal while playing.');
-        });
+        void orientation?.lock?.('landscape').catch(() => { /* Manual rotation remains available without a warning. */ });
       }
       if (wasFullscreen && !fullscreen && window.matchMedia('(pointer: coarse)').matches) {
         const orientation = screen.orientation as ScreenOrientation & { unlock?: () => void };

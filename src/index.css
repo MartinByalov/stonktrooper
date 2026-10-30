@@ -66,6 +66,15 @@ html[data-theme] .game-app .how-to-mode-selector[data-mode="easy"] {
 .info-artwork-button[data-clown="true"] .info-bag-clown { opacity: 1; transform: translateY(-55.5%) scale(0.65); }
 .info-artwork-button[data-animate="true"] .info-bag-clown { transition: transform 300ms ease-out, opacity 300ms ease-out; }
 .info-artwork-button:disabled { cursor: default; opacity: 1; }
+.info-fruit-shine { display: block; }
+.info-artwork-button[data-animate="true"] .info-fruit-shine { animation: info-fruit-shine 3s ease-in-out infinite; }
+@keyframes info-fruit-shine {
+  0%, 65%, 100% { filter: brightness(1); }
+  78% { filter: brightness(1.45); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .info-artwork-button[data-animate="true"] .info-fruit-shine { animation: none; }
+}
 .info-artwork-button[data-animate="true"] .info-coin-rotation { transition: transform 600ms ease-in-out; }
 .info-artwork-button[data-animate="true"] .info-briefcase-scale { transition: transform 180ms ease-out; }
 @media (prefers-reduced-motion: reduce) {
