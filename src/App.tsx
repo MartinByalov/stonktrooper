@@ -237,6 +237,12 @@ export default function App() {
     const syncFullscreen = () => {
       const fullscreen = document.fullscreenElement === appRef.current;
       setIsFullscreen(fullscreen);
+      if (fullscreen && window.matchMedia('(pointer: coarse)').matches) {
+        const orientation = screen.orientation as ScreenOrientation & { lock?: (value: 'landscape') => Promise<void> };
+        void orientation?.lock?.('landscape').catch(() => {
+          setFullscreenError('Landscape lock is unavailable. Keep your phone horizontal while playing.');
+        });
+      }
       if (wasFullscreen && !fullscreen && window.matchMedia('(pointer: coarse)').matches) {
         const orientation = screen.orientation as ScreenOrientation & { unlock?: () => void };
         try { orientation?.unlock?.(); } catch { }
@@ -246,6 +252,48 @@ export default function App() {
     };
     document.addEventListener('fullscreenchange', syncFullscreen);
     return () => document.removeEventListener('fullscreenchange', syncFullscreen);
+  }, []);
+
+  useEffect(() => {
+    let wasLandscape = window.innerWidth > window.innerHeight;
+    let awaitingGesture = false;
+    let requesting = false;
+    const enter = async () => {
+      if (requesting || document.fullscreenElement || !appRef.current?.requestFullscreen) return;
+      requesting = true;
+      awaitingGesture = false;
+      try {
+        await appRef.current.requestFullscreen();
+        setFullscreenError('');
+      } catch {
+        // Rotation is not a user activation in every browser. Retry on a tap,
+        // but never force re-entry after the user explicitly leaves fullscreen.
+        awaitingGesture = true;
+        setFullscreenError('Tap Fullscreen to enter landscape fullscreen.');
+      } finally { requesting = false; }
+    };
+    const rotate = () => {
+      if (!window.matchMedia('(pointer: coarse)').matches) return;
+      const landscape = window.innerWidth > window.innerHeight;
+      if (landscape && !wasLandscape) void enter();
+      if (!landscape) awaitingGesture = false;
+      wasLandscape = landscape;
+    };
+    const tap = (event: PointerEvent) => {
+      if (event.target instanceof Element && event.target.closest('button, a, input, [role="switch"]')) return;
+      if (awaitingGesture && window.innerWidth > window.innerHeight) void enter();
+    };
+    const fullscreenChanged = () => { if (!document.fullscreenElement) awaitingGesture = false; };
+    window.addEventListener('resize', rotate);
+    screen.orientation?.addEventListener('change', rotate);
+    window.addEventListener('pointerup', tap);
+    document.addEventListener('fullscreenchange', fullscreenChanged);
+    return () => {
+      window.removeEventListener('resize', rotate);
+      screen.orientation?.removeEventListener('change', rotate);
+      window.removeEventListener('pointerup', tap);
+      document.removeEventListener('fullscreenchange', fullscreenChanged);
+    };
   }, []);
 
   const toggleFullscreen = async () => {

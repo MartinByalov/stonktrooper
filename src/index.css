@@ -4723,7 +4723,7 @@ html .game-app .how-to-dialog-content > .how-to-dialog-hero {
   }
 }
 
-/* Shared compact chrome: 32px controls with 2px external insets. */
+/* Shared chrome; touch devices override the compact desktop dimensions below. */
 html .game-app {
   --chrome-height: 36px;
   /* Fallback for portrait, where the Fullscreen control is hidden. */
@@ -4981,4 +4981,60 @@ html .game-app:fullscreen .mobile-joystick {
   html .game-app :is(.mobile-how-to-panel, .paused-guide-dialog) :is(.how-to-dialog-hero, .how-to-dialog-hero > img) {
     border-radius: 0 !important;
   }
+}
+/* Responsive touch chrome and cutout-safe sharing controls. */
+@media (pointer: coarse) {
+  html .game-app {
+    --touch-control: clamp(40px, 10dvh, 52px);
+    --chrome-height: calc(var(--touch-control) + 6px);
+    --content-left-inset: max(var(--content-edge-inset), env(safe-area-inset-left, 0px));
+    --content-bottom-inset: max(var(--content-edge-inset), env(safe-area-inset-bottom, 0px));
+  }
+  html .game-app header {
+    padding-left: var(--content-left-inset);
+    padding-right: max(3px, env(safe-area-inset-right, 0px));
+  }
+  html .game-app header .stonktrooper-logo { height: clamp(30px, 8dvh, 40px); }
+  html[data-theme] .game-app :is(.header-controls > button, .dialog-close, .share-dd-actions > button, .site-info-close) {
+    width: var(--touch-control);
+    min-width: var(--touch-control);
+    height: var(--touch-control);
+    min-height: var(--touch-control);
+    padding: 6px;
+  }
+  html[data-theme] .game-app :is(.header-controls > button, .dialog-close, .share-dd-actions > button, .site-info-close) svg {
+    width: 70%; height: 70%;
+  }
+  html[data-theme] .game-app :is(.mobile-how-to-panel > .mobile-how-to-header, .paused-guide-dialog > .how-to-guide-header, .site-info-dialog > .site-info-header) {
+    height: calc(var(--touch-control) + 6px);
+    min-height: calc(var(--touch-control) + 6px);
+    flex-basis: calc(var(--touch-control) + 6px);
+  }
+  html .game-app .share-dd-dialog > .share-dd-actions {
+    left: max(8px, env(safe-area-inset-left, 0px));
+    bottom: max(8px, env(safe-area-inset-bottom, 0px));
+    gap: clamp(4px, 1.5dvh, 8px);
+  }
+  html .game-app .pause-overlay > .game-result:not(.game-result-over) {
+    --margin-call-gap: clamp(16px, 4.5dvh, 26px);
+    padding-block: var(--margin-call-gap) !important;
+    max-height: 100%;
+    overflow-y: auto;
+  }
+}
+/* Horizontal groups avoid the central camera cutout on either landscape edge. */
+@media (pointer: coarse) and (orientation: landscape) {
+  html .game-app .share-dd-dialog > .share-dd-actions {
+    top: max(8px, env(safe-area-inset-top, 0px));
+    bottom: max(8px, env(safe-area-inset-bottom, 0px));
+    width: calc(var(--touch-control) * 3 + 16px);
+    max-width: calc(100% - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px) - 16px);
+    display: grid;
+    grid-template-columns: repeat(3, var(--touch-control));
+    grid-template-rows: var(--touch-control) var(--touch-control);
+    align-content: space-between;
+    gap: 8px;
+    pointer-events: none;
+  }
+  html .game-app .share-dd-actions > button { pointer-events: auto; }
 }
