@@ -143,7 +143,7 @@ try {
     };
     await checkWideActions('.landing-menu-actions .menu-action-button');
     const gutters=await evaluate(`(()=>{const logo=document.querySelector('.header-logo-frame').getBoundingClientRect(),full=document.querySelector('.desktop-fullscreen-control').getBoundingClientRect(),donate=document.querySelector('.home-coffee-link'),panel=donate.offsetParent.getBoundingClientRect(),d=donate.getBoundingClientRect();const button=document.querySelector('.landing-menu-play-button'),s=getComputedStyle(button);return {left:logo.left,right:innerWidth-full.right,donateLeft:d.left-panel.left,donateBottom:panel.bottom-d.bottom,paddingTop:s.paddingTop,paddingBottom:s.paddingBottom};})()`);
-    assert.ok(Math.abs(gutters.left-gutters.right)<1,'Logo/fullscreen symmetric gutters: '+JSON.stringify(gutters));
+    assert.ok(gutters.right<= (mobile?3:2)+.1,'Fullscreen retains compact right gutter: '+JSON.stringify(gutters));
     assert.ok(Math.abs(gutters.donateLeft-gutters.donateBottom)<2,'Donate symmetric left/bottom gutters: '+JSON.stringify(gutters));
     assert.equal(gutters.paddingTop,gutters.paddingBottom,'Plain action text has vertically symmetric padding');
     const readChrome = () => evaluate(`(()=>{const rect=s=>{const r=document.querySelector(s).getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height}};return {logo:rect('.header-logo-frame'),fullscreen:rect('.desktop-fullscreen-control'),donate:rect('.home-coffee-link'),feed:rect(${mobile ? "'.mobile-header-feed'" : "'.desktop-live-feed'"})};})()`);
@@ -243,12 +243,19 @@ try {
     await evaluate('window.__combat.lose();window.__combat.step()');await settle();
     assert.equal(await evaluate('window.__combat.snapshot().state'),'over','Boss knockout uses normal game over');
     assert.equal(await evaluate('window.__combat.snapshot().boss'),null);
+    if(mobile){
+      await call('Runtime.evaluate',{expression:`document.querySelector('.game-app').requestFullscreen()`,awaitPromise:true,userGesture:true});
+      await settle();
+      assert.equal(await evaluate(`document.fullscreenElement===document.querySelector('.game-app')`),true,'Test actual fullscreen Share layout');
+    }
     const beforeShare=await evaluate(`(()=>{const r=document.querySelector('.share-dd-open').getBoundingClientRect();return {width:r.width,left:r.left};})()`);
     await evaluate(`document.querySelector('.share-dd-open').click()`);await settle();
     await checkWideActions('.game-result-over .game-result-actions > button');
     const share=await evaluate(`(()=>{const a=document.querySelector('.share-dd-actions');return {display:getComputedStyle(a).display,buttons:[...a.querySelectorAll('button')].map(b=>{const r=b.getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height};})};})()`);
     assert.equal(share.display,'grid','Shares replace wide Share DD with one row');
     assert.equal(share.buttons.length,4);
+    const shareVisibility=await evaluate(`Array.from(document.querySelectorAll('.share-dd-actions-host button')).map(b=>{const r=b.getBoundingClientRect();const hit=document.elementFromPoint(r.x+r.width/2,r.y+r.height/2);return {label:b.getAttribute('aria-label'),width:r.width,height:r.height,visible:b.checkVisibility({checkOpacity:true,checkVisibilityCSS:true}),hit:!!hit&&(hit===b||b.contains(hit)),cover:hit?.outerHTML.slice(0,300)};})`);
+    assert.ok(shareVisibility.every(b=>b.visible&&b.hit&&b.width>20&&b.height>20),'Share buttons visibly painted and hit-testable: '+JSON.stringify(shareVisibility));
     assert.equal(await evaluate(`!!document.querySelector('.share-dd-open, .share-dd-close')`),false,'No duplicate Share DD or close X');
     assert.ok(share.buttons.every(b=>Math.abs(b.width-b.height)<1),'All share buttons square');
     assert.ok(Math.abs(share.buttons[0].x-beforeShare.left)<1,'Shares retain action left edge');

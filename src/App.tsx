@@ -238,6 +238,8 @@ export default function App() {
     let wasLandscape = window.innerWidth > window.innerHeight;
     let awaitingGesture = window.matchMedia('(pointer: coarse)').matches && wasLandscape;
     let requesting = false;
+    let rotationTimers: ReturnType<typeof setTimeout>[] = [];
+    const clearRotationTimers = () => { rotationTimers.forEach(clearTimeout); rotationTimers = []; };
     const enter = async () => {
       if (requesting || document.fullscreenElement || !appRef.current?.requestFullscreen) return;
       requesting = true;
@@ -257,8 +259,17 @@ export default function App() {
     const rotate = () => {
       if (!window.matchMedia('(pointer: coarse)').matches) return;
       const landscape = window.innerWidth > window.innerHeight;
-      if (landscape && !wasLandscape) void enter();
-      if (!landscape) awaitingGesture = false;
+      if (landscape && !wasLandscape) {
+        clearRotationTimers();
+        awaitingGesture = true;
+        void enter();
+        // Orientation, visual viewport and browser chrome can settle separately.
+        // Retry only within this rotation, not after an explicit fullscreen exit.
+        rotationTimers = [150, 400, 800].map(delay => setTimeout(() => {
+          if (awaitingGesture && window.innerWidth > window.innerHeight) void enter();
+        }, delay));
+      }
+      if (!landscape) { awaitingGesture = false; clearRotationTimers(); }
       wasLandscape = landscape;
     };
     const tap = (event: Event) => {
@@ -266,7 +277,10 @@ export default function App() {
       if (event.target instanceof Element && event.target.closest('.desktop-fullscreen-control, .landing-menu-play-button, .continue-run, a, input')) return;
       if (awaitingGesture && window.innerWidth > window.innerHeight) void enter();
     };
-    const fullscreenChanged = () => { if (!document.fullscreenElement) awaitingGesture = false; };
+    const fullscreenChanged = () => {
+      clearRotationTimers();
+      awaitingGesture = false;
+    };
     window.addEventListener('resize', rotate);
     screen.orientation?.addEventListener('change', rotate);
     window.visualViewport?.addEventListener('resize', rotate);
@@ -274,6 +288,7 @@ export default function App() {
     window.addEventListener('click', tap, true);
     document.addEventListener('fullscreenchange', fullscreenChanged);
     return () => {
+      clearRotationTimers();
       window.removeEventListener('resize', rotate);
       screen.orientation?.removeEventListener('change', rotate);
       window.visualViewport?.removeEventListener('resize', rotate);

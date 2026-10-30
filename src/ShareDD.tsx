@@ -1,5 +1,5 @@
 // Browser game module for ShareDD.
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Check, Share2} from 'lucide-react';
 import { drawShareCard, formatShareScore, shareCardBackground, SHARE_CARD_WIDTH, SHARE_CARD_HEIGHT } from './shareCard';
@@ -15,7 +15,7 @@ export function ShareDD({ score, theme, scoreTheme = theme, demo = false, onClos
   const [sharing, setSharing] = useState(false);
   const [copied, setCopied] = useState(false);
   const [actionsHost, setActionsHost] = useState<HTMLElement | null>(null);
-  useEffect(() => {
+  useLayoutEffect(() => {
     const host = document.querySelector<HTMLElement>('.share-dd-actions-host');
     setActionsHost(host);
     const update = () => {

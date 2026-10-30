@@ -5097,7 +5097,16 @@ html[data-theme] .game-app .site-info-dialog .preferences-clear-button {
 }
 
 /* Share controls replace Share DD inline, with Android geometry. */
-.game-app .share-dd-actions-host { width: var(--home-action-width); min-width: 0; }
+.game-app .share-dd-actions-host {
+  position: relative;
+  z-index: 1;
+  flex: 0 0 auto;
+  width: var(--home-action-width);
+  min-width: 0;
+  min-height: calc((var(--home-action-width) - 3 * var(--result-action-gap)) / 4);
+  visibility: visible;
+  opacity: 1;
+}
 html[data-theme] .game-app .share-dd-actions-host > .share-dd-actions {
   position: static;
   display: grid;
@@ -5142,10 +5151,16 @@ html[data-theme] .game-app .site-info-dialog .preferences-clear-button {
 }
 /* One safe-area-aware gutter on all four relevant edges. */
 html .game-app {
+  --fullscreen-edge-inset: 2px;
+  /* Match the icon's painted inset without moving its existing button box. */
   --corner-ui-inset: max(var(--content-edge-inset), env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px), env(safe-area-inset-bottom, 0px));
 }
 html .game-app header {
-  padding-inline: var(--corner-ui-inset);
+  padding-left: var(--corner-ui-inset);
+  padding-right: max(var(--fullscreen-edge-inset), env(safe-area-inset-right, 0px));
+}
+@media (pointer: coarse) {
+  html .game-app { --fullscreen-edge-inset: 3px; }
 }
 html .game-app .landing-menu-panel .home-coffee-link {
   left: var(--corner-ui-inset);
