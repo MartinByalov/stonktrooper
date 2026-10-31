@@ -35,7 +35,7 @@ import { pickupInRenderBounds, pickupRenderBounds } from './pickupVisibility';
 import { RenderExperimentPanel } from './RenderExperimentPanel';
 import { actorLayers, getRenderMode, renderExperimentEnabled, renderLayers } from './renderExperiment';
 import { pigeonDropsPrinter } from './gameRules';
-import { extendPrinterTurns, endingPrinterCandle, printerSourceCandle, printerCrossingPose, printerEnemyPose, printerProfileFlip, rightEdgeSpawnX, PrinterTurn } from './printerTrack';
+import { extendPrinterTurns, endingPrinterCandle, printerSourceCandle, printerCrossingPose, printerEnemyPose, printerProfileFlip, rightEdgeSpawnX, PrinterTurn, printerPastLastCrossing } from './printerTrack';
 import { aimedHitDefeatsEnemy, dismountRider, canCatchBossBell, bellDescentTop } from './gameRules';
 import { GameState, Candle, Player, Pickup, Swan, Animal, Briefcase, MarketEvent, MarketLevel, ActiveNews, ScorePopup } from './types';
 import { sound } from './audio';
@@ -1771,6 +1771,10 @@ export const CandleGame: React.FC<CandleGameProps> = ({
       g.p.y = pose.y;
       g.printerRotation = pose.rotation;
       g.p.vy = 0; g.p.air = false; g.p.buf = 0;
+      // Leave right after the final crossing; the exit commits strand 1 this frame.
+      extendPrinterTurns(g.printerTurns, g.printerEndX - g.printerStartX);
+      if (g.printerTimer > 0 && printerPastLastCrossing(x => printerSourceCandle(g.printerSaved ?? g.C, Math.floor(x / CW)),
+        g.p.x, g.printerStartX, g.printerEndX, g.printerTurns, CW)) g.printerTimer = 0;
     } else if (g.p.whaleMount) {
       stepWhaleMount(g.p.whaleMount, g.C, g.p.x, CW);
       g.p.y = g.p.whaleMount.feet - WHALE_SEAT_HEIGHT;

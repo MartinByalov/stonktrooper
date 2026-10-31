@@ -36,6 +36,22 @@ export function printerSourceCandle(candles: Candle[], index: number): Candle | 
     h: top - 2 - index % 3, l: top + body + 3, k: 'Candle' };
 }
 
+// After the final crossing the two strands only separate. Once the runner
+// stands upright on strand 1 and no crossing lies ahead, it may leave the
+// printer (and jump) instead of waiting for the mode timer.
+export const PRINTER_UPRIGHT_SEPARATION = 90;
+export function printerPastLastCrossing(sourceAt: (x: number) => Candle | undefined, x: number, startX: number, endX: number, turns: PrinterTurn[], step: number): boolean {
+  if (x >= endX) return true;
+  for (let probe = x; probe <= endX; probe += step) {
+    const source = sourceAt(probe);
+    if (!source) continue;
+    const a = endingPrinterCandle(source, probe, startX, endX, turns, 1);
+    const b = endingPrinterCandle(source, probe, startX, endX, turns, -1);
+    if (a.top - b.top < PRINTER_UPRIGHT_SEPARATION) return false;
+  }
+  return true;
+}
+
 export const PRINTER_CLEARANCE = 78;
 
 export const rightEdgeSpawnX = (cameraX: number, viewportWidth: number, margin = 120): number =>
@@ -55,7 +71,7 @@ export function printerEnemyPose(a: Candle, b: Candle, height: number) {
 // Blend the attachment side near the crossing, rather than deforming candles.
 export function printerCrossingPose(a: Candle, b: Candle) {
   const separation = a.top - b.top;
-  const side = Math.max(-1, Math.min(1, separation / 90));
+  const side = Math.max(-1, Math.min(1, separation / PRINTER_UPRIGHT_SEPARATION));
   const rotation = Math.acos(side);
   const attachment = a.top + (a.bot - a.top) * (1 - side) / 2;
   return { y: attachment, rotation, inverted: separation < 0 };

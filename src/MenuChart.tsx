@@ -198,7 +198,10 @@ export function MenuChart({ theme }: { theme: 'light' | 'dark' }) {
         <rect x={candle.x - candleWidth / 2} y={top} width={candleWidth} height={Math.max(1, bottom - top)} stroke="none" />
       </g>;
     })}
-    {!portrait && scenery.map(({ asset, side, x, y, size: factor }, index) => {
+    {/* SVG paints in order: items first, so walking characters pass in front of them. */}
+    {!portrait && scenery.map((item, index) => ({ ...item, index }))
+      .sort((a, b) => Number(!!characterMotion[a.asset]) - Number(!!characterMotion[b.asset]))
+      .map(({ asset, side, x, y, size: factor, index }) => {
       const extent = sceneUnit * factor;
       const left = side === 'left' ? 8 : width / 2 + menuWidth / 2 + 16;
       const available = side === 'left' ? sideWidth : Math.max(1, plotWidth - left - 8);

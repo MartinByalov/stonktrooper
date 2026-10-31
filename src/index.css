@@ -5404,3 +5404,26 @@ html[data-theme] .game-app .site-info-dialog:has([data-info-section]) > .site-in
     color: inherit !important;
   }
 }
+
+/* Touch: one slim bar height for the header and every section title bar
+   (How to Play, Settings, About...), replacing the layered per-bar heights. */
+@media (pointer: coarse) {
+  html[data-theme] .game-app {
+    --touch-bar-height: var(--touch-control);
+    --chrome-height: var(--touch-bar-height);
+  }
+  html[data-theme] .game-app header,
+  html[data-theme] .game-app :is(.mobile-how-to-panel > .mobile-how-to-header, .paused-guide-dialog > .how-to-guide-header, .site-info-overlay.fixed.inset-0.z-50 > .site-info-dialog > .site-info-header) {
+    box-sizing: border-box;
+    height: var(--touch-bar-height) !important;
+    min-height: var(--touch-bar-height) !important;
+    max-height: var(--touch-bar-height) !important;
+    flex-basis: var(--touch-bar-height) !important;
+  }
+  html[data-theme] .game-app header { padding-block: 0; }
+  /* The inline Live Feed fills the bar's content box (inside its 1px rule). */
+  html[data-theme] .game-app header > .mobile-header-feed { height: 100%; }
+  html[data-theme] .game-app :is(.mobile-how-to-header, .how-to-guide-header, .site-info-header) > :is(.dialog-close, .site-info-close) {
+    max-height: var(--touch-bar-height);
+  }
+}
