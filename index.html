@@ -21,6 +21,8 @@
     <meta name="twitter:description" content="Jump across a stock chart, throw briefcases, and try not to get liquidated. Play free in your browser." />
     <meta name="twitter:image" content="https://www.stonktrooper.lol/images/background.png" />
     <meta name="twitter:image:alt" content="Stonktrooper logo above a candlestick chart with the game's trader character" />
+    <!-- Apply the saved theme before the first paint, so Day players never see the Night background while the game loads. -->
+    <script>try { document.documentElement.dataset.theme = localStorage.getItem('cr_theme') === 'dark' ? 'dark' : 'light'; } catch { document.documentElement.dataset.theme = 'light'; }</script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;0,700;0,800;1,400&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
