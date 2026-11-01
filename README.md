@@ -65,31 +65,6 @@
 | **Restart** | `R` | Replay button |
 | **Sound / Theme** | `M` / `N` | Settings |
 
-<table>
-  <tr>
-    <td>
-      <h2>Make it yours</h2>
-      <p><strong>Day or Night.</strong> The whole chart switches theme with one key.</p>
-      <p><strong>Your soundtrack.</strong> Pick the music style (funk and jazz on the trading desk, lo-fi, chiptune or house) and a style for every sound effect.</p>
-      <p><strong>The Shmuck Feed.</strong> A satirical ticker of market "news" running over your run. Turn it off if the headlines hurt.</p>
-      <p><strong>Show off the damage.</strong> Your score card is generated right in the browser, ready to post.</p>
-    </td>
-    <td width="36%"><img src="public/images/score-back.png" alt="The Stonktrooper opening his briefcase"></td>
-  </tr>
-</table>
-
-## Run it locally
-
-```bash
-npm install
-npm run dev      # http://localhost:5500
-npm run build    # production build in dist/
-```
-
-Built with React, TypeScript, Vite and Tailwind. Everything in a run (the chart, the hero, the
-enemies, the bosses) is drawn on a canvas in real time; the music and effects are synthesized live
-with the Web Audio API.
-
 ---
 
 <p align="center">
