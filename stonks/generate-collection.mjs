@@ -10,13 +10,13 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 
 const CONFIG_PATH = join(
   HERE,
-  'data',
+  '../public/stonks/data',
   'traits-config.json'
 );
 
 const OUTPUT_PATH = join(
   HERE,
-  'data',
+  '../public/stonks/data',
   'stonks-collection.json'
 );
 

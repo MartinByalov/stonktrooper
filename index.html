@@ -28,16 +28,5 @@
   <body class="bg-[var(--bg)] text-[var(--text)] antialiased select-none selection:bg-[#55d6ae]/30 selection:text-[#55d6ae]">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
-    <!-- Cloudflare Web Analytics -->
-    <script type="module">
-      if (import.meta.env.PROD && ['stonktrooper.lol', 'www.stonktrooper.lol'].includes(location.hostname)) {
-        const beacon = document.createElement('script');
-        beacon.defer = true;
-        beacon.src = 'https://static.cloudflareinsights.com/beacon.min.js';
-        beacon.dataset.cfBeacon = JSON.stringify({ token: 'd8805f1a6a204e5cb3c2f437cd1d31d3' });
-        document.body.appendChild(beacon);
-      }
-    </script>
-    <!-- End Cloudflare Web Analytics -->
   </body>
 </html>

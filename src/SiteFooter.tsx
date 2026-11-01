@@ -130,8 +130,7 @@ export function SiteFooter({ onOpen, theme, section, setSection, volume, onVolum
           </div>}
           {section === 'Privacy' && <>
             <p>The game does not use advertising trackers or tracking cookies, and does not upload your score to a game server.</p>
-            <p>Website analytics: Cloudflare Web Analytics is used to understand website traffic and improve site performance. Basic usage and performance information is collected through a JavaScript beacon. According to Cloudflare, the service does not use cookies or track individual visitors across websites. For more information, see <a className="underline text-[#38bdf8]" href="https://www.cloudflare.com/privacypolicy/" target="_blank" rel="noopener noreferrer">Cloudflare’s Privacy Policy</a>.</p>
-            <p>Your browser stores the selected theme, volume, Shmuck Feed, high contrast and interface animation preferences locally. These settings are not sent by the game to the creator. Current gameplay and scores are held in memory.</p>
+            <p>Your browser stores the selected theme, sound, volume, music style, Shmuck Feed, high contrast and interface animation preferences locally. These settings are not sent by the game to the creator. Current gameplay and scores are held in memory.</p>
             <p>Share score generates its image locally. Score links include the displayed result in the URL. Anyone with the link can view or edit this self-reported value.</p>
             <p>Hosting: GitHub Pages. GitHub logs visitor IP addresses for security. This is separate from the game's local settings. See the <a className="underline text-[#38bdf8]" href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement" target="_blank" rel="noopener noreferrer">GitHub Privacy Statement</a>.</p>
             <p>Fonts: this page loads fonts from Google Fonts. Your browser contacts Google to retrieve them, which exposes information such as your IP address to the provider. See <a className="underline text-[#38bdf8]" href="https://developers.google.com/fonts/faq/privacy" target="_blank" rel="noopener noreferrer">Google Fonts privacy information</a>.</p>
@@ -142,7 +141,7 @@ export function SiteFooter({ onOpen, theme, section, setSection, volume, onVolum
             <p>If you find any in-game bugs, it may be a feature!</p>
           </>}
           {section === 'Preferences' && <>
-            <p>The game saves only theme, volume, Shmuck Feed, high contrast and interface animation preferences in this browser. <br></br> You can remove them below or through your browser's site-data settings.</p>
+            <p>The game saves only theme, sound, volume, music style, Shmuck Feed, high contrast and interface animation preferences in this browser. <br></br> You can remove them below or through your browser's site-data settings.</p>
             <p>Removing the saved settings does not interrupt the current game. <br></br>Defaults apply after your next reload. Later preference changes may save new settings.</p>
           </>}
           </div>

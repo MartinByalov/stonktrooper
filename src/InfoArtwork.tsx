@@ -33,7 +33,7 @@ export function InfoArtwork({ asset, theme, animationsEnabled }: { asset: 'coin'
       : asset === 'banana' ? <FruitShine animate={animationsEnabled}>{fruit === 'banana' ? <AssetPreview asset="banana" theme={theme} /> : <InfoSurprisePreview kind={fruit as InfoFruit} />}</FruitShine>
       : <span className="info-bag-surprise">
         <span className="info-bag-front"><AssetPreview asset="bag" theme={theme} /></span>
-        <span className="info-bag-clown" aria-hidden="true"><InfoSurprisePreview kind="clown" /></span>
+        <span className="info-bag-clown" aria-hidden="true"><span className="info-bag-clown-rise"><InfoSurprisePreview kind="clown" /></span></span>
       </span>}
   </button>;
 }

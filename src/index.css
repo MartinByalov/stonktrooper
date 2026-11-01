@@ -49,9 +49,12 @@ html[data-theme] .game-app .how-to-mode-selector[data-mode="easy"] {
 .info-briefcase-scale { display: block; transform-origin: center; }
 .info-bag-surprise { position: relative; display: block; }
 .info-bag-front { position: relative; display: block; z-index: 1; }
-.info-bag-clown { position: absolute; inset: 0; z-index: 2; pointer-events: none; opacity: 0; transform: translateY(0) scale(0.25); }
-.info-artwork-button[data-clown="true"] .info-bag-clown { opacity: 1; transform: translateY(-55.5%) scale(0.65); }
-.info-artwork-button[data-animate="true"] .info-bag-clown { transition: transform 300ms ease-out, opacity 300ms ease-out; }
+/* The clown pops out of the bag's mouth: only what is above the mouth line shows,
+   so the hidden clown (tucked below that line) is never visible on the bag. */
+.info-bag-clown { position: absolute; inset: 0; z-index: 2; pointer-events: none; clip-path: inset(-300% -100% 93% -100%); }
+.info-bag-clown-rise { display: block; transform: translateY(12%) scale(0.65); }
+.info-artwork-button[data-clown="true"] .info-bag-clown-rise { transform: translateY(-55.5%) scale(0.65); }
+.info-artwork-button[data-animate="true"] .info-bag-clown-rise { transition: transform 320ms cubic-bezier(.3, 1.45, .55, 1); }
 .info-artwork-button:disabled { cursor: default; opacity: 1; }
 .info-fruit-shine { position: relative; display: block; }
 /* Coin-style sweeping reflection drawn over the fruit (FruitShine.tsx). */
@@ -59,7 +62,7 @@ html[data-theme] .game-app .how-to-mode-selector[data-mode="easy"] {
 .info-artwork-button[data-animate="true"] .info-coin-rotation { transition: transform 600ms ease-in-out; }
 .info-artwork-button[data-animate="true"] .info-briefcase-scale { transition: transform 180ms ease-out; }
 @media (prefers-reduced-motion: reduce) {
-  .info-artwork-button[data-animate="true"] :is(.info-coin-rotation, .info-briefcase-scale, .info-bag-clown) { transition: none; }
+  .info-artwork-button[data-animate="true"] :is(.info-coin-rotation, .info-briefcase-scale, .info-bag-clown-rise) { transition: none; }
 }
 
 /* The description owns all space below the heading, with equal vertical gaps. */

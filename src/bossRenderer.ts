@@ -74,8 +74,14 @@ export function drawBossEncounter(ctx: CanvasRenderingContext2D, a: BossArena, d
       ctx.fillStyle = '#946039'; ctx.beginPath(); ctx.moveTo(-11, -29);
       ctx.bezierCurveTo(-28, -17, -56, -5 + tailLift, -86, -2 + tailLift);
       ctx.bezierCurveTo(-58, 1 + tailLift, -28, -7, -4, -18); ctx.closePath(); ctx.fill();
-      ctx.strokeStyle = '#b77b47'; ctx.lineWidth = 13; ctx.lineCap = 'round';
-      for (const side of [-1, 1]) { const leg = legPose(side); ctx.beginPath(); ctx.moveTo(side * 10, -30); ctx.lineTo(leg.kneeX, leg.kneeY); ctx.lineTo(leg.footX, leg.footY); ctx.stroke(); }
+      // Hind legs: a rounded haunch behind the body, then a slim shin with soft joints.
+      ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+      for (const side of [-1, 1]) {
+        const leg = legPose(side), shade = side < 0 ? '#a26a3e' : '#b77b47';
+        ctx.fillStyle = shade; ctx.beginPath(); ctx.ellipse(side * 9 - 3, -30, 15, 19, -0.5, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = shade; ctx.lineWidth = 8;
+        ctx.beginPath(); ctx.moveTo(side * 9 + 2, -22); ctx.lineTo(leg.kneeX, leg.kneeY); ctx.lineTo(leg.footX, leg.footY); ctx.stroke();
+      }
       const fur = ctx.createLinearGradient(-20, -90, 20, -20);
       fur.addColorStop(0, '#dca56d'); fur.addColorStop(0.55, '#ba7c49'); fur.addColorStop(1, '#815332');
       ctx.fillStyle = fur; ctx.beginPath(); ctx.ellipse(0, -53, 29, 35, -0.15, 0, Math.PI * 2); ctx.fill();
@@ -96,8 +102,14 @@ export function drawBossEncounter(ctx: CanvasRenderingContext2D, a: BossArena, d
       ctx.strokeStyle = '#6b422c'; ctx.lineWidth = 1.6;
       ctx.beginPath(); ctx.moveTo(9, -105); ctx.lineTo(19, -104); ctx.moveTo(20, -80); ctx.quadraticCurveTo(30, -76, 35, -82); ctx.stroke();
       // Long hind feet and a defined pouch distinguish a kangaroo from an upright bear.
+      // Long hind feet: a round heel tapering to the toes, tipped down when airborne.
       ctx.fillStyle = '#8d5d37';
-      for (const side of [-1, 1]) { const leg = legPose(side); ctx.beginPath(); ctx.ellipse(leg.footX + 8, leg.footY + 1, 15, 4, b.grounded ? 0 : -0.2, 0, Math.PI * 2); ctx.fill(); }
+      for (const side of [-1, 1]) {
+        const leg = legPose(side);
+        ctx.save(); ctx.translate(leg.footX, leg.footY); ctx.rotate(b.grounded ? 0 : 0.25);
+        ctx.beginPath(); ctx.moveTo(-5, -4); ctx.quadraticCurveTo(-9, 2, -3, 3.5); ctx.lineTo(22, 3); ctx.quadraticCurveTo(27, 1.5, 24, -1.5); ctx.quadraticCurveTo(10, -4, -5, -4); ctx.fill();
+        ctx.restore();
+      }
       ctx.strokeStyle = '#b78353'; ctx.lineWidth = 1.5;
       ctx.beginPath(); ctx.moveTo(-6, -39); ctx.quadraticCurveTo(7, -31, 17, -39); ctx.stroke();
       for (const arm of [0, 1]) {

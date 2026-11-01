@@ -2267,7 +2267,8 @@ export const CandleGame: React.FC<CandleGameProps> = ({
         const follower = whaleCompanionPose(index);
         ctx.save(); ctx.translate(follower.x, follower.y); ctx.scale(follower.scale, follower.scale);
         const ape = g.apes[index];
-        const phase = ape.whalePhase ?? 0;
+        // Companions ride in step with the hero's mount, so everyone jumps together.
+        const phase = g.p.whaleMount.phase ?? 0;
         applyWhaleRiderSwim(ctx, phase);
         const riderScale = APE_SCALE * WHALE_RIDER_SCALE / follower.scale;
         ctx.save(); applyWhaleRiderSeat(ctx, phase, riderScale);

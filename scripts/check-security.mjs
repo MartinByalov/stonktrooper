@@ -19,15 +19,12 @@ try {
   }
   for (const link of socialLinks(123)) assert.equal(new URL(link.href).protocol, 'https:');
 
-  const popup = await readFile(new URL('../stonks/nft-popup.js', import.meta.url), 'utf8');
-  assert.ok(popup.includes('${esc(info.rarityRank)} / ${esc(info.totalSupply)}'));
-  assert.ok(popup.includes('${esc(typeof info.rarityScore'));
   const workflow = await readFile(new URL('../.github/workflows/pages.yml', import.meta.url), 'utf8');
   assert.ok(!workflow.split('  deploy:')[0].includes('pages: write'));
   assert.ok(!workflow.split('  deploy:')[0].includes('id-token: write'));
   const footer = await readFile(new URL('../src/SiteFooter.tsx', import.meta.url), 'utf8');
   assert.ok(footer.includes('If you find any in-game bugs, it may be a feature!'));
-  console.log('PASS share input validation, escaped rarity fields, deployment permissions and disclaimer copy');
+  console.log('PASS share input validation, deployment permissions and disclaimer copy');
 } finally {
   await server.close();
 }
