@@ -170,9 +170,9 @@ export function DesktopSiteFooter({ onOpen, theme, section, setSection, volume, 
             </div>}
           {section === 'Preferences' && <div className="site-info-bottom preferences-actions pt-2">
               <button type="button" className="preferences-clear-button block mx-auto w-full py-2.5 px-3 rounded-lg border font-bold text-xs font-mono-term cursor-pointer" onClick={() => {
-                try { for (const key of ['cr_theme', 'stonker-sounds', 'cr_sound_enabled', 'cr_live_feed', 'cr_volume', 'cr_animations', 'cr_high_contrast']) localStorage.removeItem(key); setMessage('Preferences removed'); }
+                try { for (const key of ['cr_theme', 'stonker-sounds', 'cr_sound_enabled', 'cr_live_feed', 'cr_live_feed_paused', 'cr_volume', 'cr_animations', 'cr_high_contrast']) localStorage.removeItem(key); setMessage('Preferences removed'); }
                 catch { setMessage('Unable to access browser storage. Use your browser site-data settings.'); }
-              }}><span aria-live="polite">{message || 'Clear'}</span></button>
+              }}><span aria-live="polite">{message || 'Clear saved preferences'}</span></button>
               {onDisconnect && <DisconnectGoogle onDisconnect={onDisconnect} />}
             </div>}
           </div>
