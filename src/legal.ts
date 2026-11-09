@@ -1,5 +1,5 @@
 // Privacy Policy and Terms for the site, shared by tabs and pages; bump LEGAL_VERSION on change.
-export const LEGAL_VERSION = '2026-11-09.6';
+export const LEGAL_VERSION = '2026-11-09.7';
 export const LEGAL_UPDATED = '9 November 2026';
 export const LEGAL_DEVELOPER = 'Martin Byalov';
 export const LEGAL_CONTACT = 'contact@stonktrooper.lol';
@@ -36,6 +36,7 @@ export const PRIVACY_POLICY: LegalDocument = {
         'For Monthly Squeeze: the event, a one-way hash of your account and the time you took part.',
       ],
       'The Service does not store your game save on its own servers: it is kept in your Google Drive and only passes through the Service when the game reads or updates it.',
+      `The use and transfer of information received from Google APIs adheres to the [Google API Services User Data Policy](https://developers.google.com/terms/api-services-user-data-policy), including the Limited Use requirements. Google data is used only to sign you in and to save and load your game. It is never used for advertising, never sold and never shared with data brokers.`,
     ] },
     { heading: 'What information is collected automatically?', paragraphs: [
       'GitHub (which hosts the website), Cloudflare (which runs the account service) and Google (sign-in and Drive) process technical data such as your IP address and browser information when your browser contacts them, for security and to deliver their services. The Service does not use advertising, analytics or tracking tools.',
@@ -66,9 +67,10 @@ export const PRIVACY_POLICY: LegalDocument = {
     { heading: 'Data retention and deletion', paragraphs: [
       [
         'Settings and caches in your browser stay until you clear your site data.',
-        'Signing out ends your session and removes it from the Service. Otherwise it expires after 30 days.',
+        'Signing out ends your session, revokes the Service\'s access to your Google Account and deletes the stored permission token. Otherwise a session expires after 30 days.',
+        'In Preferences, Disconnect Google does the same and also deletes the technical records the Service keeps for your save. Your save file itself stays in your Google Drive.',
         'Your game save stays in your Google Drive until you delete it. In your Google Account, open Data & privacy, then Third-party apps and services, choose Stonktrooper, and either delete its hidden app data or remove its access.',
-        'Technical records and Monthly Squeeze participation are kept while the Service runs and are deleted when you ask.',
+        'Monthly Squeeze participation is a pseudonymous count toward a shared goal. It is kept while the Service runs and is deleted when you ask.',
       ],
       `If you need help deleting your data or exercising any right, contact the Service Provider at ${C}. Requests are answered within one month, extendable by up to two months where necessary, as permitted by law.`,
     ] },

@@ -7022,3 +7022,34 @@ html .game-app[data-offline="true"] .home-coffee-link { visibility: hidden; poin
     left: max(var(--home-logo-inset, 12px), env(safe-area-inset-left, 0px));
   }
 }
+
+/* Sign in with Google follows Google's branding rules for the button: a light or a dark button (white or #131314 with a
+   1px outline), the standard colour G, Google Sans Medium 14/20, the text "Sign in with Google" and 12px / 10px / 12px
+   padding. On a narrow column the text scales down with the button (allowed: the button may be scaled), never the G. */
+html[data-theme] .game-app .landing-menu-actions > .google-sign-in-button,
+.google-signin-standalone {
+  box-sizing: border-box;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 10px !important;
+  padding: 0 12px !important;
+  border: 1px solid !important;
+  border-radius: var(--ui-radius, 6px);
+  font-family: 'Google Sans', 'Google Sans Text', Roboto, Arial, sans-serif !important;
+  font-weight: 500 !important;
+  letter-spacing: normal !important;
+  text-transform: none !important;
+  white-space: nowrap;
+  cursor: pointer;
+}
+html[data-theme] .game-app .landing-menu-actions > .google-sign-in-button { container-type: inline-size; }
+html[data-theme] .game-app .landing-menu-actions > .google-sign-in-button > span { font-size: clamp(10px, 8.6cqw, 14px); line-height: 20px; }
+.google-signin-standalone { min-height: 40px; font-size: 14px; line-height: 20px; margin: 8px 0; }
+html[data-theme] .google-glyph, .google-signin-standalone .google-glyph { flex: 0 0 auto; width: 20px !important; height: 20px !important; }
+html[data-theme="light"] .game-app .landing-menu-actions > .google-sign-in-button,
+html[data-theme="light"] .google-signin-standalone { background: #ffffff !important; border-color: #747775 !important; color: #1f1f1f !important; --menu-action-text: #1f1f1f; }
+html:not([data-theme="light"]) .game-app .landing-menu-actions > .google-sign-in-button,
+html:not([data-theme="light"]) .google-signin-standalone { background: #131314 !important; border-color: #8e918f !important; color: #e3e3e3 !important; --menu-action-text: #e3e3e3; }
+html .game-app .landing-menu-actions > .google-sign-in-button:disabled, .google-signin-standalone:disabled { opacity: .38; cursor: default; }
+.google-signin-standalone:focus-visible { outline: 2px solid #4285f4; outline-offset: 2px; }

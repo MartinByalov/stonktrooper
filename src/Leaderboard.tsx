@@ -1,4 +1,5 @@
 import { getGoogleTime } from './playerServices';
+import { GoogleSignInButton } from './GoogleSignInButton';
 import { googlePeriod } from './googlePeriods';
 
 import { getLeaderboard, peekLeaderboard, leaderboardConfigured, nativeServicesAvailable, type LeaderboardResult } from './playerServices';
@@ -270,7 +271,7 @@ export function Leaderboard({ onClose, theme, progress, token, playerId, signedI
       ].map(([label, value]) => <tr key={label}><th scope="row">{String(label).charAt(0).toUpperCase() + String(label).slice(1)}</th><td>{number.format(Number(value))}</td></tr>)}
     </tbody></table></div>}
     {period === 'Rankings' && <>
-    {live && !signedIn && onSignIn && <button type="button" disabled={busy || !nativeServicesAvailable()} onClick={onSignIn}>Sign in with Google</button>}
+    {live && !signedIn && onSignIn && <GoogleSignInButton disabled={busy || !nativeServicesAvailable()} onClick={onSignIn} />}
     {live && (boardLoading || boardError || !rows.length) && <p role="status">{boardLoading ? 'Loading rankings...' : boardError || 'No scores yet for this period.'}</p>}
     {live && board?.self && board.self.rank <= 0 && <p role="status">Your score was saved: {board.self.score.toLocaleString('en-US')}. No public rank has been assigned yet.</p>}
     <div id="leaderboard-rankings" className="leaderboard-table-scroll" tabIndex={0}>

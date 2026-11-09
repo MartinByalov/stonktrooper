@@ -1,4 +1,5 @@
 import { ActionLabel } from './ActionLabel';
+import { DisconnectGoogle } from './DisconnectGoogle';
 import { CloseButton } from './CloseButton';
 // Browser game module for SiteFooter.
 import { useEffect, useRef, useState } from 'react';
@@ -18,7 +19,7 @@ const footerLabel = (item: string) => item === 'Terms' ? 'Terms & Conditions' : 
 export type SiteSection = typeof sections[number] | 'Settings';
 const sectionAssets: Record<SiteSection, PreviewAsset> = { About: 'coin', Privacy: 'briefcase', Terms: 'bag', Preferences: 'banana', Settings: 'diamond' };
 
-export function SiteFooter({ showNavigation = true, onProgress, onOpen, theme, section, setSection, volume, onVolumeChange, animationsEnabled, onToggleAnimations, liveFeedPaused, onToggleLiveFeedPause, onToggleTheme, highContrast, onToggleHighContrast, onResetDefaults, wallet, hatSkin, onStarCoin }: { showNavigation?: boolean; onProgress?: (event: GameEvent) => void; wallet: Wallet; hatSkin: string; onStarCoin?: () => Promise<void>; onOpen: () => void; theme: 'light' | 'dark'; section: SiteSection | null; setSection: (section: SiteSection | null) => void; volume: number; onVolumeChange: (volume: number) => void; animationsEnabled: boolean; onToggleAnimations: () => void; liveFeedPaused: boolean; onToggleLiveFeedPause: () => void; onToggleTheme: () => void; highContrast: boolean; onToggleHighContrast: () => void; onResetDefaults: () => void }) {
+export function SiteFooter({ showNavigation = true, onProgress, onOpen, theme, section, setSection, volume, onVolumeChange, animationsEnabled, onToggleAnimations, liveFeedPaused, onToggleLiveFeedPause, onToggleTheme, highContrast, onToggleHighContrast, onResetDefaults, onDisconnect, wallet, hatSkin, onStarCoin }: { onDisconnect?: () => Promise<void>; showNavigation?: boolean; onProgress?: (event: GameEvent) => void; wallet: Wallet; hatSkin: string; onStarCoin?: () => Promise<void>; onOpen: () => void; theme: 'light' | 'dark'; section: SiteSection | null; setSection: (section: SiteSection | null) => void; volume: number; onVolumeChange: (volume: number) => void; animationsEnabled: boolean; onToggleAnimations: () => void; liveFeedPaused: boolean; onToggleLiveFeedPause: () => void; onToggleTheme: () => void; highContrast: boolean; onToggleHighContrast: () => void; onResetDefaults: () => void }) {
   const [message, setMessage] = useState('');
   const [creditsTab, setCreditsTab] = useState<'About' | 'Privacy' | 'Terms'>('About');
   const credits = section === 'About';
@@ -113,6 +114,7 @@ export function SiteFooter({ showNavigation = true, onProgress, onOpen, theme, s
           {section === 'Preferences' && <>
             <p>The game saves only theme, volume, Live Feed pause, high contrast and interface animation preferences in this browser. <br></br> You can remove them below or through your browser's site-data settings.</p>
             <p>Removing the saved settings does not interrupt the current game. <br></br>Defaults apply after your next reload. Later preference changes may save new settings.</p>
+            {onDisconnect && <DisconnectGoogle onDisconnect={onDisconnect} />}
           </>}
           </div>
           {infoSection === 'About' && <p className="site-info-bottom about-copyright text-center font-mono-term text-[10px]"><button type="button" className="stonks-copyright-button" aria-label="Open The Stonks" title="The Stonks" onClick={event => { event.currentTarget.focus(); onOpen(); setStonksOpen(true); }}>©</button> Stonktrooper.lol<br />2026</p>}

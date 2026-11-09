@@ -69,4 +69,17 @@ export async function signOutBrowserGoogle() {
   generation++;
   publish(null);
 }
+// Disconnect Google: the Worker revokes the grant and deletes its technical records; this browser forgets the account copy.
+// The save file stays in the player's own Google Drive.
+export async function disconnectBrowserGoogle() {
+  generation++;
+  await workerRequest('/auth/disconnect', { method: 'POST' });
+  generation++;
+  try {
+    for (const key of Object.keys(localStorage)) {
+      if (['cr_google_save_v1:', 'cr_pending_currencies_v1:', 'cr_retired_local_v1:', 'cr_retired_pending_v1:'].some(prefix => key.startsWith(prefix))) localStorage.removeItem(key);
+    }
+  } catch { /* Storage can be unavailable; the account is already disconnected. */ }
+  publish(null);
+}
 export const browserAuthError = (error: unknown) => error instanceof Error ? error.message : 'Google sign-in unavailable. Please retry.';

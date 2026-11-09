@@ -1,4 +1,5 @@
 import { CloseButton } from './CloseButton';
+import { GoogleSignInButton } from './GoogleSignInButton';
 import { AboutStar } from './AboutStar';
 import { VAULT_REWARD_IDS, VAULT_TARGET, vaultReward, vaultRuns } from './vault';
 import { LOCAL_SANDBOX } from './localSandbox';
@@ -223,7 +224,7 @@ export function Exchange({ progress, theme, name, busy, error, onClose, onSignIn
       {cataloguePreview && !driveProfile && <p role="status" className="exchange-mounts-description">Standard Drip preview — not your account inventory. Vault reserves and Titles are excluded. Achievements are moving to Monthly Squeeze (group effort). Purchases and equipping are disabled; displayed prices and unlock requirements are legacy references only.</p>}
       {tab === 'mounts' && <p className="exchange-mounts-description">Mounts appear only during temporary rides: tame a whale, or stomp a rider mount for a chance to ride it. Unlike Pets, they do not follow you permanently.</p>}
       {error && <p role="alert" className="exchange-error">{error}</p>}
-      {!cataloguePreview && !name && <button type="button" disabled={busy} onClick={onSignIn}>Sign in with Google</button>}
+      {!cataloguePreview && !name && <GoogleSignInButton disabled={busy} onClick={onSignIn} />}
       {tab === 'titles' ? <div className="exchange-titles">
         <div className="exchange-grid title-grid">
           <article data-title="no-title" data-owned={true} data-equipped={!progress.equippedTitle}>

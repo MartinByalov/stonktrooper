@@ -7,7 +7,7 @@ import { useBootReady } from './useBootReady';
 import { DesktopMenuChart } from './DesktopMenuChart';
 import { DesktopSiteFooter } from './DesktopSiteFooter';
 import { BrowserAccount } from './BrowserAccount';
-import { signOutBrowserGoogle, type BrowserUser } from './browserIdentity';
+import { signOutBrowserGoogle, disconnectBrowserGoogle, type BrowserUser } from './browserIdentity';
 import { prefetchFriends, type FriendlyRacePreview, type FriendsTestMode } from './CommunityPreview';
 import { ActionLabel, BadgeLabel } from './ActionLabel';
 import { CloseButton } from './CloseButton';
@@ -86,6 +86,7 @@ export default function App() {
   const squeezeSave = { owned: player.progress.owned.includes(SQUEEZE_REWARD_ID), owns: player.ownsItem, grant: player.claimMonthly,
     // The Home card points at its reward in Exchange.
     open: () => { if (player.onlineReady && player.networkOnline && !player.busy) { setExchangeFocus({ tab: 'mounts', skin: SQUEEZE_REWARD_ID }); setExchangeOpen(true); } } };
+  const disconnectAccount = () => disconnectBrowserGoogle().then(() => { setExchangeOpen(false); setAccountMenuError(''); setSiteSection(null); });
   const signOutAccount = () => void signOutBrowserGoogle().then(() => { setExchangeOpen(false); setAccountMenuError(''); }, () => setAccountMenuError('Could not sign out. Please retry.'));
   useEffect(() => {
     setAccountMenuError('');
@@ -1101,7 +1102,7 @@ export default function App() {
         </div>}
 
         {/* Keep settings dialogs available from Pause without a website footer. */}
-        {mobileDevice ? <SiteFooter onProgress={player.command} wallet={player.progress.wallet} hatSkin={outfit.hats} onStarCoin={state === 'menu' && player.networkOnline && !practiceUI ? player.claimStarCoin : undefined} showNavigation highContrast={highContrast} onToggleHighContrast={() => setHighContrast(current => !current)} onResetDefaults={resetDefaults} volume={deviceVolume.volume ?? (soundEnabled ? volume : 0)} onVolumeChange={usesDeviceVolume() ? deviceVolume.changeVolume : changeVolume} animationsEnabled={animationsEnabled} onToggleAnimations={() => setAnimationsEnabled(current => !current)} liveFeedPaused={liveFeedPaused} onToggleLiveFeedPause={() => setLiveFeedPaused(current => !current)} onToggleTheme={() => setTheme(current => current === 'dark' ? 'light' : 'dark')} theme={theme} section={siteSection} setSection={setSiteSection} onOpen={() => { if (state === 'play') setState('paused'); }} /> : <DesktopSiteFooter highContrast={highContrast} onToggleHighContrast={() => setHighContrast(current => !current)} onResetDefaults={resetDefaults} volume={deviceVolume.volume ?? (soundEnabled ? volume : 0)} onVolumeChange={usesDeviceVolume() ? deviceVolume.changeVolume : changeVolume} animationsEnabled={animationsEnabled} onToggleAnimations={() => setAnimationsEnabled(current => !current)} liveFeedEnabled={!liveFeedPaused} onToggleLiveFeed={() => setLiveFeedPaused(current => !current)} onToggleTheme={() => setTheme(current => current === 'dark' ? 'light' : 'dark')} theme={theme} section={siteSection as never} setSection={setSiteSection as never} onOpen={() => { if (state === 'play') setState('paused'); }} />}
+        {mobileDevice ? <SiteFooter onProgress={player.command} wallet={player.progress.wallet} hatSkin={outfit.hats} onStarCoin={state === 'menu' && player.networkOnline && !practiceUI ? player.claimStarCoin : undefined} showNavigation highContrast={highContrast} onToggleHighContrast={() => setHighContrast(current => !current)} onResetDefaults={resetDefaults} onDisconnect={browserUser ? disconnectAccount : undefined} volume={deviceVolume.volume ?? (soundEnabled ? volume : 0)} onVolumeChange={usesDeviceVolume() ? deviceVolume.changeVolume : changeVolume} animationsEnabled={animationsEnabled} onToggleAnimations={() => setAnimationsEnabled(current => !current)} liveFeedPaused={liveFeedPaused} onToggleLiveFeedPause={() => setLiveFeedPaused(current => !current)} onToggleTheme={() => setTheme(current => current === 'dark' ? 'light' : 'dark')} theme={theme} section={siteSection} setSection={setSiteSection} onOpen={() => { if (state === 'play') setState('paused'); }} /> : <DesktopSiteFooter highContrast={highContrast} onToggleHighContrast={() => setHighContrast(current => !current)} onResetDefaults={resetDefaults} onDisconnect={browserUser ? disconnectAccount : undefined} volume={deviceVolume.volume ?? (soundEnabled ? volume : 0)} onVolumeChange={usesDeviceVolume() ? deviceVolume.changeVolume : changeVolume} animationsEnabled={animationsEnabled} onToggleAnimations={() => setAnimationsEnabled(current => !current)} liveFeedEnabled={!liveFeedPaused} onToggleLiveFeed={() => setLiveFeedPaused(current => !current)} onToggleTheme={() => setTheme(current => current === 'dark' ? 'light' : 'dark')} theme={theme} section={siteSection as never} setSection={setSiteSection as never} onOpen={() => { if (state === 'play') setState('paused'); }} />}
         <MobileDiagnostics />
 
         {/* The words live in aria-label because an image alt flashes as text before the picture loads. */}

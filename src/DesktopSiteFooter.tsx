@@ -1,5 +1,6 @@
 // Browser game module for SiteFooter.
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { DisconnectGoogle } from './DisconnectGoogle';
 import { Mail, X, Volume2, VolumeX, Radio, Moon, Sparkles } from 'lucide-react';
 import { AssetPreview, type PreviewAsset } from './AssetPreview';
 import { SettingsDiamond } from './SettingsDiamond';
@@ -14,7 +15,7 @@ const footerLabel = (item: string) => item === 'Terms' ? 'Terms & Conditions' : 
 export type SiteSection = typeof sections[number] | 'Settings' | 'How to Play';
 const sectionAssets: Record<SiteSection, PreviewAsset> = { About: 'coin', Privacy: 'briefcase', Terms: 'bag', Preferences: 'banana', Settings: 'diamond', 'How to Play': 'diamond' };
 
-export function DesktopSiteFooter({ onOpen, theme, section, setSection, volume, onVolumeChange, animationsEnabled, onToggleAnimations, liveFeedEnabled, onToggleLiveFeed, onToggleTheme, highContrast, onToggleHighContrast, onResetDefaults }: { onOpen: () => void; theme: 'light' | 'dark'; section: SiteSection | null; setSection: (section: SiteSection | null) => void; volume: number; onVolumeChange: (volume: number) => void; animationsEnabled: boolean; onToggleAnimations: () => void; liveFeedEnabled: boolean; onToggleLiveFeed: () => void; onToggleTheme: () => void; highContrast: boolean; onToggleHighContrast: () => void; onResetDefaults: () => void }) {
+export function DesktopSiteFooter({ onOpen, theme, section, setSection, volume, onVolumeChange, animationsEnabled, onToggleAnimations, liveFeedEnabled, onToggleLiveFeed, onToggleTheme, highContrast, onToggleHighContrast, onResetDefaults, onDisconnect }: { onDisconnect?: () => Promise<void>; onOpen: () => void; theme: 'light' | 'dark'; section: SiteSection | null; setSection: (section: SiteSection | null) => void; volume: number; onVolumeChange: (volume: number) => void; animationsEnabled: boolean; onToggleAnimations: () => void; liveFeedEnabled: boolean; onToggleLiveFeed: () => void; onToggleTheme: () => void; highContrast: boolean; onToggleHighContrast: () => void; onResetDefaults: () => void }) {
   const [message, setMessage] = useState('');
   useEffect(() => { setMessage(''); }, [section]);
   const [stonksOpen, setStonksOpen] = useState(false);
@@ -160,6 +161,7 @@ export function DesktopSiteFooter({ onOpen, theme, section, setSection, volume, 
           {section === 'Preferences' && <>
             <p>The game saves only theme, sound, volume, music style, Shmuck Feed, high contrast and interface animation preferences in this browser. <br></br> You can remove them below or through your browser's site-data settings.</p>
             <p>Removing the saved settings does not interrupt the current game. <br></br>Defaults apply after your next reload. Later preference changes may save new settings.</p>
+            {onDisconnect && <DisconnectGoogle onDisconnect={onDisconnect} />}
           </>}
           </div>
           {section === 'About' && <p className="site-info-bottom about-copyright text-center font-mono-term text-[10px]"><button type="button" className="stonks-copyright-button" aria-label="Open The Stonks" title="The Stonks" onClick={event => { event.currentTarget.focus(); onOpen(); setStonksOpen(true); }}>©</button> Stonktrooper.lol<br />2026</p>}
