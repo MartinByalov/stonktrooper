@@ -61,3 +61,8 @@ html, body { margin: 0; background: #000000; }
   #boot-screen .boot-flight { transition: none; }
   #boot-screen .boot-case { animation: none; }
 }
+/* A phone held upright shows the rotate-your-phone picture from the first frame, so no loading text flashes before it. */
+@media (orientation: portrait) and (pointer: coarse) {
+  #boot-screen { background: #000000 url('images/rotate-phone.png') center / contain no-repeat; }
+  #boot-screen > * { visibility: hidden; }
+}

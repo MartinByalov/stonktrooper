@@ -1092,9 +1092,10 @@ export default function App() {
         {mobileDevice ? <SiteFooter onProgress={player.command} wallet={player.progress.wallet} hatSkin={outfit.hats} onStarCoin={state === 'menu' && player.networkOnline && !practiceUI ? player.claimStarCoin : undefined} showNavigation highContrast={highContrast} onToggleHighContrast={() => setHighContrast(current => !current)} onResetDefaults={resetDefaults} volume={deviceVolume.volume ?? (soundEnabled ? volume : 0)} onVolumeChange={usesDeviceVolume() ? deviceVolume.changeVolume : changeVolume} animationsEnabled={animationsEnabled} onToggleAnimations={() => setAnimationsEnabled(current => !current)} liveFeedPaused={liveFeedPaused} onToggleLiveFeedPause={() => setLiveFeedPaused(current => !current)} onToggleTheme={() => setTheme(current => current === 'dark' ? 'light' : 'dark')} theme={theme} section={siteSection} setSection={setSiteSection} onOpen={() => { if (state === 'play') setState('paused'); }} /> : <DesktopSiteFooter highContrast={highContrast} onToggleHighContrast={() => setHighContrast(current => !current)} onResetDefaults={resetDefaults} volume={deviceVolume.volume ?? (soundEnabled ? volume : 0)} onVolumeChange={usesDeviceVolume() ? deviceVolume.changeVolume : changeVolume} animationsEnabled={animationsEnabled} onToggleAnimations={() => setAnimationsEnabled(current => !current)} liveFeedEnabled={!liveFeedPaused} onToggleLiveFeed={() => setLiveFeedPaused(current => !current)} onToggleTheme={() => setTheme(current => current === 'dark' ? 'light' : 'dark')} theme={theme} section={siteSection as never} setSection={setSiteSection as never} onOpen={() => { if (state === 'play') setState('paused'); }} />}
         <MobileDiagnostics />
 
-        <div className="rotate-phone-placeholder" role="status">
+        {/* The words live in aria-label. An image alt would flash as text on black until the picture has loaded. */}
+        <div className="rotate-phone-placeholder" role="status" aria-label="Rotate your phone to landscape to play Stonktrooper">
           <img src={`${import.meta.env.BASE_URL}images/rotate-phone.png`}
-            width={941} height={1672} alt="Rotate your phone to landscape to play Stonktrooper" draggable={false} />
+            width={941} height={1672} alt="" decoding="sync" draggable={false} />
         </div>
 
 

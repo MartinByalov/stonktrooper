@@ -6977,3 +6977,22 @@ html[data-theme] .game-app[data-layout="desktop"] header .game-currency-hud :is(
 
 /* Offline: Donate opens a web page, so it is not offered. It keeps its place in the layout, only invisible and inert. */
 html .game-app[data-offline="true"] .home-coffee-link { visibility: hidden; pointer-events: none; }
+
+/* Phone in landscape without fullscreen: the browser bars leave 300 to 360px. The action column takes its height from the
+   chart area (as the desktop window does), so four or five buttons always fit between the Live Feed and the time axis. */
+@media (orientation: landscape) and (pointer: coarse) {
+  html .game-app[data-layout="mobile"]:not(:fullscreen) .landing-menu-panel { container-type: size; }
+  html[data-theme] .game-app[data-layout="mobile"]:not(:fullscreen) .landing-menu-panel > .landing-menu-actions {
+    --result-action-gap: min(clamp(5px, 1.5dvh, 10px), 2cqh);
+    --home-action-height: clamp(28px, calc((100cqh - var(--menu-time-axis-height) - 3 * var(--result-action-gap) - 10px) / 4), 54px);
+    --home-action-width: clamp(176px, 28vw, 260px);
+  }
+  html[data-theme] .game-app[data-layout="mobile"]:not(:fullscreen) .landing-menu-panel > .landing-menu-actions:has(> :nth-child(5)) {
+    --home-action-height: clamp(26px, calc((100cqh - var(--menu-time-axis-height) - 4 * var(--result-action-gap) - 10px) / 5), 54px);
+  }
+  html[data-theme] .game-app[data-layout="mobile"]:not(:fullscreen) .landing-menu-actions > .menu-action-button {
+    padding-block: 2px;
+    font-size: clamp(11px, calc(var(--home-action-height) * .36), 16px);
+    white-space: nowrap;
+  }
+}

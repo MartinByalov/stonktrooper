@@ -24,7 +24,8 @@
     <!-- Apply the saved theme before the first paint, so Day players never see the Night background while the game loads. -->
     <script>try { document.documentElement.dataset.theme = localStorage.getItem('cr_theme') === 'dark' ? 'dark' : 'light'; } catch { document.documentElement.dataset.theme = 'light'; }</script>
     <link rel="stylesheet" href="%BASE_URL%startup.css" />
-    <link rel="preload" href="%BASE_URL%images/startup/logo.png" as="image" />
+    <link rel="preload" href="%BASE_URL%images/startup/logo.png" as="image" media="not all and (orientation: portrait) and (pointer: coarse)" />
+    <link rel="preload" href="%BASE_URL%images/rotate-phone.png" as="image" media="(orientation: portrait) and (pointer: coarse)" />
   </head>
   <body class="bg-[var(--bg)] text-[var(--text)] antialiased select-none selection:bg-[#55d6ae]/30 selection:text-[#55d6ae]">
     <div id="root">
