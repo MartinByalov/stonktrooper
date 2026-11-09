@@ -7,7 +7,7 @@ import { useBootReady } from './useBootReady';
 import { DesktopMenuChart } from './DesktopMenuChart';
 import { DesktopSiteFooter } from './DesktopSiteFooter';
 import { BrowserAccount } from './BrowserAccount';
-import { signOutBrowserGoogle, disconnectBrowserGoogle, type BrowserUser } from './browserIdentity';
+import { signInBrowserGoogle, signOutBrowserGoogle, disconnectBrowserGoogle, type BrowserUser } from './browserIdentity';
 import { prefetchFriends, type FriendlyRacePreview, type FriendsTestMode } from './CommunityPreview';
 import { ActionLabel, BadgeLabel } from './ActionLabel';
 import { CloseButton } from './CloseButton';
@@ -71,6 +71,24 @@ export default function App() {
   const [signInNotice, setSignInNotice] = useState('');
   // Short notices (the fullscreen hint, sign-in and save errors) go to the Live Feed bar. They take no space in the layout
   // and give way to the news again after a few seconds. Screen readers still get the text as an alert below.
+  // Where Google sent the player back to (?auth=...): a plain message in the Live Feed, or one automatic second try.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const auth = params.get('auth');
+    if (!auth) { try { sessionStorage.removeItem('cr_consent_retry'); } catch { } return; }
+    params.delete('auth');
+    const rest = params.toString();
+    window.history.replaceState(null, '', window.location.pathname + (rest ? '?' + rest : '') + window.location.hash);
+    if (auth === 'drive-required') setFullscreenError('Allow Google Drive access to save your progress. Sign in again and tick the Drive box');
+    else if (auth === 'cancelled') setFullscreenError('Sign-in cancelled');
+    else if (auth === 'consent') {
+      // Google had the player's consent already and sent no refresh token: ask once more, with the consent screen.
+      let tried = false;
+      try { tried = sessionStorage.getItem('cr_consent_retry') === '1'; sessionStorage.setItem('cr_consent_retry', '1'); } catch { }
+      if (tried) { try { sessionStorage.removeItem('cr_consent_retry'); } catch { } setFullscreenError('Google did not finish signing you in. Please try again'); }
+      else void signInBrowserGoogle({ consent: true }).catch(() => setFullscreenError('Google sign-in is unavailable. Try again later'));
+    }
+  }, []);
   const noticeSource = fullscreenError || accountMenuError || signInNotice || (player.error && !player.busy ? player.error : '');
   const [notice, setNotice] = useState('');
   useEffect(() => {

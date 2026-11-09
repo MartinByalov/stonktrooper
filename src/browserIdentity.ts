@@ -54,8 +54,8 @@ export function watchBrowserUser(next: (user: BrowserUser | null) => void, error
   void refreshBrowserSession().catch(failure => { if (active) error(failure); });
   return () => { active = false; listeners.delete(next); };
 }
-export async function signInBrowserGoogle() {
-  const data = await workerRequest('/auth/start', { method: 'POST' });
+export async function signInBrowserGoogle(options: { consent?: boolean } = {}) {
+  const data = await workerRequest(options.consent ? '/auth/start?consent=1' : '/auth/start', { method: 'POST' });
   if (!data || typeof data !== 'object') throw new Error('Invalid OAuth response');
   const url = new URL(String((data as Record<string, unknown>).authorizationUrl));
   if (url.origin !== 'https://accounts.google.com' || url.pathname !== '/o/oauth2/v2/auth'

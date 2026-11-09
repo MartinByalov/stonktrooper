@@ -1,5 +1,5 @@
 // Privacy Policy and Terms for the site, shared by tabs and pages; bump LEGAL_VERSION on change.
-export const LEGAL_VERSION = '2026-11-09.7';
+export const LEGAL_VERSION = '2026-11-09.8';
 export const LEGAL_UPDATED = '9 November 2026';
 export const LEGAL_DEVELOPER = 'Martin Byalov';
 export const LEGAL_CONTACT = 'contact@stonktrooper.lol';
@@ -31,6 +31,7 @@ export const PRIVACY_POLICY: LegalDocument = {
       'The Service runs on Cloudflare Workers. It keeps only what it needs to run sign-in, your game save and Monthly Squeeze:',
       [
         'A session record, so you stay signed in. Your Google account identifier and the Google permission token needed to reach your Drive app data folder are stored encrypted. The session lasts up to 30 days or until you sign out.',
+        'A kept permission token, so that you do not have to allow Drive access again each time you sign in. It is stored encrypted, linked only to a pseudonymous hash of your Google account identifier. It is deleted when you use Disconnect Google, or by itself six months after your last sign in.',
         'Short-lived sign-in records (about 10 minutes) and request counters that limit abuse.',
         'Technical records of your Monthly Squeeze progress updates: a one-way hash of your account, operation identifiers and content hashes. They are used to prevent lost or duplicated updates.',
         'For Monthly Squeeze: the event, a one-way hash of your account and the time you took part.',
@@ -67,8 +68,8 @@ export const PRIVACY_POLICY: LegalDocument = {
     { heading: 'Data retention and deletion', paragraphs: [
       [
         'Settings and caches in your browser stay until you clear your site data.',
-        'Signing out ends your session, revokes the Service\'s access to your Google Account and deletes the stored permission token. Otherwise a session expires after 30 days.',
-        'In Preferences, Disconnect Google does the same and also deletes the technical records the Service keeps for your save. Your save file itself stays in your Google Drive.',
+        'Signing out ends your session and deletes it from the Service. Otherwise a session expires after 30 days. The kept permission token stays until you use Disconnect Google or until six months after your last sign in.',
+        'In Preferences, Disconnect Google revokes the Service\'s access to your Google Account, deletes the kept permission token and deletes the technical records the Service keeps for your save. Your save file itself stays in your Google Drive.',
         'Your game save stays in your Google Drive until you delete it. In your Google Account, open Data & privacy, then Third-party apps and services, choose Stonktrooper, and either delete its hidden app data or remove its access.',
         'Monthly Squeeze participation is a pseudonymous count toward a shared goal. It is kept while the Service runs and is deleted when you ask.',
       ],
