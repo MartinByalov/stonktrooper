@@ -4,7 +4,6 @@ import { DesktopHome } from './DesktopHome';
 import { AboutStar } from './AboutStar';
 import { PromoCode } from './PromoCode';
 import { useBootReady } from './useBootReady';
-import { useCompactBrowser } from './useCompactBrowser';
 import { DesktopMenuChart } from './DesktopMenuChart';
 import { DesktopSiteFooter } from './DesktopSiteFooter';
 import { BrowserAccount } from './BrowserAccount';
@@ -225,9 +224,7 @@ export default function App() {
   const [liveFeedPaused, setLiveFeedPaused] = useState(() => {
     try { return localStorage.getItem('cr_live_feed_paused') === 'true'; } catch { return false; }
   });
-  // Sideways phone with the browser bars showing: no Live Feed bar, to give the game the height. Notices move to the header.
-  const compactBrowser = useCompactBrowser(mobileDevice && !nativePresentation());
-  const liveFeedVisible = !compactBrowser;
+  const liveFeedVisible = true;
   useEffect(() => {
     sound.enabled = usesDeviceVolume() || soundEnabled;
     try { localStorage.setItem('cr_sound_enabled', String(soundEnabled)); } catch { }
@@ -329,7 +326,11 @@ export default function App() {
         }
         const logo = app.querySelector('.stonktrooper-logo');
         if (logo) {
-          app.style.setProperty('--home-logo-inset', `${Math.max(0, logo.getBoundingClientRect().left - app.getBoundingClientRect().left)}px`);
+          const logoRect = logo.getBoundingClientRect();
+          // A hidden logo has no position (it read 0, which put Donate and the card against the edge). The gutter on the
+          // right, the Fullscreen icon's distance from the edge, is then the shared one.
+          const inset = logoRect.width > 0 ? Math.max(0, logoRect.left - app.getBoundingClientRect().left) : Math.max(0, header.getBoundingClientRect().right - paintedRight);
+          app.style.setProperty('--home-logo-inset', `${inset}px`);
         }
       }
       const headerFeed = Array.from(app.querySelectorAll('.mobile-header-feed, .desktop-live-feed')).find(feed => feed.getBoundingClientRect().width > 0);
@@ -439,7 +440,8 @@ export default function App() {
       awaitingGesture = false;
       try {
         await appRef.current.requestFullscreen();
-        setFullscreenError('');
+        // Only the fullscreen hint goes; a message the player just opened (the Monthly Squeeze card) stays.
+        setFullscreenError(current => current.startsWith('Tap Fullscreen') ? '' : current);
         const orientation = screen.orientation as ScreenOrientation & { lock?: (orientation: 'landscape') => Promise<void> };
         try { await orientation?.lock?.('landscape'); } catch { /* Manual rotation remains available. */ }
       } catch {
@@ -830,7 +832,6 @@ export default function App() {
             ? <PracticeKillsHud kills={runKills} />
             : <CurrencyFooter className="game-currency-hud" label="Collected" showLabel={false} currencies={['coins', 'diamonds']} wallet={player.progress.run?.collected ?? emptyWallet()} theme={theme} hatSkin={outfit.hats} />)}
           {leftHeaderControls && <div className="header-left-controls">{state === 'menu' ? <>{promoStar}{leaderboardButton}</> : <>{settingsButton}{leaderboardButton}</>}</div>}
-          {compactBrowser && notice && <p role="status" className="header-notice">{notice.toUpperCase()}</p>}
           <canvas className="mobile-header-feed" aria-label="Live Feed" />
           <div className="header-controls flex items-center gap-2 ml-auto">
             {/* Retain preview tools for manual testing without exposing them in the header. */}
@@ -981,13 +982,13 @@ export default function App() {
                   <div className="how-to-layout flex flex-col items-stretch gap-3">
                     {!mobileDevice ? <DesktopHome theme={theme} liveFeedVisible={liveFeedVisible}
                       chart={<DesktopMenuChart theme={theme} />}
-                      extra={<MonthlySqueezeHome theme={theme} uid={browserUser?.uid ?? null} save={squeezeSave} />}
+                      extra={<MonthlySqueezeHome theme={theme} uid={browserUser?.uid ?? null} save={squeezeSave} onGuestPress={() => setFullscreenError('Log in to participate and win rewards')} />}
                       landingScore={landingScore !== null ? <LandingScore score={landingScore} theme={theme} /> : null}
                       onGuide={() => setSiteSection('How to Play' as never)} onSettings={() => setSiteSection('Settings')}
                       >{homeAccountButtons}</DesktopHome> :
                     <section className={`landing-menu-panel rounded border border-[var(--line)]${landingScore !== null ? ' landing-menu-shared-score' : ''}`} aria-label="Game menu">
                       <MenuChart theme={theme} animationsEnabled={animationsEnabled} candleSkin={outfit.candles} hatSkin={outfit.hats} suitcaseSkin={outfit.suitcase} suitSkin={outfit.suits} shoeSkin={outfit.shoes} petSkin={outfit.pets} />
-                      <MonthlySqueezeHome theme={theme} uid={browserUser?.uid ?? null} save={squeezeSave} />
+                      <MonthlySqueezeHome theme={theme} uid={browserUser?.uid ?? null} save={squeezeSave} onGuestPress={() => setFullscreenError('Log in to participate and win rewards')} />
                       {landingScore !== null && <LandingScore score={landingScore} theme={theme} />}
                       <button className="coffee-link home-coffee-link" type="button" aria-label="Donate (opens in a new tab)" onClick={() => window.open('https://ko-fi.com/eon', '_blank', 'noopener,noreferrer')}>
                         <span className="coffee-cup" aria-hidden="true">♥</span><span className="donate-label">Donate</span>

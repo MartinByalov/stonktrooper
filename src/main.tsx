@@ -17,6 +17,14 @@ try {
   document.documentElement.dataset.theme = 'light';
 }
 
+// Phones: the page never zooms. The viewport tag covers most browsers; these stop the two-finger zoom the rest still allow.
+if (window.matchMedia('(pointer: coarse)').matches) {
+  const stopZoom = (event: Event) => event.preventDefault();
+  document.addEventListener('gesturestart', stopZoom, { passive: false });
+  document.addEventListener('gesturechange', stopZoom, { passive: false });
+  document.addEventListener('touchmove', event => { if (event.touches.length > 1) event.preventDefault(); }, { passive: false });
+}
+
 reportBootStage('script');
 createRoot(document.getElementById('root')!).render(<App />);
 

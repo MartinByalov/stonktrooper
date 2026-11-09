@@ -6546,7 +6546,9 @@ html[data-theme] .game-app[data-layout="mobile"] :is(.dialog-close, .mobile-how-
 html[data-theme] .game-app[data-layout="mobile"] > div > header { padding: var(--corner-top-gap) var(--corner-right-gap) var(--corner-header-bottom-gap) var(--corner-left-gap) !important; }
 
 /* Fullscreen shows neither the logo nor the footer. */
-.game-app[data-fullscreen="true"] :is(.site-footer, .stonktrooper-logo) { display: none; }
+.game-app[data-fullscreen="true"] .site-footer { display: none; }
+/* The logo stays on the desktop Home page in fullscreen; elsewhere fullscreen hides it. */
+.game-app[data-fullscreen="true"]:not([data-layout="desktop"][data-state="menu"]) .stonktrooper-logo { display: none; }
 
 /* Mobile, not fullscreen: the Live Feed is a bar under the header; in fullscreen it stays inside. */
 html .game-app[data-layout="mobile"][data-fullscreen="false"] .mobile-header-feed { display: none !important; }
@@ -6997,16 +6999,26 @@ html .game-app[data-offline="true"] .home-coffee-link { visibility: hidden; poin
   }
 }
 
-/* Notice in the header when the Live Feed bar is hidden (phone sideways, no fullscreen). It sits between the logo and the
-   controls, so nothing in the layout moves. */
-.game-app .header-notice {
-  flex: 1 1 0;
-  min-width: 0;
-  margin: 0;
-  padding: 0 8px;
-  text-align: center;
-  font: 700 clamp(9px, 3.4dvh, 12px) / 1.15 var(--font-mono-term, ui-monospace, monospace);
-  letter-spacing: .04em;
-  color: var(--ui-blue);
-  overflow: hidden;
+/* Phone sideways with the browser bars showing: the Live Feed runs in the header between the logo and the controls,
+   as it does in fullscreen, and the bar under the header is gone, so the chart keeps its height. */
+@media (orientation: landscape) and (pointer: coarse) {
+  html[data-theme] .game-app[data-layout="mobile"][data-fullscreen="false"] .mobile-header-feed { display: block !important; }
+  html .game-app[data-layout="mobile"][data-fullscreen="false"] .desktop-live-feed-bar { display: none !important; }
+}
+
+/* Phones: no double-tap zoom (pinch zoom is stopped in main.tsx and by the viewport tag). */
+@media (pointer: coarse) {
+  html, body { touch-action: manipulation; }
+}
+
+/* Cutouts: everything aligned to the left or right edge of a phone shares the safe-area gutter, so the header, the
+   Monthly Squeeze card and Donate line up (only Donate used to move away from a camera cutout). */
+@media (pointer: coarse) {
+  html[data-theme] .game-app[data-layout="mobile"] > div > header {
+    padding-left: max(var(--corner-left-gap), env(safe-area-inset-left, 0px)) !important;
+    padding-right: max(var(--corner-right-gap), env(safe-area-inset-right, 0px)) !important;
+  }
+  html[data-theme] .game-app[data-layout="mobile"] .landing-menu-panel > .monthly-squeeze-home {
+    left: max(var(--home-logo-inset, 12px), env(safe-area-inset-left, 0px));
+  }
 }

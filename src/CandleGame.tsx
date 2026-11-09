@@ -2900,8 +2900,27 @@ export const CandleGame: React.FC<CandleGameProps> = ({
       }
       let tickerX = g.tickerScrollX;
       let itemIndex = 0;
+      // Paused wire in the header: one sentence stays in the middle, never a frozen strip cut at both ends.
+      const pausedSentence = tickerPausedRef.current && !!header && !feedMessageRef.current && !bossEncounter.current && g.printerTimer <= 0;
+      if (pausedSentence) {
+        const item = g.tickerQueue[0] ?? (g.tickerQueue[0] = { news: getTickerNews(), width: 0 });
+        const message = `${item.news.source}: ${formatFeedHeadline(item.news.headline)}`.replace(/[\p{Extended_Pictographic}\uFE0F\u200D]/gu, '');
+        const natural = ctx.measureText(message).width * textScaleX;
+        // Keep clear of the soft fade at both ends of the header feed.
+        const fit = Math.min(1, (viewRef.current.width - 64) / Math.max(1, natural));
+        const metrics = ctx.measureText(message);
+        const ascent = metrics.actualBoundingBoxAscent ?? 9;
+        const descent = metrics.actualBoundingBoxDescent ?? 2;
+        ctx.save();
+        ctx.textAlign = 'center';
+        ctx.fillStyle = feedColor.current;
+        ctx.translate(viewRef.current.width / 2, tapeH / 2 + (ascent - descent) / 2);
+        ctx.scale(textScaleX * fit, 1);
+        ctx.fillText(message, 0, 0);
+        ctx.restore();
+      }
     // Connection status owns the feed; never paint news over the status message.
-    while (!feedMessageRef.current && !bossEncounter.current && g.printerTimer <= 0 && tickerX < viewRef.current.width + 500) {
+    while (!pausedSentence && !feedMessageRef.current && !bossEncounter.current && g.printerTimer <= 0 && tickerX < viewRef.current.width + 500) {
         if (itemIndex >= g.tickerQueue.length) {
           g.tickerQueue.push({ news: getTickerNews(g.tickerQueue.at(-1)?.news.headline), width: 0 });
         }

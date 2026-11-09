@@ -35,14 +35,14 @@ export function useSqueezeProgress(): { participants: number | null; target: num
   if (!client) return null;
   return { participants: view?.status?.participants ?? null, target: view?.status?.target ?? FIRST_MONTHLY_SQUEEZE.participantTarget ?? 1000 };
 }
-export function MonthlySqueezeHome({ theme, uid, save }: { theme: 'light' | 'dark'; uid: string | null; save: SqueezeSave }) {
+export function MonthlySqueezeHome({ theme, uid, save, onGuestPress }: { theme: 'light' | 'dark'; uid: string | null; save: SqueezeSave; onGuestPress?: () => void }) {
   const env = import.meta.env as Record<string, unknown>;
   const config = readWorkerConfig(env), event = readSqueezeEvent(env.VITE_MONTHLY_SQUEEZE_EVENT);
   if (env.VITE_MONTHLY_SQUEEZE_ENABLED !== 'true' || !config.configured || !event) return null;
-  return <Card theme={theme} uid={uid} origin={config.origin} event={event} save={save} />;
+  return <Card theme={theme} uid={uid} origin={config.origin} event={event} save={save} onGuestPress={onGuestPress} />;
 }
 
-function Card({ theme, uid, origin, event, save, section = false }: { theme: 'light' | 'dark'; uid: string | null; origin: string; event: NonNullable<ReturnType<typeof readSqueezeEvent>>; save: SqueezeSave; section?: boolean }) {
+function Card({ theme, uid, origin, event, save, onGuestPress, section = false }: { theme: 'light' | 'dark'; uid: string | null; origin: string; event: NonNullable<ReturnType<typeof readSqueezeEvent>>; save: SqueezeSave; onGuestPress?: () => void; section?: boolean }) {
   const env = import.meta.env as Record<string, unknown>;
   const storage = useMemo(() => browserSqueezeStorage(), []);
   const statusClient = useMemo(() => createSqueezeStatusClient({ env, event, storage }), [event, storage]);
@@ -111,10 +111,13 @@ function Card({ theme, uid, origin, event, save, section = false }: { theme: 'li
   };
   // Pressing the card (not its buttons) opens the Exchange at the reward.
   const openReward = !section && uid && save.open ? save.open : undefined;
-  return <div className={section ? 'monthly-squeeze-section' : 'monthly-squeeze-home'} data-theme-card={theme} data-openable={openReward ? true : undefined}
-    role={openReward ? 'button' : undefined} tabIndex={openReward ? 0 : undefined} aria-label={openReward ? 'Open the Monthly Squeeze reward in Exchange' : undefined}
-    onClick={openReward ? event => { if (!(event.target as HTMLElement).closest('button, a')) openReward(); } : undefined}
-    onKeyDown={openReward ? event => { if (event.target === event.currentTarget && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); openReward(); } } : undefined}>
+  // A Guest pressing the card is told, in the Live Feed, that signing in is what takes part and wins the reward.
+  const press = openReward ?? (!section && !uid ? onGuestPress : undefined);
+  return <div className={section ? 'monthly-squeeze-section' : 'monthly-squeeze-home'} data-theme-card={theme} data-openable={press ? true : undefined}
+    role={press ? 'button' : undefined} tabIndex={press ? 0 : undefined}
+    aria-label={openReward ? 'Open the Monthly Squeeze reward in Exchange' : press ? 'Log in to participate and win rewards' : undefined}
+    onClick={press ? event => { if (!(event.target as HTMLElement).closest('button, a')) press(); } : undefined}
+    onKeyDown={press ? event => { if (event.target === event.currentTarget && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); press(); } } : undefined}>
     <MonthlySqueezeCard theme={theme} participants={view.status?.participants} target={target} personal={personal} threshold={event.threshold}
       unlocked={unlocked} claimed={false} busy={busy} onClaim={onClaim} notice={notice}
       onNotice={askSignIn && !uid ? () => void signInBrowserGoogle().catch(() => setNotice('Google sign-in is unavailable. Try again later.')) : undefined}
