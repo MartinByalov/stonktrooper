@@ -3,11 +3,13 @@ import { workerConfiguration, watchBrowserUser, signInBrowserGoogle, signOutBrow
 import { ActionLabel } from './ActionLabel';
 import './browserAccount.css';
 
-export function BrowserAccount({ onPlay, starting = false, onUserChange, menuOnly = false }: { onPlay?: () => void; starting?: boolean; onUserChange?: (user: BrowserUser | null) => void; menuOnly?: boolean }) {
+export function BrowserAccount({ onPlay, starting = false, onUserChange, onNotice, menuOnly = false }: { onPlay?: () => void; starting?: boolean; onUserChange?: (user: BrowserUser | null) => void; onNotice?: (message: string) => void; menuOnly?: boolean }) {
   const [user, setUser] = useState<BrowserUser | null>(null);
   const [loading, setLoading] = useState(workerConfiguration.configured);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  // With onNotice the host shows the message in the Live Feed bar; the line below stays for screen readers only.
+  useEffect(() => { onNotice?.(error); }, [error, onNotice]);
   const locked = useRef(false);
   useEffect(() => {
     if (!workerConfiguration.configured) return;
@@ -43,6 +45,6 @@ export function BrowserAccount({ onPlay, starting = false, onUserChange, menuOnl
       <span>{!user && !busy && !loading ? 'Sign in / Sign up' : label}</span>
     </button>
     <span className="sr-only" role="status">{status}</span>
-    {error && <p role="alert" className="text-xs">{error}</p>}
+    {error && <p role="alert" className={onNotice ? 'sr-only' : 'text-xs'}>{error}</p>}
   </>;
 }

@@ -52,7 +52,7 @@ import { hawkCandle, hawkDropBudget, hawkSpeedMultiplier } from './hawkTrack';
 import { zeroCrashCamera, zeroCrashComplete } from './zeroCrash';
 import { canSpawnEncounter, shouldPlaceBell, WARMUP_CANDLES, difficultyUnlocked, chartPrice, marketReachedZero } from './pacing';
 import { pigeonFlightY, stepPigeonDrop, PigeonDrop } from './pigeonEffects';
-import { createBossArena, throwBossCase, stepBossArena, randomBossKind, bossMaxHealth, bossWinPips, bossName } from './boxingRules';
+import { createBossArena, throwBossCase, stepBossArena, bossName, randomBossKind, bossMaxHealth, bossWinPips } from './boxingRules';
 import { drawBossEncounter } from './bossRenderer';
 import { bellSegmentHit } from './bellCombat';
 import { emitBellBlood } from './bellBlood';
@@ -2843,11 +2843,13 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     if (feedMessageRef.current) {
       const message = feedMessageRef.current;
       const noInternet = message === 'NO INTERNET CONNECTION';
-      const scrolling = message.startsWith('OFFLINE:') || message.startsWith('PAGE NOT FOUND') || message.startsWith('NO CONNECTION.') || message === 'CONNECTING' || noInternet;
-      ctx.textAlign = scrolling ? 'left' : 'center';
+      const scrollsByRule = message.startsWith('OFFLINE:') || message.startsWith('PAGE NOT FOUND') || message.startsWith('NO CONNECTION.') || message === 'CONNECTING' || noInternet;
       ctx.fillStyle = feedColor.current;
       const iconWidth = noInternet ? 28 * textScaleX : 0;
       const width = ctx.measureText(message).width * textScaleX + iconWidth;
+      // A notice wider than the bar scrolls like the news, so a long message is never cut off.
+      const scrolling = scrollsByRule || width > viewRef.current.width - 16;
+      ctx.textAlign = scrolling ? 'left' : 'center';
       if (scrolling) {
         const now = performance.now();
         const ticker = statusTicker.current;
@@ -2935,7 +2937,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
       ctx.scale(1, tapeH);
       tapeH = 3;
     }
-    if (bossEncounter.current) {
+    if (bossEncounter.current && liveFeedEnabled) {
       const colors = bossColors(bossEncounter.current.boss.kind, theme === 'dark');
       ctx.fillStyle = colors.track; ctx.fillRect(0, tapeH - 3, viewRef.current.width, 3);
       ctx.fillStyle = colors.foreground; ctx.fillRect(0, tapeH - 3, (viewRef.current.width) * Math.max(0, Math.min(1, bossEncounter.current.boss.health / bossMaxHealth(bossEncounter.current.boss.kind))), 3);

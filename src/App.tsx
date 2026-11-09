@@ -4,6 +4,7 @@ import { DesktopHome } from './DesktopHome';
 import { AboutStar } from './AboutStar';
 import { PromoCode } from './PromoCode';
 import { useBootReady } from './useBootReady';
+import { useCompactBrowser } from './useCompactBrowser';
 import { DesktopMenuChart } from './DesktopMenuChart';
 import { DesktopSiteFooter } from './DesktopSiteFooter';
 import { BrowserAccount } from './BrowserAccount';
@@ -67,6 +68,18 @@ export default function App() {
   const player = useProgression();
   const [browserUser, setBrowserUser] = useState<BrowserUser | null>(null);
   const [accountMenuError, setAccountMenuError] = useState('');
+  const [fullscreenError, setFullscreenError] = useState('');
+  const [signInNotice, setSignInNotice] = useState('');
+  // Short notices (the fullscreen hint, sign-in and save errors) go to the Live Feed bar. They take no space in the layout
+  // and give way to the news again after a few seconds. Screen readers still get the text as an alert below.
+  const noticeSource = fullscreenError || accountMenuError || signInNotice || (player.error && !player.busy ? player.error : '');
+  const [notice, setNotice] = useState('');
+  useEffect(() => {
+    setNotice(noticeSource);
+    if (!noticeSource) return;
+    const timer = setTimeout(() => { setNotice(''); setFullscreenError(''); }, 8000);
+    return () => clearTimeout(timer);
+  }, [noticeSource]);
   const accountSession = !!browserUser && !notFoundPage;
   // Signed in uses the Drive save, Guest the local game; both read the same progress.
   const outfit = player.progress.equipped;
@@ -133,7 +146,8 @@ export default function App() {
   // A development layout preview is not authentication or reward authorization.
   const exchangeAvailable = player.onlineReady && player.networkOnline;
   const practiceUI = state === 'menu' ? !player.onlineReady : player.practiceRun;
-  const feedMessage = state === 'menu' && !player.networkOnline && !Capacitor.isNativePlatform() ? OFFLINE_HOME_MESSAGE
+  const feedMessage = notice ? notice.toUpperCase()
+    : state === 'menu' && !player.networkOnline && !Capacitor.isNativePlatform() ? OFFLINE_HOME_MESSAGE
     : notFoundPage && state === 'menu' ? PAGE_NOT_FOUND_MESSAGE
     : !player.networkOnline && state !== 'menu' && !player.practiceRun ? 'NO INTERNET CONNECTION'
     : !Capacitor.isNativePlatform() ? (!player.networkOnline ? 'OFFLINE: PROGRESS IS NOT SAVED' : '')
@@ -211,7 +225,9 @@ export default function App() {
   const [liveFeedPaused, setLiveFeedPaused] = useState(() => {
     try { return localStorage.getItem('cr_live_feed_paused') === 'true'; } catch { return false; }
   });
-  const liveFeedVisible = true;
+  // Sideways phone with the browser bars showing: no Live Feed bar, to give the game the height. Notices move to the header.
+  const compactBrowser = useCompactBrowser(mobileDevice && !nativePresentation());
+  const liveFeedVisible = !compactBrowser;
   useEffect(() => {
     sound.enabled = usesDeviceVolume() || soundEnabled;
     try { localStorage.setItem('cr_sound_enabled', String(soundEnabled)); } catch { }
@@ -378,13 +394,6 @@ export default function App() {
     };
   }, [liveFeedVisible, mobilePlaying]);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [fullscreenError, setFullscreenError] = useState('');
-  // The hint is a short notice over the chart. It never takes space from the layout and goes away on its own.
-  useEffect(() => {
-    if (!fullscreenError) return;
-    const timer = setTimeout(() => setFullscreenError(''), 6000);
-    return () => clearTimeout(timer);
-  }, [fullscreenError]);
   const mobileStartPending = useRef(false);
   const runStartGate = useRef(createRunStartGate());
   const [startingRun, setStartingRun] = useState(false);
@@ -794,11 +803,11 @@ export default function App() {
     {accountSession
       ? <button type="button" disabled={!exchangeAvailable || player.busy} onClick={() => setExchangeOpen(true)} aria-haspopup="dialog" className="landing-menu-exchange-button menu-action-button w-full rounded font-bold font-mono-term"><ActionLabel>Exchange</ActionLabel></button>
       : <button type="button" disabled={startingRun} aria-busy={startingRun} onClick={() => void handleStartOrResume()} className="landing-menu-guest-button menu-action-button w-full rounded font-bold font-mono-term"><ActionLabel>Play as Guest</ActionLabel>{spaceKey}</button>}
-    {!notFoundPage && <BrowserAccount menuOnly onUserChange={setBrowserUser} />}
+    {!notFoundPage && <BrowserAccount menuOnly onUserChange={setBrowserUser} onNotice={setSignInNotice} />}
     {notFoundPage && <p role="status" className="text-xs"><a href={import.meta.env.BASE_URL}>Return to the Home page</a></p>}
     {accountSession && <button type="button" disabled={startingRun} onClick={() => void handleStartOrResume()} aria-label="Start" className="menu-action-button landing-menu-play-button w-full rounded font-bold font-mono-term"><ActionLabel>Start</ActionLabel>{spaceKey}</button>}
-    {accountMenuError && <p role="alert" className="text-xs">{accountMenuError}</p>}
-    {player.error && !player.busy && <p role="alert" className="text-xs">{player.error}</p>}
+    {accountMenuError && <p role="alert" className="sr-only">{accountMenuError}</p>}
+    {player.error && !player.busy && <p role="alert" className="sr-only">{player.error}</p>}
   </>;
 
   return (
@@ -821,6 +830,7 @@ export default function App() {
             ? <PracticeKillsHud kills={runKills} />
             : <CurrencyFooter className="game-currency-hud" label="Collected" showLabel={false} currencies={['coins', 'diamonds']} wallet={player.progress.run?.collected ?? emptyWallet()} theme={theme} hatSkin={outfit.hats} />)}
           {leftHeaderControls && <div className="header-left-controls">{state === 'menu' ? <>{promoStar}{leaderboardButton}</> : <>{settingsButton}{leaderboardButton}</>}</div>}
+          {compactBrowser && notice && <p role="status" className="header-notice">{notice.toUpperCase()}</p>}
           <canvas className="mobile-header-feed" aria-label="Live Feed" />
           <div className="header-controls flex items-center gap-2 ml-auto">
             {/* Retain preview tools for manual testing without exposing them in the header. */}
@@ -927,7 +937,7 @@ export default function App() {
         }) : undefined} onClaimFriend={target => setFriendlyWins(previous => previous.map(friend => (friend.id ?? friend.name) === (target.id ?? target.name) && friend.score === target.score ? { ...friend, claimed: true } : friend))} />}
         {lootOpen && player.networkOnline && !practiceUI && <Loot theme={theme} onClose={() => setLootOpen(false)} onRedeemPromo={player.redeemPromo} progress={player.progress} questWeek={player.questWeek} onClaimQuest={player.claimQuest} />}
         {soundMenuOpen && <SoundMenu onClose={() => setSoundMenuOpen(false)} />}
-        {fullscreenError && <p role="status" className="fullscreen-hint">{fullscreenError}</p>}
+        {fullscreenError && <p role="status" className="sr-only">{fullscreenError}</p>}
 
         {/* PRIMARY GAME ARENA (Clean, Uncluttered, Prominently on Top) */}
         <section

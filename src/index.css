@@ -6961,27 +6961,6 @@ html .game-app[data-offline="true"] .home-coffee-link { visibility: hidden; poin
   }
 }
 
-/* Fullscreen hint: a notice over the chart, never a line in the layout (it used to push the whole screen down). */
-.game-app .fullscreen-hint {
-  position: fixed;
-  left: 50%;
-  bottom: calc(var(--footer-inset-bottom, 0px) + 6px);
-  transform: translateX(-50%);
-  z-index: 30;
-  box-sizing: border-box;
-  max-width: min(92vw, 560px);
-  margin: 0;
-  padding: 4px 10px;
-  border: 1px solid var(--line);
-  border-radius: var(--ui-radius, 6px);
-  background: var(--page-surface, var(--bg));
-  color: var(--red);
-  font-size: 12px;
-  line-height: 1.3;
-  text-align: center;
-  pointer-events: none;
-}
-
 /* Phone in landscape without fullscreen: every piece on the Home chart is sized from the height of the chart area
    (cqh), so the Monthly Squeeze card, Donate and the buttons shrink together instead of crowding each other. */
 @media (orientation: landscape) and (pointer: coarse) {
@@ -7016,4 +6995,18 @@ html .game-app[data-offline="true"] .home-coffee-link { visibility: hidden; poin
     width: clamp(14px, 12cqh, 24px);
     height: clamp(11px, 10cqh, 20px);
   }
+}
+
+/* Notice in the header when the Live Feed bar is hidden (phone sideways, no fullscreen). It sits between the logo and the
+   controls, so nothing in the layout moves. */
+.game-app .header-notice {
+  flex: 1 1 0;
+  min-width: 0;
+  margin: 0;
+  padding: 0 8px;
+  text-align: center;
+  font: 700 clamp(9px, 3.4dvh, 12px) / 1.15 var(--font-mono-term, ui-monospace, monospace);
+  letter-spacing: .04em;
+  color: var(--ui-blue);
+  overflow: hidden;
 }
