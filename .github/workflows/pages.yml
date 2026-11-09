@@ -1,0 +1,55 @@
+name: Deploy GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - name: Configure Pages
+        id: pages
+        uses: actions/configure-pages@v6
+      - run: npm ci
+      - run: npm run lint
+      - name: Build static site
+        run: npm run build
+        env:
+          PAGES_BASE_PATH: ${{ steps.pages.outputs.base_path }}/
+          # Public settings only. Secrets stay in the Cloudflare Worker.
+          VITE_WORKER_API_URL: https://api.stonktrooper.lol
+          VITE_DRIVE_PROFILE_ENABLED: 'true'
+          VITE_MONTHLY_SQUEEZE_ENABLED: 'true'
+          VITE_MONTHLY_SQUEEZE_GAMEPLAY_ENABLED: 'true'
+          VITE_MONTHLY_SQUEEZE_EVENT: '{"id":"paper-hands-2026-11","achievementId":"paper-hands","threshold":100,"startsAt":1793516400000,"endsAt":1796108400000}'
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    permissions:
+      pages: write
+      id-token: write
+    runs-on: ubuntu-24.04
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy Pages artifact
+        id: deployment
+        uses: actions/deploy-pages@v5

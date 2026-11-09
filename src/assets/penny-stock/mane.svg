@@ -1,0 +1,28 @@
+<svg data-thick="2.6" xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+<title>Penny Stock — rolling pony (v20, right profile)</title>
+<desc>Right-profile view, facing right like every mount: only the two right legs show, the pony is rigid on caster wheels. Palomino coat, cream-white mane, tail and feathering, worn leather saddle with a tattered plum blanket, breast strap, bridle and reins, and a hanging stirrup. The mane (#mane) and tail (#tail) are separate groups with pivots so they can sway when the mount jumps.</desc>
+<defs>
+  <linearGradient id="coat" gradientUnits="userSpaceOnUse" x1="0" y1="190" x2="0" y2="800"><stop offset="0" stop-color="#f8d466"/><stop offset=".5" stop-color="#e2a831"/><stop offset="1" stop-color="#b07514"/></linearGradient>
+  <linearGradient id="muzzle" x1="0" y1="0" x2=".4" y2="1"><stop offset="0" stop-color="#fbe5a2"/><stop offset="1" stop-color="#d69e3c"/></linearGradient>
+  <linearGradient id="hair" x1="0" y1="0" x2=".6" y2="1"><stop offset="0" stop-color="#fffaf0"/><stop offset=".55" stop-color="#f1e3c3"/><stop offset="1" stop-color="#d8bf8d"/></linearGradient>
+  <linearGradient id="cloth" x1="0" y1="0" x2=".3" y2="1"><stop offset="0" stop-color="#c22d2f"/><stop offset="1" stop-color="#701216"/></linearGradient>
+  <linearGradient id="leather" x1="0" y1="0" x2=".4" y2="1"><stop offset="0" stop-color="#7a6253"/><stop offset="1" stop-color="#4a3a31"/></linearGradient>
+  <linearGradient id="strap" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4f3a2e"/><stop offset="1" stop-color="#2f231c"/></linearGradient>
+  <radialGradient id="brass" cx=".4" cy=".35" r=".7"><stop offset="0" stop-color="#e9d9b2"/><stop offset="1" stop-color="#8a7656"/></radialGradient>
+  <radialGradient id="muzzleGlow" gradientUnits="userSpaceOnUse" cx="902" cy="330" r="38"><stop offset="0" stop-color="#fde9ad" stop-opacity=".95"/><stop offset=".6" stop-color="#f6d58a" stop-opacity=".55"/><stop offset="1" stop-color="#f0c56a" stop-opacity="0"/></radialGradient>
+  <clipPath id="headClip"><path d="M722 228C744 210 774 204 798 206C832 226 868 266 914 302C924 312 930 330 926 346C922 356 914 360 904 360C900 366 892 370 882 368C866 366 850 360 832 360C806 362 778 368 756 356C740 346 734 326 728 306C718 284 710 250 722 228Z"/></clipPath>
+  <filter id="coatFx" x="-5%" y="-5%" width="110%" height="110%">
+    <feTurbulence type="fractalNoise" baseFrequency=".55" numOctaves="3" seed="11" result="grain"/>
+    <feColorMatrix in="grain" type="saturate" values="0"/>
+    <feComponentTransfer><feFuncA type="linear" slope=".1"/></feComponentTransfer>
+    <feComposite in2="SourceGraphic" operator="in" result="texture"/>
+    <feBlend in="SourceGraphic" in2="texture" mode="soft-light"/>
+  </filter>
+</defs>
+<g stroke="#3a2617" stroke-linejoin="round" stroke-linecap="round">
+  <g id="mane" data-pivot="742 220">
+    <path d="M741.4 210.5C728.3 203.1 704.8 216.7 698.9 231.7C708.8 230.3 722.7 229.0 729.2 232.7C711.6 223.2 678.6 244.8 672.9 259.9C682.8 258.4 706.5 254.2 715.3 259.0C694.9 248.3 656.2 275.3 650.7 290.5C660.5 288.8 690.0 283.0 700.2 288.4C682.4 279.3 648.5 304.2 643.1 319.4C652.9 317.7 675.4 315.3 684.3 319.8C664.6 310.0 627.3 338.2 622.0 353.4C631.8 351.6 658.4 347.5 668.2 352.4C653.0 344.9 624.2 367.5 619.0 382.8C628.8 380.9 644.8 381.3 652.4 385.0C642.5 380.3 624.1 395.4 619.0 410.7C628.9 408.8 632.3 414.3 637.3 416.7Q647.3 424.7 666.3 391.7Q715.4 358.0 720.0 337.6Q731.5 326.3 728.9 303.0Q743.3 294.4 743.6 273.7Q760.9 268.6 764.2 251.5Q775.0 245.6 771.9 227.7Z" fill="url(#hair)" stroke-width="13"/>
+    <path d="M757.4 233.1Q734.3 229.5 705.3 228.4 M744.5 257.1Q721.3 253.9 679.2 256.5 M730.1 284.8Q706.9 281.8 657.0 287.0 M714.7 315.1Q691.4 312.4 649.4 315.9 M698.7 347.1Q675.4 344.5 628.2 349.8 M682.7 379.7Q659.5 377.3 625.2 379.1" fill="none" stroke="#cdb382" stroke-width="6.5"/>
+  </g>
+</g>
+</svg>

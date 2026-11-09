@@ -1,0 +1,171 @@
+/* Credits shares the Leaderboard's fixed header and left navigation rail. */
+html[data-theme] .game-app .site-info-overlay:has(.credits-layout) {
+  padding: 0;
+}
+html[data-theme] .game-app .site-info-overlay > .site-info-dialog:has(.credits-layout) {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: 100%;
+  min-height: 0;
+  padding: 0 !important;
+  border: 0;
+  border-radius: 0;
+  overflow: hidden;
+}
+html[data-theme] .game-app .site-info-dialog:has(.credits-layout) > .site-info-header {
+  flex-shrink: 0;
+  margin: 0;
+  border-bottom: 1px solid var(--line);
+}
+html[data-theme] .game-app .site-info-overlay.fixed.inset-0.z-50 > .site-info-dialog > .site-info-content.credits-layout {
+  display: flex;
+  flex: 1;
+  flex-direction: row;
+  align-items: stretch;
+  justify-content: flex-start;
+  min-height: 0;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  scrollbar-gutter: auto;
+  padding: 0;
+  overflow: hidden;
+}
+html[data-theme] .game-app .credits-tabs {
+  display: grid;
+  grid-template-rows: repeat(3, minmax(0, 1fr));
+  flex: 0 0 clamp(100px, 17vw, 190px);
+  border-right: 1px solid var(--line);
+}
+html[data-theme] .game-app .credits-tabs > button {
+  padding: 6px;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
+  color: var(--text);
+  font: bold 12px monospace;
+}
+html[data-theme] .game-app .credits-tabs > button:last-child { border-bottom: 0; }
+html[data-theme] .game-app .credits-tabs > button[aria-selected="true"] { background: var(--alt); }
+html[data-theme] .game-app .site-info-header > .about-rate-us {
+  inset: 0 auto 0 0;
+  transform: none;
+  width: clamp(100px, 17vw, 190px);
+  height: 100%;
+  box-sizing: border-box;
+  color: #e6b13a;
+  border-right: 1px solid var(--line);
+}
+/* Title rule under About & Help, matching How to Play. */
+html[data-theme] .game-app .site-info-overlay.fixed.inset-0.z-50 > .site-info-dialog:has(.credits-layout) > .site-info-header {
+  border-bottom: 1px solid var(--line);
+}
+/* About star Easter egg: Exchange-gold outline, giggles with tiny eyes on tap. */
+html[data-theme] .game-app .site-info-header > .about-star {
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  border-top: 0;
+  border-bottom: 0;
+  border-left: 0;
+  border-radius: 0 !important;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.game-app .about-star-face { position: relative; display: grid; place-items: center; width: 24px; height: 24px; }
+.game-app .about-star-eyes { position: absolute; inset: 0; width: 100%; height: 100%; fill: #000000; opacity: 0; transform-origin: 12px 12.2px; }
+html[data-theme="dark"] .game-app .about-star-eyes { fill: #ffffff; }
+.game-app .about-star-face[data-giggling="wiggle"] { animation: about-star-giggle .7s ease-in-out; }
+.game-app .about-star-face[data-giggling="hop"] { animation: about-star-hop .7s ease-out; }
+.game-app .about-star-face[data-giggling="jelly"] { animation: about-star-jelly .7s ease-in-out; }
+.game-app .about-star-face[data-giggling="shiver"] { animation: about-star-shiver .7s linear; }
+.game-app .about-star-face[data-giggling] .about-star-eyes { animation: about-star-eyes .7s ease-in-out; }
+/* Square tabs like Leaderboard; beats the global --ui-radius button rule. */
+html[data-theme] .game-app .site-info-dialog .credits-tabs > button { border-radius: 0 !important; }
+@keyframes about-star-hop {
+  0% { transform: translateY(0) scale(1); }
+  12% { transform: translateY(1px) scale(1.15, .85); }
+  30% { transform: translateY(-7px) scale(.92, 1.1) rotate(-6deg); }
+  46% { transform: translateY(0) scale(1.12, .88); }
+  62% { transform: translateY(-4px) scale(.96, 1.05) rotate(5deg); }
+  80% { transform: translateY(0) scale(1.05, .95); }
+  100% { transform: translateY(0) scale(1); }
+}
+@keyframes about-star-jelly {
+  0%, 100% { transform: scale(1); }
+  20% { transform: scale(1.25, .8); }
+  38% { transform: scale(.82, 1.2); }
+  54% { transform: scale(1.14, .9); }
+  70% { transform: scale(.94, 1.07); }
+  85% { transform: scale(1.03, .98); }
+}
+@keyframes about-star-shiver {
+  0%, 100% { transform: translateX(0) rotate(0) scale(1.08); }
+  10%, 30%, 50%, 70% { transform: translateX(-1.5px) rotate(-5deg) scale(1.1); }
+  20%, 40%, 60%, 80% { transform: translateX(1.5px) rotate(5deg) scale(1.1); }
+  90% { transform: translateX(0) rotate(0) scale(1.04); }
+}
+@keyframes about-star-giggle {
+  0% { transform: rotate(0) scale(1); }
+  15% { transform: rotate(-14deg) scale(1.12); }
+  30% { transform: rotate(11deg) scale(1.08, 1.14); }
+  45% { transform: rotate(-9deg) scale(1.12, 1.06); }
+  60% { transform: rotate(7deg) scale(1.08); }
+  78% { transform: rotate(-3deg) scale(1.03); }
+  100% { transform: rotate(0) scale(1); }
+}
+@keyframes about-star-eyes {
+  0% { opacity: 0; transform: scaleY(.2); }
+  12%, 82% { opacity: 1; transform: scaleY(1); }
+  /* Squint with laughter halfway through. */
+  40%, 50% { opacity: 1; transform: scaleY(.35); }
+  100% { opacity: 0; transform: scaleY(.2); }
+}
+.game-app .about-star-coin { position: absolute; left: 50%; top: 50%; width: 22px; height: 22px; margin: -11px 0 0 -11px; pointer-events: none; animation: about-star-coin-drop .5s cubic-bezier(.3, 0, .6, 1) both; }
+.game-app .about-star-coin canvas { width: 100% !important; height: 100% !important; }
+@keyframes about-star-coin-drop {
+  0% { opacity: 0; transform: translateY(0) scale(.4); }
+  25% { opacity: 1; transform: translateY(-10px) scale(1); }
+  70% { transform: translateY(18px) scale(1); }
+  85% { transform: translateY(14px) scale(1); }
+  100% { opacity: 1; transform: translateY(18px) scale(1); }
+}
+.game-app [data-animations="false"] :is(.about-star-face, .about-star-eyes, .about-star-coin) { animation-duration: .01ms; }
+@media (prefers-reduced-motion: reduce) {
+  .game-app :is(.about-star-face, .about-star-coin) { animation: none !important; }
+  .game-app .about-star-face[data-giggling] .about-star-eyes { animation: none; opacity: 1; }
+}
+html[data-theme] .game-app .site-info-overlay.fixed.inset-0.z-50 > .site-info-dialog:has(.credits-layout) > .site-info-header {
+  padding-left: clamp(100px, 17vw, 190px);
+  padding-right: 32px;
+}
+html[data-theme] .game-app .site-info-overlay .site-info-dialog:has(.credits-layout) > .site-info-header > .site-info-title {
+  position: static;
+  inset: auto;
+  transform: none;
+  flex: 1;
+  width: auto;
+  text-align: center;
+}
+html[data-theme] .game-app .credits-layout > .site-info-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  justify-content: flex-start;
+  min-width: 0;
+  min-height: 0;
+  height: auto;
+  margin: 0;
+  padding: 16px;
+  overflow-y: auto;
+  box-sizing: border-box;
+  gap: 16px;
+}
+html[data-theme] .game-app .credits-layout .site-info-main { order: 0; flex: none; width: 100%; }
+html[data-theme] .game-app .credits-layout .site-info-artwork { order: 1; flex: none; }
+html[data-theme] .game-app .credits-layout .site-info-bottom { order: 2; flex: none; margin: 0; }

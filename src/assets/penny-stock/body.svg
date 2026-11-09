@@ -1,0 +1,74 @@
+<svg data-thick="2.6" xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+<title>Penny Stock — rolling pony (v20, right profile)</title>
+<desc>Right-profile view, facing right like every mount: only the two right legs show, the pony is rigid on caster wheels. Palomino coat, cream-white mane, tail and feathering, worn leather saddle with a tattered plum blanket, breast strap, bridle and reins, and a hanging stirrup. The mane (#mane) and tail (#tail) are separate groups with pivots so they can sway when the mount jumps.</desc>
+<defs>
+  <linearGradient id="coat" gradientUnits="userSpaceOnUse" x1="0" y1="190" x2="0" y2="800"><stop offset="0" stop-color="#f8d466"/><stop offset=".5" stop-color="#e2a831"/><stop offset="1" stop-color="#b07514"/></linearGradient>
+  <linearGradient id="muzzle" x1="0" y1="0" x2=".4" y2="1"><stop offset="0" stop-color="#fbe5a2"/><stop offset="1" stop-color="#d69e3c"/></linearGradient>
+  <linearGradient id="hair" x1="0" y1="0" x2=".6" y2="1"><stop offset="0" stop-color="#fffaf0"/><stop offset=".55" stop-color="#f1e3c3"/><stop offset="1" stop-color="#d8bf8d"/></linearGradient>
+  <linearGradient id="cloth" x1="0" y1="0" x2=".3" y2="1"><stop offset="0" stop-color="#c22d2f"/><stop offset="1" stop-color="#701216"/></linearGradient>
+  <linearGradient id="leather" x1="0" y1="0" x2=".4" y2="1"><stop offset="0" stop-color="#7a6253"/><stop offset="1" stop-color="#4a3a31"/></linearGradient>
+  <linearGradient id="strap" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4f3a2e"/><stop offset="1" stop-color="#2f231c"/></linearGradient>
+  <radialGradient id="brass" cx=".4" cy=".35" r=".7"><stop offset="0" stop-color="#e9d9b2"/><stop offset="1" stop-color="#8a7656"/></radialGradient>
+  <radialGradient id="muzzleGlow" gradientUnits="userSpaceOnUse" cx="902" cy="330" r="38"><stop offset="0" stop-color="#fde9ad" stop-opacity=".95"/><stop offset=".6" stop-color="#f6d58a" stop-opacity=".55"/><stop offset="1" stop-color="#f0c56a" stop-opacity="0"/></radialGradient>
+  <clipPath id="headClip"><path d="M722 228C744 210 774 204 798 206C832 226 868 266 914 302C924 312 930 330 926 346C922 356 914 360 904 360C900 366 892 370 882 368C866 366 850 360 832 360C806 362 778 368 756 356C740 346 734 326 728 306C718 284 710 250 722 228Z"/></clipPath>
+  <filter id="coatFx" x="-5%" y="-5%" width="110%" height="110%">
+    <feTurbulence type="fractalNoise" baseFrequency=".55" numOctaves="3" seed="11" result="grain"/>
+    <feColorMatrix in="grain" type="saturate" values="0"/>
+    <feComponentTransfer><feFuncA type="linear" slope=".1"/></feComponentTransfer>
+    <feComposite in2="SourceGraphic" operator="in" result="texture"/>
+    <feBlend in="SourceGraphic" in2="texture" mode="soft-light"/>
+  </filter>
+</defs>
+<g stroke="#3a2617" stroke-linejoin="round" stroke-linecap="round">
+  <!-- Body -->
+  <path d="M372 452C452 432 562 434 640 446C700 456 726 500 722 556C718 604 690 628 640 630L400 632C376 632 362 624 356 604C350 580 344 552 342 524C340 494 350 464 372 452Z" fill="url(#coat)" stroke-width="15.6" filter="url(#coatFx)"/>
+  <path d="M350 536C349 546 351 555 354 562" fill="none" stroke="#fff0a8" stroke-width="6.5" stroke-opacity=".4"/>
+  <path d="M680 520C690 548 690 576 680 600" fill="none" stroke="#fff0a8" stroke-width="13" stroke-opacity=".7"/>
+
+  <!-- Neck, blended into the chest -->
+  <path d="M600 504C604 432 640 352 700 288L792 300C772 358 744 424 722 522Z" fill="url(#coat)" stroke-width="15.6" filter="url(#coatFx)"/>
+  <ellipse cx="646" cy="486" rx="50" ry="36" fill="url(#coat)" stroke="none" filter="url(#coatFx)"/>
+
+  <!-- Right legs only (the left legs hide behind them) -->
+  <g filter="url(#coatFx)">
+    <path d="M352 560C348 620 356 660 358 700L358 762L426 762L426 700C428 660 440 610 442 570Z" fill="url(#coat)" stroke="none"/>
+    <path d="M606 570C604 620 612 660 612 700L612 762L680 762L680 700C682 660 696 610 700 560Z" fill="url(#coat)" stroke="none"/>
+  </g>
+  <path d="M354 638C354 660 357 680 358 700L358 762M426 762L426 700C427 680 430 658 432 642M608 604C608 636 612 666 612 700L612 762M680 762L680 700C682 664 690 630 698 596" fill="none" stroke-width="15.6"/>
+  <path d="M374 610C372 650 374 690 376 730M628 616C626 656 628 696 630 730" fill="none" stroke="#fff0a8" stroke-width="10.4" stroke-opacity=".6"/>
+
+  <!-- Red blanket draped over the back, with a tattered hem -->
+  <path d="M434 446C476 434 586 432 648 448C654 452 656 460 654 470L650 596L634 610L618 596L602 618L586 600L568 622L552 602L534 620L518 600L500 616L484 598L466 610L446 594L440 466C438 456 434 452 434 446Z" fill="url(#cloth)" stroke-width="13"/>
+  <path d="M452 478C510 470 590 472 630 480" fill="none" stroke="#e8706a" stroke-width="7.8" stroke-opacity=".7"/>
+
+  <!-- Breast strap forward to the chest, with a round buckle -->
+  <path d="M606 486C650 494 690 500 722 498" fill="none" stroke="#2f231c" stroke-width="57.2"/>
+  <path d="M606 486C650 494 690 500 722 498" fill="none" stroke="url(#strap)" stroke-width="41.6"/>
+  <path d="M612 486C650 493 688 498 718 497" fill="none" stroke="#a48774" stroke-width="5.2" stroke-dasharray="5 5"/>
+  <circle cx="672" cy="496" r="15" fill="url(#brass)" stroke-width="10.4"/>
+  <circle cx="672" cy="496" r="6" fill="#5c4a35" stroke="none"/>
+
+  <!-- Saddle: tooled leather skirt, then the seat with raised cantle and pommel -->
+  <path d="M478 464C530 456 588 458 616 468L612 552C586 566 520 568 488 556Z" fill="url(#leather)" stroke-width="13"/>
+  <path d="M492 476C534 470 584 472 604 480L600 544C578 554 524 556 498 546Z" fill="none" stroke="#a48774" stroke-width="7.8" stroke-dasharray="7 5"/>
+  <path d="M456 448C462 410 486 404 498 426C530 438 578 438 604 428C612 404 638 404 640 440C640 462 616 472 592 474L500 476C474 474 452 466 456 448Z" fill="url(#leather)" stroke-width="13"/>
+  <path d="M470 440C470 422 482 418 490 430M624 434C624 418 634 416 636 432" fill="none" stroke="#a48774" stroke-width="7.8"/>
+  <path d="M498 432C532 446 578 446 604 434" fill="none" stroke="#2f231c" stroke-width="7.8" stroke-opacity=".6"/>
+
+  <!-- Stirrup leather and the stirrup the rider stands in -->
+  <path d="M552 548L556 694" fill="none" stroke="#2f231c" stroke-width="41.6"/>
+  <path d="M552 548L556 694" fill="none" stroke="url(#strap)" stroke-width="26"/>
+  <path d="M536 692C536 674 576 674 576 692L580 724L532 724Z" fill="none" stroke="#2f231c" stroke-width="26"/>
+  <path d="M536 692C536 674 576 674 576 692L580 724L532 724Z" fill="none" stroke="#8a7656" stroke-width="13"/>
+  <rect x="526" y="718" width="60" height="12" rx="4" fill="#4a3a31" stroke-width="7.8"/>
+
+  <!-- Hooves, feathering and caster wheels -->
+  <path d="M350 782L436 782L440 800L346 800Z" fill="#4a3324" stroke-width="7.8"/>
+  <path d="M604 782L690 782L694 800L600 800Z" fill="#4a3324" stroke-width="7.8"/>
+  <path d="M342 726C346 702 372 692 392 692C414 692 440 702 444 728L452 774L434 764L428 790L412 772L400 796L386 774L372 794L360 774L346 790L340 768L330 778L336 752Z" fill="url(#hair)" stroke-width="13"/>
+  <path d="M596 726C600 702 626 692 646 692C668 692 694 702 698 728L706 774L688 764L682 790L666 772L654 796L640 774L626 794L614 774L600 790L594 768L584 778L590 752Z" fill="url(#hair)" stroke-width="13"/>
+  <path d="M366 712C370 736 372 756 370 778M392 708C394 734 396 758 396 784M418 712C420 736 422 756 420 776M620 712C624 736 626 756 624 778M646 708C648 734 650 758 650 784M672 712C674 736 676 756 674 776" fill="none" stroke="#cdb382" stroke-width="7.8"/>
+  <path d="M382 800L388 812M404 800L398 812M636 800L642 812M658 800L652 812" fill="none" stroke-width="13"/>
+</g>
+</svg>
+

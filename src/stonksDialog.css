@@ -1,0 +1,125 @@
+/* The Stonks uses the same edge-to-edge frame and compact chrome as the guide. */
+html[data-theme] .game-app .stonks-overlay {
+  padding: 0;
+  height: var(--app-viewport-height, 100dvh);
+  background: var(--page-surface);
+}
+html[data-theme] .game-app .stonks-dialog {
+  --line: var(--bg);
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  border: 1px solid var(--line);
+  border-radius: 0;
+  background: var(--page-surface);
+}
+html[data-theme] .game-app .stonks-header {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: var(--chrome-height);
+  min-height: var(--chrome-height);
+  max-height: var(--chrome-height);
+  flex: 0 0 var(--chrome-height);
+  margin: 0;
+  padding: 0 calc(var(--corner-control-size) + 2 * var(--corner-control-inset));
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  background: var(--page-surface);
+}
+html[data-theme] .game-app .stonks-header h2 { margin: 0; }
+html[data-theme] .game-app .stonks-close {
+  inset: auto var(--corner-control-inset) auto auto;
+  top: 50%;
+  transform: translateY(-50%);
+  width: var(--corner-control-size);
+  height: var(--corner-control-size);
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+html[data-theme] .game-app .stonks-body {
+  flex: 1 1 0;
+  gap: 0;
+  padding: 0;
+}
+html[data-theme] .game-app .stonks-canvas-frame {
+  border: 0;
+  border-right: 1px solid var(--line);
+  border-radius: 0;
+}
+html[data-theme] .game-app .stonks-details { padding: 12px; }
+html[data-theme] .game-app :is(.stonks-pills span, .stonks-traits > div) {
+  border: 1px solid var(--line);
+  border-radius: 0;
+}
+html[data-theme] .game-app .stonks-actions button {
+  background: #fff;
+  color: #000;
+  border-color: #fff;
+  border-radius: var(--ui-radius);
+}
+html[data-theme="light"] .game-app .stonks-actions button {
+  background: #000;
+  color: #fff;
+  border-color: #000;
+}
+@media (max-width: 600px) {
+  html[data-theme] .game-app .stonks-canvas-frame {
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+}
+@media (pointer: fine) {
+  html[data-theme] .game-app .stonks-dialog { border: 0; border-radius: 0; }
+}
+/* Touch: fit the whole Stonk on one screen; the square artwork takes the body
+   height and the details shrink into the remaining width without scrolling. */
+@media (pointer: coarse) {
+  html[data-theme] .game-app .stonks-body {
+    grid-template-columns: auto minmax(0, 1fr);
+    overflow: hidden;
+  }
+  html[data-theme] .game-app .stonks-canvas-frame {
+    align-self: stretch;
+    justify-self: start;
+    width: auto;
+    height: 100%;
+    min-height: 0;
+    aspect-ratio: 1;
+    border-bottom: 0;
+    border-right: 1px solid var(--line);
+  }
+  html[data-theme] .game-app .stonks-details {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    padding: clamp(6px, 2.5dvh, 12px);
+    overflow: hidden;
+  }
+  html[data-theme] .game-app .stonks-details h3 { font-size: clamp(14px, 4.6dvh, 18px); line-height: 1.2; }
+  html[data-theme] .game-app .stonks-pills { margin-block: clamp(4px, 2dvh, 12px); }
+  html[data-theme] .game-app .stonks-pills span { padding: clamp(2px, .8dvh, 4px) 8px; }
+  html[data-theme] .game-app .stonks-traits {
+    flex: 1 1 auto;
+    min-height: 0;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-auto-rows: minmax(0, 1fr);
+    gap: clamp(4px, 1.6dvh, 8px);
+  }
+  html[data-theme] .game-app .stonks-traits > div {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 0;
+    padding: clamp(3px, 1.2dvh, 8px) 6px;
+    overflow: hidden;
+  }
+  html[data-theme] .game-app .stonks-traits dd { margin-top: 2px; }
+  html[data-theme] .game-app .stonks-actions { margin-top: clamp(6px, 2.5dvh, 16px); flex-shrink: 0; }
+  html[data-theme] .game-app .stonks-actions button { padding: clamp(6px, 2dvh, 10px); }
+}

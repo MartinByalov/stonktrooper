@@ -1,0 +1,444 @@
+/* How to Play has no outer frame in any theme, viewport or entry point.
+   Keep internal card dividers and the Close button independent. */
+html[data-theme] .game-app :is(.desktop-initial-guide, .paused-guide-dialog, .mobile-how-to-panel) {
+  border: 0 !important;
+  border-radius: 0 !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Match the Liquidated score captions; keep high-score emphasis, not its blue. */
+html[data-theme] .game-app :is(.header-leaderboard-control, .header-loot-control, .header-achievements-control, .margin-call-achievements, .liquidated-exchange, .share-dd-open, .double-coins-action, .revive-action):disabled {
+  opacity: .4;
+  cursor: not-allowed;
+}
+html[data-theme] .game-app .game-result-over .revive-action {
+  position: relative;
+  overflow: hidden;
+  background: var(--alt);
+  isolation: isolate;
+}
+.revive-countdown-fill {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--liquidated-accent);
+  transform-origin: left center;
+  pointer-events: none;
+}
+html[data-theme="light"] .game-app .margin-call-summary .result-score-label {
+  color: #ffffff;
+}
+html[data-theme="dark"] .game-app .margin-call-summary .result-score-label {
+  color: #000000;
+}
+/* Practice results have one summary and exactly three navigation actions. */
+html[data-theme="light"] .game-app .liquidated-collected-grid .liquidated-guide {
+  background: #000000;
+  color: #ffffff;
+  border-color: #000000;
+}
+html[data-theme] .game-app[data-practice="true"] .liquidated-collected-navigation {
+  grid-template-rows: repeat(3, var(--home-action-height));
+}
+html[data-theme] .game-app[data-practice="true"] .liquidated-collected-summary {
+  grid-row: 1;
+}
+html[data-theme] .game-app[data-practice="true"] .liquidated-collected-grid {
+  grid-template-rows: auto;
+}
+html[data-theme] .game-app[data-practice="true"] .liquidated-collected-grid > [role="alert"] {
+  grid-column: 1 / -1;
+}
+html[data-theme] .game-app[data-practice="true"] .liquidated-collected-navigation {
+  grid-row: 1;
+  grid-column: 2;
+}
+/* Reserve icon and amount independently; never squeeze amounts into icon slots. */
+html[data-theme] .game-app header .game-currency-hud {
+  width: max-content;
+  max-width: none;
+  flex: 0 0 auto;
+  margin-left: calc(0px - var(--corner-safe-left));
+}
+html[data-theme] .game-app header .game-currency-hud .wallet-bar {
+  display: grid;
+  grid-template-columns: repeat(2, max-content);
+  overflow: visible;
+  gap: 8px;
+}
+html[data-theme] .game-app header .game-currency-hud :is([data-currency], [data-enemy]) {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 3px;
+  width: max-content;
+  height: var(--corner-control-size);
+}
+html[data-theme] .game-app header .game-currency-hud :is([data-currency], [data-enemy]) b {
+  position: static;
+  font-size: 10px;
+  min-width: 5ch;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+html[data-theme] .game-app header .game-currency-hud :is(canvas, svg) {
+  width: 22px;
+  height: 22px;
+  flex: 0 0 22px;
+}
+
+/* Each edge has the same gap inside its own safe area. Never propagate a
+   landscape side cutout into the header height or bottom spacing. */
+html[data-theme] .game-app {
+  --corner-control-size: 40px;
+  --corner-icon-size: 22px;
+  --corner-base-gap: 8px;
+  --corner-safe-top: env(safe-area-inset-top, 0px);
+  --corner-safe-right: env(safe-area-inset-right, 0px);
+  --corner-safe-bottom: env(safe-area-inset-bottom, 0px);
+  --corner-safe-left: env(safe-area-inset-left, 0px);
+  --corner-left-gap: calc(var(--corner-safe-left) + var(--corner-base-gap));
+  --corner-right-gap: calc(var(--corner-safe-right) + var(--corner-base-gap));
+  /* Slim 42px bar (40px controls + 1px each side); section title bars match it. */
+  --corner-top-gap: calc(var(--corner-safe-top) + 1px);
+  --corner-bottom-gap: calc(var(--corner-safe-bottom) + var(--corner-base-gap));
+  --corner-header-bottom-gap: 1px;
+  --corner-bar-height: calc(var(--corner-control-size) + var(--corner-top-gap) + var(--corner-header-bottom-gap));
+  --chrome-height: var(--corner-bar-height);
+}
+
+html[data-theme] .game-app header,
+html[data-theme] .game-app:is([data-state="play"], [data-state="boxing"]) header {
+  box-sizing: border-box;
+  height: var(--corner-bar-height);
+  min-height: var(--corner-bar-height);
+  max-height: var(--corner-bar-height);
+  flex: 0 0 var(--corner-bar-height);
+  padding: var(--corner-top-gap) var(--corner-right-gap) var(--corner-header-bottom-gap) var(--corner-left-gap);
+  border: 0;
+  align-items: center;
+}
+html[data-theme] .game-app header .header-controls > .mobile-header-control {
+  box-sizing: border-box;
+  width: var(--corner-control-size);
+  min-width: var(--corner-control-size);
+  height: var(--corner-control-size);
+  min-height: var(--corner-control-size);
+  flex: 0 0 var(--corner-control-size);
+  padding: 0;
+}
+html[data-theme] .game-app header .header-controls > .mobile-header-control > svg,
+html[data-theme] .game-app .dialog-close > svg {
+  width: var(--corner-icon-size);
+  height: var(--corner-icon-size);
+}
+html[data-theme] .game-app header .mobile-header-feed {
+  height: var(--corner-control-size);
+}
+
+/* Android's Recents/status bar is transient chrome, not a physical top cutout.
+   Keep the header anchored while preserving a real cutout supplied by native. */
+html[data-native="true"][data-theme] .game-app {
+  --corner-safe-top: var(--native-cutout-top, 0px);
+}
+
+/* A central side cutout does not occupy the top/bottom corner controls.
+   Keep the feed's safe padding; move only these two corner actions outward. */
+html[data-theme] .game-app header .header-leaderboard-controls {
+  margin-left: calc(0px - var(--corner-safe-left));
+}
+
+/* Remove legacy container padding so safe areas are applied exactly once. */
+html[data-theme] .game-app .exchange-overlay {
+  padding: 0;
+}
+html[data-theme] .game-app .site-info-overlay.fixed.inset-0.z-50 > .site-info-dialog,
+html[data-theme] .game-app .mobile-how-to-dialog.fixed.inset-0.z-50 > .mobile-how-to-panel {
+  padding: 0 !important;
+}
+html[data-theme] .game-app .site-info-dialog > .site-info-content {
+  padding-inline: 12px;
+}
+/* Full-screen title bars use the same coordinate system as the Home header. */
+html[data-theme] .game-app .exchange-heading,
+html[data-theme] .game-app :is(.mobile-how-to-panel > .mobile-how-to-header, .paused-guide-dialog > .how-to-guide-header),
+html[data-theme] .game-app .site-info-overlay.fixed.inset-0.z-50 > .site-info-dialog > .site-info-header {
+  box-sizing: border-box;
+  height: var(--corner-bar-height);
+  min-height: var(--corner-bar-height);
+  max-height: var(--corner-bar-height);
+  flex: 0 0 var(--corner-bar-height);
+  margin-top: 0;
+  border: 0;
+  padding-left: calc(var(--corner-control-size) + 2 * var(--corner-left-gap));
+  padding-right: calc(var(--corner-control-size) + 2 * var(--corner-right-gap));
+}
+html[data-theme] .game-app :is(.exchange-heading > .exchange-close, .mobile-how-to-header > .dialog-close, .how-to-guide-header > .dialog-close),
+html[data-theme] .game-app .site-info-overlay.fixed.inset-0.z-50 > .site-info-dialog > .site-info-header > .site-info-close {
+  box-sizing: border-box;
+  top: var(--corner-top-gap);
+  right: var(--corner-right-gap);
+  transform: none;
+  width: var(--corner-control-size);
+  min-width: var(--corner-control-size);
+  height: var(--corner-control-size);
+  min-height: var(--corner-control-size);
+  padding: 0;
+  display: grid;
+  place-items: center;
+}
+
+/* Center the title against the full bar, independent of safe-area padding. */
+html[data-theme] .game-app :is(.exchange-heading, .site-info-header, .mobile-how-to-header, .how-to-guide-header) {
+  position: relative;
+}
+html[data-theme] .game-app :is(.exchange-heading, .site-info-header, .mobile-how-to-header, .how-to-guide-header) > :is(h2, h3) {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  transform: none;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  pointer-events: none;
+}
+/* Results, reward collections and the open Exchange wallet share a centered footer. */
+html[data-theme] .game-app .currency-footer:is(.screen-currency-footer, .exchange-balances) {
+  position: absolute;
+  left: 50%;
+  right: auto;
+  bottom: var(--corner-safe-bottom);
+  transform: translateX(-50%);
+  box-sizing: border-box;
+  width: max-content;
+  max-width: calc(100% - 2 * max(var(--corner-left-gap), var(--corner-right-gap)));
+  height: var(--home-action-height);
+  min-height: var(--home-action-height);
+  margin: 0;
+  padding: 0 12px;
+  border: 0;
+  border-radius: var(--ui-radius) var(--ui-radius) 0 0;
+  background: var(--currency-strip-surface);
+  color: var(--currency-strip-ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  transition: opacity 150ms;
+  z-index: 100;
+}
+html[data-theme] .game-app .currency-footer:is(.screen-currency-footer, .exchange-balances) > .wallet-bar {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  width: max-content;
+  max-width: 100%;
+  height: auto;
+  align-items: center;
+  justify-content: safe center;
+  gap: clamp(3px, 1vw, 12px);
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+html[data-theme] .game-app .currency-footer[data-collapsible][data-expanded="false"] {
+  left: var(--corner-base-gap);
+  bottom: var(--corner-bottom-gap);
+  transform: none;
+  width: var(--corner-control-size);
+  height: var(--corner-control-size);
+  min-height: var(--corner-control-size);
+  padding: 0;
+  background: transparent;
+}
+html[data-theme] .game-app .currency-footer[data-collapsible][data-expanded="false"] > .wallet-bar {
+  display: none;
+}
+html[data-theme] .game-app .currency-footer[data-collapsible] > .currency-strip-toggle {
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+html[data-theme] .game-app .currency-strip-toggle canvas {
+  width: var(--corner-wallet-icon-size) !important;
+  height: var(--corner-wallet-icon-size) !important;
+}
+html[data-theme] .game-app .currency-footer[role="button"] { cursor: pointer; }
+html[data-theme="light"] .game-app .currency-footer:is(.screen-currency-footer, .exchange-balances) {
+  --currency-strip-surface: #000000;
+  --currency-strip-ink: #ffffff;
+}
+html[data-theme="dark"] .game-app .currency-footer:is(.screen-currency-footer, .exchange-balances) {
+  --currency-strip-surface: #ffffff;
+  --currency-strip-ink: #000000;
+}
+html[data-theme] .game-app :is(.pause-overlay, .game-over-overlay) > .screen-currency-footer {
+  width: calc(2 * var(--home-action-width) + var(--result-action-gap));
+}
+/* Only the end of the scroll needs clearance; keep content behind the footer's sides. */
+html[data-theme] .game-app .exchange-overlay:has(> .currency-footer[data-collapsible][data-expanded="true"]) .exchange-content {
+  padding-bottom: calc(var(--home-action-height) + var(--corner-safe-bottom));
+  scroll-padding-bottom: calc(var(--home-action-height) + var(--corner-safe-bottom));
+}
+html[data-theme] .game-app .currency-footer[role="button"]:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: -2px;
+}
+html[data-theme] .game-app .currency-footer[data-auto-hide]:not([data-auto-visible]) {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+html[data-theme] .game-app .currency-footer[data-auto-hide] {
+  pointer-events: none;
+}
+html[data-theme] .game-app .currency-footer:is(.screen-currency-footer, .exchange-balances) .wallet-bar canvas {
+  width: var(--corner-wallet-icon-size) !important;
+  height: var(--corner-wallet-icon-size) !important;
+  transform: none;
+}
+
+/* AssetPreview paints 80% of its canvas. Match the visible coin diameter to
+   the SVG icons rather than comparing their differently padded canvas boxes. */
+html[data-theme] .game-app {
+  --corner-wallet-icon-size: calc(var(--corner-icon-size) / .8);
+}
+html[data-theme] .game-app header .game-currency-hud {
+  margin: 0;
+  /* Mirror Controls' visible right gutter, including an asymmetric cutout. */
+  margin-left: calc(var(--corner-safe-right) - var(--corner-safe-left));
+  padding: 0;
+  padding-left: calc((var(--corner-control-size) - var(--corner-wallet-icon-size)) / 2);
+  height: var(--corner-control-size);
+  min-height: var(--corner-control-size);
+}
+html[data-theme] .game-app header .game-currency-hud [data-currency] canvas {
+  width: var(--corner-wallet-icon-size) !important;
+  height: var(--corner-wallet-icon-size) !important;
+  transform: none;
+}
+
+/* One label geometry for Home, pause and results. ActionLabel supplies a box
+   matching the actual ink bounds, including ascenders and descenders. */
+html[data-theme] .game-app .landing-menu-actions > .menu-action-button,
+html[data-theme] .game-app .game-result :is(.margin-call-action, .share-dd-open, .reward-actions button, .liquidated-decision-grid > button, .liquidated-collected-grid button) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-block: 6px;
+}
+.game-app .action-label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  letter-spacing: normal;
+  min-width: 0;
+}
+.game-app .action-label > svg {
+  display: block;
+  overflow: visible;
+  flex-shrink: 0;
+  max-width: 100%;
+  fill: currentColor;
+}
+.game-app .action-label text {
+  font: inherit;
+  letter-spacing: normal;
+}
+
+/* Authoritative shared close contract. Legacy screen-specific rules include
+   !important declarations, so reset these properties here in one place. */
+html[data-theme] .game-app button.app-close-button {
+  position: fixed !important;
+  inset: var(--corner-top-gap) var(--corner-right-gap) auto auto !important;
+  width: var(--corner-control-size) !important;
+  height: var(--corner-control-size) !important;
+  min-width: var(--corner-control-size) !important;
+  min-height: var(--corner-control-size) !important;
+  max-width: var(--corner-control-size) !important;
+  max-height: var(--corner-control-size) !important;
+  box-sizing: border-box !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  transform: none !important;
+  translate: none !important;
+  display: grid !important;
+  place-items: center !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: var(--text) !important;
+  z-index: 200;
+  cursor: pointer;
+}
+html[data-theme] .game-app button.app-close-button > svg {
+  display: block;
+  width: var(--corner-icon-size) !important;
+  height: var(--corner-icon-size) !important;
+  margin: 0;
+  transform: none;
+}
+
+/* Override the generic title grid: title and countdown are one unbroken line. */
+html[data-theme] .game-app .leaderboard-overlay .exchange-heading > h2 {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  padding-inline: calc(var(--corner-control-size) + 2 * var(--corner-base-gap));
+  box-sizing: border-box;
+  font-size: clamp(12px, 2.2vw, 22px);
+}
+html[data-theme] .game-app .leaderboard-countdown { display: inline; }
+
+html[data-theme] .game-app header .header-controls { gap: 10px; }
+/* Currency groups occupy the same two slots as Pause/Controls and
+   Leaderboard/Loot; do not reserve five empty digit columns per amount. */
+html[data-theme] .game-app header .game-currency-hud {
+  box-sizing: border-box;
+  width: calc(2 * var(--corner-control-size) + 10px);
+  flex: 0 0 calc(2 * var(--corner-control-size) + 10px);
+  padding: 0;
+  margin: 0 0 0 calc(0px - var(--corner-safe-left));
+}
+html[data-theme] .game-app header .game-currency-hud .wallet-bar {
+  width: 100%;
+  grid-template-columns: repeat(2, var(--corner-control-size));
+  gap: 10px;
+}
+html[data-theme] .game-app header .game-currency-hud :is([data-currency], [data-enemy]) {
+  width: var(--corner-control-size);
+  min-width: 0;
+  justify-content: center;
+  gap: 3px;
+}
+html[data-theme] .game-app header .game-currency-hud [data-currency] canvas {
+  width: 24px !important;
+  height: 24px !important;
+  flex: 0 0 24px;
+}
+html[data-theme] .game-app header .game-currency-hud :is([data-currency], [data-enemy]) b {
+  min-width: 0;
+  flex: 0 1 auto;
+  font-size: 10px;
+  letter-spacing: normal;
+}
+/* Center the painted digits rather than a platform-dependent font line box. */
+html[data-theme] .game-app header .achievement-notification {
+  width: max(12px, calc(2ch + 2px));
+  height: auto;
+  aspect-ratio: 1;
+  line-height: 1;
+  text-align: center;
+}
+html[data-theme] .game-app header .achievement-notification .action-label > svg {
+  width: auto;
+  height: auto;
+  max-width: none;
+}

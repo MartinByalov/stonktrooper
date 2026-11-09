@@ -1,0 +1,85 @@
+/* The title bar never shares a shrinking/scrolling row with guide content. */
+html[data-theme] .game-app:where([data-layout="mobile"]) .mobile-how-to-dialog.fixed.inset-0.z-50 > .mobile-how-to-panel, html[data-theme] .game-app:where([data-layout="mobile"]) .paused-guide-dialog {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+html[data-theme] .game-app:where([data-layout="mobile"]) :is(.mobile-how-to-header, .how-to-guide-header) {
+  flex-shrink: 0;
+}
+html[data-theme] .game-app:where([data-layout="mobile"]) .mobile-how-to-dialog > .mobile-how-to-panel > .how-to-dialog-content, html[data-theme] .game-app:where([data-layout="mobile"]) .paused-guide-dialog > .how-to-dialog-content {
+  display: block;
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-y: auto;
+}
+html .game-app:where([data-layout="mobile"]) .how-to-dialog-content > .mechanics-guide {
+  height: auto;
+  min-height: 0;
+  overflow: visible;
+  grid-auto-rows: auto;
+}
+html .game-app:where([data-layout="mobile"]) .mechanics-guide > [data-touch-control] {
+  display: grid;
+  grid-row: span 2;
+  grid-template-rows: subgrid;
+  row-gap: 0;
+  align-content: stretch;
+}
+html .game-app:where([data-layout="mobile"]) .mechanics-guide .mechanics-control-heading {
+  box-sizing: border-box;
+  min-height: 64px;
+  padding: 8px;
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 0;
+}
+html .game-app:where([data-layout="mobile"]) .mechanics-guide .mechanics-control-heading > p {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 4px 0;
+}
+html .game-app:where([data-layout="mobile"]) .mechanics-guide .mechanics-control-heading h3 {
+  margin: 0;
+  line-height: 1.25;
+}
+html .game-app:where([data-layout="mobile"]) .mechanics-guide .touch-control-preview {
+  aspect-ratio: auto;
+  border-bottom: 0;
+  line-height: 0;
+  align-self: end;
+}
+html .game-app:where([data-layout="mobile"]) .mechanics-guide .touch-control-preview canvas {
+  display: block;
+  aspect-ratio: 360 / 220;
+}
+/* As in the desktop guide, headings belong to the description column.
+   Equal outer tracks center descriptions on the paired-artwork divider. */
+html .game-app:where([data-layout="mobile"]) .mechanics-guide .mechanics-card-body { min-height: 168px; }
+html .game-app:where([data-layout="mobile"]) .mechanics-guide .mechanics-card-body .mechanics-guide-text {
+  display: grid;
+  grid-template-rows: 1fr auto 1fr;
+  align-items: stretch;
+  padding: 0 10px;
+}
+html .game-app:where([data-layout="mobile"]) .mechanics-guide .mechanics-guide-text > .mechanics-guide-title {
+  grid-row: 1;
+  align-self: start;
+  width: 100%;
+  box-sizing: border-box;
+  height: auto;
+  min-height: 0;
+  margin: 0;
+  padding: 8px 0;
+  border: 0;
+  line-height: 1.25;
+}
+html .game-app:where([data-layout="mobile"]) .mechanics-guide .mechanics-guide-text > .mechanics-guide-description {
+  grid-row: 2;
+  min-height: 0;
+  padding: 8px 0;
+}

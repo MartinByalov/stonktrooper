@@ -1,0 +1,47 @@
+<svg data-thick="2.6" xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+<title>Penny Stock — rolling pony (v20, right profile)</title>
+<desc>Right-profile view, facing right like every mount: only the two right legs show, the pony is rigid on caster wheels. Palomino coat, cream-white mane, tail and feathering, worn leather saddle with a tattered plum blanket, breast strap, bridle and reins, and a hanging stirrup. The mane (#mane) and tail (#tail) are separate groups with pivots so they can sway when the mount jumps.</desc>
+<defs>
+  <linearGradient id="coat" gradientUnits="userSpaceOnUse" x1="0" y1="190" x2="0" y2="800"><stop offset="0" stop-color="#f8d466"/><stop offset=".5" stop-color="#e2a831"/><stop offset="1" stop-color="#b07514"/></linearGradient>
+  <linearGradient id="muzzle" x1="0" y1="0" x2=".4" y2="1"><stop offset="0" stop-color="#fbe5a2"/><stop offset="1" stop-color="#d69e3c"/></linearGradient>
+  <linearGradient id="hair" x1="0" y1="0" x2=".6" y2="1"><stop offset="0" stop-color="#fffaf0"/><stop offset=".55" stop-color="#f1e3c3"/><stop offset="1" stop-color="#d8bf8d"/></linearGradient>
+  <linearGradient id="cloth" x1="0" y1="0" x2=".3" y2="1"><stop offset="0" stop-color="#c22d2f"/><stop offset="1" stop-color="#701216"/></linearGradient>
+  <linearGradient id="leather" x1="0" y1="0" x2=".4" y2="1"><stop offset="0" stop-color="#7a6253"/><stop offset="1" stop-color="#4a3a31"/></linearGradient>
+  <linearGradient id="strap" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4f3a2e"/><stop offset="1" stop-color="#2f231c"/></linearGradient>
+  <radialGradient id="brass" cx=".4" cy=".35" r=".7"><stop offset="0" stop-color="#e9d9b2"/><stop offset="1" stop-color="#8a7656"/></radialGradient>
+  <radialGradient id="muzzleGlow" gradientUnits="userSpaceOnUse" cx="902" cy="330" r="38"><stop offset="0" stop-color="#fde9ad" stop-opacity=".95"/><stop offset=".6" stop-color="#f6d58a" stop-opacity=".55"/><stop offset="1" stop-color="#f0c56a" stop-opacity="0"/></radialGradient>
+  <clipPath id="headClip"><path d="M722 228C744 210 774 204 798 206C832 226 868 266 914 302C924 312 930 330 926 346C922 356 914 360 904 360C900 366 892 370 882 368C866 366 850 360 832 360C806 362 778 368 756 356C740 346 734 326 728 306C718 284 710 250 722 228Z"/></clipPath>
+  <filter id="coatFx" x="-5%" y="-5%" width="110%" height="110%">
+    <feTurbulence type="fractalNoise" baseFrequency=".55" numOctaves="3" seed="11" result="grain"/>
+    <feColorMatrix in="grain" type="saturate" values="0"/>
+    <feComponentTransfer><feFuncA type="linear" slope=".1"/></feComponentTransfer>
+    <feComposite in2="SourceGraphic" operator="in" result="texture"/>
+    <feBlend in="SourceGraphic" in2="texture" mode="soft-light"/>
+  </filter>
+</defs>
+<g stroke="#f3e3c3" stroke-linejoin="round" stroke-linecap="round">
+  <!-- Head (right profile): short friendly face, big rounded muzzle, smiling mouth -->
+  <path d="M722 228C744 210 774 204 798 206C832 226 868 266 914 302C924 312 930 330 926 346C922 356 914 360 904 360C900 366 892 370 882 368C866 366 850 360 832 360C806 362 778 368 756 356C740 346 734 326 728 306C718 284 710 250 722 228Z" fill="url(#coat)" stroke-width="15.6" filter="url(#coatFx)"/>
+  <ellipse cx="902" cy="330" rx="38" ry="34" fill="url(#muzzleGlow)" stroke="none" clip-path="url(#headClip)"/>
+  <path d="M900 316C910 311 918 319 913 330C909 325 905 322 900 316Z" fill="#3a2617" stroke="none"/>
+  <path d="M880 352Q894 358 910 352" fill="none" stroke-width="10.4"/>
+  <path d="M748 304C744 330 760 352 790 356" fill="none" stroke="#b07514" stroke-width="10.4" stroke-opacity=".55"/>
+  <!-- Eye with lid and lashes -->
+  <ellipse cx="804" cy="258" rx="18" ry="20" fill="#2a170b" stroke-width="7.8"/>
+  <ellipse cx="806" cy="259" rx="13" ry="15" fill="#2fb58a" stroke="none"/>
+  <circle cx="808" cy="260" r="7.5" fill="#063d2b" stroke="none"/>
+  <circle cx="813" cy="251" r="5.5" fill="#fff" stroke="none"/>
+  <circle cx="801" cy="268" r="2.4" fill="#fff" stroke="none"/>
+  <path d="M784 246Q804 230 824 244" fill="none" stroke-width="10.4"/>
+  <path d="M788 240L783 232M799 236L797 226M811 236L814 227" fill="none" stroke-width="6.5"/>
+
+  
+
+  <!-- Bit ring at the corner of the mouth -->
+  <circle cx="882" cy="354" r="7" fill="url(#brass)" stroke-width="7.8"/>
+  <!-- Reins from the bit back to the pommel -->
+  <path d="M882 354C806 394 712 428 630 440" fill="none" stroke="#2f231c" stroke-width="20.8"/>
+  <path d="M882 354C806 394 712 428 630 440" fill="none" stroke="#8a6a4c" stroke-width="10.4"/>
+
+</g>
+</svg>

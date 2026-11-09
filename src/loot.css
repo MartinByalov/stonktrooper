@@ -1,0 +1,68 @@
+/* Claim dimensions are shared by Loot and Achievements. */
+.game-app { --reward-claim-width: 72px; }
+/* Daily and Redeem share centered group geometry; leaderboard stays independent. */
+.game-app .loot-content {
+  --loot-claim-width: var(--reward-claim-width);
+  --loot-column-gap: 24px;
+  --loot-currency-width: 74px;
+  flex: 1;
+  min-height: 0;
+  width: min(100%, 520px);
+  box-sizing: border-box;
+  margin-inline: auto;
+  overflow-y: auto;
+  padding: 0 12px 16px;
+}
+.game-app .loot-section { margin: 12px 0 16px; border: 1px solid var(--line); border-radius: var(--ui-radius); padding: 12px; }
+html[data-theme] .game-app .loot-overlay > .exchange-heading { border-bottom: 1px solid var(--line); }
+.game-app .loot-section + .loot-section { padding-top: 12px; }
+.game-app .loot-section h3 { margin: 0 0 8px; text-align: center; font: bold 18px monospace; }
+.game-app .loot-daily-row { display: grid; grid-template-columns: max-content var(--home-action-width) var(--loot-claim-width); justify-content: center; align-items: center; gap: var(--result-action-gap); }
+.game-app .loot-daily-currency { display: flex; align-items: center; gap: 6px; padding: 4px 8px; height: var(--home-action-height); box-sizing: border-box; border: 1px solid var(--line); border-radius: var(--ui-radius); }
+.game-app .loot-daily-amount { font: bold 20px monospace; }
+.game-app .loot-daily-currency { justify-self: end; }
+html[data-theme] .game-app .loot-double { position: relative; display: flex; align-items: center; justify-content: center; gap: 8px; box-sizing: border-box; width: var(--home-action-width); min-width: var(--home-action-width); max-width: var(--home-action-width); height: var(--home-action-height); min-height: var(--home-action-height); max-height: var(--home-action-height); padding: 8px 12px 4px; background: var(--ui-blue); border: 1px solid var(--ui-blue); border-radius: var(--ui-radius); color: #000; font: 700 clamp(12px, 3.2dvh, 16px)/1.2 var(--font-mono); }
+.game-app :is(.loot-overlay, .loot-embedded) :is(.loot-daily-currency, .loot-double, .loot-prize) canvas { width: 28px !important; height: 28px !important; }
+html[data-theme] .game-app :is(.loot-overlay, .loot-embedded) .loot-claim { position: static; display: inline-flex; align-items: center; justify-content: center; width: var(--loot-claim-width); min-width: 0; height: var(--home-action-height); min-height: var(--home-action-height); box-sizing: border-box; padding: 4px; background: #e6b13a; border: 1px solid #e6b13a; border-radius: var(--ui-radius); color: #000; font: bold 14px monospace; box-shadow: none; }
+.game-app .loot-table-scroll { overflow-x: auto; }
+.game-app .loot-rewards-table { width: 100%; table-layout: fixed; border-collapse: collapse; font: 14px monospace; font-variant-numeric: tabular-nums; }
+.game-app .loot-rewards-table col:nth-child(1) { width: 16%; }
+.game-app .loot-rewards-table col:nth-child(2) { width: 14%; }
+.game-app .loot-rewards-table col:nth-child(3) { width: 18%; }
+.game-app .loot-claim-column { width: calc(var(--loot-claim-width) + var(--loot-column-gap)); }
+.game-app .loot-rewards-table :is(th, td) { padding: 8px 6px; text-align: center; border-bottom: 1px solid var(--line); white-space: nowrap; }
+.game-app .loot-rewards-table :is(th, td):nth-child(-n+3) { text-align: center; vertical-align: middle; }
+.game-app .loot-rewards-table :is(th, td):nth-child(4) { padding-inline: 6px 0; text-align: center; }
+.game-app .loot-rewards-table :is(th, td):last-child { padding-left: var(--loot-column-gap); padding-right: 0; }
+.game-app .loot-rank, .game-app .loot-prize, .game-app .loot-prize > span { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+.game-app .loot-rank .leaderboard-avatar-crown { position: static; transform: none; }
+.game-app .loot-rank { vertical-align: middle; }
+.game-app .loot-prize { gap: 10px; }
+.game-app .loot-prize > span { flex-shrink: 0; }
+.game-app .loot-rewards-table .loot-empty-row > td { height: 112px; padding: 16px; border-bottom: 0; text-align: center; white-space: normal; }
+.game-app .loot-empty-message { margin: 0; line-height: 1.5; }
+.game-app .loot-redeem { display: grid; grid-template-columns: calc(var(--loot-currency-width) + var(--result-action-gap) + var(--home-action-width)) var(--loot-claim-width); justify-content: center; gap: var(--result-action-gap); }
+.game-app .loot-redeem input { width: 100%; min-width: 0; height: var(--home-action-height); box-sizing: border-box; padding: 8px 10px; border: 1px solid var(--line); border-radius: var(--ui-radius); background: var(--alt); color: var(--text); }
+.game-app :is(.loot-overlay, .loot-embedded) :is(button, input):focus-visible { outline: 2px solid var(--ui-blue); outline-offset: 2px; }
+html[data-theme] .game-app header .header-controls > .header-loot-control { position: relative; }
+.loot-notification { color: #fff; }
+@media (max-width: 740px) {
+  .game-app .loot-rewards-table { font-size: 12px; }
+}
+.game-app .quest-list { display: flex; flex-direction: column; gap: 6px; }
+.game-app .quest-list .quest-row { background-color: var(--alt); background-image: linear-gradient(to right, var(--achievement-fill-start), var(--achievement-fill-end)); background-repeat: no-repeat; transition: background-size 350ms ease-out; }
+.game-app .quest-row { display: grid; grid-template-columns: minmax(0, 1fr) 40px 64px 72px; align-items: center; gap: 8px; padding: 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--alt); font: 12px/1.3 monospace; }
+.quest-objectives { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.quest-goal, .quest-prize { display: flex; align-items: center; gap: 5px; }
+.quest-goal > svg { width: 24px; height: 24px; flex-shrink: 0; }
+.game-app .quest-row canvas { width: 24px !important; height: 24px !important; flex: 0 0 24px; }
+.quest-goal small { opacity: .7; white-space: nowrap; }
+.quest-done { font-weight: bold; }
+.game-app .quest-row .loot-claim { height: 30px; min-height: 30px; font-size: 11px; }
+
+.game-app .loot-daily-currency { background: var(--alt); }
+.game-app .quest-row, .game-app .friendly-rewards-table { --achievement-ink: var(--text); }
+.game-app .quest-row .achievement-done-stamp, .game-app .friendly-rewards-table .achievement-done-stamp { font-size: 13px; letter-spacing: 1px; padding: 4px; justify-self: center; }
+.friendly-rewards-table { width: 100%; border-collapse: collapse; font: 12px monospace; }
+.friendly-rewards-table th, .friendly-rewards-table td { padding: 6px; border-bottom: 1px solid var(--line); text-align: left; }
+.game-app .friendly-rewards-table canvas { width: 24px !important; height: 24px !important; }

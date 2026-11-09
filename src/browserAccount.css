@@ -1,0 +1,15 @@
+/* Same size, font and theme colours as the other Home buttons (menu-action-button); only the logo gap is specific. */
+.game-app .landing-menu-actions > .google-sign-in-button { gap: 10px; }
+.google-sign-in-button svg { flex-shrink: 0; width: 1.25em; height: 1.25em; }
+.game-app .landing-menu-actions > .google-sign-in-button:disabled { opacity: .6; cursor: default; }
+.google-sign-in-button:focus-visible, .browser-sign-out:focus-visible { outline: 2px solid #4285f4; outline-offset: 2px; }
+.game-app .landing-menu-actions > .browser-sign-out {
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  padding: 4px;
+  font: inherit;
+  font-size: 12px;
+  text-decoration: underline;
+  cursor: pointer;
+}

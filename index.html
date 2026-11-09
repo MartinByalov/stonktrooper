@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Stonktrooper</title>
+    <link rel="canonical" href="https://www.stonktrooper.lol/" />
+    <link id="favicon" rel="icon" type="image/png" sizes="48x48" href="%BASE_URL%images/tab-icon-48.png" />
+    <meta name="description" content="An arcade financial terminal runner game navigating synthetic candlestick charts, market gaps, black swans, and margin calls." />
+    <meta property="og:title" content="Stonktrooper" />
+    <meta property="og:description" content="An arcade financial terminal runner game navigating synthetic candlestick charts, market gaps, black swans, and margin calls." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://www.stonktrooper.lol/" />
+    <meta property="og:image" content="https://www.stonktrooper.lol/images/background.png" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1611" />
+    <meta property="og:image:height" content="707" />
+    <meta property="og:image:alt" content="Stonktrooper logo above a candlestick chart with the game's trader character" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Stonktrooper" />
+    <meta name="twitter:description" content="Jump across a stock chart, throw briefcases, and try not to get liquidated. Play free in your browser." />
+    <meta name="twitter:image" content="https://www.stonktrooper.lol/images/background.png" />
+    <meta name="twitter:image:alt" content="Stonktrooper logo above a candlestick chart with the game's trader character" />
+    <!-- Apply the saved theme before the first paint, so Day players never see the Night background while the game loads. -->
+    <script>try { document.documentElement.dataset.theme = localStorage.getItem('cr_theme') === 'dark' ? 'dark' : 'light'; } catch { document.documentElement.dataset.theme = 'light'; }</script>
+    <link rel="stylesheet" href="%BASE_URL%startup.css" />
+    <link rel="preload" href="%BASE_URL%images/startup/logo.png" as="image" />
+  </head>
+  <body class="bg-[var(--bg)] text-[var(--text)] antialiased select-none selection:bg-[#55d6ae]/30 selection:text-[#55d6ae]">
+    <div id="root">
+      <div id="boot-screen" role="status" aria-live="polite" aria-label="Stonktrooper is loading">
+        <img class="boot-logo" src="%BASE_URL%images/startup/logo.png" alt="Stonktrooper" width="1523" height="416" fetchpriority="high" />
+        <p class="boot-loading">Loading…</p>
+        <div class="boot-track" aria-hidden="true">
+          <div class="boot-flight"><img class="boot-case" src="%BASE_URL%images/startup/briefcase.svg" alt="" width="36" height="36" /></div>
+        </div>
+      </div>
+    </div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

@@ -1,0 +1,126 @@
+/* Donate and Fullscreen of the mobile Home, taken from the browser version (stonktrooper) and scoped to the mobile layout. */
+[data-layout="mobile"] .coffee-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.85rem;
+  max-width: 100%;
+  padding: 0.65rem 1rem;
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  background: #ffffff;
+  color: #000000;
+  font-weight: 700;
+  cursor: pointer;
+}
+[data-layout="mobile"] .coffee-link:hover {
+  border-color: var(--green);
+}
+[data-layout="mobile"] .coffee-link:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 3px;
+}
+[data-layout="mobile"] .coffee-cup {
+  --coffee-cup-color: #fff;
+  position: relative;
+  isolation: isolate;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 1.5rem;
+  height: 1.25rem;
+  border-radius: 0.15rem 0.15rem 0.5rem 0.5rem;
+  background: var(--coffee-cup-color);
+  color: #e13947;
+  font-size: 1rem;
+  line-height: 1;
+}
+[data-layout="mobile"] .coffee-cup::after {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  top: 0.15rem;
+  right: -0.45rem;
+  width: 0.65rem;
+  height: 0.8rem;
+  border: 0.2rem solid var(--coffee-cup-color);
+  border-radius: 0 0.5rem 0.5rem 0;
+}
+html:not([data-theme="light"]) [data-layout="mobile"] .coffee-cup {
+  --coffee-cup-color: #ffffff;
+}
+html[data-theme="light"] [data-layout="mobile"] .coffee-link {
+  background: #000000;
+  color: #ffffff;
+}
+html[data-theme="light"] [data-layout="mobile"] .coffee-cup {
+  --coffee-cup-color: #000000;
+}
+html .game-app[data-layout="mobile"] .landing-menu-panel .home-coffee-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  position: absolute;
+  z-index: 1;
+  left: var(--home-logo-inset, 24px);
+  bottom: calc(18px + var(--home-logo-inset, 24px));
+  width: var(--home-logo-width, 95.7px);
+  height: 36px;
+  min-height: 36px;
+  padding: 4px 8px;
+  background: var(--ui-blue);
+  color: #000;
+  border-color: var(--ui-blue);
+  font-size: 13px;
+}
+html:not([data-theme="light"]) .game-app[data-layout="mobile"] .landing-menu-panel .home-coffee-link {
+  color: #fff;
+}
+html[data-theme="light"] .game-app[data-layout="mobile"] .landing-menu-panel .home-coffee-link:hover {
+  color: #fff;
+}
+html[data-theme="light"] [data-layout="mobile"] .home-coffee-link:hover .coffee-cup {
+  --coffee-cup-color: #fff;
+}
+html:not([data-theme="light"]) .game-app[data-layout="mobile"] .landing-menu-panel .home-coffee-link:hover {
+  color: #000;
+}
+html:not([data-theme="light"]) [data-layout="mobile"] .home-coffee-link:hover .coffee-cup {
+  --coffee-cup-color: #000;
+}
+html .game-app[data-layout="mobile"] .landing-menu-panel .home-coffee-link {
+  left: var(--content-left-inset);
+  bottom: calc(18px + var(--content-left-inset));
+}
+@media (orientation: portrait) and (pointer: coarse) {
+  html .game-app[data-layout="mobile"] .landing-menu-panel .home-coffee-link {
+    bottom: calc(24px + max(var(--content-edge-inset), env(safe-area-inset-left)));
+  }
+}
+html .game-app[data-layout="mobile"] .landing-menu-panel .home-coffee-link {
+  left: var(--corner-ui-inset);
+  bottom: var(--corner-ui-inset);
+}
+@media (pointer: coarse) {
+  html .game-app[data-layout="mobile"] .landing-menu-panel .home-coffee-link {
+    left: max(var(--mobile-logo-edge-inset, var(--content-edge-inset)), env(safe-area-inset-left, 0px));
+  }
+  html .game-app[data-layout="mobile"] .landing-menu-panel .home-coffee-link {
+    /* Match the logo gutter above the chart's 18px timestamp band. */
+    bottom: calc(18px + max(var(--mobile-logo-edge-inset, var(--content-edge-inset)), env(safe-area-inset-bottom, 0px)));
+  }
+}
+@media (pointer: coarse) and (orientation: landscape) {
+  html .game-app[data-layout="mobile"] .home-coffee-link > .donate-home-art {
+    display: block;
+    position: absolute;
+    bottom: calc(100% + 1px);
+    left: 50%;
+    width: min(100%, calc(100cqh - 18px - 36px - max(var(--mobile-logo-edge-inset, var(--content-edge-inset)), env(safe-area-inset-bottom, 0px)) - 8px));
+    transform: translateX(-50%);
+    pointer-events: none;
+    line-height: 0;
+  }
+}

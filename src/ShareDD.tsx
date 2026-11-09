@@ -1,0 +1,134 @@
+// Browser game module for ShareDD.
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { Check, Share2} from 'lucide-react';
+import { drawShareCard, formatShareScore, shareCardBackground, SHARE_CARD_WIDTH, SHARE_CARD_HEIGHT } from './shareCard';
+import { resultUrl, socialLinks } from './shareLinks';
+import { SocialIcon } from './SocialIcon';
+import { copyText } from './copyText';
+
+export function ShareDD({ score, challenger = 'Challenger', theme, scoreTheme = theme, demo = false, onClose }: { score: number; challenger?: string; theme: 'light' | 'dark'; scoreTheme?: 'light' | 'dark'; demo?: boolean; onClose: () => void }) {
+  const canvas = useRef<HTMLCanvasElement>(null);
+  const dialog = useRef<HTMLDivElement>(null);
+  const [file, setFile] = useState<File | null>(null);
+  const [error, setError] = useState('');
+  const [sharing, setSharing] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [actionsHost, setActionsHost] = useState<HTMLElement | null>(null);
+  useLayoutEffect(() => {
+    const host = document.querySelector<HTMLElement>('.share-dd-actions-host');
+    setActionsHost(host);
+    const update = () => {
+      if (!host || !dialog.current) return;
+      const bounds = dialog.current.getBoundingClientRect();
+      const buttons = host.getBoundingClientRect();
+      dialog.current.style.setProperty('--share-left-space', `${Math.max(0, buttons.left - bounds.left)}px`);
+    };
+    update();
+    const observer = new ResizeObserver(update);
+    if (host) observer.observe(host);
+    if (dialog.current) observer.observe(dialog.current);
+    window.addEventListener('resize', update);
+    return () => { observer.disconnect(); window.removeEventListener('resize', update); };
+  }, []);
+  const url = resultUrl(score, challenger);
+  useEffect(() => {
+    setCopied(false);
+  }, [score, challenger]);
+  useEffect(() => {
+    if (!copied) return;
+    const timer = window.setTimeout(() => setCopied(false), 2500);
+    return () => window.clearTimeout(timer);
+  }, [copied]);
+  useEffect(() => {
+    const previous = document.activeElement as HTMLElement | null;
+    const firstVisibleButton = dialog.current?.querySelectorAll<HTMLButtonElement>('button');
+    Array.from(firstVisibleButton ?? []).find(button => button.getClientRects().length > 0)?.focus();
+    return () => { previous?.focus(); };
+  }, []);
+  useEffect(() => {
+    let cancelled = false;
+    setFile(null);
+    setError('');
+    const background = new Image();
+    const render = () => {
+      if (cancelled) return;
+      const ctx = canvas.current?.getContext('2d');
+      if (!ctx || !canvas.current) { setError('Unable to generate the share image.'); return; }
+      // Lid geometry follows the loaded artwork, not the finished run's theme.
+      drawShareCard(ctx, score, background, theme);
+      // Ignore transparent rows below the shoes for display only; the exported
+      // card retains the complete native image and its transparency.
+      const pixels = ctx.getImageData(0, 0, background.naturalWidth, background.naturalHeight).data;
+      let bottom = background.naturalHeight - 1;
+      while (bottom > 0) {
+        let occupied = false;
+        for (let x = 0; x < background.naturalWidth; x++) {
+          if (pixels[(bottom * background.naturalWidth + x) * 4 + 3] > 16) { occupied = true; break; }
+        }
+        if (occupied) break;
+        bottom--;
+      }
+      dialog.current?.style.setProperty('--share-art-ratio', String(background.naturalWidth / (bottom + 1)));
+      canvas.current.toBlob(blob => {
+        if (cancelled) return;
+        if (blob) setFile(new File([blob], 'stonktrooper-dd.png', { type: 'image/png' }));
+        else setError('Unable to generate the share image.');
+      }, 'image/png');
+    };
+    // The card is drawn on a canvas, so its font must be loaded first (the page may not have used it yet).
+    background.onload = () => { void document.fonts.load('700 32px "Space Grotesk"').catch(() => {}).then(render); };
+    background.onerror = () => { if (!cancelled) setError('Unable to load the share image background.'); };
+    background.src = shareCardBackground(theme, import.meta.env.BASE_URL);
+    return () => { cancelled = true; };
+  }, [score, theme, scoreTheme]);
+  const share = async () => {
+    if (sharing) return;
+    setError('');
+    setCopied(false);
+    setSharing(true);
+    try {
+      await copyText(url, navigator, document, dialog.current ?? document.body);
+      setCopied(true);
+    } catch {
+      setError('Unable to copy the score link. Check clipboard permissions and try again.');
+    } finally { setSharing(false); }
+  };
+  const shareSocial = async (platform: string) => {
+    const destination = socialLinks(score, challenger).find(item => item.name === platform);
+    if (!destination || sharing) return;
+    setError('');
+    setSharing(true);
+    try {
+      window.open(destination.href, '_blank', 'noopener,noreferrer');
+    } catch {
+      setError(`Unable to open the ${platform} share link.`);
+    } finally { setSharing(false); }
+  };
+  const actions = <div className="share-dd-actions">
+    <button type="button" aria-label={error || (copied ? 'Challenge link copied' : 'Copy challenge link')} title={error || (copied ? 'Copied!' : 'Copy challenge link')} disabled={sharing} onClick={() => { void share(); }} className="share-dd-copy flex items-center justify-center gap-2 rounded-lg p-3 font-bold disabled:opacity-40">
+      {copied ? <Check className="w-5 h-5" aria-hidden="true" /> : <Share2 className="w-5 h-5" aria-hidden="true" />}
+    </button>
+    {socialLinks(score, challenger).map(platform => <button key={platform.name} type="button" disabled={sharing} onClick={() => { void shareSocial(platform.name); }} aria-label={`Share challenge link to ${platform.name}`} title={`Share challenge on ${platform.name}`} className="share-dd-social-button flex items-center justify-center rounded-lg border border-[var(--line)] bg-[var(--alt)] p-3 disabled:opacity-40 cursor-pointer"><SocialIcon name={platform.name} /></button>)}
+  </div>;
+  return <div className="share-dd-overlay fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4" onPointerDown={event => event.stopPropagation()}>
+    <div ref={dialog} role="dialog" aria-modal="false" aria-label={demo ? 'Challenge demo — simulated result' : 'Challenge'} className="share-dd-dialog" onKeyDown={event => {
+      event.stopPropagation();
+      if (event.key === 'Escape') { onClose(); return; }
+      if (event.key === 'Tab') {
+        if (!window.matchMedia('(pointer: coarse) and (orientation: portrait)').matches) return;
+        const buttons = Array.from(dialog.current?.querySelectorAll<HTMLElement>('button:not(:disabled), a[href]') ?? [])
+          .filter(button => button.getClientRects().length > 0);
+        if (!buttons?.length) return;
+        const first = buttons[0], last = buttons[buttons.length - 1];
+        if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+        else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+      }
+    }}>
+      <div className="share-dd-image">
+        <canvas ref={canvas} width={SHARE_CARD_WIDTH} height={SHARE_CARD_HEIGHT} role="img" aria-label={`Stonktrooper best score: ${formatShareScore(score)}`} className="share-dd-canvas" />
+      </div>
+      {actionsHost ? createPortal(actions, actionsHost) : actions}
+    </div>
+  </div>;
+}
