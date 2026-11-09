@@ -819,12 +819,12 @@ export default function App() {
                 setSiteSection('Settings');
               }} className="mobile-header-control header-options-control"><Settings className="w-3.5 h-3.5" aria-hidden="true" /></button>;
 
-  // Account buttons of the Home menu: Exchange or Play as Guest, Sign in / Sign up, messages.
+  // Account buttons of the Home menu: Continue with Google (nothing once signed in), then Exchange or Play as Guest, then Start.
   const homeAccountButtons = <>
+    {!notFoundPage && <BrowserAccount menuOnly onUserChange={setBrowserUser} onNotice={setSignInNotice} />}
     {accountSession
       ? <button type="button" disabled={!exchangeAvailable || player.busy} onClick={() => setExchangeOpen(true)} aria-haspopup="dialog" className="landing-menu-exchange-button menu-action-button w-full rounded font-bold font-mono-term"><ActionLabel>Exchange</ActionLabel></button>
       : <button type="button" disabled={startingRun} aria-busy={startingRun} onClick={() => void handleStartOrResume()} className="landing-menu-guest-button menu-action-button w-full rounded font-bold font-mono-term"><ActionLabel>Play as Guest</ActionLabel>{spaceKey}</button>}
-    {!notFoundPage && <BrowserAccount menuOnly onUserChange={setBrowserUser} onNotice={setSignInNotice} />}
     {notFoundPage && <p role="status" className="text-xs"><a href={import.meta.env.BASE_URL}>Return to the Home page</a></p>}
     {accountSession && <button type="button" disabled={startingRun} onClick={() => void handleStartOrResume()} aria-label="Start" className="menu-action-button landing-menu-play-button w-full rounded font-bold font-mono-term"><ActionLabel>Start</ActionLabel>{spaceKey}</button>}
     {accountMenuError && <p role="alert" className="sr-only">{accountMenuError}</p>}

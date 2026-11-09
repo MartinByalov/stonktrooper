@@ -7044,12 +7044,11 @@ html[data-theme] .game-app .landing-menu-actions > .google-sign-in-button,
   cursor: pointer;
 }
 html[data-theme] .game-app .landing-menu-actions > .google-sign-in-button { container-type: inline-size; }
-html[data-theme] .game-app .landing-menu-actions > .google-sign-in-button > span { font-size: clamp(10px, 8.6cqw, 14px); line-height: 20px; }
+html[data-theme] .game-app .landing-menu-actions > .google-sign-in-button > span { font-size: clamp(10px, 7.6cqw, 14px); line-height: 20px; }
 .google-signin-standalone { min-height: 40px; font-size: 14px; line-height: 20px; margin: 8px 0; }
 html[data-theme] .google-glyph, .google-signin-standalone .google-glyph { flex: 0 0 auto; width: 20px !important; height: 20px !important; }
-html[data-theme="light"] .game-app .landing-menu-actions > .google-sign-in-button,
-html[data-theme="light"] .google-signin-standalone { background: #ffffff !important; border-color: #747775 !important; color: #1f1f1f !important; --menu-action-text: #1f1f1f; }
-html:not([data-theme="light"]) .game-app .landing-menu-actions > .google-sign-in-button,
-html:not([data-theme="light"]) .google-signin-standalone { background: #131314 !important; border-color: #8e918f !important; color: #e3e3e3 !important; --menu-action-text: #e3e3e3; }
+/* Google's dark button on both themes (black with white letters): fill #131314, outline #8E918F, text #E3E3E3, Medium weight as Google requires. */
+html[data-theme] .game-app .landing-menu-actions > .google-sign-in-button,
+html[data-theme] .google-signin-standalone { background: #131314 !important; border-color: #8e918f !important; color: #e3e3e3 !important; --menu-action-text: #e3e3e3; }
 html .game-app .landing-menu-actions > .google-sign-in-button:disabled, .google-signin-standalone:disabled { opacity: .38; cursor: default; }
 .google-signin-standalone:focus-visible { outline: 2px solid #4285f4; outline-offset: 2px; }

@@ -38,12 +38,12 @@ export function BrowserAccount({ onPlay, starting = false, onUserChange, onNotic
     {user && onPlay && <button type="button" data-browser-play disabled={starting || busy} aria-busy={starting}
       onClick={onPlay} className="menu-action-button landing-menu-play-button w-full rounded font-bold font-mono-term"
       title="Play locally. Cloud progress is not connected yet."><ActionLabel>Play</ActionLabel></button>}
-    <button type="button" data-browser-account aria-label={user ? 'Sign out' : 'Sign in or sign up with Google'}
+    <button type="button" data-browser-account aria-label={user ? 'Sign out' : 'Continue with Google'}
       title={status} className={user ? 'browser-sign-out' : 'menu-action-button google-sign-in-button w-full rounded border border-[var(--line)] bg-[var(--panel)] text-[var(--text)] font-bold font-mono-term cursor-pointer'}
       disabled={!workerConfiguration.configured || loading || busy} aria-busy={loading || busy}
       onClick={() => void authenticate()}>
       {!user && <GoogleGlyph />}
-      <span>{!user && !busy && !loading ? 'Sign in with Google' : label}</span>
+      <span>{!user && !busy && !loading ? 'Continue with Google' : label}</span>
     </button>
     <span className="sr-only" role="status">{status}</span>
     {error && <p role="alert" className={onNotice ? 'sr-only' : 'text-xs'}>{error}</p>}
