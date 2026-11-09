@@ -7059,3 +7059,6 @@ html .game-app .landing-menu-actions > .google-sign-in-button:disabled, .google-
 
 /* Promo Code: no extra room under the form, and a successful claim shows no text (the button says Claimed). */
 .promo-panel { min-height: 0; padding-bottom: 12px; }
+
+/* Preferences: Clear saved preferences and Disconnect from Google stack, with space between the text above and the buttons. */
+html[data-theme] .game-app .site-info-body[data-info-section="Preferences"] > .site-info-bottom.preferences-actions { display: flex; flex-direction: column; gap: 8px; padding-top: 16px; }

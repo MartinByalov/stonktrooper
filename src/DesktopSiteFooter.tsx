@@ -1,6 +1,6 @@
 // Browser game module for SiteFooter.
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { DisconnectGoogle } from './DisconnectGoogle';
+import { DisconnectGoogle, DisconnectGoogleNote } from './DisconnectGoogle';
 import { Mail, X, Volume2, VolumeX, Radio, Moon, Sparkles } from 'lucide-react';
 import { AssetPreview, type PreviewAsset } from './AssetPreview';
 import { SettingsDiamond } from './SettingsDiamond';
@@ -161,18 +161,19 @@ export function DesktopSiteFooter({ onOpen, theme, section, setSection, volume, 
           {section === 'Preferences' && <>
             <p>The game saves only theme, sound, volume, music style, Shmuck Feed, high contrast and interface animation preferences in this browser. <br></br> You can remove them below or through your browser's site-data settings.</p>
             <p>Removing the saved settings does not interrupt the current game. <br></br>Defaults apply after your next reload. Later preference changes may save new settings.</p>
-            {onDisconnect && <DisconnectGoogle onDisconnect={onDisconnect} />}
+            {onDisconnect && <DisconnectGoogleNote />}
           </>}
           </div>
           {section === 'About' && <p className="site-info-bottom about-copyright text-center font-mono-term text-[10px]"><button type="button" className="stonks-copyright-button" aria-label="Open The Stonks" title="The Stonks" onClick={event => { event.currentTarget.focus(); onOpen(); setStonksOpen(true); }}>©</button> Stonktrooper.lol<br />2026</p>}
           {section === 'Settings' && <div className="site-info-bottom pt-2">
               <button type="button" className="settings-reset-button preferences-clear-button block mx-auto w-full py-2.5 px-3 rounded-lg border font-bold text-xs font-mono-term cursor-pointer" onClick={() => { onResetDefaults(); setMessage('Default settings restored'); }}><span aria-live="polite">{message || 'Reset to defaults'}</span></button>
             </div>}
-          {section === 'Preferences' && <div className="site-info-bottom pt-2">
+          {section === 'Preferences' && <div className="site-info-bottom preferences-actions pt-2">
               <button type="button" className="preferences-clear-button block mx-auto w-full py-2.5 px-3 rounded-lg border font-bold text-xs font-mono-term cursor-pointer" onClick={() => {
                 try { for (const key of ['cr_theme', 'stonker-sounds', 'cr_sound_enabled', 'cr_live_feed', 'cr_volume', 'cr_animations', 'cr_high_contrast']) localStorage.removeItem(key); setMessage('Preferences removed'); }
                 catch { setMessage('Unable to access browser storage. Use your browser site-data settings.'); }
               }}><span aria-live="polite">{message || 'Clear'}</span></button>
+              {onDisconnect && <DisconnectGoogle onDisconnect={onDisconnect} />}
             </div>}
           </div>
         </div>

@@ -1,5 +1,5 @@
 import { ActionLabel } from './ActionLabel';
-import { DisconnectGoogle } from './DisconnectGoogle';
+import { DisconnectGoogle, DisconnectGoogleNote } from './DisconnectGoogle';
 import { CloseButton } from './CloseButton';
 // Browser game module for SiteFooter.
 import { useEffect, useRef, useState } from 'react';
@@ -21,10 +21,9 @@ const sectionAssets: Record<SiteSection, PreviewAsset> = { About: 'coin', Privac
 
 export function SiteFooter({ showNavigation = true, onProgress, onOpen, theme, section, setSection, volume, onVolumeChange, animationsEnabled, onToggleAnimations, liveFeedPaused, onToggleLiveFeedPause, onToggleTheme, highContrast, onToggleHighContrast, onResetDefaults, onDisconnect, wallet, hatSkin, onStarCoin }: { onDisconnect?: () => Promise<void>; showNavigation?: boolean; onProgress?: (event: GameEvent) => void; wallet: Wallet; hatSkin: string; onStarCoin?: () => Promise<void>; onOpen: () => void; theme: 'light' | 'dark'; section: SiteSection | null; setSection: (section: SiteSection | null) => void; volume: number; onVolumeChange: (volume: number) => void; animationsEnabled: boolean; onToggleAnimations: () => void; liveFeedPaused: boolean; onToggleLiveFeedPause: () => void; onToggleTheme: () => void; highContrast: boolean; onToggleHighContrast: () => void; onResetDefaults: () => void }) {
   const [message, setMessage] = useState('');
-  const [creditsTab, setCreditsTab] = useState<'About' | 'Privacy' | 'Terms'>('About');
+  // About & Help is one section: Privacy and Terms & Conditions are public pages of their own, opened from the footer links.
   const credits = section === 'About';
-  const infoSection = credits ? creditsTab : section;
-  useEffect(() => { if (section === 'About') setCreditsTab('About'); }, [section]);
+  const infoSection = section;
   useEffect(() => { setMessage(''); }, [section]);
   const [stonksOpen, setStonksOpen] = useState(false);
   useEffect(() => { if (section !== 'About') setStonksOpen(false); }, [section]);
@@ -61,15 +60,7 @@ export function SiteFooter({ showNavigation = true, onProgress, onOpen, theme, s
           <CloseButton ref={close} type="button" aria-label="Close site information" onClick={() => setSection(null)} className="dialog-close mobile-dialog-close site-info-close absolute right-0 top-0 p-2 border border-[var(--line)] rounded hover:bg-[var(--alt)] cursor-pointer" />
         </div>
         <div className={`site-info-content text-sm leading-relaxed${credits ? ' credits-layout' : ''}`}>
-          {credits && <div className="credits-tabs" role="tablist" aria-label="About & Help sections" aria-orientation="vertical">
-            {(['About', 'Privacy', 'Terms'] as const).map((tab, index, tabs) => <button key={tab} id={`credits-tab-${tab}`} type="button" role="tab" aria-selected={creditsTab === tab} aria-controls="credits-panel" tabIndex={creditsTab === tab ? 0 : -1} onClick={() => { setCreditsTab(tab); setStonksOpen(false); }} onKeyDown={event => {
-              const next = event.key === 'ArrowDown' ? (index + 1) % tabs.length : event.key === 'ArrowUp' ? (index + tabs.length - 1) % tabs.length : event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1 : -1;
-              if (next < 0) return;
-              event.preventDefault(); setCreditsTab(tabs[next]); setStonksOpen(false);
-              dialog.current?.querySelector<HTMLButtonElement>(`#credits-tab-${tabs[next]}`)?.focus();
-            }}>{tab}</button>)}
-          </div>}
-          <div className="site-info-body" data-info-section={infoSection} id={credits ? 'credits-panel' : undefined} role={credits ? 'tabpanel' : undefined} aria-labelledby={credits ? `credits-tab-${creditsTab}` : undefined} tabIndex={credits ? 0 : undefined}>
+          <div className="site-info-body" data-info-section={infoSection} tabIndex={credits ? 0 : undefined}>
           <div className="site-info-artwork" data-info-asset={sectionAssets[infoSection!]}>{infoSection === 'Settings' ? <SettingsDiamond theme={theme} animationsEnabled={animationsEnabled} onProgress={onProgress} /> : <InfoArtwork key={infoSection} asset={sectionAssets[infoSection!] as 'coin' | 'briefcase' | 'bag' | 'banana'} theme={theme} animationsEnabled={animationsEnabled} onProgress={onProgress} />}</div>
           <div className="site-info-main space-y-3">
           {infoSection === 'About' && <>
@@ -114,18 +105,19 @@ export function SiteFooter({ showNavigation = true, onProgress, onOpen, theme, s
           {section === 'Preferences' && <>
             <p>The game saves only theme, volume, Live Feed pause, high contrast and interface animation preferences in this browser. <br></br> You can remove them below or through your browser's site-data settings.</p>
             <p>Removing the saved settings does not interrupt the current game. <br></br>Defaults apply after your next reload. Later preference changes may save new settings.</p>
-            {onDisconnect && <DisconnectGoogle onDisconnect={onDisconnect} />}
+            {onDisconnect && <DisconnectGoogleNote />}
           </>}
           </div>
           {infoSection === 'About' && <p className="site-info-bottom about-copyright text-center font-mono-term text-[10px]"><button type="button" className="stonks-copyright-button" aria-label="Open The Stonks" title="The Stonks" onClick={event => { event.currentTarget.focus(); onOpen(); setStonksOpen(true); }}>©</button> Stonktrooper.lol<br />2026</p>}
           {section === 'Settings' && <div className="site-info-bottom pt-2">
               <button type="button" className="settings-reset-button preferences-clear-button block mx-auto w-full py-2.5 px-3 rounded-lg border font-bold text-xs font-mono-term cursor-pointer" onClick={() => { onResetDefaults(); setMessage('Settings Restored'); }}><span aria-live="polite"><ActionLabel>{message || 'Default Settings'}</ActionLabel></span></button>
             </div>}
-          {section === 'Preferences' && <div className="site-info-bottom pt-2">
+          {section === 'Preferences' && <div className="site-info-bottom preferences-actions pt-2">
               <button type="button" className="preferences-clear-button block mx-auto w-full py-2.5 px-3 rounded-lg border font-bold text-xs font-mono-term cursor-pointer" onClick={() => {
                 try { for (const key of ['cr_theme', 'stonker-sounds', 'cr_sound_enabled', 'cr_live_feed', 'cr_live_feed_paused', 'cr_volume', 'cr_animations', 'cr_high_contrast']) localStorage.removeItem(key); setMessage('Preferences removed'); }
                 catch { setMessage('Unable to access browser storage. Use your browser site-data settings.'); }
               }}><span aria-live="polite">{message || 'Clear saved preferences'}</span></button>
+              {onDisconnect && <DisconnectGoogle onDisconnect={onDisconnect} />}
             </div>}
           </div>
         </div>

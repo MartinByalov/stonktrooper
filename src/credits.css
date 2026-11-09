@@ -169,3 +169,12 @@ html[data-theme] .game-app .credits-layout > .site-info-body {
 html[data-theme] .game-app .credits-layout .site-info-main { order: 0; flex: none; width: 100%; }
 html[data-theme] .game-app .credits-layout .site-info-artwork { order: 1; flex: none; }
 html[data-theme] .game-app .credits-layout .site-info-bottom { order: 2; flex: none; margin: 0; }
+/* About & Help is a single section, so the header has no left rail: the star keeps its own small cell and the title stays centred. */
+html[data-theme] .game-app .site-info-overlay.fixed.inset-0.z-50 > .site-info-dialog:has(.credits-layout) > .site-info-header {
+  padding-left: 48px;
+  padding-right: 48px;
+}
+html[data-theme] .game-app .site-info-header > .about-rate-us {
+  width: 48px;
+  border-right: 0;
+}

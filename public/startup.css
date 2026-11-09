@@ -21,9 +21,10 @@ html, body { margin: 0; background: #000000; }
   max-width: 100%;
   object-fit: contain;
 }
-/* "Loading" sits in the middle between the logo's lowest ink and the rail of the briefcase. The logo's empty bottom edge grows with its
-   width, and the rail is 17px below the top of its box, so the text is lifted by an amount that follows the logo width. */
-#boot-screen .boot-loading { margin: 0; letter-spacing: .14em; transform: translateY(calc(8.8px - .0206 * min(70vw, 620px, 150vh))); }
+/* "Loading" sits in the middle between the logo's letters (their baseline, not the tail of the p) and the rail of the briefcase. The
+   logo's empty bottom edge grows with its width, and the rail is 17px below the top of its box, so the text is lifted by an amount that
+   follows the logo width. */
+#boot-screen .boot-loading { margin: 0; letter-spacing: .14em; transform: translateY(calc(8.8px - .0392 * min(70vw, 620px, 150vh))); }
 #boot-screen .boot-track {
   position: relative;
   width: min(52vw, 340px);

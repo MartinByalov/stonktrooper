@@ -3610,3 +3610,6 @@ html[data-theme] .game-app[data-layout="desktop"] .site-info-dialog:has([data-in
 
 /* Terms on desktop: clear space between the last paragraph and the bag. */
 html .game-app[data-layout="desktop"] .site-info-body[data-info-section="Terms"] > .site-info-artwork { padding-top: 40px; }
+
+/* Preferences on desktop: the two buttons stack with space above them. */
+html[data-theme] .game-app[data-layout="desktop"] .site-info-body[data-info-section="Preferences"] > .site-info-bottom.preferences-actions { display: flex; flex-direction: column; gap: 8px; padding-top: 16px; padding-bottom: 0; }
