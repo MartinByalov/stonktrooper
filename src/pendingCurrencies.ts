@@ -27,6 +27,13 @@ export function retainRunCurrencies(storage: Store, save: AccountSave, progress:
   storage.setItem(key(save.playerId), JSON.stringify(receipt));
 }
 export function clearRunCurrencies(storage: Store, playerId: string) { storage.removeItem(key(playerId)); }
+function retireRunCurrencies(storage: Store, playerId: string, raw: string) {
+  const prefix = `cr_retired_pending_v1:${encodeURIComponent(playerId)}:`;
+  let index = 0;
+  while (storage.getItem(prefix + index) !== null) index++;
+  storage.setItem(prefix + index, raw);
+  storage.removeItem(key(playerId));
+}
 
 export async function restoreRunCurrencies(storage: Store, playerId: string,
   read: () => Promise<{ data: string | null; conflict: boolean }>,
@@ -40,7 +47,13 @@ export async function restoreRunCurrencies(storage: Store, playerId: string,
   const cloud = await read();
   if (cloud.conflict) throw new Error('Google save conflict. Pending currencies were preserved.');
   if (cloud.data !== receipt.data) {
-    if (cloud.data !== receipt.base) throw new Error('Google progress changed on another session. Pending currencies were preserved for recovery; no wallets were merged.');
+    if (cloud.data !== receipt.base) {
+      // Google progress moved on, either from another session or because this run was already saved
+      // before the page closed. Google always wins and wallets are never merged. Keep the receipt as an
+      // archive and release the account instead of blocking Exchange and online play forever.
+      retireRunCurrencies(storage, playerId, raw);
+      return;
+    }
     const result = await write(playerId, receipt.base, receipt.data);
     if (result.data !== receipt.data) throw new Error('Currencies are retained locally until Google confirms the save.');
   }
