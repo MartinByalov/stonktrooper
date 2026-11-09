@@ -7,8 +7,7 @@ import { drawClownMakeup } from './clownRenderer';
 import type { Pickup } from './types';
 import { drawPet } from './petRenderer';
 
-// Static vignettes share gameplay models/materials, not equipped player state.
-// All compositions use a 64px square with a safe transparent inset.
+// Static vignettes share gameplay models, not player state, in a 64px square with a safe inset.
 export function drawAchievementArtwork(ctx: CanvasRenderingContext2D, id: string, dark: boolean): void {
   ctx.save();
   ctx.lineCap = 'round'; ctx.lineJoin = 'round';

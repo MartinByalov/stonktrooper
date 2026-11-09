@@ -7,8 +7,7 @@ export interface Quest { id: string; name: string; goals: readonly QuestGoal[]; 
 // Counters at the moment the active Google week was adopted.
 export interface QuestCounters { lifetime: Wallet; throws: number; kills: number }
 export interface WeeklyQuests { week: string; baseline: QuestCounters; claimed: string[] }
-// Catalog for Weekly Quests. Each Google week offers 5–7 of these; progress
-// counts lifetime pickups since the week's baseline, not wallet balance.
+// Weekly Quests catalog: 5-7 per Google week, counted from lifetime pickups since the baseline.
 export const QUESTS: readonly Quest[] = [
   { id: 'q1-coins', name: 'Pocket Change', goals: [{ kind: 'collect', currency: 'coins', target: 50 }], coins: 15 },
   { id: 'q1-diamonds', name: 'Diamond Hunter', goals: [{ kind: 'collect', currency: 'diamonds', target: 5 }], coins: 25 },
@@ -42,7 +41,7 @@ export const questWeek = (now: number) => googlePeriod(now, 'weekly').key;
 export const validQuestWeek = (week: unknown): week is string => typeof week === 'string'
   && /^weekly:\d{4}-\d{2}-\d{2}$/.test(week) && new Date(Date.parse(week.slice(7))).toISOString().slice(0, 10) === week.slice(7);
 
-// Deterministic 5–7 quests per week, identical on every device.
+// Deterministic 5-7 quests per week, identical on every device.
 export function weeklyQuests(week: string): readonly Quest[] {
   let seed = 2166136261;
   for (let i = 0; i < week.length; i++) seed = Math.imul(seed ^ week.charCodeAt(i), 16777619) >>> 0;

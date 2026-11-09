@@ -30,8 +30,7 @@ export function AssetPreview({ asset, compact = false, theme = 'light', grounded
       output.drawImage(cached, 0, 0);
       return;
     }
-    // Render without clipping first, then fit the actual painted bounds, not
-    // the character's feet/origin, into the square preview.
+    // Render unclipped, then fit the painted bounds, not the origin, into the square preview.
     const buffer = document.createElement('canvas');
     buffer.width = 512; buffer.height = 512;
     const ctx = buffer.getContext('2d');
@@ -153,8 +152,7 @@ export function AssetPreview({ asset, compact = false, theme = 'light', grounded
     const width = right - left + 1, height = bottom - top + 1;
     // Currency icons keep their static size even while they move.
     if (animated && asset !== 'coin' && !currencyIcon) {
-      // Center the painted silhouette rather than each renderer's arbitrary origin.
-      // Keep a fixed scale unless the full artwork would exceed the preview.
+      // Center the painted silhouette, keeping a fixed scale unless the artwork would overflow.
       const scale = Math.min(.8, 156 / Math.max(width, height));
       output.drawImage(buffer, left, top, width, height,
         (160 - width * scale) / 2, (160 - height * scale) / 2, width * scale, height * scale);
@@ -162,8 +160,7 @@ export function AssetPreview({ asset, compact = false, theme = 'light', grounded
     }
     const smallerPickup = ['banana', 'coin', 'briefcase', 'fedora'].includes(asset);
     const smallPickup = ['tender', 'bell'].includes(asset);
-    // Currency hats share the visible extent of the footer's 80%-scaled icons,
-    // regardless of whether the equipped silhouette is wide or tall.
+    // Currency hats match the visible extent of the footer's 80%-scaled icons.
     const size = currencyIcon ? (asset === 'bag' ? 86 : asset === 'fedora' ? 128 * .8 : 128) : smallerPickup ? 86 : smallPickup ? 104 : asset === 'diamond' ? 156 : 136;
     const scale = size / Math.max(width, height);
     output.drawImage(buffer, left, top, width, height,

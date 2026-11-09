@@ -193,9 +193,7 @@ function main() {
   let attempts = 0;
 
 
-  // ==========================================================
-  // GENERATE 10,000 UNIQUE TOKENS
-  // ==========================================================
+  // Generate 10,000 unique tokens.
 
   for (
     let tokenId = 1;
@@ -208,9 +206,7 @@ function main() {
     while (true) {
       attempts++;
 
-      // ------------------------------------------------------
-      // BODY TYPE
-      // ------------------------------------------------------
+      // Body type.
 
       const bodyTypeIndex =
         weightedChoice(
@@ -241,9 +237,7 @@ function main() {
       };
 
 
-      // ------------------------------------------------------
-      // TRAITS
-      // ------------------------------------------------------
+      // Traits.
 
       for (const category of categories) {
         const options =
@@ -272,9 +266,7 @@ function main() {
       }
 
 
-      // ------------------------------------------------------
-      // UNIQUE COMBINATION KEY
-      // ------------------------------------------------------
+      // Unique combination key.
 
       comboKey = [
         traits.bodyType,
@@ -307,9 +299,7 @@ function main() {
   }
 
 
-  // ==========================================================
-  // CONFIGURED TRAIT PROBABILITIES
-  // ==========================================================
+  // Configured trait probabilities.
 
   const frequency = {};
 
@@ -359,9 +349,7 @@ function main() {
   }
 
 
-  // ==========================================================
-  // BODY TYPE PROBABILITIES
-  // ==========================================================
+  // Body type probabilities.
 
   const bodyTypeFrequency = {};
 
@@ -387,9 +375,7 @@ function main() {
   }
 
 
-  // ==========================================================
-  // RARITY SCORE
-  // ==========================================================
+  // Rarity score.
 
   for (const token of collection) {
     let rarityScore = 0;
@@ -436,9 +422,7 @@ function main() {
   }
 
 
-  // ==========================================================
-  // RARITY RANK
-  // ==========================================================
+  // Rarity rank.
 
   const ranked =
     [...collection].sort(
@@ -466,9 +450,7 @@ function main() {
   );
 
 
-  // ==========================================================
-  // RESTORE TOKEN ID ORDER
-  // ==========================================================
+  // Restore token ID order.
 
   collection.sort(
     (a, b) =>
@@ -476,9 +458,7 @@ function main() {
   );
 
 
-  // ==========================================================
-  // STATISTICS
-  // ==========================================================
+  // Statistics.
 
   const bodyTypeCounts = {};
 
@@ -510,9 +490,7 @@ function main() {
   }
 
 
-  // ==========================================================
-  // OUTPUT
-  // ==========================================================
+  // Output.
 
   const output = {
     totalSupply:
@@ -543,9 +521,7 @@ function main() {
   );
 
 
-  // ==========================================================
-  // CONSOLE REPORT
-  // ==========================================================
+  // Console report.
 
   console.log(
     `✓ Generated ${TOTAL_SUPPLY} unique Stonks`

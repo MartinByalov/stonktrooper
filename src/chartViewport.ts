@@ -1,7 +1,6 @@
 import type { AimPoint } from './aim';
 
-// Android gameView calibration, in CSS pixels per world unit. Keep this
-// independent of backing resolution/DPR and leave browser desktop framing alone.
+// Android gameView calibration in CSS pixels per world unit, independent of DPR.
 export function mobileWorldScale(display: { width: number; height: number }) {
   const valid = Number.isFinite(display.width) && Number.isFinite(display.height)
     && display.width > 0 && display.height > 0;
@@ -19,8 +18,7 @@ export const chartViewport = (mobile: boolean, width: number, height: number, ax
   const worldScale = mobileWorldScale(pixels);
   return {
   scale: mobile ? worldScale * height / pixels.height : 1,
-  // Cancel CSS stretching of the fixed-resolution canvas. Both world axes
-  // then occupy the same CSS pixels per unit, using height as the reference.
+  // Cancel CSS stretching of the fixed-resolution canvas, using height as the reference.
   scaleX: mobile ? worldScale * width / pixels.width : (pixels.height / height) / (pixels.width / width),
   x: (width - axisWidth) * (mobile ? 0.20 : 0),
   y: height * 0.62,

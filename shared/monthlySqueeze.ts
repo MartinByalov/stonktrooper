@@ -1,5 +1,4 @@
-// No live month, timezone, group target or rewards are selected here.
-// Fail closed for unimplemented Achievement conditions; do not treat them as Score.
+// No live month, timezone, target or reward is chosen here; unimplemented conditions fail closed.
 export interface SqueezeEvent { id: string; achievementId: 'paper-hands'; threshold: number; startsAt: number; endsAt: number }
 export interface SqueezeReceipt { eventId: string; contributed: true }
 export function validSqueezeEvent(value: SqueezeEvent): boolean {

@@ -19,8 +19,7 @@ html[data-theme="light"] .game-app { --liquidated-loss: #b91c1c; }
 html[data-theme="dark"] .game-app { --liquidated-loss: #ff6467; }
 html[data-theme] .game-app .margin-call-summary .finish-confirm-title { color: var(--liquidated-loss); }
 
-/* Only the large Home, Margin Call and Liquidated actions share this ink.
-   Header controls and dialog buttons retain their original theme colors. */
+/* Only the large Home, Margin Call and Liquidated actions share this ink. */
 @layer button-theme {
   html { --menu-action-text: #ffffff; }
   html[data-theme="dark"] { --menu-action-text: #000000; }
@@ -428,8 +427,7 @@ body {
   height: 100%;
 }
 
-/* Keep the canvas Live Feed (48 of 840 canvas pixels) above the How to Play
-   overlay, without dimming or blurring it. The guide fills the area below. */
+/* Keep the 48px canvas Live Feed above the How to Play overlay, undimmed; the guide fills below. */
 .how-to-play-overlay {
   top: calc(100% * 48 / 840);
 }
@@ -460,9 +458,7 @@ body {
   text-underline-offset: 3px;
 }
 
-/* Keep the How to Play panel inside the available overlay height. The hero
-   and controls stay in the left column while the longer guide is the only
-   content allowed to scroll. */
+/* Keep How to Play inside the overlay height; only the longer guide column scrolls. */
 .initial-guide {
   display: flex;
   flex-direction: column;
@@ -1115,8 +1111,7 @@ html[data-theme="light"] .game-app .game-arena > .game-overlay.pause-overlay {
   }
 }
 
-/* A phone in landscape has very little vertical space. Let the overlay
-   scroll instead of clipping the Liquidated dialog and its buttons. */
+/* A phone in landscape has little height; let the overlay scroll instead of clipping the dialog. */
 @media (max-width: 767px) and (orientation: landscape) {
   .game-overlay {
     align-items: flex-start;
@@ -1234,8 +1229,7 @@ html[data-theme="light"] .game-app .game-arena > .game-overlay.pause-overlay {
   .game-result .space-y-2 > * + * { margin-top: 6px; }
 }
 
-/* Mobile/tablet landscape How to Play layout:
-   keep the title and left controls fixed, and scroll only the card column. */
+/* Mobile and tablet landscape How to Play: fixed title and controls, scrolling card column. */
 @media (max-width: 1024px) and (orientation: landscape) {
   .initial-guide {
     height: calc(100% - 2px);
@@ -1349,9 +1343,7 @@ kbd {
   color: var(--text);
 }
 
-/* Final mobile-landscape sizing overrides. These come after the generic
-   landscape rules so the guide cards remain readable instead of being
-   compressed into four clipped grid rows. */
+/* Final mobile-landscape sizing overrides, after the generic rules, so guide cards stay readable. */
 @media (orientation: landscape) and (pointer: coarse) {
   .game-app .site-footer {
     grid-template-columns: 1fr auto;
@@ -1603,8 +1595,7 @@ kbd {
     padding: max(8px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
   }
 
-  /* Keep the 48px Live Feed strip of the game canvas visible below the header;
-     the portrait How to Play overlay starts beneath it. */
+  /* Keep the 48px Live Feed strip visible below the header; the portrait overlay starts beneath it. */
   .game-app .game-overlay.how-to-play-overlay {
     inset: calc(100% * 48 / 840) 0 0;
     padding: max(8px, env(safe-area-inset-top), env(safe-area-inset-right), env(safe-area-inset-bottom), env(safe-area-inset-left));
@@ -2989,8 +2980,7 @@ kbd {
   }
 }
 
-/* Device-validated portrait landing gaps: Firefox Android reports a bottom
-   inset even when its navigation bar is already outside the visible shell. */
+/* Device-validated portrait gaps: Firefox Android reports a bottom inset with its bar outside. */
 @media (orientation: portrait) and (pointer: coarse) {
   .game-app .site-footer {
     padding-bottom: 4px;
@@ -3312,8 +3302,7 @@ html .game-app:has(.share-dd-overlay) .game-result-over .game-result-actions {
   color: var(--text);
   user-select: text;
 }
-/* Header logo PNGs are 864x289; visible artwork occupies (4,42)-(858,230).
-   Crop only the header presentation, retaining the existing 32px image scale. */
+/* Header logo PNGs are 864x289 with artwork at (4,42)-(858,230); crop only the header view. */
 .game-app header {
   --logo-art-height: calc(188px * 32 / 289);
   --logo-edge-gap: calc(8px + (32px - var(--logo-art-height)) / 2);
@@ -3338,8 +3327,7 @@ html .game-app:has(.share-dd-overlay) .game-result-over .game-result-actions {
   max-width: none;
 }
 
-/* Compact touch edges shared by the logo, canvas score and joystick.
-   Keep each safe-area inset on its own axis (a side notch is not a bottom gap). */
+/* Compact touch edges shared by logo, score and joystick; each safe-area inset stays on its own axis. */
 @media (pointer: coarse) {
   .game-app {
     --mobile-edge-gap: 6px;
@@ -3356,8 +3344,7 @@ html .game-app:has(.share-dd-overlay) .game-result-over .game-result-actions {
   }
 }
 
-/* Portrait information panels have roomier text and desktop-style title placement.
-   Keep the existing landscape frame and close-button position unchanged. */
+/* Portrait information panels have roomier text; the landscape frame and close button are unchanged. */
 @media (orientation: portrait) and (pointer: coarse) {
   .game-app .site-info-overlay.fixed.inset-0.z-50 > .site-info-dialog > .site-info-content {
     padding-inline: 24px;
@@ -3394,8 +3381,7 @@ html .game-app:has(.share-dd-overlay) .game-result-over .game-result-actions {
   }
 }
 
-/* Keep the pause guide close control on the Fullscreen control's vertical axis,
-   independently of the symmetric description-card gutters and side notches. */
+/* Keep the pause guide close control on the Fullscreen control's vertical axis. */
 @media (orientation: landscape) and (pointer: coarse) {
   .game-app .mobile-how-to-panel {
     position: relative;
@@ -3412,8 +3398,7 @@ html .game-app:has(.share-dd-overlay) .game-result-over .game-result-actions {
   }
 }
 
-/* The landing screen is the page surface, not a separate black/white panel.
-   Override legacy opaque guide backgrounds and the translucent menu veil. */
+/* The landing screen is the page surface; override legacy opaque guide backgrounds and the menu veil. */
 html .game-app .game-arena > .game-overlay.how-to-play-overlay,
 html .game-app .how-to-play-overlay > .desktop-initial-guide,
 html .game-app .how-to-play-overlay .mechanics-guide > div,
@@ -3556,8 +3541,7 @@ html[data-theme="light"] .game-app .mechanics-guide .mechanics-guide-visuals {
   background: #ffffff !important;
 }
 
-/* Use the header buttons' corner radius across UI surfaces and controls.
-   Circular touch controls and edge-to-edge page containers keep their shape. */
+/* Use the header buttons' corner radius on UI surfaces; circular and edge-to-edge parts keep theirs. */
 html .game-app :is(
   button:not(.mobile-joystick):not([class~="rounded-full"]),
   select,
@@ -5296,8 +5280,7 @@ html[data-theme] .game-app:where([data-layout="mobile"]) header .header-controls
 .exchange-overlay .skin-purchase[data-progress="true"] { width: max-content; max-width: 100%; white-space: nowrap; font-size: clamp(9px, 1.1vw, 13px); padding-inline: 8px; }
 .exchange-overlay .skin-purchase[data-equipped="true"] { background: var(--alt); opacity: 1; cursor: default; }
 .exchange-grid article[data-equipped="true"] { box-shadow: none; }
-/* Cover the existing 1px grid border, rather than inset a second rectangle.
-   Absolute positioning uses the padding box, hence -1px on each edge. */
+/* Cover the existing 1px grid border; absolute positioning uses the padding box, hence -1px. */
 .exchange-grid article[data-equipped="true"]::after {
   content: '';
   position: absolute;
@@ -5317,8 +5300,7 @@ html[data-theme] .game-app:where([data-layout="mobile"]) header .header-controls
 @keyframes skin-reveal { 0% { filter: blur(5px); opacity: .3; } 100% { filter: blur(0); opacity: 1; } }
 .exchange-overlay .skin-mode-toggle { position: absolute; top: 1px; right: 1px; display: grid; place-items: center; width: 32px; height: 32px; min-width: 32px; min-height: 32px; padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; color: var(--text); }
 html .game-app .exchange-overlay :is(.skin-mode-toggle, .exchange-close) > svg { width: 20px; height: 20px; }
-/* The card toggle center is 18px from its outer edge (1px border +
-   1px inset + half its 32px width). Match the shared Close control axis. */
+/* The card toggle center is 18px from its edge (border, inset, half of 32px); match the Close axis. */
 .exchange-content { padding-right: max(0px, calc(var(--corner-right-gap) + var(--corner-control-size) / 2 - 18px)); scrollbar-width: none; }
 .exchange-content::-webkit-scrollbar { display: none; }
 .skin-achievement-requirement { margin: 0; padding: 4px 8px; font: 11px/1.4 monospace; text-align: center; overflow-wrap: anywhere; }
@@ -5466,8 +5448,7 @@ html[data-theme] .game-app:where([data-layout="mobile"]):is([data-state="play"],
 }
 html[data-theme] .game-app:where([data-layout="mobile"]) header .header-options-control > svg { width: 16px; height: 16px; }
 html[data-theme] .game-app .game-currency-hud { margin-left: 8px; }
-/* Currency previews occupy 128 of 160 pixels; align the painted coin, not
-   its transparent canvas edge, with the PIPS text's visible left edge. */
+/* Currency previews fill 128 of 160 pixels; align the painted coin with the PIPS text edge. */
 html[data-theme] .game-app .game-currency-hud [data-currency="coins"] canvas {
   transform: translateX(-10%);
 }
@@ -6005,8 +5986,7 @@ html[data-theme] .game-app .currency-footer[data-collapsible] {
   /* The moving right edge reveals stationary balances, never a full-strip fade. */
   transition: width 280ms cubic-bezier(.4, 0, .2, 1), background-color 0s, box-shadow 0s;
 }
-/* Keep the surface behind the clipped icons until the shrinking edge reaches
-   the coin. Otherwise it disappears immediately and the icons seem to lag. */
+/* Keep the surface behind the clipped icons until the shrinking edge reaches the coin. */
 html[data-theme] .game-app .currency-footer[data-collapsible][data-expanded="false"] {
   width: 40px;
   background: transparent;
@@ -6030,8 +6010,7 @@ html[data-theme] .game-app .currency-footer[data-collapsible] .wallet-bar canvas
 }
 
 /* Static hat diagnostics: independent scrolling, no currency strip overlap. */
-/* Header actions are icon/text-only, including hover, focus and pressed states.
-   Keep keyboard focus outlines and the separate notification badge fills. */
+/* Header actions are icon or text only in every state; keep focus outlines and badge fills. */
 html[data-theme] .game-app:where([data-layout="mobile"]) header .header-controls > button, html[data-theme] .game-app:where([data-layout="mobile"]) header .header-controls > button:is(:hover, :focus-visible, :active, [aria-pressed]) {
   background: transparent !important;
   border-color: transparent !important;
@@ -6375,8 +6354,7 @@ html[data-theme] .game-app .share-dd-image {
   width: min(calc(var(--share-left-space, 50cqw) - 16px), calc(70cqh * var(--share-art-ratio, 1)));
 }
 
-/* Exchange mirrors Leaderboard: the giggling star sits above the categories,
-   the title is centred over the cards and the categories start at its rule. */
+/* Exchange mirrors Leaderboard: star above the categories, title centred over the cards. */
 html[data-theme] .game-app .exchange-overlay:has(> .exchange-heading > .exchange-star) > .exchange-heading { display: block; padding: 0; box-sizing: border-box; border-bottom: 1px solid var(--bg); }
 html[data-theme] .game-app .exchange-overlay:has(> .exchange-heading > .exchange-star) > .exchange-heading > h2 {
   box-sizing: border-box; width: auto; height: 100%; margin: 0 10px 0 clamp(112px, 17vw, 200px); /* matches .exchange-content padding-right */
@@ -6390,8 +6368,7 @@ html[data-theme] .game-app .exchange-overlay > .exchange-heading > .exchange-sta
 }
 html[data-theme] .game-app .exchange-overlay:has(> .exchange-heading > .exchange-star) .exchange-category { padding-top: 0; }
 
-/* Touch keeps :hover on the last tap point, so a newly opened dialog's X could
-   inherit a hover frame. On touch, close buttons show no hover state. */
+/* Touch keeps :hover on the last tap point, so close buttons show no hover state on touch. */
 @media (hover: none), (pointer: coarse) {
   html[data-theme] .game-app :is(.dialog-close, .site-info-close, .exchange-close, .stonks-close, .share-dd-close):hover:not(:focus-visible) {
     border-color: transparent !important;
@@ -6404,8 +6381,7 @@ html[data-theme] .game-app .exchange-overlay:has(> .exchange-heading > .exchange
   }
 }
 
-/* Monthly Vault: three equal auto gaps — the artwork sits centred between
-   "Resets in" and Claim, and Claim between the artwork and the bottom edge. */
+/* Monthly Vault: three equal auto gaps around the artwork, Resets in and Claim. */
 .game-app .vault-preview > .vault-stage { margin: auto; }
 .game-app .vault-preview > .vault-progress-footer { flex: none; display: flex; flex-direction: column; align-items: center; margin: 0 0 auto; padding-top: 0; }
 /* Collected Vault reward: the achievement Done stamp, tilted like on Achievements. */
@@ -6413,13 +6389,10 @@ html[data-theme] .game-app .exchange-overlay:has(> .exchange-heading > .exchange
 /* Centre the Leaderboard title over its panel (the X sits inside the bar). */
 html[data-theme] .game-app .leaderboard-overlay > .exchange-heading h2 { margin-right: 0; }
 
-/* Settings: the diamond sits centred between High contrast and Reset to defaults
-   (the artwork row already has equal padding above and below). */
+/* Settings: the diamond sits centred between High contrast and Reset to defaults. */
 html .game-app:where([data-layout="mobile"]) .site-info-body[data-info-section="Settings"] > .site-info-bottom { margin-top: 0; padding-top: 0; }
 
-/* Exchange: one title rule. It ends at the last card (the content keeps a
-   10px right gutter), and the first card row tucks its top border under it
-   (the scroller clips the overlap) instead of doubling the line. */
+/* Exchange: one title rule ending at the last card; the first card border tucks under it. */
 html[data-theme] .game-app .exchange-overlay:has(> .exchange-heading > .exchange-star) > .exchange-heading { border-bottom: 0; }
 html[data-theme] .game-app .exchange-overlay:has(> .exchange-heading > .exchange-star) > .exchange-heading::after {
   content: ""; position: absolute; left: 0; right: 10px; bottom: 0; height: 1px; background: var(--bg); pointer-events: none;
@@ -6444,8 +6417,7 @@ html[data-theme] .game-app .exchange-overlay:has(> .exchange-heading > .exchange
 .legal-document :is(h3, h4) { margin: 6px 0 0; font: 900 14px/1.25 var(--font-mono); letter-spacing: .02em; }
 .legal-document p { margin: 0; }
 .legal-document .legal-updated { font-size: 11px; color: var(--muted); }
-/* First launch: a framed section over the dimmed Home screen, where the player agrees to the
-   Terms and confirms reading the Privacy Policy. Confirm is a Home action button (Play, New Game). */
+/* First launch: a framed section over the dimmed Home; Confirm is a Home action button. */
 .game-app .legal-consent-backdrop { position: fixed; inset: 0; z-index: 10001; display: grid; place-items: center; padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)); background: rgba(0, 0, 0, .78); }
 .game-app .legal-consent-confirm { box-sizing: border-box; display: flex; flex-direction: column; align-items: center; gap: clamp(14px, 4dvh, 22px); width: min(560px, 100%); max-height: 100%; overflow-y: auto; padding: clamp(16px, 5dvh, 24px); border: 1px solid var(--line); background: var(--panel); color: var(--text); text-align: center; font: 15px/1.6 var(--font-mono); box-shadow: 0 20px 60px rgba(0, 0, 0, .5); }
 .game-app .legal-consent-confirm > p { margin: 0; }
@@ -6463,7 +6435,7 @@ html[data-theme] .game-app:where([data-layout="mobile"]) .site-info-overlay.lega
 .legal-document ul { margin: 0; padding-left: 1.3em; list-style: disc; }
 .legal-document li { margin: 0 0 4px; }
 
-/* Monthly Squeeze: one Achievement row, pinned to the top-left corner of the Home chart, in line with Donate. */
+/* Monthly Squeeze: one Achievement row pinned top-left of the Home chart, in line with Donate. */
 .game-app .landing-menu-panel > .monthly-squeeze-home {
   position: absolute;
   top: var(--home-logo-inset, 12px);
@@ -6521,7 +6493,7 @@ html[data-theme] .game-app:where([data-layout="mobile"]) .site-info-overlay.lega
 .monthly-squeeze-home .monthly-squeeze-notice { position: absolute; inset: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 0 6px; padding: 4px 10px; box-sizing: border-box; font-size: 11px; line-height: 1.25; }
 
 /* Play as Guest: blue per theme. Sign in / Sign up: the green of Start per theme. */
-/* The one blue of the active theme (--ui-blue: day #569DCC, night #38bdf8), as Donate and the Live Feed use it; label colour as on Donate. */
+/* The one blue of the active theme (--ui-blue), as Donate and the Live Feed use it. */
 html[data-theme="light"] .game-app .landing-menu-actions > .landing-menu-guest-button { background: var(--ui-blue); border-color: var(--ui-blue); --menu-action-text: #000; color: #000; }
 html[data-theme="dark"] .game-app .landing-menu-actions > .landing-menu-guest-button { background: var(--ui-blue); border-color: var(--ui-blue); --menu-action-text: #fff; color: #fff; }
 html[data-theme="light"] .game-app .landing-menu-actions > .google-sign-in-button { background: #54d3ac; border-color: #54d3ac; --menu-action-text: #000; color: #000; }
@@ -6557,12 +6529,11 @@ html .game-app .landing-menu-actions > .google-sign-in-button:disabled { opacity
 /* Desktop: the live feed is the bar under the header, not the header canvas used on mobile. */
 html .game-app[data-layout="desktop"] .mobile-header-feed { display: none !important; }
 
-/* Mobile: ONE gutter G (left of the logo, left and bottom of Donate, left and top of Monthly Squeeze) equal to the distance
-   from the right edge and from the top to the Fullscreen glyph. Button box 40.3px and glyph 18.4px as in the browser version. */
+/* Mobile: one gutter G (logo, Donate, Monthly Squeeze) equals the Fullscreen glyph's edge gaps. */
 html[data-theme] .game-app[data-layout="mobile"] {
   --corner-control-size: 40.3px;
   --corner-icon-size: 18.4px;
-  /* Right and top gaps of the Fullscreen button are equal (bar height unchanged); G, the gap to its glyph, is shared. */
+  /* Right and top gaps of the Fullscreen button are equal; G is shared. */
   --corner-right-gap: .4px;
   --corner-left-gap: calc(var(--corner-right-gap) + (var(--corner-control-size) - var(--corner-icon-size)) / 2);
   --corner-top-gap: .85px;
@@ -6577,7 +6548,7 @@ html[data-theme] .game-app[data-layout="mobile"] > div > header { padding: var(-
 /* Fullscreen shows neither the logo nor the footer. */
 .game-app[data-fullscreen="true"] :is(.site-footer, .stonktrooper-logo) { display: none; }
 
-/* Mobile, not fullscreen: the Live Feed is a bar under the header, as on desktop. In fullscreen it stays in the header. */
+/* Mobile, not fullscreen: the Live Feed is a bar under the header; in fullscreen it stays inside. */
 html .game-app[data-layout="mobile"][data-fullscreen="false"] .mobile-header-feed { display: none !important; }
 html .game-app[data-layout="mobile"][data-fullscreen="false"] .desktop-live-feed-bar { display: block; flex: 0 0 auto; min-width: 0; height: 36px; overflow: hidden; }
 html[data-theme="light"] .game-app[data-layout="mobile"] .desktop-live-feed-bar { background: #ffffff; }
@@ -6595,14 +6566,13 @@ html .game-app[data-layout="mobile"] .desktop-live-feed { display: block; width:
 /* How to Play has no artwork or bottom action row: do not reserve their space under the content. */
 .game-app[data-layout="desktop"] .site-info-body[data-info-section="How to Play"] { display: block !important; min-height: 0 !important; }
 
-/* Desktop header: every header control is the size of the Fullscreen button (32px in the 36px bar), so the gaps are equal. */
+/* Desktop header: every control is the size of the Fullscreen button (32px in the 36px bar). */
 html[data-theme] .game-app[data-layout="desktop"] header .header-controls > .mobile-header-control { box-sizing: border-box; width: 32px; min-width: 32px; height: 32px; min-height: 32px; flex: 0 0 32px; padding: 0; }
 html[data-theme] .game-app[data-layout="desktop"] header .header-controls > .mobile-header-control > svg:not(.achievement-notification) { width: 14px; height: 14px; }
 /* Exchange keeps its gold on desktop too (the android rule is limited to the mobile layout). */
 html .game-app[data-layout="desktop"] .landing-menu-actions > .landing-menu-exchange-button { background: #e6b13a; border-color: #e6b13a; }
 
-/* Desktop Exchange is a section like How to Play and Settings, not a full window. The huge shadow is the backdrop;
-   the transform makes the box the containing block of its fixed corner controls. */
+/* Desktop Exchange is a section like How to Play, not a window; the transform contains fixed controls. */
 html .game-app[data-layout="desktop"] .exchange-overlay {
   inset: 0; margin: auto; width: min(1180px, 82vw); height: min(680px, 78dvh);
   transform: translateZ(0); border: 1px solid var(--line); border-radius: 12px; overflow: hidden;
@@ -6614,11 +6584,11 @@ html .game-app[data-layout="desktop"] .exchange-overlay {
 .account-monthly-note { margin: 0 auto 12px; max-width: 520px; font: 13px/1.4 monospace; text-align: center; }
 .monthly-squeeze-section { max-width: 520px; margin: 0 auto; }
 
-/* ---- Desktop polish: header pitch, Donate above the time axis, bigger Monthly Squeeze, Loot / Achievements like How to Play ---- */
+/* Desktop polish: header pitch, Donate above the time axis, bigger Monthly Squeeze, Loot layout. */
 /* Header controls: the browser version's 0.25rem gap between the 32px buttons. */
 html[data-theme] .game-app[data-layout="desktop"] header .header-controls { gap: 4px; }
 
-/* Donate sits above the time axis (the bottom 18px of the chart) with the same gutter it has on the left. */
+/* Donate sits above the time axis (bottom 18px of the chart) with the same left gutter. */
 html .game-app[data-layout="desktop"] .landing-menu-panel > .home-coffee-link.coffee-link { bottom: calc(18px + var(--home-logo-inset, 12px)); }
 
 /* Monthly Squeeze on Home (desktop): larger and easier to notice, title in the Exchange gold. */
@@ -6636,18 +6606,17 @@ html .game-app[data-layout="desktop"] .monthly-squeeze-home .monthly-squeeze-car
 html .game-app[data-layout="desktop"] .monthly-squeeze-home .achievement-reward-icon { width: 40px; height: 24px; }
 html .game-app[data-layout="desktop"] .monthly-squeeze-home .achievement-reward .achievement-reward-icon canvas { width: 40px; }
 
-/* Desktop windows with a wallet (Exchange, Loot, Achievements): scrollbars stay visible, and the currency bar hangs
-   from the bottom border of the window instead of covering its content. */
+/* Desktop wallet windows: scrollbars stay visible and the currency bar hangs from the bottom border. */
 html[data-theme] .game-app[data-layout="desktop"] .exchange-overlay { overflow: visible; }
-/* A standard scrollbar-color replaces the hidden WebKit scrollbar of the android layout with the normal, visible one. */
+/* A standard scrollbar-color replaces the hidden WebKit scrollbar of the android layout. */
 html[data-theme] .game-app[data-layout="desktop"] .exchange-overlay .exchange-content { scrollbar-width: auto; scrollbar-color: #c1c1c1 #f1f1f1; }
 html[data-theme="dark"] .game-app[data-layout="desktop"] .exchange-overlay .exchange-content { scrollbar-color: #6b6b6b #2b2b2b; }
-/* top: 100% is the inside of the 1px window border, so +1px puts the bar's top edge exactly on the window's bottom edge. */
+/* top: 100% is inside the 1px border, so +1px puts the bar on the window's bottom edge. */
 html[data-theme] .game-app[data-layout="desktop"] .exchange-overlay .currency-footer:not([data-collapsible]) {
   position: absolute; top: calc(100% + 1px); bottom: auto; left: 50%; right: auto; transform: translateX(-50%); margin: 0;
   height: 36px; min-height: 36px; border: 0; border-radius: 0 0 var(--ui-radius, 6px) var(--ui-radius, 6px);
 }
-/* Exchange, Loot and Achievements windows keep the bar visible; the Leaderboard shows it only while a reward falls into it. */
+/* Exchange, Loot and Achievements keep the bar visible; Leaderboard shows it only for rewards. */
 html[data-theme] .game-app[data-layout="desktop"] .exchange-overlay:not(.leaderboard-overlay) .currency-footer:not([data-collapsible]) {
   opacity: 1 !important; visibility: visible !important; pointer-events: auto !important;
 }
@@ -6683,41 +6652,38 @@ html .game-app .landing-menu-actions > .google-sign-in-button { display: flex !i
 html .game-app .landing-menu-actions > .google-sign-in-button > svg { flex: 0 0 auto; }
 html .game-app .landing-menu-actions > .google-sign-in-button > span { flex: 0 0 auto; }
 
-/* Mobile: the Home logo is the only thing that fills the header's left corner. In fullscreen Home it is gone, so the Live Feed
-   starts at the edge and fades there. On Pause the two run currencies stay in that corner, blurred like the feed behind them. */
+/* Mobile: the Home logo fills the header's left corner; on Pause the run currencies take it. */
 html .game-app[data-layout="mobile"][data-fullscreen="true"][data-state="menu"] header > div:first-child { display: none; }
 
 
 .game-app :is(.landing-menu-guest-button, .landing-menu-play-button, .continue-run) { position: relative; }
 
-/* Exchange (desktop): the coin stays in the corner as on Android; once opened, the bar hangs from the window's bottom edge. */
+/* Exchange (desktop): the coin stays in the corner; once opened, the bar hangs below the window. */
 html[data-theme] .game-app[data-layout="desktop"] .exchange-overlay > .currency-footer[data-collapsible][data-expanded="true"] {
   top: calc(100% + 1px); bottom: auto; left: 50%; right: auto; transform: translateX(-50%); margin: 0;
   border-radius: 0 0 var(--ui-radius, 6px) var(--ui-radius, 6px);
 }
 
-/* Exchange (desktop): the wallet bar hangs outside the window, so the list does not reserve room for it at the bottom. */
+/* Exchange (desktop): the wallet bar hangs outside, so the list reserves no room for it. */
 html[data-theme] .game-app[data-layout="desktop"] .exchange-overlay .exchange-content { padding-bottom: 0 !important; scroll-padding-bottom: 0 !important; }
-/* Exchange (desktop) category buttons: an inset, fully rounded fill without the curved separator lines, and one divider line
-   between the list and the cards (the first card's border sits on the sidebar's border instead of next to it). */
+/* Exchange (desktop) categories: inset rounded fill, one divider between list and cards. */
 html[data-theme] .game-app[data-layout="desktop"] .exchange-overlay:has(> .exchange-heading > .exchange-star) .exchange-category { padding: 4px 6px; }
 html[data-theme] .game-app[data-layout="desktop"] .exchange-overlay:has(> .exchange-heading > .exchange-star) .exchange-category > button {
   flex: 0 0 calc(100% / 3 - 8px); margin: 4px 0; border-bottom: 0; border-radius: 8px;
 }
 html[data-theme] .game-app[data-layout="desktop"] .exchange-overlay:has(> .exchange-heading > .exchange-star) .exchange-grid { margin-left: -1px; }
 
-/* Header buttons: the same visible gap between every pair of icons. Buttons touch (their hover squares stay equal); a notification
-   badge hangs past its icon's right edge, so that button gets the same amount of space after it. */
+/* Header buttons: equal visible gap between icons; a badge's overhang adds space after its icon. */
 html[data-theme] .game-app[data-layout="desktop"] header .header-controls { gap: 0; }
 html[data-theme] .game-app[data-layout="mobile"] header .header-controls { gap: 0; }
 
-/* Exchange categories: the hat glyph is drawn smaller than the line icons, so it is scaled to the same visible size. */
+/* Exchange categories: the hat glyph is drawn smaller, so it is scaled to the line icons' size. */
 
-/* Mobile Exchange: the collapsed coin has the same visible size and left/right edges as the category icons above it. */
+/* Mobile Exchange: the collapsed coin matches the category icons' visible size and edges. */
 html[data-theme] .game-app[data-layout="mobile"] .exchange-overlay > .currency-footer[data-collapsible] .wallet-bar canvas { width: 24px !important; height: 24px !important; }
-/* Sub-pixel trim: the line icons have slightly different drawn widths, so each gap is nudged to the same visible distance. */
+/* Sub-pixel trim: line icons differ slightly in width, so each gap is nudged to match. */
 
-/* Leaderboard sections: Quests and Achievements are the Loot and Achievements content shown inside the window. */
+/* Leaderboard sections: Quests and Achievements show the Loot and Achievements content. */
 .loot-embedded, .achievements-embedded { display: flex; flex-direction: column; flex: 1 1 100%; width: 100%; align-self: stretch; min-width: 0; min-height: 0; }
 .achievements-embedded { --line: var(--bg); }
 .achievements-embedded > .exchange-content { padding-right: 0; scrollbar-width: auto; padding-bottom: 0; }
@@ -6752,7 +6718,7 @@ html[data-theme] .game-app[data-layout="mobile"] header .header-controls > .head
 .promo-panel { min-height: 0; }
 .promo-content, .promo-content .loot-redeem { margin-bottom: 0; }
 
-/* Quests inside the Leaderboard use the Achievements row: page background, the same progress fill and the same spacing. */
+/* Quests in the Leaderboard use the Achievements row: same background, fill and spacing. */
 html[data-theme] .game-app .loot-embedded .quest-list .quest-row {
   background-color: var(--page-surface);
   min-height: 92px; padding: 12px; gap: 8px 12px;
@@ -6760,10 +6726,10 @@ html[data-theme] .game-app .loot-embedded .quest-list .quest-row {
 
 /* The logo belongs to Home only. */
 html .game-app:not([data-state="menu"]) header > div:first-child { display: none; }
-/* Desktop pause / game over: the currency bar hangs under the result panel and its buttons, one action gap below. */
+/* Desktop pause and game over: the currency bar hangs under the result panel, one gap below. */
 html[data-theme] .game-app[data-layout="desktop"] .game-overlay > .screen-currency-footer { top: calc(var(--result-bottom, 50%) + var(--result-action-gap, 10px)); bottom: auto; }
 
-/* Desktop in game: the header is the same 36px bar with the same bottom border as Home, so the coin/diamond counter is 32px like the buttons. */
+/* Desktop in game: the header is the 36px Home bar, so the counter is 32px like the buttons. */
 html[data-theme] .game-app[data-layout="desktop"]:not([data-state="menu"]) header { box-sizing: border-box; height: 36px !important; min-height: 36px !important; max-height: 36px; padding: 2px 2px 1px 12.1667px !important; border-bottom: 1px solid var(--bg) !important; }
 html[data-theme] .game-app[data-layout="desktop"] header .game-currency-hud { height: 32px; min-height: 32px; }
 html[data-theme] .game-app[data-layout="desktop"] header .game-currency-hud [data-currency] canvas { width: 32px !important; height: 32px !important; }
@@ -6776,15 +6742,15 @@ html[data-theme] .game-app header .header-left-controls > .mobile-header-control
 html[data-theme] .game-app header .header-left-controls > .mobile-header-control > svg:not(.achievement-notification) { width: var(--corner-icon-size, 18px); height: var(--corner-icon-size, 18px); }
 html[data-theme] .game-app header .header-left-controls > .mobile-header-control { position: relative; }
 
-/* Compact header buttons: narrower hover areas bring the icons closer (the drawn gap between icons is equal everywhere). */
+/* Compact header buttons: narrower hover areas bring the icons closer. */
 html[data-theme] .game-app[data-layout="mobile"] header .header-controls > .mobile-header-control,
 html[data-theme] .game-app[data-layout="mobile"] header .header-left-controls > .mobile-header-control { width: 32px; min-width: 32px; flex: 0 0 32px; }
-/* Mobile pause: the left edge mirrors the right edge (Settings sits as close to the left border as Fullscreen to the right one). */
+/* Mobile pause: the left edge mirrors the right edge (Settings and Fullscreen distances match). */
 
 html[data-theme] .game-app[data-layout="mobile"][data-state="paused"] header .header-left-controls { margin-left: 0; }
 html[data-theme] .game-app[data-layout="mobile"][data-state="paused"] header .game-currency-hud { margin-left: 0; }
 
-/* Margin Call and Liquidated: Panel | buttons | Stash on one row, every column as tall as four buttons. The Stash is the Android one. */
+/* Margin Call and Liquidated: Panel, buttons and Stash on one row, each as tall as four buttons. */
 html[data-theme] .game-app:not(:has(.share-dd-overlay)) .liquidated-collected-grid,
 html[data-theme] .game-app .game-result:not(.game-result-over) > div {
   grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
@@ -6820,7 +6786,7 @@ html[data-theme] .game-app .game-result:not(.game-result-over),
 html[data-theme] .game-app:not(:has(.share-dd-overlay)) .game-over-overlay > .game-result-over {
   width: calc(3 * var(--home-action-width) + 2 * var(--result-action-gap)) !important; max-width: 100% !important; min-width: 0;
 }
-/* The Margin Call Stash is the Liquidated one: same surface, ink and blue title (those colours are defined for Liquidated only). */
+/* The Margin Call Stash is the Liquidated one: same surface, ink and blue title. */
 html[data-theme="light"] .game-app .margin-call-stash { --liquidated-summary-surface: #000000; --liquidated-summary-ink: #ffffff; --liquidated-accent: var(--ui-blue); }
 html[data-theme="dark"] .game-app .margin-call-stash { --liquidated-summary-surface: #ffffff; --liquidated-summary-ink: #000000; --liquidated-accent: var(--ui-blue); }
 html[data-theme] .game-app .result-stash-panel { align-content: stretch; grid-template-columns: minmax(0, 1fr); }
@@ -6828,8 +6794,7 @@ html[data-theme] .game-app .result-stash-panel > h2 { grid-row: 1; grid-column: 
 html[data-theme] .game-app .result-stash-panel > .result-summary-body { grid-row: 2; grid-column: 1; justify-content: center; align-self: stretch; }
 html[data-theme] .game-app .result-stash-panel .wallet-bar { width: 100%; justify-items: center; }
 
-/* Mobile edge gap G: the distance from the border to the icon of the first / last header button. Every corner element uses it:
-   Fullscreen (top and right), the left header button, the coin counter, Donate (left and bottom), the score tab and the kill icons. */
+/* Mobile edge gap G: border to the first or last header icon, used by every corner element. */
 html .game-app[data-layout="mobile"] {
   --edge-gap: calc((var(--chrome-height) - 1px - var(--corner-icon-size)) / 2);
   --ctl-size: 32px;
@@ -6846,7 +6811,7 @@ html[data-theme] .game-app[data-layout="mobile"] > div > header {
 }
 /* A header that starts with a button: its icon, not its box, sits at the edge gap. */
 html[data-theme] .game-app[data-layout="mobile"][data-account="true"][data-state="menu"] > div > header { padding-left: calc(var(--edge-gap) - var(--ctl-inset)) !important; }
-/* The counter's icons are inset inside their 40px cells; pull the counter left so the icon itself is at the edge gap. */
+/* The counter's icons are inset in their 40px cells; pull it left so the icon meets the edge gap. */
 html[data-theme] .game-app[data-layout="mobile"] > div > header .game-currency-hud { margin-left: -4.9px; }
 html[data-theme] .game-app[data-layout="mobile"] > div > header .game-currency-hud:not(.practice-kills-hud) { margin-left: -6.3px; }
 
@@ -6863,7 +6828,7 @@ html[data-theme] .game-app[data-layout="desktop"] header .header-controls > :is(
   display: inline-flex; align-items: center; justify-content: center;
 }
 html[data-theme] .game-app[data-layout="desktop"] header .header-controls > :is(.mobile-header-control, .desktop-fullscreen-control) > svg:not(.achievement-notification) { width: 20px; height: 20px; }
-/* Desktop Exchange: title and X like How to Play / Settings; the X is as far from the top as from the right. */
+/* Desktop Exchange: title and X like How to Play; the X is as far from the top as the right. */
 html[data-theme] .game-app[data-layout="desktop"] .exchange-overlay:has(> .exchange-heading > .exchange-star) > .exchange-heading > h2 {
   font: 700 20px/1.2 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: #fff;
 }
@@ -6873,10 +6838,10 @@ html[data-theme] .game-app[data-layout="desktop"] .exchange-overlay:has(> .excha
   padding: 0; border: 1px solid transparent; border-radius: 4px; background: transparent; display: grid; place-items: center;
 }
 html .game-app[data-layout="desktop"] .exchange-overlay:has(> .exchange-heading > .exchange-star) > .exchange-heading > .exchange-close > svg { width: 14px; height: 14px; }
-/* The Leaderboard badge hangs over the right of its icon, so visually that gap is the smaller one: the exit-to-Fullscreen gap is matched to it. */
+/* The Leaderboard badge overhangs its icon, so the exit-to-Fullscreen gap is matched to it. */
 html[data-theme] .game-app[data-layout="desktop"] header .header-controls > .header-signout-control { margin-right: -4.7px; }
 
-/* Desktop Exchange: the heading is as tall as it takes for the X to sit one corner gap from the top and the right. */
+/* Desktop Exchange: the heading is tall enough for the X to sit one corner gap in. */
 html[data-theme] .game-app[data-layout="desktop"] .exchange-overlay:has(> .exchange-heading > .exchange-star) { --exchange-corner-gap: 28px; }
 html[data-theme] .game-app[data-layout="desktop"] .exchange-overlay:has(> .exchange-heading > .exchange-star) > .exchange-heading {
   flex: 0 0 calc(var(--exchange-corner-gap) + 32px + 8px); height: calc(var(--exchange-corner-gap) + 32px + 8px); min-height: calc(var(--exchange-corner-gap) + 32px + 8px); max-height: none;
@@ -6885,7 +6850,7 @@ html[data-theme] .game-app[data-layout="desktop"] .exchange-overlay:has(> .excha
   top: calc(var(--exchange-corner-gap) - 1px) !important; right: calc(var(--exchange-corner-gap) - 1px) !important;
 }
 
-/* Margin Call / Liquidated and their Stash: the titles share one row, lowered from the top edge; the content sits below them. */
+/* Margin Call, Liquidated and Stash: titles share one lowered row; content sits below. */
 html[data-theme] .game-app:not(:has(.share-dd-overlay)) :is(.margin-call-summary, .liquidated-collected-summary, .result-stash-panel) {
   display: grid !important; grid-template-columns: minmax(0, 1fr) !important; grid-template-rows: minmax(0, 1fr) auto minmax(0, 2fr) !important; align-items: center; justify-items: center;
   padding: 0 8px !important; row-gap: 0 !important;
@@ -6905,7 +6870,7 @@ html[data-theme] .game-app[data-layout="desktop"] .result-stash-panel .wallet-ba
 html[data-theme] .game-app[data-layout="desktop"] .screen-currency-footer .wallet-bar canvas { width: 36px !important; height: 36px !important; }
 html[data-theme] .game-app[data-layout="desktop"] .screen-currency-footer .wallet-bar b { font-size: 15px; }
 
-/* Phone, Pause and Liquidated: the left group (Leaderboard, Settings) starts at the same edge gap as Fullscreen ends. */
+/* Phone, Pause and Liquidated: the left group starts at the same edge gap as Fullscreen ends. */
 html[data-theme] .game-app[data-layout="mobile"]:is([data-state="paused"], [data-state="over"]) > div > header { padding-left: calc(var(--edge-gap) - var(--ctl-inset)) !important; }
 html[data-theme] .game-app[data-layout="mobile"]:is([data-state="paused"], [data-state="over"]) header .header-left-controls { margin-left: 0; }
 
@@ -6919,7 +6884,7 @@ html[data-theme] .game-app:not(:has(.share-dd-overlay)) :is(.margin-call-summary
 }
 html[data-theme] .game-app:not(:has(.share-dd-overlay)) :is(.margin-call-summary, .liquidated-collected-summary, .result-stash-panel) > :is(.margin-call-summary-body, .result-summary-body) { grid-row: 2 !important; }
 
-/* Share (Challenge): the result narrows to its one button column and the share art takes the rest, as on Android. */
+/* Share (Challenge): the result narrows to one button column and the share art takes the rest. */
 html[data-theme] .game-app:has(.share-dd-overlay) .liquidated-collected-grid { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; }
 html[data-theme] .game-app:has(.share-dd-overlay) .liquidated-collected-grid > .result-stash-panel { display: none !important; }
 /* Promo Code: no focus bar, a taller window, title and X at the top. */
@@ -6927,10 +6892,10 @@ html[data-theme] .game-app:has(.share-dd-overlay) .liquidated-collected-grid > .
 .promo-panel input:focus { border-color: var(--text); }
 .promo-panel { min-height: 196px; display: flex; flex-direction: column; }
 .promo-header { margin-bottom: 26px; }
-/* How to Play: the coin is drawn larger than its neighbours inside its canvas, so it gets a smaller box. */
+/* How to Play: the coin is drawn larger in its canvas, so it gets a smaller box. */
 html .game-app .mechanics-guide-visuals canvas[data-asset="coin"] { width: 64px !important; height: 64px !important; }
 
-/* Margin Call / Liquidated / Stash: titles at the top (on the first button's centre line); Score and the currencies centred in the whole panel. */
+/* Margin Call, Liquidated and Stash: titles on the first button's centre line; content centred. */
 html[data-theme] .game-app:not(:has(.share-dd-overlay)) :is(.margin-call-summary, .liquidated-collected-summary, .result-stash-panel) { grid-template-rows: minmax(0, 1fr) !important; }
 html[data-theme] .game-app:not(:has(.share-dd-overlay)) :is(.margin-call-summary, .liquidated-collected-summary, .result-stash-panel) > h2 {
   grid-row: 1 !important; grid-column: 1 !important; align-self: start;
@@ -6939,13 +6904,13 @@ html[data-theme] .game-app:not(:has(.share-dd-overlay)) :is(.margin-call-summary
 html[data-theme] .game-app:not(:has(.share-dd-overlay)) :is(.margin-call-summary, .liquidated-collected-summary, .result-stash-panel) > :is(.margin-call-summary-body, .result-summary-body) {
   grid-row: 1 !important; grid-column: 1 !important; align-self: center; padding-top: 0 !important;
 }
-/* Share: four equal rows with the same gap everywhere; the share row is exactly as tall as the squares in it. */
+/* Share: four equal rows with one gap; the share row is as tall as its squares. */
 html[data-theme] .game-app:has(.share-dd-overlay) .game-result-over .liquidated-collected-navigation {
   grid-template-rows: var(--home-action-height) auto var(--home-action-height) var(--home-action-height); row-gap: var(--result-action-gap);
 }
 html[data-theme] .game-app:has(.share-dd-overlay) .share-dd-actions-host { align-self: start; }
 
-/* Desktop Pause and Liquidated: the counter (coins and diamonds, or the bull and bear kills for a Guest) stays top-left, blurred. */
+/* Desktop Pause and Liquidated: the counter stays top-left, blurred. */
 html[data-theme] .game-app[data-layout="desktop"]:is([data-state="paused"], [data-state="over"]) header .game-currency-hud { opacity: .45; filter: blur(1.5px); pointer-events: none; }
 /* Margin Call's Exchange: the same gold button as on Home and Liquidated, the size of its neighbours. */
 html[data-theme] .game-app .game-result-actions > .margin-call-action.liquidated-exchange {
@@ -6954,7 +6919,7 @@ html[data-theme] .game-app .game-result-actions > .margin-call-action.liquidated
 html[data-theme] .game-app .game-result-actions > .margin-call-action.liquidated-exchange:is(:hover, :focus-visible):not(:disabled) { filter: brightness(1.08); }
 html[data-theme] .game-app .game-result-actions > .margin-call-action.liquidated-exchange:disabled { opacity: .45; filter: saturate(.3); }
 
-/* Guest run: no Stash, so Margin Call and Liquidated are the panel and three buttons, the panel as tall as the three buttons. */
+/* Guest run: no Stash, so the panel is as tall as the three buttons. */
 html[data-theme] .game-app[data-practice="true"] .game-result:not(.game-result-over),
 html[data-theme] .game-app[data-practice="true"]:not(:has(.share-dd-overlay)) .game-over-overlay > .game-result-over {
   width: calc(2 * var(--home-action-width) + var(--result-action-gap)) !important;
@@ -6972,14 +6937,13 @@ html[data-theme] .game-app[data-practice="true"]:not(:has(.share-dd-overlay)) :i
   grid-row: 2 !important; align-self: center;
 }
 
-/* Desktop counter (coins and diamonds, bull and bear kills): its cells are the 32px of the header buttons, so the icons sit on the header's middle line. */
+/* Desktop counter: its cells are 32px like the header buttons, so icons sit on the middle line. */
 html[data-theme] .game-app[data-layout="desktop"] header .game-currency-hud :is([data-currency], [data-enemy]) { height: 32px; }
 
-/* Offline: Donate opens a web page, so it is not offered. It keeps its place in the layout, only invisible and inert. */
+/* Offline: Donate opens a web page, so it stays in the layout but invisible and inert. */
 html .game-app[data-offline="true"] .home-coffee-link { visibility: hidden; pointer-events: none; }
 
-/* Phone in landscape without fullscreen: the browser bars leave 300 to 360px. The action column takes its height from the
-   chart area (as the desktop window does), so four or five buttons always fit between the Live Feed and the time axis. */
+/* Phone landscape without fullscreen: the action column takes its height from the chart area. */
 @media (orientation: landscape) and (pointer: coarse) {
   html .game-app[data-layout="mobile"]:not(:fullscreen) .landing-menu-panel { container-type: size; }
   html[data-theme] .game-app[data-layout="mobile"]:not(:fullscreen) .landing-menu-panel > .landing-menu-actions {
@@ -6994,5 +6958,62 @@ html .game-app[data-offline="true"] .home-coffee-link { visibility: hidden; poin
     padding-block: 2px;
     font-size: clamp(11px, calc(var(--home-action-height) * .36), 16px);
     white-space: nowrap;
+  }
+}
+
+/* Fullscreen hint: a notice over the chart, never a line in the layout (it used to push the whole screen down). */
+.game-app .fullscreen-hint {
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--footer-inset-bottom, 0px) + 6px);
+  transform: translateX(-50%);
+  z-index: 30;
+  box-sizing: border-box;
+  max-width: min(92vw, 560px);
+  margin: 0;
+  padding: 4px 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--ui-radius, 6px);
+  background: var(--page-surface, var(--bg));
+  color: var(--red);
+  font-size: 12px;
+  line-height: 1.3;
+  text-align: center;
+  pointer-events: none;
+}
+
+/* Phone in landscape without fullscreen: every piece on the Home chart is sized from the height of the chart area
+   (cqh), so the Monthly Squeeze card, Donate and the buttons shrink together instead of crowding each other. */
+@media (orientation: landscape) and (pointer: coarse) {
+  html[data-theme] .game-app[data-layout="mobile"]:not(:fullscreen) .landing-menu-panel {
+    --home-logo-inset: clamp(6px, 5cqh, 12px);
+  }
+  /* The card is already compact (40px picture, 12px title). It only shrinks from there, never grows. */
+  html[data-theme] .game-app[data-layout="mobile"]:not(:fullscreen) .landing-menu-panel > .monthly-squeeze-home { --msq-image: clamp(22px, 27cqh, 40px); }
+  html[data-theme] .game-app[data-layout="mobile"]:not(:fullscreen) .monthly-squeeze-home .monthly-squeeze-card article[data-monthly="true"] {
+    padding: clamp(2px, 2.2cqh, 3px) 8px;
+    grid-template-columns: var(--msq-image) minmax(0, 1fr) auto;
+  }
+  html[data-theme] .game-app[data-layout="mobile"]:not(:fullscreen) .monthly-squeeze-home .monthly-squeeze-card .achievement-image { min-width: var(--msq-image); }
+  html[data-theme] .game-app[data-layout="mobile"]:not(:fullscreen) .monthly-squeeze-home .monthly-squeeze-card .achievement-image canvas,
+  html[data-theme] .game-app[data-layout="mobile"]:not(:fullscreen) .monthly-squeeze-home .monthly-squeeze-card .achievement-illustration,
+  html[data-theme] .game-app[data-layout="mobile"]:not(:fullscreen) .monthly-squeeze-home .monthly-squeeze-card .achievement-illustration > img {
+    width: var(--msq-image) !important;
+    height: var(--msq-image) !important;
+  }
+  html[data-theme] .game-app[data-layout="mobile"]:not(:fullscreen) .monthly-squeeze-home .monthly-squeeze-label { font-size: clamp(7px, 5.8cqh, 9px); }
+  html[data-theme] .game-app[data-layout="mobile"]:not(:fullscreen) .monthly-squeeze-home .achievement-details h3 { font-size: clamp(9px, 7.6cqh, 12px); }
+  html[data-theme] .game-app[data-layout="mobile"]:not(:fullscreen) .monthly-squeeze-home .monthly-squeeze-card :is(.achievement-requirements, .achievement-reward) { font-size: clamp(8px, 6.4cqh, 10px); }
+  html[data-theme] .game-app[data-layout="mobile"]:not(:fullscreen) .monthly-squeeze-home .monthly-squeeze-card .achievement-count { font-size: clamp(8px, 6.4cqh, 10px); }
+  html[data-theme] .game-app[data-layout="mobile"]:not(:fullscreen) .landing-menu-panel .home-coffee-link {
+    height: clamp(24px, 20cqh, 36px);
+    min-height: clamp(24px, 20cqh, 36px);
+    padding-block: 2px;
+    font-size: clamp(10px, 7.2cqh, 13px);
+    bottom: calc(var(--menu-time-axis-height) + var(--home-logo-inset));
+  }
+  html[data-theme] .game-app[data-layout="mobile"]:not(:fullscreen) .landing-menu-panel .home-coffee-link .coffee-cup {
+    width: clamp(14px, 12cqh, 24px);
+    height: clamp(11px, 10cqh, 20px);
   }
 }

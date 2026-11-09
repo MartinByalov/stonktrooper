@@ -12,8 +12,7 @@ export function canMountRider(animal: Pick<Animal, 'mount'>, stomp: boolean, spe
   return (animal.mount === 'bear' || animal.mount === 'bull') && stomp && canMountWhale(special, roll);
 }
 
-// Swept underside contact: only a descent from above counts as a stomp.
-// No automatic bounce or extra jump charge is granted by hitting an enemy.
+// Swept underside contact: only a descent from above stomps, with no bounce or extra jump charge.
 export function whaleStompsEnemy(mount: WhaleMount, x: number, enemyX: number, top: number, radius: number): boolean {
   return Math.abs(enemyX - x) < radius
     && mount.feet > mount.previousFeet
@@ -23,8 +22,7 @@ export function whaleStompsEnemy(mount: WhaleMount, x: number, enemyX: number, t
 const WHALE_GRAVITY = 0.35;
 const NORMAL_JUMP_HEIGHT = 9.2 * 9.2 / (2 * WHALE_GRAVITY);
 
-// Jump heights are measured from the initial takeoff, not from the second
-// button press. The second press reaches 4x a held normal jump in total.
+// Jump heights are measured from the first takeoff; the second press reaches 4x a held normal jump.
 export function jumpWhaleMount(mount: WhaleMount): boolean {
   const jumps = mount.jumps ?? 0;
   if (jumps >= 2) return false;

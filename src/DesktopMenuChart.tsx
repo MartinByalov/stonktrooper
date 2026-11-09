@@ -2,8 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { DesktopAssetPreview as AssetPreview } from './DesktopAssetPreview';
 import type { PreviewAsset } from './AssetPreview';
 
-// Two small scenes frame the controls. Coordinates are local to each side,
-// keeping the complete cast away from the menu, Donate and chart axes.
+// Two small scenes frame the controls, keeping the cast away from the menu, Donate and axes.
 const scenery: { asset: PreviewAsset; side: 'left' | 'right'; x: number; y: number; size: number }[] = [
   { asset: 'pigeon', side: 'left', x: 0.10, y: 0.10, size: 0.21 },
   { asset: 'printer', side: 'left', x: 0.88, y: 0.55, size: 0.15 },
@@ -24,9 +23,7 @@ const scenery: { asset: PreviewAsset; side: 'left' | 'right'; x: number; y: numb
   { asset: 'jerome', side: 'right', x: 0.13, y: 0.70, size: 0.25 },
   { asset: 'bell', side: 'right', x: 0.96, y: 0.85, size: 0.13 },
 ];
-// Home characters move like their in-game counterparts: game speed (world px
-// per 60fps frame, scaled to the sprite) and walk/wing phase per second.
-// They travel right to left and re-enter from the right edge.
+// Home characters move like their in-game counterparts, right to left, re-entering from the right.
 const characterMotion: Partial<Record<PreviewAsset, { speed: number; phaseRate: number }>> = {
   pigeon: { speed: 2, phaseRate: 5.4 }, hawk: { speed: 2, phaseRate: 5.4 }, swan: { speed: 2, phaseRate: 5.4 }, white: { speed: 2, phaseRate: 5.4 },
   bull: { speed: 1.5, phaseRate: 9.6 }, bear: { speed: .9, phaseRate: 9.6 }, whale: { speed: .9, phaseRate: 9.6 },
@@ -53,8 +50,7 @@ export function DesktopMenuChart({ theme }: { theme: 'light' | 'dark' }) {
     const place = (mover: Mover, x: number, now: number, dt: number) => {
       let y: number;
       if (mover.bird) {
-        // Birds hold their altitude with the game's gentle wing-synced bob,
-        // instead of tracing the chart.
+        // Birds keep their altitude with the game's wing-synced bob instead of tracing the chart.
         y = mover.startY + Math.sin(now / 1000 * mover.phaseRate) * 5 * mover.extent / GAME_SPRITE_SIZE;
       } else {
         const target = Math.max(4, geometry.current.groundAt(x + mover.extent / 2) - mover.extent - mover.lift);
@@ -112,8 +108,7 @@ export function DesktopMenuChart({ theme }: { theme: 'light' | 'dark' }) {
   const candleWidth = portrait ? 3.6 : 2.6;
   const priceColumnWidth = portrait ? 0 : mobile ? 28 : 54;
   const plotWidth = Math.max(1, width - priceColumnWidth);
-  // Put portrait's outer candle centres on the screen edges. The plot clips
-  // their bodies and volume bars, so neither side ends in an empty gutter.
+  // Put portrait's outer candle centres on the screen edges so neither side has an empty gutter.
   const portraitIntervals = Math.max(1, Math.ceil(plotWidth / 6));
   const candleSpacing = portrait ? plotWidth / portraitIntervals : 4;
   const plotHeight = Math.max(1, height - (portrait ? 24 : 18));

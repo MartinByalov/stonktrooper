@@ -1,10 +1,8 @@
-// Hip position on the rear of a right-facing whale (ahead of its tail stock).
-// Rider and whale share the same swimming transform to keep the seat aligned.
+// Hip position on a right-facing whale's rear; rider and whale share the swimming transform.
 export const WHALE_RIDER_SEAT = { x: -22, y: 6 };
 export const WHALE_RIDER_SCALE = 0.88;
 
-// Contact in rider-local space, derived from the pony artwork's tread at
-// (556,724), seat (552,438), ground 851 and seat height 28.
+// Contact in rider-local space from the pony artwork: tread (556,724), seat (552,438), ground 851.
 export const PENNY_RIDER_FOOT = {
   x: (556 - 552) * (28 / 413) / WHALE_RIDER_SCALE,
   y: ((724 - 851) * (28 / 413) + 24) / WHALE_RIDER_SCALE,
@@ -25,8 +23,7 @@ export function drawPennyStirrupForeground(ctx: CanvasRenderingContext2D, dark: 
   ctx.lineTo(PENNY_RIDER_FOOT.x + 1.7, PENNY_RIDER_FOOT.y); ctx.stroke(); ctx.restore();
 }
 
-// Original left-facing whale swim: body bend, bob and squash/stretch.
-// Tail animation still uses the same phase in the animal renderer.
+// Original left-facing whale swim: bend, bob and squash; the tail uses the same phase.
 export function applyWhaleSwim(ctx: CanvasRenderingContext2D, phase: number): void {
   ctx.translate(0, -Math.max(0, Math.sin(phase)) * 11);
   ctx.rotate(Math.sin(phase) * 0.11);
@@ -41,19 +38,15 @@ export function applyWhaleRiderSwim(ctx: CanvasRenderingContext2D, phase: number
   ctx.scale(-1, 1); ctx.translate(0, -40);
 }
 
-// Keep the hip attached to the animated back, but do not stretch the rider
-// with the whale. riderScale compensates for the miniature whale's scale,
-// so rider size stays stable throughout the swimming animation.
+// Keep the hip on the animated back without stretching the rider; riderScale keeps its size stable.
 export function applyWhaleRiderSeat(ctx: CanvasRenderingContext2D, phase: number, riderScale = 1): void {
   ctx.translate(WHALE_RIDER_SEAT.x, WHALE_RIDER_SEAT.y);
   ctx.scale(riderScale / (1 + Math.cos(phase * 2) * 0.06), riderScale / (1 - Math.cos(phase * 2) * 0.08));
 }
 
-// Right-facing equivalent of the Bear/Bull whale-rider knees. Far legs are
-// drawn before the whale, near legs afterwards, so riders straddle its back.
+// Right-facing Bear/Bull whale-rider knees: far legs before the whale, near legs after.
 export function drawWhaleRiderLeg(ctx: CanvasRenderingContext2D, near: boolean, color: string, shoe: string, width = 5, pony = false): void {
-  // On the pony the thigh runs forward along the saddle like on every mount, then the
-  // shin drops into the stirrup, so the hips stay one clean line.
+  // On the pony the thigh runs forward along the saddle, then the shin drops into the stirrup.
   const kneeX = pony ? (near ? 8 : 6) : near ? 16 : 12;
   const kneeY = pony ? (near ? 3 : 1) : near ? 4 : 1;
   const footX = pony ? PENNY_RIDER_FOOT.x - 2 : near ? 13 : 10;
@@ -67,8 +60,7 @@ export function drawWhaleRiderLeg(ctx: CanvasRenderingContext2D, near: boolean, 
   ctx.restore();
 }
 
-// Left arm is a narrow, mostly occluded silhouette. The right arm is drawn
-// last, in front of the torso and lap luggage, with its palm on the back.
+// The left arm is a narrow, mostly hidden silhouette; the right arm is drawn last, palm on the back.
 export function drawWhaleRiderArm(ctx: CanvasRenderingContext2D, near: boolean, sleeve: string, skin: string, width = 4, frog = false, pony = false, onBack = false, equippedHand?: (x: number, y: number, angle: number) => void): void {
   ctx.strokeStyle = sleeve; ctx.lineWidth = near ? width : width * 0.65; ctx.lineCap = 'round';
   if (onBack) {

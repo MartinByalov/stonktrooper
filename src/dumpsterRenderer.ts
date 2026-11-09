@@ -23,8 +23,7 @@ export function drawDumpster(ctx: CanvasRenderingContext2D, monkeys: number, pha
   }
   for (let i = 0; i <= monkeys; i++) {
     ctx.save();
-    // Sink the jaw into the rim and cut off the neck at its top edge. Keep
-    // this contact fixed: independent head bobbing would reopen the gap.
+    // Sink the jaw into the rim and cut the neck at its top edge; keep this contact fixed.
     const seatX = 8 - (i + (i > 0 ? petSeats : 0)) * 22;
     ctx.beginPath();ctx.rect(seatX - 40, -10000, 80, 9964);ctx.clip();
     ctx.translate(seatX, -42);

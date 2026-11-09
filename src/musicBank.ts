@@ -18,8 +18,7 @@ export function composeTrack(mode: MusicMode, index: number): MusicTrack {
   const progressions = [[0, 3, 1, 4], [1, 4, 0, 5], [0, 5, 3, 1], [0, 3, 5, 4], [0, 2, 5, 4], [3, 4, 2, 5], [0, 1, 3, 4], [5, 1, 4, 0]];
   const progression = mode === 'kangaroo' ? [0, 3, 0, 4] : mode === 'hawk' ? [0, 5, 3, 4] : mode === 'pigeon' ? [0, 3, 4, 0] : progressions[index % progressions.length];
   const note = (degree: number, octave = 0) => root + scale[((degree % 7) + 7) % 7] + Math.floor(degree / 7) * 12 + octave;
-  // A diminished triad (ii° in minor, vi° in Dorian) loops as a wrong-sounding
-  // tritone; use the triad a third above, which shares two of its tones.
+  // A diminished triad loops as a wrong-sounding tritone; use the triad a third above.
   const diminished = (degree: number) => (note(degree + 2) - note(degree)) % 12 === 3 && (note(degree + 4) - note(degree)) % 12 === 6;
   const harmonic = (degree: number) => diminished(degree) ? (degree + 2) % 7 : degree;
   const bassPatterns = [[0, 3, 4, 7], [0, 2, 5, 7], [0, 1, 4, 6], [0, 3, 5, 6]];
@@ -56,8 +55,7 @@ export function composeTrack(mode: MusicMode, index: number): MusicTrack {
     if (phrase === 2) melodicDegree = 4 - melodicDegree;
     if (mode === 'hawk') melodicDegree = 4 - melodicDegree;
     if (mode === 'kangaroo') melodicDegree = Math.max(0, melodicDegree - 1);
-    // Keep the hook's contour, resolving to the nearest tone of the active triad.
-    // Every part changes harmony on the same two-bar boundary.
+    // Keep the hook's contour, resolving to the nearest tone; all parts change harmony every two bars.
     const chordTones = [degree - 7, degree - 5, degree - 3, degree, degree + 2, degree + 4, degree + 7, degree + 9, degree + 11];
     const resolved = chordTones.reduce((best, candidate) => Math.abs(candidate - melodicDegree) < Math.abs(best - melodicDegree) ? candidate : best);
     melody.push(hookNote === null ? 0 : frequency(note(resolved, 12)));

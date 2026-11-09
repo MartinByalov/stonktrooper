@@ -1,8 +1,7 @@
 import { drawHeadHat } from './assetRenderer';
 import type { HatHead } from './hatContact';
 
-// Called inside each boss's head transform so hats follow neck extension,
-// leaning, facing and attack rotation rather than floating above the body.
+// Called inside each boss's head transform so hats follow neck, lean, facing and attack rotation.
 export function drawBossHats(ctx: CanvasRenderingContext2D, count: number, skin: string, dark: boolean, head: HatHead, x: number, y: number): void {
   ctx.save(); ctx.translate(x, y);
   for (let i = 0; i < count; i++) {

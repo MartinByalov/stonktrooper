@@ -7,8 +7,7 @@ export function browserSqueezeStorage(): SqueezeStorage | undefined {
   catch { return undefined; }
 }
 
-// Device-local request suppression only, NOT eligibility or a reward credential.
-// API + account + full event definition prevent cross-account/environment reuse.
+// Device-local request suppression only, not eligibility or a reward credential.
 export function createSqueezeConfirmationStore(storage: SqueezeStorage | undefined, origin: string, uid: string, event: SqueezeEvent) {
   if (!/^[0-9]{1,255}$/.test(uid) || !validSqueezeEvent(event)) throw new Error('Invalid Squeeze storage scope');
   const key = 'cr_squeeze_confirmed_v2:' + encodeURIComponent(JSON.stringify([

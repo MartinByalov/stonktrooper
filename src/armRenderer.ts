@@ -1,8 +1,7 @@
 // Browser game module for armRenderer.
 type ArmPoint = { x: number; y: number };
 
-// A single tapered contour, not overlapping thick sticks. The shoulder cap
-// follows the upper-arm direction; the wrist narrows into the palm.
+// A single tapered contour: the shoulder cap follows the upper arm and the wrist narrows to the palm.
 export function traceJointedArm(ctx: CanvasRenderingContext2D, shoulder: ArmPoint, elbow: ArmPoint, wrist: ArmPoint, upperWidth: number, forearmWidth: number, roundShoulder = true): void {
   const normal=(a:ArmPoint,b:ArmPoint)=>{
     const length=Math.hypot(b.x-a.x,b.y-a.y)||1;

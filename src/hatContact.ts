@@ -15,10 +15,7 @@ function surface(x: number, y: number, halfWidth: number, dip: number, height: n
 
 export const HEAD_HAT_CONTACTS: Readonly<Record<HatHead, HatContact>> = {
   human: surface(0,-8,6.5,2,1),
-  // drawApeHead uses an ellipse centered at (0,0), radii (9,10).
-  // A rigid opening cuts a chord through the upper skull, rather than resting
-  // tangent to its apex. At y=-6.5 the ellipse gives the opening half-width.
-  // This seats the sides into the fur while keeping the eyes (top y=-5) clear.
+  // drawApeHead is an ellipse at (0,0), radii (9,10); a rigid opening cuts a chord through the skull.
   ape: surface(0,-6.5,9*Math.sqrt(1-(6.5/10)**2),0,1),
   bear: surface(0,-8.5,9,3,1,-1),
   bull: surface(0,-8.5,9,3,1,-1),
@@ -35,18 +32,13 @@ export const HEAD_HAT_CONTACTS: Readonly<Record<HatHead, HatContact>> = {
   paul: surface(0,-13,10,3,1.25),
 };
 
-// The rigid naval band sits around the ape's forehead, not across the full
-// widest part of its round skull. Shared by companions and the monkey hero.
+// The rigid naval band sits around the ape's forehead; shared by companions and the monkey hero.
 const APE_CAPTAIN_CONTACT = surface(0,-7,6,2.5,1);
-// The crown ring encloses the full human head, not the narrower scalp chord
-// used by brimmed hats. Its sides sit at the temples, above the visible eye.
-// Its ends sit on the skull's outline at the band's height (measured: -6.6..6.4 at y=-6.5).
+// The crown ring encloses the full human head, with sides at the temples above the eye.
 const HUMAN_CROWN_CONTACT = surface(-.3,-6.5,6.5,0,1);
 export function headHatContact(head: HatHead, captain = false, skin = 'hats-classic'): HatContact {
   if (!captain && head === 'human' && skin === 'hats-crown') return HUMAN_CROWN_CONTACT;
-  // The candlestick crown is a ring seen slightly from above, as in its design: its ends
-  // stay on the head's outline and its near side dips below them (a smile, not the arch
-  // of the scalp).
+  // The candlestick crown is a ring seen from above: ends on the head outline, near side dipping.
   if (!captain && skin === 'hats-ath') {
     const contact = HEAD_HAT_CONTACTS[head], endY = (contact.rear.y + contact.front.y) / 2;
     return { ...contact, rear: { ...contact.rear, y: endY }, front: { ...contact.front, y: endY }, middle: { x: contact.middle.x, y: endY + .9 * contact.height } };
@@ -54,8 +46,7 @@ export function headHatContact(head: HatHead, captain = false, skin = 'hats-clas
   return captain && head === 'ape' ? APE_CAPTAIN_CONTACT : HEAD_HAT_CONTACTS[head];
 }
 
-// Visible eyes in the same head-local coordinates as each contact surface.
-// Janet's spinning shell has no exposed face or eyes.
+// Visible eyes use the same head-local coordinates as each contact surface; Janet's shell has none.
 export const HEAD_HAT_EYES: Readonly<Record<HatHead, readonly ContactPoint[]>> = {
   human:[{x:4.8,y:-3}], ape:[{x:4,y:-3}],
   bear:[{x:-6.5,y:-1.5}], bull:[{x:-6.5,y:-1.5}],
@@ -68,16 +59,14 @@ export const HEAD_HAT_EYES: Readonly<Record<HatHead, readonly ContactPoint[]>> =
 
 export function paperHatEyes(head: HatHead, front = false): readonly ContactPoint[] {
   if(front && (head==='human'||head==='ape'))return [{x:-3.4,y:-3},{x:3.4,y:-3}];
-  // A worn bag still has two openings in profile, unlike the exposed face's
-  // single visible eye. Keep the second opening behind it, inside the bag.
+  // A worn bag has two openings in profile; keep the second one behind the visible eye, inside the bag.
   const contact = HEAD_HAT_CONTACTS[head];
   const bounds = PAPER_HEAD_BOUNDS[head];
   const eye = HEAD_HAT_EYES[head][0] ?? { x: contact.middle.x, y: (bounds.top + bounds.bottom) / 2 };
   return [eye, { x: eye.x - contact.facing * 6 * contact.height, y: eye.y }];
 }
 
-// Full head envelopes, not scalp openings. Bags must enclose ears and muzzle
-// as well as the skull; bounds remain in the wearer's own local coordinates.
+// Full head envelopes: bags enclose ears and muzzle too, in the wearer's local coordinates.
 export const PAPER_HEAD_BOUNDS: Readonly<Record<HatHead, {left:number;right:number;top:number;bottom:number}>> = {
   human:{left:-8.5,right:10,top:-15,bottom:8},
   ape:{left:-12,right:13,top:-16,bottom:11},
@@ -107,9 +96,7 @@ const translate = (x: number, y: number): Matrix => [1,0,0,1,x,y];
 const scale = (x: number, y: number): Matrix => [x,0,0,y,0,0];
 const rotate = (a: number): Matrix => [Math.cos(a),Math.sin(a),-Math.sin(a),Math.cos(a),0,0];
 
-// The opening belongs to the artwork. Its three points include the artwork's
-// own transforms, not corrections for individual wearers. Peaks are NOT part
-// of the opening: they must still project beyond the forehead.
+// The opening belongs to the artwork and includes its own transforms; peaks are not part of it.
 export function hatArtworkContact(skin: string, captain = false, front = false): HatContact {
   let m: Matrix = identity;
   const apply = (next: Matrix) => { m=multiply(m,next); };
@@ -118,8 +105,7 @@ export function hatArtworkContact(skin: string, captain = false, front = false):
   const novel=['cap','crown','christmas','cowboy','paper','tinfoil','propeller','cone','top','ath'].includes(kind);
   if(captain) {
     apply(translate(0,-7));apply(scale(.84,.84));apply(translate(0,7));
-    // Actual underside of the desktop cap's band: the profile rises towards
-    // the visor. Its quadratic midpoint is not the obsolete horizontal band.
+    // Actual underside of the desktop cap band: the profile rises towards the visor.
     rear=front?{x:-10,y:-7}:{x:-9,y:-5};
     middle=front?{x:0,y:-7}:{x:.75,y:-6.25};
     forward=front?{x:10,y:-7}:{x:11,y:-10};
@@ -135,7 +121,6 @@ export function hatArtworkContact(skin: string, captain = false, front = false):
       apply([1,0,.18,1,1.44,0]);
       middle.y=front?-6:-7.4;
       // Seat the band on the upper skull, leaving the forehead clear.
-      // The band's straight lower edge, end to end.
       rear.y=forward.y=middle.y=-8;
     }
     if(kind==='top'){apply(translate(0,-8));apply(rotate(front?-.04:-.07));apply(translate(0,8));}
@@ -174,17 +159,14 @@ export function fitHatPoint(p: ContactPoint, artwork: HatContact, head: HatConta
   const onBand=rigid(sourceX,sourceY);
   const t=(sourceX-artwork.rear.x)/(artwork.front.x-artwork.rear.x);
   const contactX=head.facing===1?head.rear.x+t*(head.front.x-head.rear.x):head.front.x-t*(head.front.x-head.rear.x);
-  // Only the seating edge conforms. Crown, emblem and peak keep a single
-  // similarity transform (uniform scale/rotation), never independent X/Y stretch.
+  // Only the seating edge conforms; crown, emblem and peak keep one uniform similarity transform.
   const distance=Math.abs(p.y-sourceY);
   const outsideDistance=Math.abs(p.x-sourceX);
   const weight=!conform||distance>=2||outsideDistance>=2?0:(1-distance/2)**2*(1-outsideDistance/2)**2;
   return {x:base.x+(contactX-onBand.x)*weight,y:base.y+(contactY(head,contactX)-onBand.y)*weight-lift};
 }
 
-// A vector adapter, not a raster stretch: flatten curves in artwork space and
-// map them onto the head surface. The caller's pose/mirror transform stays on
-// the real context, so the exact same fit follows running, riding and charging.
+// A vector adapter, not a raster stretch: curves are flattened and mapped onto the head surface.
 export function hatContactContext(ctx: CanvasRenderingContext2D, artwork: HatContact, head: HatContact, lift = 0, conform = true): CanvasRenderingContext2D {
   let matrix=identity, cursor: ContactPoint={x:0,y:0};
   const stack: Matrix[]=[];

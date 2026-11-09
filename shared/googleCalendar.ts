@@ -1,5 +1,4 @@
-// Same fixed UTC-7 reset convention as the existing Google leaderboard periods.
-// This is a calendar convention, NOT a Google time fetch or an IANA/DST zone.
+// Fixed UTC-7 reset convention like the Google leaderboard periods, not a time fetch or IANA zone.
 export const GOOGLE_RESET_OFFSET_MS = 7 * 3600000;
 
 export function googleCalendarMonth(year: number, month: number) {

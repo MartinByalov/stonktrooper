@@ -41,8 +41,7 @@ export const extendMarketPath = (knots: MarketKnot[], index: number, random = Ma
   while (knots[knots.length - 1].index <= index + 1) {
     const previous = knots[knots.length - 1];
     const length = 18 + Math.floor(random() * 150);
-    // Independent shocks permit both corrections and rallies. Drift is per
-    // candle, rather than the same rise repeated at every knot boundary.
+    // Independent shocks allow corrections and rallies; drift is per candle, not repeated per knot.
     const drift = 0.35 + random() * 0.65;
     const shock = (random() - 0.5) * Math.min(360, length * 8);
     knots.push({

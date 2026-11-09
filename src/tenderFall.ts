@@ -1,8 +1,7 @@
 // Browser game module for tenderFall.
 import type { Candle, Pickup } from './types';
 
-// Leave coin-like clearance above the entire icon footprint, including
-// neighbouring candle bodies and wicks, not just one narrow candle column.
+// Leave coin-like clearance above the whole icon footprint, including neighbouring bodies and wicks.
 export function tenderLanding(candles: Candle[], x: number, candleWidth: number): { x: number; y: number } | null {
   const origin = Math.floor(x / candleWidth);
   for (let distance = 0; distance < candles.length; distance++) {

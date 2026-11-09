@@ -1,5 +1,4 @@
-/* Desktop Home from the browser version (stonktrooper). Generated from its index.css and scoped to
-   .game-app[data-layout="desktop"] so the mobile (android) Home is untouched. */
+/* Desktop Home from the browser version, scoped to .game-app[data-layout="desktop"] to spare mobile. */
 :root [data-layout="desktop"] {
   --ui-blue: #569DCC;
   --primary-action: #54d3ac;

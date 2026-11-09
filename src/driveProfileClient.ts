@@ -38,14 +38,11 @@ interface Dependencies {
 }
 export interface PreparedProfileCommand {
   readonly operationId: string;
-  // Reuse this SAME object after an ambiguous failure. No automatic retries,
-  // rebasing, offline queue or localStorage save. Refresh discards the handle.
+  // Reuse this same object after an ambiguous failure; no auto retries, rebasing, queue or localStorage.
   execute(): Promise<{ revision: number }>;
 }
 
-// Detached factory: no App/useProgression/legacy-wallet imports or UI wiring.
-// Factory creation captures identity. Logout, switch, re-login or session refresh
-// invalidates this instance; construct another after identity restoration.
+// Detached factory with no App or wallet imports; identity changes invalidate this instance.
 export function createDriveProfileClient(dependencies: Dependencies) {
   const config = readWorkerConfig(dependencies.env);
   if (!driveProfileConfigured(dependencies.env) || typeof dependencies.validate !== 'function') return fail('disabled');
@@ -118,7 +115,7 @@ export function createDriveProfileClient(dependencies: Dependencies) {
     if (typeof operationId !== 'string' || !/^[A-Za-z0-9_-]{16,80}$/.test(operationId) || usedIds.has(operationId)) return fail('invalid');
     usedIds.add(operationId);
     const body = JSON.stringify({ ...command, operationId });
-    // A reward that is already owned is acknowledged without a write, so its receipt keeps the same revision.
+    // An already owned reward is acknowledged without a write, so its receipt keeps the revision.
     const expected = command.type === 'provision' ? [1] : command.type === 'claim-reward' ? [command.revision, command.revision + 1] : [command.revision + 1];
     return Object.freeze({ operationId, async execute() {
       const receipt = exact(await request(body), ['revision']);
@@ -147,8 +144,7 @@ export function createDriveProfileClient(dependencies: Dependencies) {
       if (receipt.revision !== 1) return fail('invalid');
       return { revision: 1 };
     },
-    // Claim the Monthly Squeeze reward. The client names only the event: which item is granted,
-    // and whether the shared goal was reached, is decided by the server.
+    // Claim the Monthly Squeeze reward; the client names only the event and the server decides the rest.
     prepareClaimReward(baseRevision: number, eventId: string) {
       if (!revision(baseRevision) || baseRevision >= Number.MAX_SAFE_INTEGER - 1 || typeof eventId !== 'string' || !/^[A-Za-z0-9_-]{1,100}$/.test(eventId)) return fail('invalid');
       return prepare({ type: 'claim-reward', revision: baseRevision, eventId });

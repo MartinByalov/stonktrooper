@@ -10,8 +10,7 @@ export const hawkSpeedMultiplier = (timer: number, bags: number): number =>
 export const hawkDropBudget = (feet: number, zeroY: number): number =>
   Math.max(0, Math.min(HAWK_ROUTE_CANDLES * HAWK_DOWN_SLOPE, (zeroY - feet - 180) * 0.65));
 
-// Tilt the existing irregular market rather than forcing each top below the
-// previous top. Bodies, colours, wicks, yellow zones and gaps stay unchanged.
+// Tilt the existing market instead of forcing each top below the previous one.
 export const hawkCandle = (source: Candle, distance: number, budget = HAWK_ROUTE_CANDLES * HAWK_DOWN_SLOPE): Candle => {
   if (source.hole) return source;
   // Beyond the timed section only translate the old chart: no further tilt.

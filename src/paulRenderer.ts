@@ -21,15 +21,13 @@ export function drawPaul(ctx: CanvasRenderingContext2D, b: BossArena['boss'], da
   });
 
   const drawTail = () => {
-    // Bury the broad tail base inside the pelvis, and follow the same waist
-    // rotation/compression as the torso instead of anchoring at its silhouette.
+    // Bury the tail base in the pelvis and follow the torso's waist rotation and compression.
     const root = chasing ? { x: -24, y: -29 }
       : upperPoint(-7 * (1 - Math.abs(twist) * 0.18), -27);
     const rootX = root.x, rootY = root.y;
     const dx = tail.x - rootX, dy = tail.y - rootY;
     const length = Math.hypot(dx, dy) || 1, nx = -dy / length, ny = dx / length;
-    // Shade across the thickness, not along the length: a rounded, furry tail
-    // with a heavy base and tapered tip rather than a constant-width ribbon.
+    // Shade across the thickness: a rounded furry tail with a heavy base and tapered tip.
     const midX = rootX + dx * 0.42, midY = rootY + dy * 0.42;
     const fur = ctx.createLinearGradient(midX + nx * 15, midY + ny * 15, midX - nx * 15, midY - ny * 15);
     fur.addColorStop(0, '#b1bec9'); fur.addColorStop(0.3, '#8d9faf');
@@ -54,8 +52,7 @@ export function drawPaul(ctx: CanvasRenderingContext2D, b: BossArena['boss'], da
     const dx = joint.x - root.x, dy = joint.y - root.y;
     drawPaulMuscle(ctx, root.x + dx * 0.4, root.y + dy * 0.4,
       upper * 0.56, Math.hypot(dx, dy) * 0.52, Math.atan2(dy, dx) - Math.PI / 2, near);
-    // Blend the forearm into a smaller elbow instead of drawing a hard seam
-    // across the bend. The rounded core keeps wrists and ankles connected.
+    // Blend the forearm into a smaller elbow with no hard seam; the core connects wrists and ankles.
     const forearmX = end.x - joint.x, forearmY = end.y - joint.y;
     drawPaulMuscle(ctx, joint.x + forearmX * 0.43, joint.y + forearmY * 0.43,
       lower * 0.52, Math.hypot(forearmX, forearmY) * 0.52,
@@ -110,8 +107,7 @@ export function drawPaul(ctx: CanvasRenderingContext2D, b: BossArena['boss'], da
     };
     const arm = (near: boolean) => {
       const active = b.attackKind === 'hook' && b.attack > 0 && b.arm === (near ? 1 : 0);
-      // Active glove stays on the shared collision path; only the shoulder
-      // and elbow supply the wind-up, with the other hand held in guard.
+      // The active glove stays on the shared collision path; shoulder and elbow wind up, other hand guards.
       const hand = active ? paulHookPose(b) : upperPoint(near ? 23 : 27, near ? -44 : -53);
       const shoulder = upperPoint(near ? 1 + shoulderShift : 12 - shoulderShift, near ? -53 : -55);
       const elbow = active ? {
@@ -147,8 +143,7 @@ export function drawPaul(ctx: CanvasRenderingContext2D, b: BossArena['boss'], da
     ctx.beginPath(); ctx.moveTo(11, -42); ctx.quadraticCurveTo(7, -38, 9, -29);
     ctx.moveTo(1, -33); ctx.quadraticCurveTo(5, -35, 8, -33); ctx.stroke();
     ctx.restore();
-    // Head follows the waist but keeps its skull volume while the chest turns.
-    // Project the muzzle/ears independently instead of flattening the profile.
+    // The head follows the waist but keeps its skull volume; project muzzle and ears independently.
     const head = upperPoint((8 + shoulderShift * 0.5) * (1 - Math.abs(twist) * 0.18), -76);
     ctx.save(); ctx.translate(head.x, head.y); ctx.rotate(hook.lean);
     drawPaulHead(ctx, 0, 0, twist * 0.85 - hook.load * 0.42 + hook.drive * 0.28);

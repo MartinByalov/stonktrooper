@@ -1,5 +1,4 @@
-// Public status of one Monthly Squeeze event, shared by the Worker and the browser.
-// Only counts and a flag: no account, no personal progress.
+// Public status of one Monthly Squeeze event: counts and a flag only, no account data.
 export interface SqueezeStatus {
   eventId: string;
   participants: number;

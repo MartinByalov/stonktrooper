@@ -2,8 +2,7 @@ import type { BossArena } from './boxingRules';
 import { alternatingPunchArm } from './jeromePunch';
 export const BOSS_PLAYER_CLEARANCE = 48;
 
-// Targets are relative to the runner, so chart scrolling never changes an AI
-// destination or masquerades as the boss walking across the screen.
+// Targets are relative to the runner, so chart scrolling never changes an AI destination.
 const chooseRoamTarget = (arena: BossArena, random: () => number, retreat: boolean): void => {
   const b = arena.boss, p = arena.player;
   const left = Math.max(arena.left, arena.bossLeft, p.x + BOSS_PLAYER_CLEARANCE);
@@ -52,8 +51,7 @@ export function stepChartBoss(arena: BossArena, random: () => number): void {
       } else b.behavior = 'approach';
     }
   } else if (b.behavior === 'approach') {
-    // Full extension passes slightly behind the runner (the 22% screen line).
-    // Rendering and damage still use the same animated glove/tail geometry.
+    // Full extension passes slightly behind the runner (22% line); damage uses the same glove geometry.
     const overshoot = Math.max(0, p.x - Math.max(arena.left, arena.bossLeft));
     const reach = b.kind === 'paul' ? 202 : 205;
     b.attackReachScale = Math.min(1, Math.max(0, right - left) / reach);

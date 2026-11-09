@@ -16,8 +16,7 @@ export interface LeaderboardLootReward extends LootReward {
   coins: number;
   diamonds: number;
 }
-// Layout fixtures are not authorization to grant currency. Only DEV previews
-// mark them ready; production waits for confirmed reward eligibility.
+// Layout fixtures do not authorize currency grants; production waits for confirmed eligibility.
 export const dailyLootReward: DailyLootReward = { id: 'daily-preview', currency: 'coins', amount: 20, claimable: import.meta.env.DEV };
 export const leaderboardLootRewardFixtures: LeaderboardLootReward[] = [
   { id: 'daily-board-preview', period: 'Daily', rank: 2, score: 28277, coins: 120, diamonds: 3, claimable: import.meta.env.DEV },

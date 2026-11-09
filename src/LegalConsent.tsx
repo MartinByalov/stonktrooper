@@ -11,15 +11,13 @@ export const legalAccepted = (): boolean => {
   try { return localStorage.getItem(STORAGE_KEY) === LEGAL_VERSION; } catch { return false; }
 };
 
-// First launch (and after the documents change): a full-screen section where the player
-// agrees to the Terms and confirms reading the Privacy Policy before playing. Both
-// documents open as full-screen sections like About & Help.
+// First launch or changed documents: a full-screen section to accept Terms and confirm Privacy.
 export function LegalConsent({ onAccept }: { onAccept: () => void }) {
   const [reading, setReading] = useState<'terms' | 'privacy' | null>(null);
   const focusTarget = useRef<HTMLButtonElement>(null);
   const screen = useRef<HTMLDivElement>(null);
   useEffect(() => { focusTarget.current?.focus(); }, [reading]);
-  // Game shortcuts (Space to play, M, N…) stay inactive until the player confirms.
+  // Game shortcuts (Space to play, M, N) stay inactive until the player confirms.
   useEffect(() => {
     const block = (event: KeyboardEvent) => {
       if (event.key === 'Escape' && reading) { setReading(null); }

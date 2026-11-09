@@ -1,8 +1,7 @@
 import type { SqueezeStorage } from './monthlySqueezeStorage';
 import { squeezeEventScope, type SqueezeEvent } from '../shared/monthlySqueeze';
 
-// A Guest has no account and contributes nothing to the shared count. The only Guest state is
-// the request to claim, so the reward can be credited after they sign in. Nothing is sent anywhere.
+// A Guest contributes nothing to the shared count; only the claim request is kept, nothing is sent.
 const intentKey = (origin: string, eventId: string) => 'cr_squeeze_claim_intent_v1:' + encodeURIComponent(JSON.stringify([origin, eventId]));
 
 // What the Guest asked for: show the sign-in message now, credit the reward after sign-in.
@@ -15,9 +14,7 @@ export function claimIntent(storage: SqueezeStorage | undefined, origin: string,
   };
 }
 
-// The signed-in player's own liquidations this month, read from the account's local
-// journal (the same one the gameplay controller keeps), with no network request.
-// The controller restores/merges the cloud record into this journal when a run starts.
+// The player's own liquidations this month from the local journal, with no network request.
 export function readAccountEffort(storage: SqueezeStorage | undefined, origin: string, uid: string, event: SqueezeEvent): number {
   try {
     const raw = storage?.getItem('cr_squeeze_actions_v1:' + encodeURIComponent(JSON.stringify([origin, uid, squeezeEventScope(event)])));

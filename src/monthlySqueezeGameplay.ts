@@ -14,8 +14,7 @@ interface Options {
   clock?: () => number; operationId?: () => string;
 }
 
-// No polling or retry timer. The journal is account/API/event scoped and never
-// shares a key with Guest/legacy progress. Ambiguous saves freeze their payload.
+// No polling or retry timer; the journal is scoped per account, API and event, never Guest.
 export function createMonthlySqueezeGameplay(options: Options) {
   const event = Object.freeze({ ...options.event }), captured = { ...options.identity() };
   if (captured.uid !== options.uid) throw new Error('Squeeze account changed');
@@ -58,8 +57,7 @@ export function createMonthlySqueezeGameplay(options: Options) {
       const savedIds = new Set(pending.actions.map(action => action.id));
       queued = queued.filter(action => !savedIds.has(action.id)); pending = undefined; handle = undefined;
       persist(); blocked = false; error = undefined;
-      // Only the normal gate may qualify, and only after Drive acknowledged the
-      // monthly batch. Its own ambiguous contribution has explicit retry only.
+      // Only the normal gate may qualify, and only after Drive acknowledged the monthly batch.
       if (!queued.length) await options.consider(state); guard();
     } catch (failure) { blocked = true; error = failure; throw failure; }
     finally {
@@ -101,8 +99,7 @@ export function createMonthlySqueezeGameplay(options: Options) {
     },
     async recoverConflict() {
       guard();
-      // A timeout/lost response is NOT permission to abandon an exact payload.
-      // After reload, retry that payload explicitly to obtain a fresh conflict.
+      // A timeout is not permission to abandon an exact payload; retry it explicitly after reload.
       if (!ready || busy || !pending || !blocked || !(error instanceof ProfileClientError) || error.code !== 'conflict') {
         throw new Error('Confirmed monthly conflict required; retry the exact pending operation first');
       }

@@ -18,14 +18,12 @@ export const runnerLegPose = (front: boolean, stride: number, airborne = false) 
     kneeX:hipX+dx/reach*along+dy/reach*bend,
     kneeY:hipY+dy/reach*along-dx/reach*bend,
     ankleX,ankleY,
-    // The recovering foot points down behind the body; the advancing foot
-    // dorsiflexes slightly before landing. Keep stance near flat.
+    // The recovering foot points down behind the body; the advancing foot dorsiflexes before landing.
     shoeAngle: airborne ? (front ? -.18 : .12) : Math.max(0, -swing) * .32 - Math.max(0, swing) * .08,
   };
 };
 
-// The reference right-profile pose attaches the near/right arm beside the
-// collar, at the shoulder depth of the torso rather than its forward edge.
+// The right-profile pose attaches the near arm beside the collar, at the torso's shoulder depth.
 export const NEAR_PROFILE_SHOULDER = PROFILE_ANATOMY.nearShoulder;
 
 // Special actions use the same limb lengths as running, including their palms.

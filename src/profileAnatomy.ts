@@ -1,5 +1,4 @@
-// Model-space anatomy shared by bare skin and fitted clothing. Feet remain at
-// y=0 so gameplay collision, terrain placement and equipped assets do not move.
+// Model-space anatomy shared by skin and clothing; feet stay at y=0 so collisions do not move.
 export const PROFILE_ANATOMY = {
   nearShoulder: { x: .8, y: -30.8 },
   farShoulder: { x: 1.5, y: -30.8 },
@@ -23,16 +22,14 @@ export function profileArmPose(front: boolean, stride: number, airborne = false,
   };
 }
 
-// The same continuous shoulder, rib cage and waist boundary is used before
-// and after the head pass. No cosmetic-specific anatomy or shoulder masks.
+// The same shoulder, rib cage and waist boundary is used before and after the head pass.
 export function traceProfileTorso(ctx: CanvasRenderingContext2D, upperOnly = false, straightHem = false): void {
   ctx.beginPath();ctx.moveTo(.2,-34);
   ctx.quadraticCurveTo(.3,-33.5,-1,-31.8);
   ctx.quadraticCurveTo(-2,-30,-1.9,-27);
   if(upperOnly)ctx.lineTo(6,-27);
   else if(straightHem) {
-    // Fabric falls from the ribs over the waist; it does not follow the
-    // lumbar hollow and flare back out into a rounded waistband.
+    // Fabric falls from the ribs over the waist rather than following the lumbar hollow.
     ctx.quadraticCurveTo(-1.7,-23,-1.7,-17);
     ctx.lineTo(5.6,-17);
     ctx.quadraticCurveTo(5.7,-22,6,-27);
@@ -46,9 +43,7 @@ export function traceProfileTorso(ctx: CanvasRenderingContext2D, upperOnly = fal
 }
 
 export function traceProfilePelvis(ctx: CanvasRenderingContext2D, waistY = -18.5): void {
-  // Iliac crest -> lower abdomen -> crotch -> gluteal fold -> lumbar waist.
-  // The seat has depth BELOW the waist, not a horizontal ledge behind it.
-  // Both thigh roots overlap this volume; their swing cannot reshape the seat.
+  // Iliac crest to lumbar waist: the seat has depth below the waist and both thigh roots overlap it.
   ctx.beginPath();ctx.moveTo(-1.5,waistY);ctx.lineTo(5.6,waistY);
   ctx.quadraticCurveTo(5.5,-16.5,4.1,-14.8);
   ctx.quadraticCurveTo(2.7,-13.5,.3,-14.1);

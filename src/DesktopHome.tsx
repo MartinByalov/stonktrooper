@@ -3,9 +3,7 @@ import { DesktopMenuCelebration } from './DesktopMenuCelebration';
 import { MenuQuote } from './MenuQuote';
 import { ActionLabel } from './ActionLabel';
 
-// The desktop Home page, laid out as on the browser version (stonktrooper): quote, hero,
-// How to Play, Settings, mode selector, Start and Donate. Buttons that come from the android
-// version are added later, where the owner places them.
+// Desktop Home page laid out like the browser version; Android buttons are added later by the owner.
 export function DesktopHome({ theme, chart, extra, landingScore, liveFeedVisible, onGuide, onSettings, children }: {
   theme: 'light' | 'dark';
   chart: ReactNode;

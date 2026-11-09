@@ -1,16 +1,12 @@
 // Head-local units: the scalp contact lies at y=-7.
 export function hatMetrics(id: string) {
   const kind=id.slice(5);
-  // Profile artwork is scaled around y=-7 inside the hat renderers.
-  // Use those final heights, not the unscaled construction coordinates.
+  // Profile artwork is scaled around y=-7 in the hat renderers; use those final heights.
   const top=kind==='lid'?-29.5:kind==='ath'?-28.5:kind==='cone'?-33.3:kind==='top'?-31:kind==='crown'?-29.6:
     kind==='christmas'?-28.1:kind==='tinfoil'?-26.1:kind==='propeller'?-25.7:
     kind==='paper'?-26.8:kind==='cowboy'?-23.4:kind==='cap'?-18.5:-18.8;
   const bottom=kind==='paper'?10.6:-4;
-  // Hollow crowns nest over one another: the next brim overlaps the previous
-  // crown instead of balancing on its highest pixel. Tall rigid hats nest less.
-  // Top hats and hollow traffic cones slide deeply over the previous crown
-  // instead of forming separate towers. Share this spacing across wearers.
+  // Hollow crowns nest over each other, tall rigid hats less; share this spacing across wearers.
   const nesting=['top','cone'].includes(kind)?.20:kind==='propeller'?.24:['crown','tinfoil'].includes(kind)?.60:.38;
   return {centerY:(top+bottom)/2,stackHeight:Math.max(5,(-7-top-1)*nesting)};
 }
@@ -23,8 +19,7 @@ export function hatItemPose(id: string, phase: number) {
   return {angle:Math.sin(phase)*amplitude,bob:Math.sin(phase*2)*.65};
 }
 
-// Grip points in raw profile-artwork space, not in the head-contact mapping.
-// Keep the crown outside the beak: a backwards cap needs the opposite facing.
+// Grip points are in raw profile-artwork space; keep the crown outside the beak.
 export function hatBirdGrip(id: string, captain = false) {
   const kind=id.slice(5);
   if (captain) {

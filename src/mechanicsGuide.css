@@ -57,8 +57,7 @@ html .game-app:where([data-layout="mobile"]) .mechanics-guide .touch-control-pre
   display: block;
   aspect-ratio: 360 / 220;
 }
-/* As in the desktop guide, headings belong to the description column.
-   Equal outer tracks center descriptions on the paired-artwork divider. */
+/* As in the desktop guide, headings belong to the description column; equal outer tracks center it. */
 html .game-app:where([data-layout="mobile"]) .mechanics-guide .mechanics-card-body { min-height: 168px; }
 html .game-app:where([data-layout="mobile"]) .mechanics-guide .mechanics-card-body .mechanics-guide-text {
   display: grid;

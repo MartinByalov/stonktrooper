@@ -3,8 +3,7 @@ import { CosmeticPreview } from './CosmeticPreview';
 import { MOBILE_ACHIEVEMENTS, SKINS } from './progression';
 import { FIRST_MONTHLY_SQUEEZE } from '../shared/monthlySqueezeSchedule';
 
-// One Achievement row in the app's own Achievement style, headed by "Monthly Squeeze".
-// Shared by the Home card (active) and the Achievements list (done after claiming).
+// One Achievement row headed by Monthly Squeeze, shared by the Home card and the Achievements list.
 export interface MonthlySqueezeCardProps {
   theme: 'light' | 'dark';
   // Group progress; unknown until the first answer from the server.

@@ -48,7 +48,7 @@ import { PracticeKillsHud, type RunKills } from './PracticeKillsHud';
 import { ReviveCountdown } from './ReviveCountdown';
 import { BOOT_FINISH_MS } from './bootProgress';
 import { LegalConsent, legalAccepted } from './LegalConsent';
-// The Terms and Privacy Policy belong to the Android app; ?legalPreview=1 shows the dialog in development.
+// Terms and Privacy belong to the Android app; ?legalPreview=1 shows the dialog in development.
 const legalRequired = () => Capacitor.isNativePlatform() || (import.meta.env.DEV && new URLSearchParams(window.location.search).get('legalPreview') === '1');
 import { canReward, claimableAchievements, emptyWallet, readProgress, skinColors, SKINS, type GameEvent } from './progression';
 import { getLeaderboard, leaderboardConfigured, rewardedServicesAvailable } from './playerServices';
@@ -68,7 +68,7 @@ export default function App() {
   const [browserUser, setBrowserUser] = useState<BrowserUser | null>(null);
   const [accountMenuError, setAccountMenuError] = useState('');
   const accountSession = !!browserUser && !notFoundPage;
-  // Signed in: the Android game on the player's Drive save. Guest: the local game. Both read the same progress.
+  // Signed in uses the Drive save, Guest the local game; both read the same progress.
   const outfit = player.progress.equipped;
   const [exchangeFocus, setExchangeFocus] = useState<{ tab: 'mounts'; skin: string } | null>(null);
   const squeezeSave = { owned: player.progress.owned.includes(SQUEEZE_REWARD_ID), owns: player.ownsItem, grant: player.claimMonthly,
@@ -149,7 +149,7 @@ export default function App() {
   const collectionOrigins = useRef<CurrencyCollectionOrigins>({});
   const [confirmFinish, setConfirmFinish] = useState(false);
   const [finishingHome, setFinishingHome] = useState(false);
-  // Pause / game over: the currency bar sits right under the result panel, so the panel's bottom edge is published to CSS.
+  // Pause and game over: the panel's bottom edge is published to CSS for the currency bar.
   useLayoutEffect(() => {
     if (state === 'menu') return;
     const overlay = appRef.current?.querySelector<HTMLElement>('.game-overlay');
@@ -254,9 +254,9 @@ export default function App() {
   const [soundMenuOpen, setSoundMenuOpen] = useState(false);
   const [pausedGuideOpen, setPausedGuideOpen] = useState(false);
   const [promoOpen, setPromoOpen] = useState(false);
-  // Mobile: the guide is the full-screen dialog (over the header too); desktop keeps the in-game section.
+  // Mobile: the guide is a full-screen dialog; desktop keeps the in-game section.
   const openGuide = () => { if (mobileDevice) setMobileGuideOpen(true); else setPausedGuideOpen(true); };
-  // Desktop only: the Space bar starts and continues the game, so those buttons show the key under their label.
+  // Desktop only: Space starts and continues the game, so buttons show the key.
   const spaceKey = mobileDevice ? null : <svg className="new-game-space-key" viewBox="0 0 36 6" aria-hidden="true" focusable="false"><path d="M1 1V5H35V1" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>;
   const [mobileGuideOpen, setMobileGuideOpen] = useState(false);
   const [hatFitOpen, setHatFitOpen] = useState(false);
@@ -329,8 +329,7 @@ export default function App() {
         && footerRect.top < window.innerHeight;
       const footerInsetBottom = footerVisible && footerRect ? Math.max(0, window.innerHeight - footerRect.top) : 0;
       app.style.setProperty('--footer-inset-bottom', `${footerInsetBottom}px`);
-      // Fixed-position containing blocks need not match the visual viewport.
-      // Measure the shell itself rather than deriving guide height from innerHeight.
+      // Measure the shell itself, since fixed containing blocks may differ from the visual viewport.
       const guideBottom = footerVisible && footerRect ? footerRect.top : app.getBoundingClientRect().bottom;
       app.style.setProperty('--guide-available-height', `${Math.max(0, guideBottom - rect.top - feedHeight)}px`);
       const fullscreenRect = fullscreenControl?.getBoundingClientRect();
@@ -380,6 +379,12 @@ export default function App() {
   }, [liveFeedVisible, mobilePlaying]);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [fullscreenError, setFullscreenError] = useState('');
+  // The hint is a short notice over the chart. It never takes space from the layout and goes away on its own.
+  useEffect(() => {
+    if (!fullscreenError) return;
+    const timer = setTimeout(() => setFullscreenError(''), 6000);
+    return () => clearTimeout(timer);
+  }, [fullscreenError]);
   const mobileStartPending = useRef(false);
   const runStartGate = useRef(createRunStartGate());
   const [startingRun, setStartingRun] = useState(false);
@@ -429,8 +434,7 @@ export default function App() {
         const orientation = screen.orientation as ScreenOrientation & { lock?: (orientation: 'landscape') => Promise<void> };
         try { await orientation?.lock?.('landscape'); } catch { /* Manual rotation remains available. */ }
       } catch {
-        // Rotation is not a user activation in every browser. Retry on a tap,
-        // but never force re-entry after the user explicitly leaves fullscreen.
+        // Retry fullscreen on a tap after rotation, but never re-enter after an explicit exit.
         awaitingGesture = true;
         setFullscreenError('Tap Fullscreen to enter landscape fullscreen.');
       } finally { requesting = false; }
@@ -442,8 +446,7 @@ export default function App() {
         clearRotationTimers();
         awaitingGesture = true;
         void enter();
-        // Orientation, visual viewport and browser chrome can settle separately.
-        // Retry only within this rotation, not after an explicit fullscreen exit.
+        // Retry only within this rotation, never after an explicit fullscreen exit.
         rotationTimers = [150, 400, 800].map(delay => setTimeout(() => {
           if (awaitingGesture && window.innerWidth > window.innerHeight) void enter();
         }, delay));
@@ -574,8 +577,7 @@ export default function App() {
 
   useEffect(() => {
     const shortcuts = (event: KeyboardEvent) => {
-      // Let the gallery handle its own focus and Escape before gameplay or
-      // portrait-mode keyboard guards consume the event.
+      // Let the gallery handle focus and Escape before gameplay or portrait keyboard guards.
       if (hatFitOpen || leaderboardOpen || lootOpen) return;
       if (achievementsOpen && event.key !== 'Tab' && event.key !== 'Enter') {
         if (event.key === 'Escape') setAchievementsOpen(false);
@@ -775,7 +777,7 @@ export default function App() {
     if (mobileStartPending.current && document.fullscreenElement === appRef.current && window.innerWidth > window.innerHeight) startOrResume();
   };
 
-  // Mobile pause: Settings and Leaderboard move to the left of the header; Play and Fullscreen stay on the right.
+  // Mobile pause: Settings and Leaderboard go left in the header; Play and Fullscreen stay right.
   const leftHeaderControls = mobileDevice && (state === 'paused' || state === 'over' || (state === 'menu' && accountSession));
   const promoStar = <AboutStar className="about-star mobile-header-control header-promo-star" onPress={() => setPromoOpen(true)} theme={theme} wallet={player.progress.wallet} hatSkin={outfit.hats} />;
   const leaderboardButton = !practiceUI && (state === 'menu' || state === 'paused' || state === 'over') && <><button type="button" title="Leaderboard" aria-label="Leaderboard" aria-haspopup="dialog" aria-expanded={leaderboardOpen}
@@ -912,8 +914,7 @@ export default function App() {
         {hatFitOpen && <HatFitGallery theme={theme} hatSkin={outfit.hats} onClose={() => setHatFitOpen(false)} />}
         {leaderboardOpen && player.networkOnline && !practiceUI && <Leaderboard vaultMonth={player.vaultMonth} friendsMode={friendsMode} onFriendsMode={setFriendsMode} onResetRaces={() => { setFriendlyWins([]); setRaceTarget(null); raceRunId.current = null; }} key={player.googlePlayer?.playerId} onClaimVault={player.claimVault} onClaimQuest={player.claimQuest} onRedeemPromo={player.redeemPromo} onCollectAchievement={player.claimAchievement} questWeek={player.questWeek} monthlyAchievement={<MonthlySqueezeAchievement theme={theme} owned={squeezeSave.owned} />} friendlyWins={friendlyWins} playerId={player.googlePlayer?.playerId} signedIn busy={player.busy || finishingHome} token={player.account?.token} progress={player.progress} theme={theme} onClose={() => setLeaderboardOpen(false)} onRace={!finishingHome && (state === 'menu' || state === 'over' || state === 'paused') ? async friend => runStartGate.current(async () => {
           if (state === 'paused') {
-            // Settle the previous run before preparation replaces its recovery
-            // receipt/baseline. Stay in Friends: no results or collection flights.
+            // Settle the previous run before the new one replaces its receipt; Friends shows no flights.
             player.command({ type: 'finish', pips: Math.round(stats.current.totalScore), ath: Math.round(stats.current.totalScore * stats.current.currentPrice * 100) / 100 });
           }
           if (!await player.prepareRun()) throw new Error('Could not start the run. Check your connection and try again.');
@@ -926,7 +927,7 @@ export default function App() {
         }) : undefined} onClaimFriend={target => setFriendlyWins(previous => previous.map(friend => (friend.id ?? friend.name) === (target.id ?? target.name) && friend.score === target.score ? { ...friend, claimed: true } : friend))} />}
         {lootOpen && player.networkOnline && !practiceUI && <Loot theme={theme} onClose={() => setLootOpen(false)} onRedeemPromo={player.redeemPromo} progress={player.progress} questWeek={player.questWeek} onClaimQuest={player.claimQuest} />}
         {soundMenuOpen && <SoundMenu onClose={() => setSoundMenuOpen(false)} />}
-        {fullscreenError && <p role="status" className="px-4 text-xs text-[var(--red)]">{fullscreenError}</p>}
+        {fullscreenError && <p role="status" className="fullscreen-hint">{fullscreenError}</p>}
 
         {/* PRIMARY GAME ARENA (Clean, Uncluttered, Prominently on Top) */}
         <section
@@ -1092,7 +1093,7 @@ export default function App() {
         {mobileDevice ? <SiteFooter onProgress={player.command} wallet={player.progress.wallet} hatSkin={outfit.hats} onStarCoin={state === 'menu' && player.networkOnline && !practiceUI ? player.claimStarCoin : undefined} showNavigation highContrast={highContrast} onToggleHighContrast={() => setHighContrast(current => !current)} onResetDefaults={resetDefaults} volume={deviceVolume.volume ?? (soundEnabled ? volume : 0)} onVolumeChange={usesDeviceVolume() ? deviceVolume.changeVolume : changeVolume} animationsEnabled={animationsEnabled} onToggleAnimations={() => setAnimationsEnabled(current => !current)} liveFeedPaused={liveFeedPaused} onToggleLiveFeedPause={() => setLiveFeedPaused(current => !current)} onToggleTheme={() => setTheme(current => current === 'dark' ? 'light' : 'dark')} theme={theme} section={siteSection} setSection={setSiteSection} onOpen={() => { if (state === 'play') setState('paused'); }} /> : <DesktopSiteFooter highContrast={highContrast} onToggleHighContrast={() => setHighContrast(current => !current)} onResetDefaults={resetDefaults} volume={deviceVolume.volume ?? (soundEnabled ? volume : 0)} onVolumeChange={usesDeviceVolume() ? deviceVolume.changeVolume : changeVolume} animationsEnabled={animationsEnabled} onToggleAnimations={() => setAnimationsEnabled(current => !current)} liveFeedEnabled={!liveFeedPaused} onToggleLiveFeed={() => setLiveFeedPaused(current => !current)} onToggleTheme={() => setTheme(current => current === 'dark' ? 'light' : 'dark')} theme={theme} section={siteSection as never} setSection={setSiteSection as never} onOpen={() => { if (state === 'play') setState('paused'); }} />}
         <MobileDiagnostics />
 
-        {/* The words live in aria-label. An image alt would flash as text on black until the picture has loaded. */}
+        {/* The words live in aria-label because an image alt flashes as text before the picture loads. */}
         <div className="rotate-phone-placeholder" role="status" aria-label="Rotate your phone to landscape to play Stonktrooper">
           <img src={`${import.meta.env.BASE_URL}images/rotate-phone.png`}
             width={941} height={1672} alt="" decoding="sync" draggable={false} />

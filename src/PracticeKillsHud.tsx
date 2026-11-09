@@ -1,7 +1,6 @@
 export type RunKills = { bull: number; bear: number };
 
-// Front-facing counterparts of the game's brown bull/bear heads. Both eyes
-// are crosses so these read as defeated enemies, not pets or extra lives.
+// Front-facing bull and bear heads with cross eyes, so they read as defeated enemies.
 export function DefeatedHead({ enemy }: { enemy: keyof RunKills }) {
   const bear = enemy === 'bear';
   const fur = bear ? '#784c28' : '#883a24';

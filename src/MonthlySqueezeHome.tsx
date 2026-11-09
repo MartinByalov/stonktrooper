@@ -15,12 +15,10 @@ const noticeFor = (code: string) => code === 'profile' ? 'Your profile is still 
   : code === 'retry' ? 'Could not confirm the claim. Press Claim to retry.'
   : 'Could not claim right now. Try again later.';
 
-// The Home card. One request to the Worker at most per ten minutes (none when a recent
-// number is cached or the goal is already reached); personal effort never touches the network.
-// The reward goes into the player's own game save: `owns` reads it, `grant` adds the item and saves.
+// The Home card: at most one Worker request per ten minutes; `owns` reads the save, `grant` saves.
 export const SQUEEZE_REWARD_ID: string = FIRST_MONTHLY_SQUEEZE.reward.itemId;
 export interface SqueezeSave { owned: boolean; owns: (itemId: string) => boolean; grant: (itemId: string) => Promise<void>; open?: () => void }
-// The shared goal as the Exchange shows it under the reward: how many players have joined, out of the target. Null when the event is off.
+// The shared goal as the Exchange shows it: players joined out of the target; null when off.
 export function useSqueezeProgress(): { participants: number | null; target: number } | null {
   const env = import.meta.env as Record<string, unknown>;
   const config = readWorkerConfig(env), event = readSqueezeEvent(env.VITE_MONTHLY_SQUEEZE_EVENT);
@@ -64,8 +62,7 @@ function Card({ theme, uid, origin, event, save, section = false }: { theme: 'li
 
   useEffect(() => {
     const unsubscribe = statusClient.subscribe(setView);
-    // Home is open: ask if the cached number is old (it never is for ten minutes) and again
-    // only when the tab comes back to the foreground. Both are guarded by the same cache.
+    // Ask again only if the cached number is old or the tab returns to the foreground.
     void statusClient.refresh().catch(() => {});
     const onVisible = () => { if (document.visibilityState === 'visible') void statusClient.refresh().catch(() => {}); };
     document.addEventListener('visibilitychange', onVisible);
@@ -77,7 +74,7 @@ function Card({ theme, uid, origin, event, save, section = false }: { theme: 'li
     if (uid && createSqueezeConfirmationStore(storage, origin, uid, event).read()) statusClient.noteOwnContribution();
   }, [uid, storage, origin, event, statusClient]);
 
-  // A message is shown over the card for a few seconds, so the card never grows over the buttons below it.
+  // A message shows over the card for a few seconds so the card never grows over the buttons.
   useEffect(() => {
     if (!notice) return;
     const timer = window.setTimeout(() => setNotice(''), 8000);
@@ -134,7 +131,7 @@ export function MonthlySqueezeAchievement({ theme, owned }: { theme: 'light' | '
   return <MonthlySqueezeCard theme={theme} target={FIRST_MONTHLY_SQUEEZE.participantTarget ?? 1000} personal={event.threshold} threshold={event.threshold} unlocked claimed />;
 }
 
-// The same card inside a dialog (Achievements / Loot): full size, and it stays listed as Done once claimed.
+// The same card inside a dialog (Achievements or Loot): full size, listed as Done once claimed.
 export function MonthlySqueezeSection({ theme, uid, save }: { theme: 'light' | 'dark'; uid: string | null; save: SqueezeSave }) {
   const env = import.meta.env as Record<string, unknown>;
   const config = readWorkerConfig(env), event = readSqueezeEvent(env.VITE_MONTHLY_SQUEEZE_EVENT);

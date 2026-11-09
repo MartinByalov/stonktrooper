@@ -1,6 +1,4 @@
-// Real startup progress for the boot screen. Each completed stage moves the
-// briefcase further along its track; the flight never loops. Both boot screens
-// (static HTML and React) read the same --boot-progress variable.
+// Real startup progress for the boot screen: each stage moves the briefcase along; no looping.
 export const BOOT_STAGES = {
   script: 0.3,
   network: 0.42,
@@ -22,8 +20,7 @@ export function reportBootStage(stage: BootStage): void {
   if (value > current) apply(value);
 }
 
-// A new connection attempt (for example after returning online) starts the
-// flight again from the point where the app itself is already loaded.
+// A new connection attempt restarts the flight from the point where the app is already loaded.
 export function restartBootProgress(): void {
   apply(BOOT_STAGES.script);
 }

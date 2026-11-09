@@ -40,8 +40,7 @@ export function animateCurrencyFlights(host: HTMLElement, sources: CurrencyFligh
       node.setAttribute('aria-hidden', 'true');
       node.style.left = `${source.x - 9}px`; node.style.top = `${source.y - 9}px`;
       host.append(node);
-      // Fullscreen/game containers can establish a fixed-position containing
-      // block. Translate viewport origins into that block before animating.
+      // Fullscreen containers can form a fixed containing block; translate viewport origins into it first.
       const startBounds = node.getBoundingClientRect();
       node.style.left = `${source.x - 9 - (startBounds.left - (source.x - 9))}px`;
       node.style.top = `${source.y - 9 - (startBounds.top - (source.y - 9))}px`;

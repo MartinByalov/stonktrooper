@@ -27,8 +27,7 @@ const achievementDiagnostics = new Map<string, Promise<unknown>>();
 export const syncGoogleAchievements = async (playerId: string, progress: Progress) => {
   if (!nativeServicesAvailable() || !playerId) return;
   await mirrorGoogleAchievements(playerId, progress);
-  // Temporary read-only QA: one successful read per owner/session. No timers,
-  // progression writes or coupling between diagnostic failures and cloud saves.
+  // Temporary read-only QA: one read per owner and session, no timers or progression writes.
   if (achievementDiagnostics.has(playerId)) return;
   const request = bridge.loadAchievementDiagnostics({ playerId });
   achievementDiagnostics.set(playerId, request);
@@ -44,9 +43,7 @@ export const syncGoogleAchievements = async (playerId: string, progress: Progres
 const env = (import.meta as ImportMeta & { env: Record<string, string | undefined> }).env;
 export const nativeServicesAvailable = () => Capacitor.isNativePlatform()
   && Capacitor.isPluginAvailable('StonktrooperPlay');
-// Browser account: the signed-in player's progress is one save file in their own Google Drive,
-// moved by the Worker. It answers the same questions as the native bridge (who is signed in,
-// online or not, read/write the save), so the progression flow is shared with the app.
+// Browser account: progress is one Drive save moved by the Worker, shared with the native flow.
 const webAccountAvailable = () => !Capacitor.isNativePlatform() && env.VITE_DRIVE_PROFILE_ENABLED === 'true'
   && workerConfiguration.configured && !!getBrowserUser();
 export const servicesAvailable = () => nativeServicesAvailable() || webAccountAvailable();

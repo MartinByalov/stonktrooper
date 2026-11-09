@@ -5,8 +5,7 @@ export function renderPixelRatio(width: number, height: number, worldWidth: numb
   return Math.min(density, Math.max(width / worldWidth, height / worldHeight) * density);
 }
 
-// The CSS stage can be much narrower than the logical 1920:840 world.
-// Independent axes avoid allocating invisible horizontal pixels in portrait.
+// The CSS stage can be narrower than the 1920:840 world; independent axes skip invisible pixels.
 export function renderBackingSize(width: number, height: number, worldWidth: number, worldHeight: number, dpr: number, touch: boolean) {
   const ratio = renderPixelRatio(width, height, worldWidth, worldHeight, dpr, touch);
   const valid = width > 0 && height > 0 && Number.isFinite(width) && Number.isFinite(height);

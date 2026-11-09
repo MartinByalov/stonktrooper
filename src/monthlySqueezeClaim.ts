@@ -6,9 +6,7 @@ import { validSqueezeEvent, type SqueezeEvent } from '../shared/monthlySqueeze';
 
 export type SqueezeClaimResult = 'claimed' | 'already-owned';
 export class SqueezeClaimError extends Error {
-  // 'not-unlocked' - the server says the shared goal is not reached
-  // 'retry'        - the outcome is unknown; claim() again is safe (it only adds the item once)
-  // 'reauth' / 'identity' / 'unavailable' / 'disabled' - transport and account states
+  // Results: not-unlocked, retry (unknown outcome, safe to repeat), or a transport or account state.
   constructor(public code: 'disabled' | 'identity' | 'not-unlocked' | 'retry' | 'reauth' | 'unavailable') {
     super(`Monthly Squeeze claim: ${code}`);
   }
@@ -26,9 +24,7 @@ interface Options {
   itemId?: string;
 }
 
-// Device-local only: remembers that this account already claimed, so the Home card can
-// stay hidden without asking the server. It is not a credential: the player's save is
-// the record of ownership, and claiming again is a harmless no-op.
+// Device-local only: remembers an account already claimed; not a credential, the save is the record.
 export function claimedMarker(storage: SqueezeStorage | undefined, origin: string, uid: string, eventId: string) {
   const key = 'cr_squeeze_claimed_v1:' + encodeURIComponent(JSON.stringify([origin, uid, eventId]));
   return {
@@ -37,8 +33,7 @@ export function claimedMarker(storage: SqueezeStorage | undefined, origin: strin
   };
 }
 
-// Claim the shared Monthly Squeeze reward. The Worker only answers whether the group goal is
-// reached (it never touches the save); the game then adds the item to the player's own save.
+// Claim the shared reward: the Worker only reports the goal, then the game adds the item to the save.
 export function createSqueezeClaim(options: Options) {
   const config = readWorkerConfig(options.env);
   if (options.env.VITE_MONTHLY_SQUEEZE_ENABLED !== 'true' || options.env.VITE_DRIVE_PROFILE_ENABLED !== 'true' || !config.configured

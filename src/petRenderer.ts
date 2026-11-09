@@ -103,8 +103,7 @@ export function drawPet(ctx: CanvasRenderingContext2D, id: string, dark = false,
     curve([[side * 8, -3], [side * 8 + step * side * 4, -1], [side * 8 + step * side * 4, 2], [side * 8 + step * side * 4 + 3, 2]], '#292524', 1.5);
   }
   if (kind === 'hamster') {
-    // Compact low haunches and full cheeks, not an upright mouse silhouette.
-    // Far paws first; the near pair remains visible in front of the belly.
+    // Compact low haunches and full cheeks, not an upright mouse; far paws first, near pair in front.
     const paw = (near: boolean, ghost = 0) => {
       const p = hamsterPawPose(phase-ghost,near,walking);
       ctx.save(); ctx.globalAlpha *= ghost ? .18 : 1;
@@ -138,8 +137,7 @@ export function drawPet(ctx: CanvasRenderingContext2D, id: string, dark = false,
     paw(true);
   } else if(kind === 'black-swan') {
     const feather = dark ? '#a8b5c5' : '#626273';
-    // A short pair of wingbeats, then a long folded-wing rest. Simulation phase
-    // keeps this cosmetic gesture paused with gameplay and shared with previews.
+    // Two short wingbeats then a long folded rest; simulation phase pauses it with gameplay.
     const {flap,y}=swanFlapPose(phase);
     if(walking)ctx.translate(0,y);
     for (const near of [false,true]) {
@@ -184,8 +182,7 @@ export function drawPet(ctx: CanvasRenderingContext2D, id: string, dark = false,
       const foot=rabbitFootPose(phase,near,walking,airborne);
       ellipse(foot.x,foot.y,4.2,2,body);
     }
-    // Long rounded ears grow from behind the cheeks, outside the hat crown.
-    // Their narrow roots are hidden by the head and brim, not floating beside it.
+    // Long rounded ears grow from behind the cheeks, outside the hat crown, with roots hidden.
     ctx.save();ctx.translate(-5,-31);ctx.rotate(hop.earAngle);ctx.translate(5,31);
     shape(body, () => { ctx.moveTo(-6,-30); ctx.bezierCurveTo(-12,-36,-16,-55,-11,-56); ctx.bezierCurveTo(-6,-57,-5,-38,-3,-31); });
     curve([[-7,-35],[-10,-42],[-12,-52],[-11,-53]],detail,2);

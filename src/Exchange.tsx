@@ -88,8 +88,7 @@ export function CurrencyFooter({ wallet, theme, label, hatSkin, className = '', 
       const canvas = host.querySelector<HTMLCanvasElement>(`[data-currency="${currency}"] canvas`);
       if (!canvas || target[currency] <= baseline[currency]) return [];
       const bounds = canvas.getBoundingClientRect();
-      // Stash is removed on Give Up, so use its captured icon positions.
-      // Later coin bonuses keep their existing flight above the Coins balance.
+      // Stash is removed on Give Up, so use its captured icon positions; coin bonuses keep their flight.
       const origin = firstCollection ? collectionOrigins?.[currency] : undefined;
       return [{ canvas, destination: canvas, amount: target[currency] - baseline[currency],
         x: origin?.x ?? (firstCollection ? window.innerWidth / 2 : bounds.left + bounds.width / 2),
@@ -98,8 +97,7 @@ export function CurrencyFooter({ wallet, theme, label, hatSkin, className = '', 
     });
     setCelebrating(sources.length > 0);
     setCollectionVisible(sources.length > 0);
-    // A transformed footer establishes a containing block for fixed particles.
-    // Keep viewport-coordinate flights in the result overlay, not inside the tab.
+    // A transformed footer is a containing block for fixed particles; keep flights in the result overlay.
     const flightHost = host.closest<HTMLElement>('.game-overlay') ?? host;
     cancel = animateCurrencyFlights(flightHost, sources, fraction => {
       const next = { ...target };
@@ -117,7 +115,7 @@ export function CurrencyFooter({ wallet, theme, label, hatSkin, className = '', 
     // Finish expanding before measuring targets or launching particles.
     const startTimer = setTimeout(start, collapsible && hasRewards && !window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 300 : 0);
     return () => { clearTimeout(startTimer); cancel(); clearTimeout(hideTimer); };
-    // The signature represents every numeric target; cosmetic rerenders must not restart flights.
+    // The signature covers every numeric target, so cosmetic rerenders must not restart flights.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [animateCollection, signature]);
   const displayWallet = animateCollection ? animatedWallet : target;
@@ -131,7 +129,7 @@ export function CurrencyFooter({ wallet, theme, label, hatSkin, className = '', 
     {doubleCoins && <span className="coin-double-feedback" role="status">Coins ×2</span>}
   </footer>;
 }
-// A top hat drawn like the other line icons (24px grid, 2px stroke), so it is the same visible size as they are.
+// A top hat drawn like the other line icons (24px grid, 2px stroke) to match their size.
 function HatIcon({ size }: { size: number }) {
   return <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
     <path d="M2.5 19.5h19" /><path d="M6 19.5V5.5a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v14" /><path d="M6 14.5h12" />
@@ -139,7 +137,7 @@ function HatIcon({ size }: { size: number }) {
 }
 
 export function Exchange({ progress, theme, name, busy, error, onClose, onSignIn, onBuy, onTitle, onBuyTitle, onVault, animationsEnabled = true, vaultMonth = null, cataloguePreview = false, driveProfile = false, initialTab, focusSkin }: {
-  // Open on a category and bring one card into view (the Home Monthly Squeeze card points at its reward).
+  // Open on a category and scroll one card into view (the Home Monthly Squeeze card uses it).
   initialTab?: Category | 'titles'; focusSkin?: string;
   cataloguePreview?: boolean;
   // The player's own Drive profile: their owned items can be equipped; nothing is bought here.
@@ -155,7 +153,7 @@ export function Exchange({ progress, theme, name, busy, error, onClose, onSignIn
   const [tab, setTab] = useState<Category | 'titles'>(initialTab ?? 'candles');
   const squeeze = useSqueezeProgress();
   const gridRef = useRef<HTMLDivElement>(null);
-  // Desktop: the X sits right above the last column's day/night toggle, as far from the right edge as from the top.
+  // Desktop: the X sits above the last column's day/night toggle, as far from the right as the top.
   useLayoutEffect(() => {
     const overlay = root.current;
     if (!overlay) return;
@@ -181,9 +179,9 @@ export function Exchange({ progress, theme, name, busy, error, onClose, onSignIn
   const [unlocked, setUnlocked] = useState<string[]>([]);
   const previousOwned = useRef(progress.owned);
   const testBalance = !cataloguePreview && (LOCAL_SANDBOX || import.meta.env.DEV) && !name;
-  // Only this month's Vault reward appears unowned (as a secret card); other Vault items stay off the market.
+  // Only this month's Vault reward appears unowned (as a secret card); other Vault items stay off.
   const monthReward = vaultMonth ? vaultReward(vaultMonth) : VAULT_REWARD_IDS[0];
-  // The shop lists only the 60 standard Drip items. The 21 reserved ones and the rewards of Monthly Effort achievements are earned, not bought: they appear here once owned.
+  // The shop lists only the 60 standard Drip items; reserved and achievement rewards show once owned.
   const root = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const added = progress.owned.filter(id => !previousOwned.current.includes(id));

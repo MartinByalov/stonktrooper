@@ -2,8 +2,7 @@ export interface SimulationClock { previousTime: number; accumulator: number }
 export const SIMULATION_STEP_SECONDS = 1 / 60;
 export const MAX_FRAME_SECONDS = .1;
 
-// DOM-free fixed-step scheduler. Hidden-tab handling belongs to the host, which
-// resets the clock instead of simulating time spent away from the game.
+// DOM-free fixed-step scheduler; the host resets the clock for hidden tabs instead of simulating.
 export function resetSimulationClock(clock: SimulationClock): void {
   clock.previousTime = 0; clock.accumulator = 0;
 }

@@ -12,8 +12,7 @@ export const pigeonFlightY = (cameraY: number, tapeHeight: number, phase: number
 export const stepPigeonDrop = (drop: PigeonDrop, headX: number, headY: number): boolean => {
   if (drop.impactFrames !== undefined) {
     const remaining = Math.max(1, drop.impactFrames);
-    // Track the actual hat throughout the visible flight, including jumps and
-    // inverted printer sections. The last step lands exactly on the target.
+    // Track the actual hat through the visible flight, including jumps; the last step hits the target.
     drop.x += (headX - drop.x) / remaining;
     drop.y += (headY - drop.y) / remaining;
     drop.impactFrames = remaining - 1;

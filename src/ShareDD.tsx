@@ -57,8 +57,7 @@ export function ShareDD({ score, challenger = 'Challenger', theme, scoreTheme = 
       if (!ctx || !canvas.current) { setError('Unable to generate the share image.'); return; }
       // Lid geometry follows the loaded artwork, not the finished run's theme.
       drawShareCard(ctx, score, background, theme);
-      // Ignore transparent rows below the shoes for display only; the exported
-      // card retains the complete native image and its transparency.
+      // Hide transparent rows below the shoes for display only; the exported card keeps the full image.
       const pixels = ctx.getImageData(0, 0, background.naturalWidth, background.naturalHeight).data;
       let bottom = background.naturalHeight - 1;
       while (bottom > 0) {

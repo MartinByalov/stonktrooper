@@ -1,5 +1,4 @@
-/* How to Play has no outer frame in any theme, viewport or entry point.
-   Keep internal card dividers and the Close button independent. */
+/* How to Play has no outer frame in any theme; card dividers and Close stay independent. */
 html[data-theme] .game-app :is(.desktop-initial-guide, .paused-guide-dialog, .mobile-how-to-panel) {
   border: 0 !important;
   border-radius: 0 !important;
@@ -88,8 +87,7 @@ html[data-theme] .game-app header .game-currency-hud :is(canvas, svg) {
   flex: 0 0 22px;
 }
 
-/* Each edge has the same gap inside its own safe area. Never propagate a
-   landscape side cutout into the header height or bottom spacing. */
+/* Each edge has the same gap inside its safe area; never propagate a side cutout into the header. */
 html[data-theme] .game-app {
   --corner-control-size: 40px;
   --corner-icon-size: 22px;
@@ -137,14 +135,12 @@ html[data-theme] .game-app header .mobile-header-feed {
   height: var(--corner-control-size);
 }
 
-/* Android's Recents/status bar is transient chrome, not a physical top cutout.
-   Keep the header anchored while preserving a real cutout supplied by native. */
+/* Android's status bar is transient chrome, so keep the header anchored but honour a real cutout. */
 html[data-native="true"][data-theme] .game-app {
   --corner-safe-top: var(--native-cutout-top, 0px);
 }
 
-/* A central side cutout does not occupy the top/bottom corner controls.
-   Keep the feed's safe padding; move only these two corner actions outward. */
+/* A central side cutout does not affect the top and bottom corner controls; move only these outward. */
 html[data-theme] .game-app header .header-leaderboard-controls {
   margin-left: calc(0px - var(--corner-safe-left));
 }
@@ -302,8 +298,7 @@ html[data-theme] .game-app .currency-footer:is(.screen-currency-footer, .exchang
   transform: none;
 }
 
-/* AssetPreview paints 80% of its canvas. Match the visible coin diameter to
-   the SVG icons rather than comparing their differently padded canvas boxes. */
+/* AssetPreview paints 80% of its canvas; match the visible coin diameter to the SVG icons. */
 html[data-theme] .game-app {
   --corner-wallet-icon-size: calc(var(--corner-icon-size) / .8);
 }
@@ -322,8 +317,7 @@ html[data-theme] .game-app header .game-currency-hud [data-currency] canvas {
   transform: none;
 }
 
-/* One label geometry for Home, pause and results. ActionLabel supplies a box
-   matching the actual ink bounds, including ascenders and descenders. */
+/* One label geometry for Home, pause and results; ActionLabel supplies a box matching the ink bounds. */
 html[data-theme] .game-app .landing-menu-actions > .menu-action-button,
 html[data-theme] .game-app .game-result :is(.margin-call-action, .share-dd-open, .reward-actions button, .liquidated-decision-grid > button, .liquidated-collected-grid button) {
   display: flex;
@@ -351,8 +345,7 @@ html[data-theme] .game-app .game-result :is(.margin-call-action, .share-dd-open,
   letter-spacing: normal;
 }
 
-/* Authoritative shared close contract. Legacy screen-specific rules include
-   !important declarations, so reset these properties here in one place. */
+/* Authoritative shared close contract: reset these properties here, since legacy rules use !important. */
 html[data-theme] .game-app button.app-close-button {
   position: fixed !important;
   inset: var(--corner-top-gap) var(--corner-right-gap) auto auto !important;
@@ -398,8 +391,7 @@ html[data-theme] .game-app .leaderboard-overlay .exchange-heading > h2 {
 html[data-theme] .game-app .leaderboard-countdown { display: inline; }
 
 html[data-theme] .game-app header .header-controls { gap: 10px; }
-/* Currency groups occupy the same two slots as Pause/Controls and
-   Leaderboard/Loot; do not reserve five empty digit columns per amount. */
+/* Currency groups use the same two slots as Pause/Controls and Leaderboard/Loot, with no empty digits. */
 html[data-theme] .game-app header .game-currency-hud {
   box-sizing: border-box;
   width: calc(2 * var(--corner-control-size) + 10px);

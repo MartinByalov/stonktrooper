@@ -24,12 +24,11 @@ export function CosmeticPreview({ skin, theme, animationsEnabled = true, centerA
       const kind = skin.id === 'mounts-classic' && animate ? kinds[Math.floor(now / 2500) % kinds.length] : 'whale';
       // Penny Stock is taller than the whale; its mane and tail sway gently.
       const penny = skin.id === 'mounts-penny';
-      // Centre each card: the pony's seat origin sits behind its art, and the bull and
-      // bear are set back under their rider in the game.
+      // Centre each card: the pony's seat origin sits behind its art; bull and bear sit back.
       const setBack = skin.id === 'mounts-classic' && kind !== 'whale' ? 12 * 1.9 : 0;
       ctx.translate(penny ? 174 : 120 + setBack, penny ? 132.5 : 122); ctx.scale(penny ? -2.6 : -1.9, penny ? 2.6 : 1.9); drawMount(ctx, skin.id, kind, dark, penny && animate ? now / 500 : 0);
     } else if (skin.category === 'pets') {
-      // Brick's original bounds are [-22,23] × [-25,4], including its .8 scale.
+      // Brick's original bounds are [-22,23] x [-25,4], including its .8 scale.
       ctx.translate(skin.id==='pets-brick'?119.16:120, skin.id==='pets-brick'?89.64:126);
       ctx.scale(2.1, 2.1); drawPet(ctx, skin.id, dark);
     } else if (skin.category === 'hats') {

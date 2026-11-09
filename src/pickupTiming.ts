@@ -2,8 +2,7 @@ import { randomDelay } from './randomTiming';
 
 type TrackPickup = 'coin' | 'banana' | 'fedora';
 
-// Distances are in candles, not frames. Event drops and rocket coins have
-// their own schedules and are intentionally unaffected.
+// Distances are in candles, not frames; event drops and rocket coins keep their own schedules.
 const spacing: Record<TrackPickup, { first: [number, number]; normal: [number, number]; hard: [number, number] }> = {
   coin: { first: [25, 60], normal: [25, 95], hard: [10, 32] },
   banana: { first: [170, 370], normal: [170, 780], hard: [170, 420] },

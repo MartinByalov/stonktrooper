@@ -3,9 +3,7 @@ import type { Candle } from './types';
 
 export interface PrinterTurn { x: number; angle: number; radius: number }
 
-// Fixed spatial exit in world coordinates. The attached strand joins its
-// source; the opposite strand peels away and ends. With a fixed Inverted view,
-// these are visibly the upper continuing boundary and lower ending boundary.
+// Fixed spatial exit in world coordinates: the attached strand continues, the other peels away.
 export function endingPrinterCandle(source: Candle, x: number, startX: number, endX: number, turns: PrinterTurn[], strand: 1 | -1): Candle {
   const twisted = twistPrinterCandle(source, x, startX, turns, strand);
   const t = Math.max(0, Math.min(1, (x - (endX - 360)) / 360));
@@ -16,8 +14,7 @@ export function endingPrinterCandle(source: Candle, x: number, startX: number, e
     bot: source.bot + shift, h: source.h + shift, l: source.l + shift };
 }
 
-// Bridge source gaps without touching the saved normal-run chart or using its
-// gap sentinel heights. All printer consumers use the same replacement candle.
+// Bridge source gaps without touching the saved chart or its gap sentinels; one shared candle.
 export function printerSourceCandle(candles: Candle[], index: number): Candle | undefined {
   const source = candles[index];
   if (!source?.hole) return source;
@@ -36,9 +33,7 @@ export function printerSourceCandle(candles: Candle[], index: number): Candle | 
     h: top - 2 - index % 3, l: top + body + 3, k: 'Candle' };
 }
 
-// After the final crossing the two strands only separate. Once the runner
-// stands upright on strand 1 and no crossing lies ahead, it may leave the
-// printer (and jump) instead of waiting for the mode timer.
+// After the final crossing the strands only separate; an upright runner may leave the printer early.
 export const PRINTER_UPRIGHT_SEPARATION = 90;
 export function printerPastLastCrossing(sourceAt: (x: number) => Candle | undefined, x: number, startX: number, endX: number, turns: PrinterTurn[], step: number): boolean {
   if (x >= endX) return true;
@@ -57,8 +52,7 @@ export const PRINTER_CLEARANCE = 78;
 export const rightEdgeSpawnX = (cameraX: number, viewportWidth: number, margin = 120): number =>
   cameraX + viewportWidth + margin;
 
-// Flip the local profile before applying its attachment rotation. This keeps
-// the head facing the travel direction on both floor and inverted ceiling.
+// Flip the local profile before the attachment rotation so the head faces travel on floor and ceiling.
 export const printerProfileFlip = (rotation: number): 1 | -1 => Math.cos(rotation) < 0 ? -1 : 1;
 
 export function printerEnemyPose(a: Candle, b: Candle, height: number) {
@@ -67,8 +61,7 @@ export function printerEnemyPose(a: Candle, b: Candle, height: number) {
     centerY: pose.y - Math.cos(pose.rotation) * height / 2 };
 }
 
-// The same strand changes from a floor to a ceiling at an intersection.
-// Blend the attachment side near the crossing, rather than deforming candles.
+// A strand turns from floor to ceiling at a crossing; blend the attachment side, not the candles.
 export function printerCrossingPose(a: Candle, b: Candle) {
   const separation = a.top - b.top;
   const side = Math.max(-1, Math.min(1, separation / PRINTER_UPRIGHT_SEPARATION));
@@ -96,8 +89,7 @@ export function printerLoopCandle(source: Candle, progress: number, startX: numb
     top: source.top + shift, bot: source.bot + shift, h: source.h + shift, l: source.l + shift } };
 }
 
-// A parametric track can turn back in X, unlike a height-at-X graph. This is
-// what permits a real loop and an inverted runner, without animating the track.
+// A parametric track can turn back in X, which permits a real loop and an inverted runner.
 export function printerLoopPose(progress: number, startX: number, baseY: number, turns: PrinterTurn[], strand: 1 | -1 = 1, inset = 0) {
   const position = Math.max(0, progress - startX);
   const right = turns.findIndex(turn => turn.x > position);
@@ -135,8 +127,7 @@ export function twistPrinterCandle(source: Candle, x: number, startX: number, tu
   const smooth = t * t * (3 - 2 * t);
   const angle = a.angle + (b.angle - a.angle) * smooth;
   const radius = a.radius + (b.radius - a.radius) * smooth;
-  // Geometry depends only on the original chart and world position, never on
-  // time or player proximity. Crossings remain fixed as the camera scrolls.
+  // Geometry depends only on the chart and world position, never on time or proximity.
   const shift = strand * Math.sin(angle) * radius;
   return { ...source, hole: false, sp: false, doubleJumpBarrier: false,
     o: source.o + shift, c: source.c + shift, top: source.top + shift,
@@ -149,8 +140,7 @@ export const printerCeilingCandle = (upper: Candle, floor: number, height = 68):
     bot: upper.bot + shift, h: upper.h + shift, l: upper.l + shift };
 };
 
-// Use the whole character footprint, not interpolated candle centres. This
-// prevents the feet/body intersecting a taller neighbouring candle on slopes.
+// Use the whole character footprint, not interpolated centres, so feet never clip taller candles.
 export const printerFloorAt = (candles: Candle[], x: number, width: number, fallback: number): number => {
   const first = Math.max(0, Math.floor((x - 12) / width));
   const last = Math.min(candles.length - 1, Math.floor((x + 12) / width));

@@ -5,9 +5,7 @@ export function hudStripGeometry(options: {
   pauseLeft?: number; controlsRight?: number;
 }) {
   const { canvasLeft, canvasWidth, headerLeft, controlSize, controlGap, leftInset, pauseLeft, controlsRight, currencyWidth } = options;
-  // Pause can insert Achievements between Resume and Settings. The score tab
-  // must still span exactly two slots, just like Leaderboard/Loot and the HUD.
-  // Never narrower than the coin/diamond counter above it, so the score tab lines up with it.
+  // The score tab spans exactly two slots and is never narrower than the counter above it.
   const width = Math.max(controlSize * 2 + controlGap, currencyWidth ?? 0);
   return {
     left: headerLeft + leftInset - canvasLeft,

@@ -30,8 +30,7 @@ export function drawPaulHead(ctx: CanvasRenderingContext2D, x: number, y: number
   const yaw = Math.max(-1, Math.min(1, turn));
   const depth = Math.abs(yaw);
   const muzzleX = 17 - depth * 6;
-  // The rounded cranium retains its width; the muzzle and far-side features
-  // shift separately to reveal depth during the shoulder load and tail turn.
+  // The cranium keeps its width; the muzzle and far-side features shift separately to show depth.
   drawPaulMuscle(ctx, -2 - yaw * 2, -1, 13, 15, -0.12);
   // Far ear sits lower and behind the skull instead of a symmetrical cartoon pair.
   ctx.fillStyle = '#344355'; ctx.beginPath(); ctx.moveTo(2 + yaw * 5, -8); ctx.lineTo(8 + yaw * 5, -23);

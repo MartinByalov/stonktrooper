@@ -7,8 +7,7 @@ let currentUser: BrowserUser | null = null;
 let generation = 0;
 const listeners = new Set<(user: BrowserUser | null) => void>();
 export const getBrowserUser = () => currentUser;
-// Invalidate detached profile requests even during logout/login/refresh, before
-// a replacement user is published. This is not a server session credential.
+// Invalidate detached profile requests during logout, login and refresh; not a session credential.
 export const getBrowserIdentityGeneration = () => generation;
 function publish(user: BrowserUser | null) {
   currentUser = user;

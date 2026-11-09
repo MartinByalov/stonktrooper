@@ -1,4 +1,4 @@
-/* Donate and Fullscreen of the mobile Home, taken from the browser version (stonktrooper) and scoped to the mobile layout. */
+/* Donate and Fullscreen of the mobile Home, from the browser version, scoped to the mobile layout. */
 [data-layout="mobile"] .coffee-link {
   display: inline-flex;
   align-items: center;

@@ -95,8 +95,7 @@ export function steakSlitherPoint(x: number, y: number, phase: number, walking: 
 
 export function stepPetFollower(state: PetFollower, targetX: number, floor: number): void {
   state.x += Math.max(-1.1, Math.min(1.1, (targetX-state.x)*.12));
-  // Gait supplies any intentional hop above the surface. The terrain anchor
-  // itself must not lag, fall through rising candles, or float over descents.
+  // Gait supplies any intentional hop; the terrain anchor itself must not lag, sink or float.
   state.feet=floor;
   state.vy=0;
 }
@@ -112,8 +111,7 @@ export function steakFlopPose(phase: number) {
     depthY: Math.sin(pitch) * .3, scaleX: 1 - .08 * amount };
 }
 
-// Simulation-frame driven: a small hop, a half turn, then rest on the back.
-// Gap victims retain gravity instead of landing on an invisible floor.
+// Simulation-frame driven: a small hop, a half turn, then rest; gap victims keep gravity.
 export function petDeathPose(frame: number, gap: boolean) {
   const t = Math.max(0, frame);
   return { x: -26 - Math.min(t, 24) * .35,

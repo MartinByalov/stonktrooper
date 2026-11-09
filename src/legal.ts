@@ -1,9 +1,4 @@
-// Privacy Policy and Terms & Conditions for the Stonktrooper website. One source for the in-page
-// tabs and the public pages on stonktrooper.lol (scripts/export-legal-pages.mjs).
-// It describes only what the site does: optional Google sign-in, a game save in the player's own
-// Google Drive app data folder, and the shared Monthly Squeeze counter. No ads, analytics or tracking.
-// Links use [text](https://...) markup; a string[] entry is a bulleted list.
-// Bump LEGAL_VERSION on every change so players confirm the new text.
+// Privacy Policy and Terms for the site, shared by tabs and pages; bump LEGAL_VERSION on change.
 export const LEGAL_VERSION = '2026-11-09.6';
 export const LEGAL_UPDATED = '9 November 2026';
 export const LEGAL_DEVELOPER = 'Martin Byalov';

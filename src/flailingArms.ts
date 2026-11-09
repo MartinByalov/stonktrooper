@@ -1,5 +1,4 @@
-// Panicked falling pose: both arms wave overhead in opposite phase, open hands with
-// fingers spread. Shared by the falling hero/companions and dying bulls and bears.
+// Panicked falling pose: both arms wave overhead in opposite phase with fingers spread.
 export interface FlailingArmStyle {
   shoulderX: number;
   shoulderY: number;

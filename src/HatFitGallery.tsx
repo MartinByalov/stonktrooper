@@ -58,8 +58,7 @@ function HatStackImage({ skin, count, dark }: { skin: typeof STACK_HAT_MODELS[nu
   return <figure data-stack-hat={skin.id}><figcaption>{skin.name} — {count} hats</figcaption><canvas ref={canvas} width={960} height={640} role="img" aria-label={`${skin.name}: ${count} stacked hats on human and monkey`} /></figure>;
 }
 
-// Static, deterministic frames from the same renderers used in gameplay and
-// How to play. There is no animation clock while the gallery is open.
+// Static, deterministic frames from the gameplay renderers; no animation clock while open.
 export function drawHatFitScene(ctx: CanvasRenderingContext2D, scene: HatFitScene, skin: string, count: number, dark: boolean): void {
   ctx.clearRect(0, 0, 480, 320);
   ctx.fillStyle = dark ? '#182233' : '#edf3f8'; ctx.fillRect(0, 0, 480, 320);
@@ -81,8 +80,7 @@ export function drawHatFitScene(ctx: CanvasRenderingContext2D, scene: HatFitScen
     }
     else if (head === 'whale' || head === 'frog') drawMount(ctx, head === 'frog' ? 'mounts-wednesday' : 'mounts-classic', 'whale', dark, .8, false, 0, true);
     else {
-      // Anatomy contact silhouette keeps every head surface inspectable,
-      // including boss and charging poses, without preview-only hat fitting.
+      // The anatomy contact silhouette keeps every head surface inspectable without preview-only fitting.
       ctx.fillStyle = dark ? '#64748b' : '#94a3b8';
       ctx.beginPath();
       ctx.moveTo(contact.rear.x, contact.rear.y);

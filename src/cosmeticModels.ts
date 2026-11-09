@@ -19,8 +19,7 @@ export function suitShirtColor(id: string, dark: boolean): string {
   return suitShirts[id]?.[dark ? 1 : 0] ?? skinColors(id, dark)[0];
 }
 
-// The current path is the fabric boundary. Clip the repeating print so it never
-// spills onto skin, shirt, tie, or the space between trouser legs.
+// The current path is the fabric boundary; clip the repeating print so it never spills onto skin.
 function drawMoneyPrint(ctx: CanvasRenderingContext2D, dark: boolean, left: number, top: number, right: number, bottom: number, size: number): void {
   ctx.save(); ctx.clip();
   ctx.fillStyle = dark ? '#14532d' : '#bbf7d0';
@@ -87,8 +86,7 @@ function drawJointedSuitArmFabric(ctx: CanvasRenderingContext2D, id: string, dar
   }
   drawJointedArm(ctx, shoulder, elbow, wrist, body, upperWidth, forearmWidth);
   if(id==='suits-too-big') {
-    // The pad belongs to the sleeve/shoulder, so it remains visible above the
-    // moving arm instead of being buried beneath a normal cylindrical sleeve.
+    // The pad belongs to the sleeve and shoulder, so it stays visible above the moving arm.
     ctx.save();ctx.translate(shoulder.x,shoulder.y);
     ctx.rotate(Math.atan2(elbow.y-shoulder.y,elbow.x-shoulder.x)-Math.PI/2);
     ctx.fillStyle=body;traceSuitShoulderPad(ctx,upperWidth);ctx.fill();ctx.clip();
@@ -167,8 +165,7 @@ function drawPrisonLabel(ctx: CanvasRenderingContext2D, background: string, x: n
   ctx.restore();
 }
 
-// Hat coordinates match drawCharacterHat: the head sits directly below y=-7.
-// All-Time Highness leans left (towards the back of a right-facing head): skew per unit of height.
+// Hat coordinates match drawCharacterHat; All-Time Highness leans left by a skew per unit of height.
 export const ATH_LEAN = .07;
 
 export function drawNovelHat(ctx: CanvasRenderingContext2D, id: string, dark: boolean, front: boolean, phase = 0, showPropeller = true, showPaperEyes = true, worn: number = 0): boolean {
@@ -179,8 +176,7 @@ export function drawNovelHat(ctx: CanvasRenderingContext2D, id: string, dark: bo
   // Seat these bands into the scalp, not above it; keep the eyes uncovered.
   if (kind === 'tinfoil' || kind === 'propeller') ctx.translate(0,2);
   if (kind === 'cap') ctx.translate(front ? 0 : -1,1.5);
-  // Fit the same forehead contact point as the fedora. Profile peaks face right;
-  // the near/right shoulder is visible, so never mirror an equipped hat.
+  // Fit the same forehead contact point as the fedora; never mirror an equipped hat.
   ctx.translate(0, -7); ctx.scale(kind==='paper'?.8:front ? .8 : .65, kind==='paper'?1.1:.78); ctx.translate(0, 7);
   const shape = (draw: () => void) => { ctx.beginPath(); draw(); ctx.closePath(); ctx.fill(); ctx.stroke(); };
   if (kind === 'cone') {
@@ -204,9 +200,7 @@ export function drawNovelHat(ctx: CanvasRenderingContext2D, id: string, dark: bo
     ctx.fillStyle = dark ? '#30271f' : '#221c17';
     if (showPaperEyes) for (const x of front ? [-5, 5] : [3, 9]) { ctx.beginPath(); ctx.ellipse(x, -3, 2, 2.8, 0, 0, Math.PI * 2); ctx.fill(); }
   } else if (kind === 'ath') {
-    // A crown of candlesticks: gold-framed green and red bodies fanned on a smiling band.
-    // Worn on a head it leans towards the back (a skew around the band, so the band stays
-    // seated); anywhere else it stands upright.
+    // A crown of gold-framed candlesticks on a smiling band; leans back on a head, upright elsewhere.
     if (!front) ctx.scale(.84, 1);
     // `worn` is the wearer's facing (1 right, -1 left): the lean always goes towards the back of the head.
     if (worn) ctx.transform(1, 0, ATH_LEAN * worn, 1, ATH_LEAN * 8 * worn, 0);
@@ -241,18 +235,15 @@ export function drawNovelHat(ctx: CanvasRenderingContext2D, id: string, dark: bo
     ctx.strokeStyle = gold; ctx.lineWidth = .5;
     ctx.beginPath(); ctx.moveTo(-15.5, -11.6); ctx.quadraticCurveTo(0, -5.8, 15.5, -11.6); ctx.stroke();
   } else if (kind === 'crown') {
-    // The profile skull is narrower than a fedora brim. Fit the crown's ring
-    // around its temples rather than letting the band overhang either side.
+    // The profile skull is narrower than a fedora brim, so fit the crown ring around the temples.
     if (!front) ctx.scale(.78,1);
     ctx.translate(-.5, -7); ctx.rotate(front ? -.04 : -.03); ctx.translate(0, 7);
-    // Lean the crown and horns left around the seating edge. Unlike a rigid
-    // rotation, this design lean survives the shared head-contact alignment.
+    // Lean the crown and horns left around the seating edge so the lean survives head-contact alignment.
     ctx.transform(1,0,.18,1,1.44,0);
     // Ivory bull horns sweep out and up behind the gold crown.
     const metalEdge=dark?'#64748b':'#87520d';
     const metalShine=dark?'#f0f9ff':'#fff2a3';
-    // In profile the band follows the scalp, not a deep frontal hanging arc.
-    // Worn on a head the lower edge is straight: no 3D arc under the crown.
+    // In profile the band follows the scalp: the lower edge is straight, with no 3D arc under the crown.
     const bandCurve=worn?-8:front?-4:-6.8;
     const bandTop=front?-10:-12;
     ctx.fillStyle=dark?'#f0f9ff':'#e7d9b7'; ctx.strokeStyle=dark?'#94a3b8':'#947448';
@@ -344,8 +335,7 @@ export function drawNovelHat(ctx: CanvasRenderingContext2D, id: string, dark: bo
     ctx.beginPath(); capOutline(); ctx.closePath(); ctx.fill();
     // Recolor the peak inside the silhouette; stroke only its outer boundary.
     ctx.save(); ctx.clip(); ctx.fillStyle = dark ? '#be123c' : '#b91c1c';
-    // Cover the entire lower lip in the Exchange's side view too, not just
-    // the projecting right half. The clip preserves the outer silhouette.
+    // Cover the whole lower lip in the Exchange side view too; the clip keeps the outer silhouette.
     ctx.beginPath(); ctx.moveTo(-12,-9);
     ctx.lineTo(14,-10);
     ctx.quadraticCurveTo(front ? 20 : 26,-7,front ? 16 : 24,-5);
@@ -400,8 +390,7 @@ export function drawGauntlet(ctx: CanvasRenderingContext2D, dark: boolean, open 
   ctx.restore();
 }
 
-// The hero's hand: bare skin, or a diamond gauntlet with Diamond Hands. The angle points
-// from the elbow through the hand, so the knuckles always lead.
+// The hero's hand: bare skin or a diamond gauntlet; the angle runs from elbow through hand.
 export function drawHeroHand(ctx: CanvasRenderingContext2D, x: number, y: number, angle: number, near: boolean, bagId: string, dark: boolean): void {
   if (bagId.split(':')[0] === 'suitcase-diamond-hands') {
     ctx.save(); ctx.translate(x, y); ctx.rotate(angle); ctx.scale(.26, .26); ctx.translate(-1, 0); drawGauntlet(ctx, dark); ctx.restore();
@@ -481,8 +470,7 @@ function drawUprightGauntlet(ctx: CanvasRenderingContext2D, dark: boolean, open:
     ctx.fillStyle = mid; ctx.beginPath(); ctx.moveTo(-.6, -.2); ctx.lineTo(3.4, 3.8); ctx.lineTo(-2.4, 4.2); ctx.closePath(); ctx.fill();
     ctx.strokeStyle = deep; ctx.lineWidth = .3; ctx.beginPath(); ctx.moveTo(-2.6, -3); ctx.lineTo(-.6, -.2); ctx.lineTo(2.8, -2.8); ctx.moveTo(-.6, -.2); ctx.lineTo(3.4, 3.8); ctx.stroke();
   } else {
-    // Index and middle fingers raised; ring and little finger curled under the thumb.
-    // Same lengths and roots as the open hand's index and middle fingers.
+    // Index and middle fingers raised, ring and little finger curled under the thumb.
     for (const [x, length, angle] of [[-3.3, 6.2, -.12], [-1.15, 7.4, -.04]] as const) {
       ctx.save(); ctx.translate(x, -3.4); ctx.rotate(angle);
       ctx.beginPath(); ctx.roundRect(-1.05, -length, 2.1, length + 1, 1.05); ctx.fill(); ctx.stroke();
@@ -523,8 +511,7 @@ function drawVaultBag(ctx: CanvasRenderingContext2D, id: string, dark: boolean, 
     ctx.beginPath(); ctx.moveTo(-2.8, 1.4); ctx.quadraticCurveTo(2.4, .2, 7.5, 1.6); ctx.quadraticCurveTo(12.6, .2, 17.8, 1.4);
     ctx.quadraticCurveTo(18.6, 7.5, 18.2, 13.6); ctx.quadraticCurveTo(12.6, 14.8, 7.5, 13.6); ctx.quadraticCurveTo(2.4, 14.8, -3.2, 13.6);
     ctx.quadraticCurveTo(-3.6, 7.5, -2.8, 1.4); ctx.closePath(); ctx.fill(); ctx.stroke();
-    // Lid in perspective: a lighter top face receding behind the case's top edge,
-    // then the front lip. The handle stands in the middle of that top face.
+    // Lid in perspective: a lighter top face behind the case's top edge, then the front lip.
     ctx.fillStyle = '#a59be0'; ctx.strokeStyle = ink; ctx.lineWidth = .6;
     ctx.beginPath(); ctx.moveTo(-2.8, 1.4); ctx.quadraticCurveTo(2.4, .2, 7.5, 1.6); ctx.quadraticCurveTo(12.6, .2, 17.8, 1.4);
     ctx.lineTo(16.4, -1); ctx.quadraticCurveTo(12, -2.1, 7.5, -.9); ctx.quadraticCurveTo(3, -2.1, -1.4, -1); ctx.closePath(); ctx.fill(); ctx.stroke();
@@ -730,8 +717,7 @@ export function drawSuitPreview(ctx: CanvasRenderingContext2D, id: string, dark:
       if (id === 'suits-money') drawMoneyPrint(ctx,dark,-24,-30,24,4,2.5);
     }
     if (!casual) {
-      // The unbuttoned jacket exposes the shirt all the way to the waist.
-      // Keep the two lapels apart instead of closing them over a short tie.
+      // The unbuttoned jacket exposes the shirt to the waist; keep the two lapels apart.
       ctx.fillStyle = suitShirtColor(id,dark);
       ctx.beginPath(); ctx.moveTo(-6,-29); ctx.lineTo(6,-29);
       ctx.lineTo(4,-17); ctx.lineTo(5,4); ctx.lineTo(-5,4);
@@ -817,9 +803,7 @@ function drawHeelPlate(ctx: CanvasRenderingContext2D, tipX: number, tipY: number
   ctx.save();ctx.fillStyle='#fde047';ctx.strokeStyle='#7e22ce';
   ctx.lineWidth=1.1;ctx.lineJoin='round';ctx.beginPath();ctx.moveTo(-8,-12);
   ctx.bezierCurveTo(-6,-5,8,-2,22,0);
-  // Only the upper edge descends to taper the panel. The lower edge stays
-  // anchored to the sole profile instead of lifting towards the upper edge.
-  // Matching tangent vectors (14,2) remove the kink between the two curves.
+  // Only the upper edge descends to taper the panel; the lower edge stays on the sole profile.
   ctx.bezierCurveTo(36,2,tipX*.8,tipY-1,tipX,tipY);
   ctx.quadraticCurveTo(soleControlX,soleCurveY,rearX,rearY);
   if(rearX===22)ctx.bezierCurveTo(8,6,-2,8,-10,3);
@@ -827,8 +811,7 @@ function drawHeelPlate(ctx: CanvasRenderingContext2D, tipX: number, tipY: number
 }
 
 function drawHeelWings(ctx: CanvasRenderingContext2D, color: string, ink: string, phase: number, front: boolean): void {
-  // Keep the entire stroke swept backwards, away from the foot opening.
-  // Render opposite sides separately so the shoe hides the far attachment.
+  // Keep the whole stroke swept backwards and render sides separately so the shoe hides the far one.
   const flap=Math.sin(phase*7);
   if (!front) {
   ctx.save();ctx.translate(2,0);ctx.scale(.78,1);
@@ -843,8 +826,7 @@ function drawHeelWings(ctx: CanvasRenderingContext2D, color: string, ink: string
 function drawDiamondPanel(ctx: CanvasRenderingContext2D): void {
   // Caller leaves the complete upper silhouette as the current clipping path.
   ctx.save();ctx.clip();
-  // Large edge-to-edge diamonds: staggered rows alternate colors, not columns.
-  // Horizontal neighbors meet at tips; diagonal neighbors share a full edge.
+  // Large edge-to-edge diamonds: staggered rows alternate colors, and diagonal neighbors share an edge.
   for(let row=-6;row<=5;row++)for(let col=0;col<9;col++) {
     const x=-48+col*12+(Math.abs(row)%2)*6,y=2+row*5;
     ctx.fillStyle=row%2===0?'#ffffff':'#38bdf8';
@@ -869,8 +851,7 @@ export function drawShoePreview(ctx: CanvasRenderingContext2D, id: string, dark:
   const collar = boot ? -29 : high ? -24 : -11;
   const sole = formal ? '#292524' : dark ? '#dbeafe' : '#fff7ed';
   ctx.save();
-  // A staggered pair on a common diagonal: full silhouettes, no overlapping toes.
-  // Taller collars are lowered slightly so every model stays optically centered.
+  // A staggered pair on a common diagonal; taller collars are lowered to stay optically centered.
   ctx.translate(0, boot || high ? 4 : -3);
   if (id === 'shoes-clown') ctx.translate(-5,6);
   for (const [index, placement] of [[-5, -17, -.22], [3, 18, .10]].entries()) {
@@ -896,8 +877,7 @@ export function drawShoePreview(ctx: CanvasRenderingContext2D, id: string, dark:
       ctx.fillRect(-32,14,14,4); ctx.restore(); continue;
     }
     if (slide) {
-      // Oblique top view: narrow rounded heel, inset arch and a broad toe bed.
-      // Repeat the anatomical outline lower down to give the sole real thickness.
+      // Oblique top view: narrow heel, inset arch, broad toe bed; repeat the outline lower for thickness.
       const footbed = (dy: number) => {
         ctx.beginPath();ctx.moveTo(-31,dy-3);
         ctx.bezierCurveTo(-32,dy-13,-19,dy-14,-9,dy-9);
@@ -927,8 +907,7 @@ export function drawShoePreview(ctx: CanvasRenderingContext2D, id: string, dark:
         ctx.quadraticCurveTo(25,8,20,7);ctx.stroke();
         const foam=ctx.createLinearGradient(0,-14,9,12);
         foam.addColorStop(0,trim);foam.addColorStop(.3,body);foam.addColorStop(1,body);
-        // The band is anchored on both edges of the footbed: its far end on the
-        // rear edge, its near end along the front edge, arching over the foot.
+        // The band is anchored on both footbed edges and arches over the foot.
         ctx.fillStyle=foam;ctx.beginPath();ctx.moveTo(-6,-8.5);
         ctx.quadraticCurveTo(3,-16,13,-13.8);
         ctx.lineTo(20,11.6);
@@ -945,8 +924,7 @@ export function drawShoePreview(ctx: CanvasRenderingContext2D, id: string, dark:
       ctx.restore(); continue;
     }
     if (id === 'shoes-high-tops') {
-      // Rebound boot: a hard shell (hinged cuff over a lower shell, lever buckles) on a
-      // lens-shaped leaf spring with an elastic band inside and a rubber pad below.
+      // Rebound boot: hard hinged shell with lever buckles on a leaf spring, elastic band and rubber pad.
       const ink = dark ? '#e2e8f0' : '#1e293b', steel = dark ? '#f1f5f9' : '#cbd5e1';
       ctx.translate(2,-4); ctx.scale(.62,.62); ctx.lineJoin = 'round'; ctx.lineCap = 'round';
       const lens = () => { ctx.beginPath(); ctx.moveTo(-28,18); ctx.quadraticCurveTo(3,13,34,18); ctx.quadraticCurveTo(3,44,-28,18); ctx.closePath(); };
@@ -1054,8 +1032,7 @@ export function drawShoePreview(ctx: CanvasRenderingContext2D, id: string, dark:
       ctx.fillStyle = '#101827'; ctx.beginPath(); ctx.ellipse(-23,collar+1,7,2.8,.1,0,Math.PI*2); ctx.fill();
       ctx.strokeStyle = trim; ctx.lineWidth = .75;
       if (boot) {
-        // The reinforced toe cap meets the sole and wraps the entire toe volume.
-        // Its back edge sweeps smoothly from the top of the toe box back down to the sole.
+        // The reinforced toe cap meets the sole and wraps the whole toe; its back edge sweeps down smoothly.
         ctx.fillStyle=trim;ctx.beginPath();ctx.moveTo(12,-.15);ctx.lineTo(14,0);
         ctx.bezierCurveTo(27,0,35,3,36,9);ctx.lineTo(34,12);
         ctx.quadraticCurveTo(21,14.2,8,12.8);ctx.quadraticCurveTo(13.5,7,12,-.15);
@@ -1065,8 +1042,7 @@ export function drawShoePreview(ctx: CanvasRenderingContext2D, id: string, dark:
       ctx.beginPath();
       if(id!=='shoes-moon') {ctx.moveTo(-30,8); ctx.quadraticCurveTo(0,12,32,8); ctx.stroke();}
       if(id==='shoes-moon') {
-        // Heel guard follows the rear edge only; its tip joins the separate welt stripe.
-        // Exact reversed t=0..0.72 segment of the sole's Q(-34,10; 1,14; 36,9).
+        // Heel guard follows the rear edge only; its tip joins the welt stripe.
         ctx.save();ctx.translate(-29,7);ctx.scale(.65,.65);
         drawHeelPlate(ctx,(16.4+29)/.65,(11.0944-7)/.65,(12.88-7)/.65,(-8.8+29)/.65,(-34+29)/.65,(10-7)/.65);ctx.restore();
         ctx.strokeStyle='#fde047';ctx.lineWidth=.9;ctx.lineCap='round';
@@ -1112,8 +1088,7 @@ export function drawShoePreview(ctx: CanvasRenderingContext2D, id: string, dark:
       ctx.fillStyle = trim; ctx.strokeStyle = ink; ctx.lineWidth = .8;
       ctx.save(); ctx.translate(-33,collar-1); ctx.rotate(-.08); ctx.beginPath(); ctx.roundRect(-1.9,-5,3.8,8,.8); ctx.fill(); ctx.stroke();
       ctx.strokeStyle = '#fde2c8'; ctx.lineWidth = .6; ctx.beginPath(); ctx.moveTo(-1,-3.6); ctx.lineTo(1,-3.6); ctx.stroke(); ctx.restore();
-      // The rug: a wide band under the sole that is pulled out behind the heel,
-      // ending in a folded-down tab, with a light zigzag stitch along it.
+      // The rug: a wide band under the sole, pulled out behind the heel with a folded tab and zigzag stitch.
       const rug = () => { ctx.beginPath(); ctx.moveTo(36,15.5); ctx.quadraticCurveTo(0,21.5,-31,17); ctx.bezierCurveTo(-37,16.5,-40,13,-46,13.5); ctx.quadraticCurveTo(-49,14,-49.5,17); };
       ctx.lineCap = 'round'; ctx.lineJoin = 'round';
       ctx.strokeStyle = ink; ctx.lineWidth = 6.6; rug(); ctx.stroke();
@@ -1298,15 +1273,12 @@ export function drawFarRunnerArm(ctx: CanvasRenderingContext2D, id: string, dark
   ctx.restore();
 }
 
-// Foreground pass: the anatomical right arm remains one continuous shape from
-// its shoulder at the profile's near/back edge, through the swinging elbow,
-// to the hand gripping the case.
+// Foreground pass: the right arm stays one continuous shape from shoulder through elbow to the case.
 export function drawNearBriefcaseArm(ctx: CanvasRenderingContext2D, suitId: string, bagId: string, dark: boolean, stride: number, airborne = false, velocity = 0, showBag = true): void {
   const arm = briefcaseArmPose(airborne, velocity, stride);
   ctx.save();ctx.globalCompositeOperation='source-over';
   if(showBag&&bagId.startsWith('suitcase-severance')) {
-    // Held by its hand hole: the box hangs behind the forearm, and the fingers
-    // disappear into the slot (the palm is cut off at the slot's top edge).
+    // Held by its hand hole: the box hangs behind the forearm and the fingers vanish into the slot.
     ctx.save();ctx.translate(arm.handX,arm.handY);ctx.rotate(arm.angle);
     ctx.translate(-bagGripX(bagId),1-bagGripY(bagId));drawEquippedBag(ctx,bagId,dark);ctx.restore();
     drawJointedSuitArm(ctx,suitId,dark,{x:arm.shoulderX,y:arm.shoulderY},{x:arm.elbowX,y:arm.elbowY},{x:arm.handX,y:arm.handY},4.5,3.5);
@@ -1342,11 +1314,7 @@ export function drawSuitDetails(ctx: CanvasRenderingContext2D, id: string, dark:
   ctx.save(); ctx.fillStyle = body;
   const casual = ['suits-tracksuit','suits-prison','suits-pajamas','suits-swim'].includes(id);
   const padded = id === 'suits-too-big';
-  // One continuous profile torso silhouette; the arm passes provide shoulder depth.
-  // Formal jackets stop at shoulder height; the raised shirt collar fills
-  // the space up to the neck. Casual necklines keep their own fabric contour.
-  // Bare torso ends at the waistband; it must not repaint skin over the
-  // already-rendered moving shorts below the waist.
+  // One continuous profile torso; formal jackets stop at the shoulder, bare torso at the waistband.
   ctx.save();
   if (id === 'suits-swim') { ctx.beginPath(); ctx.rect(-100,-100,200,81); ctx.clip(); }
   const bareTorso=id==='suits-swim';
@@ -1362,8 +1330,7 @@ export function drawSuitDetails(ctx: CanvasRenderingContext2D, id: string, dark:
   } else traceProfileTorso(ctx,false,softTop);
   ctx.fill();
   ctx.restore();
-  // Keep casual prints inside the fitted torso without clipping the swim
-  // waistband or the oversized jacket's deliberately wider shoulder pads.
+  // Keep casual prints inside the fitted torso without clipping the waistband or wider shoulder pads.
   ctx.save();
   if (['suits-tracksuit','suits-prison','suits-pajamas'].includes(id)) ctx.clip();
   if (id === 'suits-money') drawMoneyPrint(ctx,dark,-4,-35,8,-16,1.6);
@@ -1378,8 +1345,7 @@ export function drawSuitDetails(ctx: CanvasRenderingContext2D, id: string, dark:
     ctx.fillStyle=trim; ctx.beginPath(); ctx.arc(5,-21,.45,0,Math.PI*2); ctx.fill();
   }
   if (id === 'suits-swim') {
-    // One continuous waistband/seat joins both moving shorts legs. Draw over
-    // the lower torso so bare skin cannot cut across the top of the trunks.
+    // One continuous waistband joins both shorts legs; draw over the lower torso so skin stays hidden.
     ctx.fillStyle = trim;
     traceProfilePelvis(ctx,-19);ctx.fill();
     ctx.save(); ctx.clip();
@@ -1391,21 +1357,17 @@ export function drawSuitDetails(ctx: CanvasRenderingContext2D, id: string, dark:
     if(id==='suits-pajamas') {
       ctx.beginPath();ctx.moveTo(4.5,-32.5);ctx.lineTo(4.8,-18.5);ctx.stroke();
     }
-    // Tracksuit keeps a single tonal zip, without parallel torso stripes.
-    // Chest patch is finished after the neckline pass, which covers this area.
+    // Tracksuit keeps a single tonal zip; the chest patch is finished after the neckline pass.
     if (id === 'suits-pajamas') { ctx.fillStyle = trim; for (const [x,y] of [[-2,-29],[4,-22],[-1,-19]]) { ctx.beginPath(); ctx.arc(x,y,.8,0,Math.PI*2);ctx.fill(); } }
   }
   ctx.restore();
   if (id !== 'suits-swim') {
-    // Join both hip roots beneath the jacket; never leave two round trouser
-    // strokes protruding independently from the torso at the waist.
+    // Join both hip roots beneath the jacket so no trouser strokes protrude at the waist.
     ctx.fillStyle=body;traceProfilePelvis(ctx);ctx.fill();
     if (id === 'suits-money') drawMoneyPrint(ctx,dark,-4.5,-19,5,-14,1.6);
     if (!casual) drawSuitBelt(ctx,id,dark,-1.5,-18,7.1,.9);
     if(softTop) {
-      // The shirt ends at one flat edge above the pelvis. A fine seam makes
-      // top/trousers readable even when both use the same fabric color.
-      // No extra filled band: that made the lower shirt look cinched/puffy.
+      // The shirt ends at one flat edge above the pelvis with a fine seam and no extra filled band.
       ctx.save();ctx.strokeStyle=trim;ctx.globalAlpha=.35;ctx.lineWidth=.22;
       ctx.lineCap='butt';ctx.beginPath();ctx.moveTo(-1.7,-17);
       ctx.lineTo(5.6,-17);ctx.stroke();ctx.restore();
@@ -1451,8 +1413,7 @@ export function drawSuitCollar(ctx: CanvasRenderingContext2D, id: string, dark: 
       // A crew-neck prison shirt, not a white business-shirt collar.
       ctx.beginPath();ctx.moveTo(.2,-34);
       ctx.quadraticCurveTo(2,-32.8,3.6,-33.4);ctx.stroke();
-      // Project the badge onto the narrow front-facing chest plane. Clip it
-      // to the cloth, not to an imaginary full-width frontal torso.
+      // Project the badge onto the narrow chest plane and clip it to the cloth.
       ctx.save();traceProfileTorso(ctx,false,true);ctx.clip();
       ctx.translate(3.8,-28.5);ctx.transform(.48,-.06,0,1,0,0);
       drawPrisonLabel(ctx,'#fff3cd',-2,-1.3,5,2.6,1.8);ctx.restore();
@@ -1463,14 +1424,12 @@ export function drawSuitCollar(ctx: CanvasRenderingContext2D, id: string, dark: 
     }
     ctx.restore(); return;
   }
-  // Merge the sleeve root and jacket into one shoulder before finishing the
-  // shirt. This also covers the neck's skin and lapel strokes at the arm root.
+  // Merge the sleeve root and jacket into one shoulder, covering neck skin and lapel strokes.
   ctx.save(); ctx.fillStyle=body;
   traceProfileTorso(ctx,true);ctx.fill();
   if (id === 'suits-money') drawMoneyPrint(ctx,dark,-2,-35,5.2,-28,1.6);
   ctx.restore();
-  // A separate open front hangs behind the tie, not in front of it. Keep the
-  // shoulder fixed and let only the lower fabric edge flutter with the stride.
+  // A separate open front hangs behind the tie; only the lower fabric edge flutters with the stride.
   ctx.save(); ctx.fillStyle=body;
   const frontX=drawProfileGarmentFront(ctx,body,phase,airborne,velocity);
   if (id === 'suits-money') drawMoneyPrint(ctx,dark,4.5,-34,frontX+1,-17,1.6);
@@ -1491,16 +1450,14 @@ export function drawSuitCollar(ctx: CanvasRenderingContext2D, id: string, dark: 
   ctx.restore();
   ctx.save(); ctx.globalCompositeOperation='source-over';
   ctx.fillStyle=suitShirtColor(id,dark); ctx.strokeStyle=dark?'#94a3b8':'#64748b'; ctx.lineWidth=.35;
-  // A low curved neckband follows the neck opening. No horizontal white
-  // shelf above the shoulder and no doubled, disconnected collar points.
+  // A low curved neckband follows the neck opening, with no white shelf or doubled collar points.
   ctx.lineWidth=.2;
   ctx.beginPath(); ctx.moveTo(.2,-34.7);
   ctx.quadraticCurveTo(1.8,-34.1,3.5,-34.3);
   ctx.lineTo(4,-33.4);
   ctx.quadraticCurveTo(2.1,-33.1,.2,-34);
   ctx.closePath(); ctx.fill(); ctx.stroke();
-  // The tie's neck strap runs under the folded collar and overlaps the knot.
-  // Keep it fixed to the shirt; only the blade below the knot may flutter.
+  // The tie's neck strap runs under the collar and overlaps the knot; only the blade flutters.
   ctx.fillStyle=trim;ctx.beginPath();ctx.moveTo(3.5,-34.3);
   ctx.lineTo(5.8,-33.4);ctx.lineTo(6.2,-32.7);
   ctx.lineTo(5.1,-32.4);ctx.lineTo(3.7,-33.2);ctx.closePath();ctx.fill();
@@ -1508,8 +1465,7 @@ export function drawSuitCollar(ctx: CanvasRenderingContext2D, id: string, dark: 
   // One folded near point descends toward the tie, rather than projecting out.
   ctx.lineTo(5.4,-32.8);ctx.lineTo(4.7,-31.9);ctx.lineTo(3.7,-33.2);
   ctx.closePath(); ctx.fill(); ctx.stroke();
-  // Far collar point is occluded in this profile; do not mirror a second flap.
-  // The knot is in front of the collar points and joins the blade below it.
+  // The far collar point is hidden in profile; the knot sits in front of the points and joins the blade.
   ctx.fillStyle=trim; ctx.beginPath(); ctx.moveTo(5.1,-33);
   ctx.lineTo(6.2,-32.7); ctx.lineTo(6,-31.6); ctx.lineTo(5.6,-30.9);
   ctx.lineTo(5,-31.8); ctx.closePath(); ctx.fill();
@@ -1523,16 +1479,14 @@ export function drawRidingSuit(ctx: CanvasRenderingContext2D, id: string, dark: 
   if (mode === 'rocket') { ctx.translate(-1.5,13.5); ctx.scale(.85,.85); }
   else ctx.translate(-2.5,5);
   if (mode === 'whale') {
-    // Follow the seated lumbar/hip contour with a continuous curve, not a
-    // rectangular notch at the hem. Shared by gameplay and dressing room.
+    // Follow the seated lumbar and hip contour with a continuous curve, for game and dressing room.
     ctx.beginPath(); ctx.moveTo(-100,-100); ctx.lineTo(100,-100);
     ctx.lineTo(100,100); ctx.lineTo(2.5,100); ctx.lineTo(2.5,2);
     ctx.bezierCurveTo(.5,1,-.2,-1,-.3,-4);
     ctx.bezierCurveTo(-.4,-7,-1.4,-10,-1.7,-14);
     ctx.lineTo(-100,-14); ctx.closePath(); ctx.clip();
   }
-  // Standing clothes end at the pelvis; seated clothes must reach the hip at
-  // y=0, as in the original rider, without lifting the neckline or head.
+  // Standing clothes end at the pelvis; seated clothes reach the hip at y=0, neckline unchanged.
   ctx.save();
   if(mode==='whale'){ctx.translate(0,-34);ctx.scale(1,1.55);ctx.translate(0,34);}
   drawSuitDetails(ctx,id,dark,phase);ctx.restore();
@@ -1566,24 +1520,21 @@ export function drawRunnerLeg(ctx: CanvasRenderingContext2D, suitId: string, sho
     ctx.lineTo(pose.kneeX,pose.kneeY); ctx.lineTo(pose.ankleX,pose.ankleY); ctx.stroke();
   };
   if (swim) {
-    // Start exposed skin at the shorts hem, never at the hip. The hem follows
-    // the same thigh joints during every stride and airborne pose.
+    // Start exposed skin at the shorts hem, never at the hip, in every stride and airborne pose.
     const hemX = pose.hipX + (pose.kneeX-pose.hipX)*.5;
     const hemY = pose.hipY + (pose.kneeY-pose.hipY)*.5;
     const thighLength = Math.hypot(pose.kneeX-pose.hipX,pose.kneeY-pose.hipY);
     const tx = (pose.kneeX-pose.hipX)/thighLength;
     const ty = (pose.kneeY-pose.hipY)/thighLength;
     const nx = ty, ny = -tx;
-    // Clip away the round skin cap above the moving shorts opening. Otherwise
-    // it can poke through the side of the fabric when the thigh swings back.
+    // Clip away the round skin cap above the shorts opening so it cannot poke through the fabric.
     ctx.save(); ctx.beginPath();
     ctx.moveTo(hemX+nx*40,hemY+ny*40);
     ctx.lineTo(hemX-nx*40,hemY-ny*40);
     ctx.lineTo(hemX-nx*40+tx*80,hemY-ny*40+ty*80);
     ctx.lineTo(hemX+nx*40+tx*80,hemY+ny*40+ty*80);
     ctx.closePath(); ctx.clip();
-    // The foreground bare leg must not paint over the OTHER shorts leg.
-    // Subtract its fabric before drawing skin, regardless of the stride.
+    // The foreground bare leg must not paint over the other shorts leg; subtract its fabric first.
     ctx.beginPath(); ctx.rect(-100,-100,200,200);
     swimShortsPath(ctx,stride,!front,airborne); ctx.clip('evenodd');
     ctx.strokeStyle=body; ctx.lineWidth=front?4.4:4.2;
@@ -1593,14 +1544,12 @@ export function drawRunnerLeg(ctx: CanvasRenderingContext2D, suitId: string, sho
     ctx.fillStyle=trim; ctx.beginPath();
     swimShortsPath(ctx,stride,front,airborne); ctx.fill();
     if (front) {
-      // Finish BOTH fabric legs above both skin passes, including antialiased
-      // crossing edges. This keeps the shorts intact through the full stride.
+      // Finish both fabric legs above both skin passes, including antialiased crossing edges.
       ctx.beginPath(); swimShortsPath(ctx,stride,false,airborne); ctx.fill();
       ctx.beginPath(); swimShortsPath(ctx,stride,true,airborne); ctx.fill();
     }
   } else {
-    // Tapered fabric, rather than a round-ended stick: the thigh and shin
-    // follow their joints while the hem stays narrow enough to meet the shoe.
+    // Tapered fabric, not a round-ended stick: the hem stays narrow enough to meet the shoe.
     const oversized = suitId === 'suits-too-big';
     const hipWidth = oversized ? 3 : (front ? 2.2 : 2);
     const kneeWidth = oversized ? 3.2 : (front ? 1.9 : 1.7);
@@ -1608,10 +1557,7 @@ export function drawRunnerLeg(ctx: CanvasRenderingContext2D, suitId: string, sho
     const shinLength=Math.hypot(pose.ankleX-pose.kneeX,pose.ankleY-pose.kneeY);
     const cuffX=(pose.ankleY-pose.kneeY)/shinLength*ankleWidth;
     const cuffY=-(pose.ankleX-pose.kneeX)/shinLength*ankleWidth;
-    // Both legs attach inside the same profile pelvis, not at two widely
-    // separated frontal hips. Only the fabric below the waist swings outward.
-    // Taper the waist root under the garment; a wide horizontal hip cap
-    // otherwise pokes out as a triangular tab above the moving thigh.
+    // Both legs attach inside the same profile pelvis; taper the waist root so no hip tab pokes out.
     const hipLeft = Math.max(oversized ? -3.5 : -1.5,pose.hipX-hipWidth);
     ctx.fillStyle=body; ctx.beginPath();
     ctx.moveTo(hipLeft,pose.hipY-1);
@@ -1644,8 +1590,7 @@ export function drawRunnerLeg(ctx: CanvasRenderingContext2D, suitId: string, sho
     }
     ctx.restore();
   }
-  // Rotate about the ankle inside the rear collar, not a point above the shoe.
-  // Scale the heel offset with the far foot so both collars stay on their joints.
+  // Rotate about the ankle inside the rear collar and scale the heel offset with the far foot.
   const shoeWidth=front?9:8;
   ctx.translate(pose.ankleX,pose.ankleY); ctx.rotate(pose.shoeAngle);
   drawShoe(ctx,shoeId,dark,-2*shoeWidth/9,0,shoeWidth,phase);

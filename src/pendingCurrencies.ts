@@ -6,8 +6,7 @@ const key = (playerId: string) => `cr_pending_currencies_v1:${encodeURIComponent
 export const hasPendingCurrencies = (storage: Store, playerId: string) => storage.getItem(key(playerId)) !== null;
 interface Receipt { version: 1; playerId: string; runId: string; base: string | null; data: string }
 
-// A currency-only recovery payload, never a Practice save or deferred Score.
-// Use exact snapshot compare-and-swap, not wallet merging across devices.
+// A currency-only recovery payload, never a Practice save; exact snapshot CAS, no wallet merging.
 export function retainRunCurrencies(storage: Store, save: AccountSave, progress: Progress) {
   if (!progress.run) return;
   const previous = storage.getItem(key(save.playerId));
@@ -18,8 +17,7 @@ export function retainRunCurrencies(storage: Store, save: AccountSave, progress:
   next.run = null;
   for (const currency of CURRENCIES) {
     next.wallet[currency] += progress.run.collected[currency];
-    // A live Claim may already have confirmed the pickup counters, while its
-    // stash is still unbanked. Recovery must not count those pickups twice.
+    // A live Claim may already have confirmed pickup counters, so recovery must not count them twice.
     next.lifetime[currency] = Math.max(next.lifetime[currency], progress.lifetime[currency]);
   }
   const receipt: Receipt = { version: 1, playerId: save.playerId, runId: progress.run.id,
@@ -48,9 +46,7 @@ export async function restoreRunCurrencies(storage: Store, playerId: string,
   if (cloud.conflict) throw new Error('Google save conflict. Pending currencies were preserved.');
   if (cloud.data !== receipt.data) {
     if (cloud.data !== receipt.base) {
-      // Google progress moved on, either from another session or because this run was already saved
-      // before the page closed. Google always wins and wallets are never merged. Keep the receipt as an
-      // archive and release the account instead of blocking Exchange and online play forever.
+      // Google progress moved on, so Google wins: archive the receipt and release the account.
       retireRunCurrencies(storage, playerId, raw);
       return;
     }

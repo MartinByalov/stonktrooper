@@ -1,5 +1,4 @@
-// DOM-free swept projectile geometry. Callers retain their own hit radii and
-// strict/inclusive comparisons so extraction does not change contact policy.
+// DOM-free swept projectile geometry; callers keep their own hit radii and comparisons.
 export function segmentPointDistance(
   startX: number, startY: number, endX: number, endY: number,
   centerX: number, centerY: number,

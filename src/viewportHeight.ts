@@ -25,8 +25,7 @@ export function observeViewportHeight(
   viewportWindow.addEventListener('pageshow', update);
   const restore = () => {
     if (!native) { if (!viewportDocument.hidden) update(); return; }
-    // Android restores bars/cutout insets over several frames after unlock.
-    // Keep the last usable shell height until those intermediate sizes settle.
+    // Android restores insets over several frames after unlock; keep the last usable shell height.
     settling = true;
     clearTimeout(restoreTimer);
     if (viewportDocument.hidden) return;

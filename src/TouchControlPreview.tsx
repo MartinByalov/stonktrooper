@@ -59,8 +59,7 @@ export function guideHatEncounter(tick: number) {
   return { hat, windup, killed: tick >= 56, deathFrame: tick - 56, decorated: second && local >= impact, onHead: !hat && !windup && !(second && local >= impact) };
 }
 
-// Keep the held hat at the same head-local stack position until the hand
-// reaches it, then carry its brim above the palm instead of centering it there.
+// Keep the held hat at the same head-local position until the hand reaches it, then carry the brim.
 export function guideHeldHatPose(windup: number) {
   const hand = fedoraArmPose(windup);
   const grab = Math.max(0, Math.min(1, (1 - windup / FEDORA_WINDUP) / .4));

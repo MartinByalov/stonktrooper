@@ -18,8 +18,7 @@ export const animalHeight = (animal: Animal): number => animal.mount === 'whale'
 export const drawAnimalHead = (ctx: CanvasRenderingContext2D, type: 'bear' | 'bull', charging = false, darkMode = false, drawHats?: () => void, coverHead = false): void => {
   const bear = type === 'bear';
   ctx.save();
-  // Left-facing profile: the far attachment is smaller and behind the skull.
-  // Mirroring the whole mount preserves this depth order for the hero's ride.
+  // Left-facing profile: the far attachment is smaller and behind the skull; mirroring keeps the order.
   if (bear) {
     ctx.fillStyle = '#5c3a21';
     ctx.beginPath(); ctx.ellipse(-5, -9, 3, 3.5, -.2, 0, Math.PI * 2); ctx.fill();
@@ -132,8 +131,7 @@ export function drawAnimalMount(ctx: CanvasRenderingContext2D, animal: Animal, d
     ctx.fillStyle = color; ctx.beginPath();
     const l1 = side(a, b, wa / 2, 1), l2 = side(b, c, wb / 2, 1);
     const r2 = side(b, c, wb / 2, -1), r1 = side(a, b, wa / 2, -1);
-    // The ankle ends horizontally inside the paw/hoof. A perpendicular cap
-    // leaves a diagonal spur whenever the shin leans during a step.
+    // The ankle ends horizontally inside the paw; a perpendicular cap leaves a spur when the shin leans.
     ctx.moveTo(l1.x, l1.y); ctx.lineTo(l2.x, l2.y);
     ctx.quadraticCurveTo(c.x - wc / 2, c.y - 3, c.x - wc / 2, c.y);
     ctx.lineTo(c.x + wc / 2, c.y);
@@ -141,8 +139,7 @@ export function drawAnimalMount(ctx: CanvasRenderingContext2D, animal: Animal, d
     ctx.lineTo(r1.x, r1.y); ctx.closePath(); ctx.fill();
     for (const [p, w] of [[a, wa], [b, wb]] as const) { ctx.beginPath(); ctx.arc(p.x, p.y, w / 2, 0, Math.PI * 2); ctx.fill(); }
   };
-  // Rear attachment is behind the right-profile body, never painted across
-  // the visible haunch. The body masks the root at the rump contour.
+  // The rear attachment sits behind the body, which masks its root at the rump contour.
   const sway = Math.sin(animal.phase * .8) * 1.1;
   if (kind === 'bear') {
     ctx.fillStyle = dark;
@@ -162,8 +159,7 @@ export function drawAnimalMount(ctx: CanvasRenderingContext2D, animal: Animal, d
   for (const near of [false, true]) {
     if (near) {
       ctx.fillStyle = fur; ctx.beginPath(); ctx.ellipse(0, -29, 31, 16, 0, 0, Math.PI * 2); ctx.fill();
-      // Muscle at the shoulder and haunch, so the legs grow out of the body;
-      // kept inside the body's outline.
+      // Muscle at the shoulder and haunch so the legs grow out of the body, inside its outline.
       ctx.save(); ctx.beginPath(); ctx.ellipse(0, -29, 31, 16, 0, 0, Math.PI * 2); ctx.clip();
       ctx.fillStyle = dark; ctx.globalAlpha = kind === 'bear' ? 0 : .3;
       ctx.beginPath(); ctx.ellipse(-17, -22, 9, 10, .2, 0, Math.PI * 2); ctx.fill();
@@ -186,8 +182,7 @@ export function drawAnimalMount(ctx: CanvasRenderingContext2D, animal: Animal, d
       const color = near ? fur : dark;
       const bear = kind === 'bear';
       if (bear) {
-        // Plantigrade profile: elbow/knee stays near the belly and the low
-        // wrist/heel flows into a full grounded sole, not an ungulate hock.
+        // Plantigrade profile: elbow and knee near the belly, low wrist flowing into a grounded sole.
         const { hip: h, foot: f } = leg;
         const front = side === -1;
         const k = { x: h.x + (f.x-h.x)*.45 + (front ? 1.8 : -2.2), y: h.y + (f.y-h.y)*.46 };
@@ -211,8 +206,7 @@ export function drawAnimalMount(ctx: CanvasRenderingContext2D, animal: Animal, d
       }
       // Solid tapered limbs, with independent fore/hind joint directions; the toes face forward (-x).
       limb(leg.hip, leg.joint, { x: leg.foot.x, y: leg.foot.y - 2 }, 11, 7, 5, color);
-      // Round the shared ankle volume before the toe pass; no pinched cutout
-      // may open between the curved shin and the horizontal foot silhouette.
+      // Round the shared ankle volume before the toe pass so no cutout opens between shin and foot.
       ctx.fillStyle = color; ctx.beginPath();
       ctx.ellipse(leg.foot.x, leg.foot.y - 2.4, 2.5, 2.8, 0, 0, Math.PI * 2); ctx.fill();
       {
@@ -311,9 +305,7 @@ export const drawAnimalCharacter = (ctx: CanvasRenderingContext2D, animal: Anima
     for (let i = 0; i < 4; i++) {
       ctx.beginPath(); ctx.moveTo(-29 + i * 7, -18); ctx.quadraticCurveTo(-22 + i * 7, -9, -8 + i * 7, -12); ctx.stroke();
     }
-    // Near flipper, right profile: it grows out of the flank just behind the head, in the
-    // body's own colour, and sweeps back and down over the pale belly. A body-coloured
-    // root covers the belly line where it attaches; only its free edges are outlined.
+    // Near flipper in right profile: body-coloured, growing from the flank and sweeping back.
     ctx.fillStyle = skin;
     ctx.beginPath(); ctx.ellipse(-3, -21.5, 6.5, 4.5, .35, 0, Math.PI * 2); ctx.fill();
     ctx.save();ctx.translate(-5,-25);ctx.rotate(fins.near);ctx.translate(5,25);
@@ -370,15 +362,13 @@ export const drawAnimalCharacter = (ctx: CanvasRenderingContext2D, animal: Anima
   // Lower the hips onto the whale's back, not just the tips of long legs.
   if (whaleRider) ctx.translate(0, 20);
   ctx.lineCap = 'round';
-  // Thick bent limbs must not use the canvas default miter join: it creates
-  // triangular spikes at recovering knees and elbows beside the rump.
+  // Thick bent limbs avoid the canvas default miter join, which spikes at knees and elbows.
   ctx.lineJoin = 'round';
 
   // Left-facing profile: the tail grows from the rear hip, behind the body.
   drawAnimalTail(ctx, bear, animal.phase, 8, -26);
 
-  // Whale riders sit with short thighs pointing forward and bent knees.
-  // The ordinary walking and four-legged mount poses remain unchanged.
+  // Whale riders sit with short forward thighs and bent knees; other poses are unchanged.
   for (const side of [-1, 1]) {
     if (whaleRider) {
       const far = side === -1;
@@ -423,9 +413,7 @@ export const drawAnimalCharacter = (ctx: CanvasRenderingContext2D, animal: Anima
   bodyShade.addColorStop(0.5, fur);
   bodyShade.addColorStop(1, darkFur);
   ctx.fillStyle = bodyShade;
-  // One continuous back/rump/abdomen silhouette, not overlapping torso and
-  // pelvis ovals. The lower edge masks both thigh roots throughout the gait;
-  // the rear contour tapers into the hip instead of protruding as a separate lobe.
+  // One continuous back, rump and abdomen silhouette whose lower edge masks both thigh roots.
   ctx.beginPath(); ctx.moveTo(-7, -51);
   ctx.bezierCurveTo(4, -53, 11, -44, 11, -35);
   ctx.bezierCurveTo(11, -28, 10, -22, 7, -19);

@@ -72,8 +72,7 @@ export function MenuRunner({ theme, scale, animationsEnabled, hatSkin = 'hats-cl
     drawNearBriefcaseArm(ctx, suitSkin, suitcaseSkin, theme === 'dark', mountSkin?0:stride);
     if (animate) frame = requestAnimationFrame(draw);
     };
-    // Parent chart effects publish the terrain sampler after this layout pass.
-    // One deferred paint also anchors static/reduced-motion previews correctly.
+    // Parent chart effects publish the terrain sampler after this pass; one deferred paint anchors it.
     draw(performance.now());
     if (!animate) frame=requestAnimationFrame(draw);
     return () => cancelAnimationFrame(frame);

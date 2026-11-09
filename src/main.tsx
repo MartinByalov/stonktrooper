@@ -20,7 +20,7 @@ try {
 reportBootStage('script');
 createRoot(document.getElementById('root')!).render(<App />);
 
-// Offline play in the browser: the game is kept after the first visit and opens even when the site cannot be reached.
+// Offline play in the browser: the game is kept after the first visit and opens without the site.
 if (import.meta.env.PROD && !Capacitor.isNativePlatform() && 'serviceWorker' in navigator) {
   window.addEventListener('load', () => { void navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`).catch(() => { /* The game still works online. */ }); });
 }

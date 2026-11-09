@@ -101,8 +101,7 @@ export function drawBossEncounter(ctx: CanvasRenderingContext2D, a: BossArena, d
       },17);
       ctx.strokeStyle = '#6b422c'; ctx.lineWidth = 1.6;
       ctx.beginPath(); ctx.moveTo(9, -105); ctx.lineTo(19, -104); ctx.moveTo(20, -80); ctx.quadraticCurveTo(30, -76, 35, -82); ctx.stroke();
-      // Long hind feet and a defined pouch distinguish a kangaroo from an upright bear.
-      // Long hind feet: a round heel tapering to the toes, tipped down when airborne.
+      // Long hind feet and a defined pouch tell a kangaroo from a bear; heels round, toes tip down airborne.
       ctx.fillStyle = '#8d5d37';
       for (const side of [-1, 1]) {
         const leg = legPose(side);

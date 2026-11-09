@@ -1,5 +1,4 @@
-// Mount artwork faces right in gameplay. Bounds include its body and feet;
-// cosmetic skins share the same gameplay collection area.
+// Mount artwork faces right in gameplay; bounds include body and feet, shared by all skins.
 export function mountPickupDistance(
   x: number,
   mount: { kind?: 'whale' | 'bear' | 'bull'; feet: number } | undefined,

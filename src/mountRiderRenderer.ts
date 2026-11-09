@@ -23,20 +23,17 @@ interface MountedPreview {
 }
 
 // Same hip, bent limbs and hands-on-back pose as the gameplay whale rider.
-// The callback places the mount between the far and near legs.
 export function drawMountedPreview(ctx: CanvasRenderingContext2D, outfit: MountedPreview, drawMount: () => void): void {
   const {suit,shoes,bag,hat,pet,dark,phase,seconds,airborne,velocity,animate}=outfit;
   const [body]=skinColors(suit,dark);
   const frog=outfit.mount==='mounts-wednesday', pony=outfit.mount==='mounts-penny';
   const gauntlets=bag.split(':')[0]==='suitcase-diamond-hands';
-  // Scale the whole rider/mount assembly, not the mount alone. The original
-  // uses a .88 rider against a full-size mount, including limb reach.
+  // Scale the whole rider and mount assembly, not the mount alone; the original uses a .88 rider.
   const raised=outfit.mount==='mounts-classic'&&outfit.kind&&outfit.kind!=='whale';
   const seat=() => {ctx.translate((frog?-10:-22)*.65,(frog?-38:pony?-24:raised?-45:-34)*.65);ctx.scale(WHALE_RIDER_SCALE*.65,WHALE_RIDER_SCALE*.65);};
   const arm=(near: boolean) => {
     if(!frog){drawWhaleRiderArm(ctx,near,body,near?'#fed7aa':'#dca581',4,false,pony,!!raised,gauntlets?(x,y,angle)=>drawHeroHand(ctx,x,y,angle,near,bag,dark):undefined);return;}
-    // Bent elbow below the shoulder, then a forward forearm resting on the
-    // frog's withers rather than reaching for the whale's much higher back.
+    // Bent elbow below the shoulder, then a forearm resting on the frog's withers.
     const shoulder={x:near?1:-2,y:-25};
     const elbow={x:near?6:4,y:near?-8:-10};
     const wrist={x:near?19:16,y:near?0:-2};

@@ -77,8 +77,7 @@ html[data-theme="light"] .game-app .stonks-actions button {
 @media (pointer: fine) {
   html[data-theme] .game-app .stonks-dialog { border: 0; border-radius: 0; }
 }
-/* Touch: fit the whole Stonk on one screen; the square artwork takes the body
-   height and the details shrink into the remaining width without scrolling. */
+/* Touch: fit the whole Stonk on one screen, with the square art taking the body height. */
 @media (pointer: coarse) {
   html[data-theme] .game-app .stonks-body {
     grid-template-columns: auto minmax(0, 1fr);

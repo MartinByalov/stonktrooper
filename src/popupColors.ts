@@ -1,5 +1,4 @@
-// Keep Night event colours unchanged; use darker shades of the same hues
-// on the white Day chart so event text remains readable.
+// Keep Night event colours; use darker shades of the same hues on the white Day chart.
 const dayColors: Record<string, string> = {
   '#f8fafc': '#1e293b',
   '#fbbf24': '#856600', // Points / Hawk: dark amber.

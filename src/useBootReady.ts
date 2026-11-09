@@ -2,8 +2,7 @@ import { useEffect, useState } from 'react';
 import { reportBootStage } from './bootProgress';
 import { watchBrowserUser, workerConfiguration } from './browserIdentity';
 
-// The boot screen stays until the page has really loaded: fonts, the page and its images, and the
-// restored Google session. Each finished part moves the briefcase along its track.
+// The boot screen stays until fonts, page, images and Google session load, moving the briefcase.
 export function useBootReady(): boolean {
   const [ready, setReady] = useState(false);
   useEffect(() => {

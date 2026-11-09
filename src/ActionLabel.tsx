@@ -41,8 +41,7 @@ export function ActionLabel({ children }: { children: string }) {
   </span>;
 }
 
-/** Badge digits: drawn at device resolution and centred on their actual painted pixels,
- *  so a number sits in the exact middle of its circle with any platform font. */
+/** Badge digits are drawn at device resolution and centred on their painted pixels. */
 export function BadgeLabel({ children }: { children: string }) {
   const root = useRef<HTMLSpanElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);

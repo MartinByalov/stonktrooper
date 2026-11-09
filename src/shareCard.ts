@@ -17,8 +17,7 @@ export function drawShareCard(ctx: CanvasRenderingContext2D, score: number, back
   ctx.save();
   ctx.drawImage(background, 0, 0, width, height);
 
-  // The new day/night illustrations have different native dimensions and lids.
-  // Keep both lines inside the blue panel, clear of the rim and hinges.
+  // The day and night illustrations differ in size and lids; keep both lines inside the blue panel.
   const centerX = width * (theme === 'dark' ? 0.71 : 0.70);
   const artworkScale = Math.min(width, height) / 1254;
   ctx.textAlign = 'center';
@@ -31,8 +30,7 @@ export function drawShareCard(ctx: CanvasRenderingContext2D, score: number, back
   const headingMetrics = ctx.measureText('BEST SCORE');
 
   const fullScore = formatShareScore(score);
-  // A single line remains legible up to a safe integer; avoid microscopic type
-  // for extreme values while leaving the full score in the accessible label/link.
+  // A single line stays legible up to a safe integer; the full score remains in the label.
   const value = fullScore.length > 24 ? Math.max(0, score).toExponential(3) : fullScore;
   const maxWidth = width * 0.34;
   const baseFontSize = 72 * artworkScale;

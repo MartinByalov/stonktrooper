@@ -6,8 +6,7 @@ export const SCORE_REWARD_TIERS = {
   weekly: [{ threshold: 2500, coins: 25, diamonds: 1 }, { threshold: 5000, coins: 50, diamonds: 1 }, { threshold: 7500, coins: 75, diamonds: 2 }],
   'all-time': [{ threshold: 2500, coins: 30, diamonds: 1 }, { threshold: 5000, coins: 60, diamonds: 2 }, { threshold: 9000, coins: 100, diamonds: 3 }],
 } as const;
-// Display the highest reached tier beside a ranked score. This is a tier
-// preview, not eligibility, claim state, or a separate rank-based payout.
+// Show the highest reached tier beside a ranked score; a preview, not eligibility or a payout.
 export function scoreRewardForRow(period: RewardPeriod, score: number) {
   if (!Number.isFinite(score) || score < 0) return null;
   return [...SCORE_REWARD_TIERS[period]].reverse().find(tier => score >= tier.threshold) ?? null;

@@ -1,5 +1,4 @@
-// Independent of locomotion: seated and idle characters blink too. No timers or
-// random state are created during rendering. Tests can supply a fixed time.
+// Independent of locomotion: seated and idle characters blink; tests can supply a fixed time.
 export function eyeOpenness(seconds: number, seed = 0): number {
   const period = 3.4 + Math.abs(Math.sin(seed * 1.73)) * 1.8;
   const t = ((seconds + seed * .713) % period + period) % period;

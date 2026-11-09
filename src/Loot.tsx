@@ -53,8 +53,7 @@ export function Loot({ embedded = false, theme, onClose, onRedeemPromo, onClaimQ
   };
   useEffect(() => {
     if (!collection || confirmed || redeeming) return;
-    // React may publish the confirmed cloud profile after the promise resolves.
-    // Keep the animation/lock alive until that render instead of dropping it.
+    // React may publish the cloud profile after the promise resolves; keep the lock until then.
     const timer = setTimeout(() => { setCollection(null); collectionLock.current = false; }, 5000);
     return () => clearTimeout(timer);
   }, [collection, confirmed, redeeming]);

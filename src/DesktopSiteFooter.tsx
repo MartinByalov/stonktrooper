@@ -95,7 +95,7 @@ export function DesktopSiteFooter({ onOpen, theme, section, setSection, volume, 
           const open = () => { onOpen(); setMessage(''); setSection(item); };
           const page = item === 'Privacy' ? 'privacy/' : item === 'Terms' ? 'terms/' : null;
           const className = 'hover:text-[var(--text)] underline underline-offset-2 cursor-pointer';
-          // The public page address is a real link (search engines and the Google consent check read it); a normal click opens the section here, so the game and offline play are not left.
+          // The public address is a real link; a normal click opens the section here, keeping offline play.
           return page
             ? <a key={item} href={`${import.meta.env.BASE_URL}${page}`} className={className} onClick={event => { if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return; event.preventDefault(); open(); }}>{footerLabel(item)}</a>
             : <button key={item} type="button" className={className} onClick={open}>{footerLabel(item)}</button>;

@@ -67,16 +67,12 @@ export const drawHatArtwork = (ctx: CanvasRenderingContext2D, captain: boolean, 
       ctx.fillStyle = '#dbe4ec'; ctx.beginPath(); ctx.moveTo(-10, -11); ctx.quadraticCurveTo(1, -14, 13, -26); ctx.lineTo(11, -13); ctx.quadraticCurveTo(0, -8, -10, -9); ctx.closePath(); ctx.fill();
       ctx.strokeStyle = '#b8c2cb'; ctx.lineWidth = 0.5;
       ctx.beginPath(); ctx.moveTo(-10, -13); ctx.quadraticCurveTo(0, -20, 14, -27); ctx.stroke();
-      // Tuck the peak root into the band rather than outlining a separate plate.
-      // Only its exposed curved edges are stroked; the band covers the joint.
+      // Tuck the peak root into the band; only its exposed curved edges are stroked.
       ctx.fillStyle = '#202328'; ctx.beginPath(); ctx.moveTo(8, -11); ctx.quadraticCurveTo(15, -8, 23, -6); ctx.quadraticCurveTo(20, -2, 4, -8); ctx.fill();
       ctx.strokeStyle = '#080b10'; ctx.lineWidth = 0.6; ctx.stroke();
-      // Continuous wrap follows the crown base and overlaps the visor root.
-      // Keep the underside unchanged so the existing rigid head fit still seats.
+      // Continuous wrap follows the crown base and overlaps the visor root; the underside stays unchanged.
       ctx.fillStyle = '#161b22'; ctx.beginPath(); ctx.moveTo(-10, -9); ctx.quadraticCurveTo(0, -8, 11, -13); ctx.lineTo(11, -10); ctx.quadraticCurveTo(0, -5, -9, -5); ctx.closePath(); ctx.fill();
-      // Gold ribbon wraps the entire visible band, following its curvature.
-      // Both edges interpolate the black band's contours, keeping black trim
-      // above and below without a floating end at the middle of the cap.
+      // Gold ribbon wraps the whole band, with black trim above and below and no floating end.
       ctx.fillStyle = '#dcb759';
       ctx.beginPath(); ctx.moveTo(-9.65, -7.6);
       ctx.quadraticCurveTo(0, -6.95, 11, -11.95);
@@ -109,8 +105,7 @@ export const drawHatArtwork = (ctx: CanvasRenderingContext2D, captain: boolean, 
     return;
   }
   if (frontFacing) {
-    // Frontal fedora: a centered crown sits inside the brim's rear ellipse;
-    // the curved front lip overlaps its base, giving the hat depth, not tilt.
+    // Frontal fedora: a centered crown inside the brim's rear ellipse; the front lip adds depth, not tilt.
     ctx.translate(0, -7); ctx.scale(0.86, 0.86); ctx.translate(0, 7);
     const outline = darkMode ? '#94a3b8' : '#64748b';
     ctx.fillStyle = custom?.[0] ?? (darkMode ? '#cbd5e1' : '#101115');
@@ -146,9 +141,7 @@ export const drawHatArtwork = (ctx: CanvasRenderingContext2D, captain: boolean, 
     ctx.restore();
     return;
   }
-  // Fedora: broad brim, pinched sides and a recessed crown, not a bowler dome.
-  // Match the logo's slight forward tilt while keeping the hat anchored to the head.
-  // Both crown ends are level; the forward rise comes only from the tilt.
+  // Fedora: broad brim, pinched sides, recessed crown; leans forward like the logo, head-anchored.
   ctx.translate(0, -7); ctx.rotate(-0.12); ctx.scale(0.86, 0.86); ctx.translate(0, 7);
   const hatColor = custom?.[0] ?? (darkMode ? '#f8fafc' : '#111318');
   const hatBandColor = custom?.[1] ?? (darkMode ? '#111318' : '#ffffff');
@@ -178,8 +171,7 @@ export const drawHatArtwork = (ctx: CanvasRenderingContext2D, captain: boolean, 
   ctx.restore();
 };
 
-// Liquidation Lid: a red candle bursts out through the torn crown of the fedora,
-// with a gold buckle on the band. Drawn in the fedora's own coordinates.
+// Liquidation Lid: a red candle bursts through the torn fedora crown, with a gold band buckle.
 function drawLidCandle(ctx: CanvasRenderingContext2D, dark: boolean, front: boolean): void {
   const ink = dark ? '#94a3b8' : '#0f172a', felt = skinColors('hats-lid', dark)[0];
   ctx.save(); ctx.lineJoin = 'round';
@@ -206,8 +198,7 @@ function drawLidCandle(ctx: CanvasRenderingContext2D, dark: boolean, front: bool
 export function drawHeadHat(ctx: CanvasRenderingContext2D, head: HatHead, captain = false, dark = false, skin = 'hats-classic', phase = 0, stack = 0, front = false, showPropeller = true): void {
   const contact=headHatContact(head,captain,skin);
   const fedora = !captain && ['hats-classic','hats-gold','hats-ocean','hats-orchid','hats-lid'].includes(skin);
-  // Ape hats and naval caps are rigid: anatomy determines placement and
-  // uniform size, never local bending of the brim, band or crown.
+  // Ape hats and naval caps are rigid: anatomy sets placement and uniform size, never local bending.
   const fitted=hatContactContext(ctx,hatArtworkContact(skin,captain,front),contact,stack*hatMetrics(skin).stackHeight*contact.height,!captain && !fedora && head !== 'ape');
   ctx.save();
   try {
@@ -215,14 +206,10 @@ export function drawHeadHat(ctx: CanvasRenderingContext2D, head: HatHead, captai
     if (paper) {
       const bounds=PAPER_HEAD_BOUNDS[head];
       const lift=stack*hatMetrics(skin).stackHeight*contact.height;
-      // Fit the unmodified bag artwork around the entire head, at the same
-      // proportions as its shop artwork: one uniform scale from the head's width,
-      // the torn lower edge below the chin, and the bag standing tall above.
-      // At its narrowest the artwork spans x=-8.8..9.6; y=-26.8..10.6.
+      // Fit the bag artwork around the whole head with one uniform scale from the head width.
       const size=(bounds.right-bounds.left)/18.4;
       ctx.save();
-      // Anatomy supplies the local profile. Existing caller mirrors still apply
-      // to both head and bag (including bosses and reversed movement poses).
+      // Anatomy supplies the local profile; caller mirrors still apply to both head and bag.
       const facing=contact.facing;
       ctx.translate(facing===-1 ? bounds.right-8.8*size : bounds.left+8.8*size,bounds.bottom-10.6*size-lift);
       ctx.scale(size*facing,size);
@@ -244,13 +231,9 @@ export const drawCharacterHat = (ctx: CanvasRenderingContext2D, captain: boolean
 // Shared rounded right-profile head for running and seated poses.
 export const drawHumanHead = (ctx: CanvasRenderingContext2D, hat = true, darkMode = false, hatSkin = 'hats-classic', phase = 0, showPropeller = true): void => {
   ctx.save();
-  // Overlap both the jaw and shirt/shoulders, including scaled seated poses.
-  // Draw behind the face so the chin keeps its rounded profile.
-  // Same skin and tapered base as the bare torso. Clothing simply covers the
-  // lower neck; Swim Shady does not need to repaint a separate skin contour.
+  // Overlap the jaw and shirt, including seated poses, and draw behind the face to keep the chin.
   ctx.fillStyle = '#fed7aa';
-  // The cervical column sits beneath the ear/back of the jaw, not the chin.
-  // Keep the face/hat origin fixed; move the neck itself back into the shoulder.
+  // The neck sits beneath the ear, not the chin; keep the face origin fixed and move the neck back.
   ctx.beginPath(); ctx.moveTo(-3.25,3); ctx.lineTo(1.25,3);
   ctx.quadraticCurveTo(.65,7,1.65,10.8);
   ctx.quadraticCurveTo(1.45,11.4,.75,11.75);
@@ -392,8 +375,7 @@ export const drawApeAsset = (ctx: CanvasRenderingContext2D, phase = 0, seated = 
       const gripX=frogRider?(near?19:16):(near?23:19);
       const gripY=frogRider?(near?11:9):(near?1:-1);
       if (near && throwTimer > 0) {
-        // Only the foreground/right hand releases its grip. Blend back to
-        // the same palm position as the holding pose when the throw ends.
+        // Only the foreground hand releases its grip, and it blends back to the holding pose after the throw.
         const reach = Math.min(1, throwTimer / 8);
         const handX = gripX + (2 + throwDirection * 28 - gripX) * reach;
         const handY = gripY + (-15 - gripY) * reach;
@@ -583,8 +565,7 @@ export const drawPickupAsset = (ctx: CanvasRenderingContext2D, d: Pickup, x: num
       ctx.scale(0.78, 0.78);
       const peel = ctx.createLinearGradient(-9, -10, 9, 12);
       peel.addColorStop(0, '#fff1a6'); peel.addColorStop(0.45, '#f7c548'); peel.addColorStop(1, '#b77913');
-      // Reference silhouette: full lower belly, pale concave inner edge,
-      // short dark tip at left and upright green stem at right.
+      // Reference silhouette: full lower belly, pale concave inner edge, dark left tip, green right stem.
       ctx.beginPath(); ctx.moveTo(-16, -5);
       ctx.bezierCurveTo(-7, 0, 6, 4, 14, -9);
       ctx.bezierCurveTo(19, 6, 8, 14, -2, 12);
@@ -662,8 +643,7 @@ export const drawPickupAsset = (ctx: CanvasRenderingContext2D, d: Pickup, x: num
         ctx.arc(0, 0, 22, 0, Math.PI * 2);
         ctx.fill();
 
-        // 3D Stack of Banknotes
-        // Shadow/bottom layer
+        // 3D stack of banknotes: shadow and bottom layer.
         ctx.fillStyle = '#064e3b';
         ctx.fillRect(-11, -5, 22, 13);
 

@@ -1,8 +1,6 @@
 import type { Progress } from './progression';
 
-// Monthly Vault: Games Played count from the start of each UTC month (the
-// same boundary as the Vault reset timer); a month that misses the target
-// misses its reward.
+// Monthly Vault: Games Played count from each UTC month start; missing the target misses the reward.
 export interface MonthlyVault { month: string; baselineRuns: number }
 export const VAULT_TARGET = 100;
 export const vaultMonth = (now: number) => `monthly:${new Date(now).toISOString().slice(0, 7)}`;

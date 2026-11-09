@@ -253,7 +253,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
         })(),
         pauseLeft: pause && pause.width > 0 ? pause.left : undefined,
         controlsRight: controls && controls.width > 0 ? controls.right : undefined });
-      // Desktop controls are 32px, so the score tab is 32px tall there; the Android layout keeps its 24px tab.
+      // Desktop controls are 32px, so the score tab is 32px tall; Android keeps 24px.
       const desktopLayout = canvas.closest<HTMLElement>('.game-app')?.dataset.layout === 'desktop';
       hudStripLayout.current = { height: headerHeight || 36, stripHeight: desktopLayout ? 32 : 24, radius, ...geometry, iconSize: controlSize * .8 };
       headerFeedRef.current = Array.from(canvas.closest('.game-app')?.querySelectorAll<HTMLCanvasElement>('.mobile-header-feed, .desktop-live-feed') ?? []).find(feed => feed.getBoundingClientRect().width > 0) ?? null;
@@ -301,8 +301,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
       resumeTicker();
     };
   }, [state, liveFeedEnabled, theme]);
-  // The page applies the theme to <html> after this component's effects run, so the colour read above
-  // is still the previous theme's blue. Read the shared --ui-blue again once the theme is in place.
+  // The page sets the theme after effects run, so read --ui-blue again once it is applied.
   useEffect(() => {
     const frame = requestAnimationFrame(() => {
       const canvas = canvasRef.current;
@@ -577,8 +576,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     if (i - g.lastBig < 8) mr = Math.min(mr, 14);
     if (i - g.lastSpike < 4) mr = Math.min(mr, 7);
     if (!barrier && top < pt - mr) {
-      // Cap the climb, not the whole OHLC candle: shifting its open detaches
-      // it from the preceding close and looks like a new chart segment.
+      // Cap the climb, not the whole OHLC candle, so its open stays attached to the previous close.
       c = Math.max(c, pt - mr);
       top = Math.min(o, c);
       bot = Math.max(o, c);
@@ -729,8 +727,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     };
 
     if (whaleDemo) {
-      // A clean runway covers the mount, companion pickups and two targets
-      // for watching mounted banana throws using ordinary combat mechanics.
+      // A clean runway holds the mount, companion pickups and two targets for banana-throw testing.
       const top = g.p.y;
       const endX = g.p.x + 1500;
       for (let i = startIndex - 1; i <= Math.ceil(endX / CW); i++) {
@@ -806,8 +803,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
   const activateHawk = useCallback(() => {
     const g = gameRef.current;
     if (!g.p || g.hawkTimer > 0) return;
-    // A shortened Pigeon must still honor its randomly chosen exit.
-    // Outside Pigeon, preserve the current view for Hawk's mirrored slide.
+    // A shortened Pigeon keeps its random exit; outside Pigeon, keep the view for Hawk's slide.
     if (g.printerTimer > 0) g.invertedView = g.printerExitInverted;
     g.printerExitInverted = g.invertedView;
     aimRef.current = null;
@@ -830,8 +826,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     if (g.printerTimer <= 0) g.printerSaved = null;
     g.printerTimer = 600;
     g.printerExitInverted = Math.random() < 0.5;
-    // Choose the visible continuing boundary from the start. Reflecting only
-    // at the exit swaps both graphs on screen instead of ending one boundary.
+    // Pick the continuing boundary up front; reflecting only at the exit swaps both graphs.
     g.invertedView = g.printerExitInverted;
     aimRef.current = null;
     g.printerTickerX = viewRef.current.width - viewRef.current.axisWidth;
@@ -855,9 +850,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     if (!g.p || g.falling || bossEncounter.current) return;
     const encounter = createBossArena(kind);
     encounter.externalPlayer = true;
-    // Boss attacks use the live run state, including pickups collected mid-fight.
-    // Each attack gets its own contact token: a diamond blocks one strike, not
-    // every subsequent attack from this boss.
+    // Boss attacks use live run state; each has its own contact token, so a diamond blocks one strike.
     encounter.absorbBossHit = () => !!g.p && (g.p.rocketTimer > 0
       || !!g.p.whaleMount || absorbEnemyHit(g.p, {}));
     encounter.nextDrop = Infinity;
@@ -897,8 +890,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     const g = gameRef.current;
     if (g.currentState !== 'play' || g.falling || g.flyingFedora || g.fedoraWindup > 0 || !g.p || g.p.whaleMount) return;
 
-    // In Bell combat the equipped boomerang is independent of the briefcase
-    // cooldown and the diamond/bag held by the runner.
+    // In Bell combat the boomerang is independent of the briefcase cooldown and held diamond or bag.
     if (g.hawkTimer <= 0 && bossEncounter.current && g.fedoraTimer > 0 && g.fedoraCount > 0) {
       g.fedoraCount--;
       g.fedoraWindup = FEDORA_WINDUP;
@@ -1109,8 +1101,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
           g.hawkBags = 0;
           const last = [...g.C].reverse().find(c => c && !c.hole);
           if (last) { g.lastC = last.c; g.lastTop = last.top; }
-          // Rebase the original upward-biased market, do not keep adding a
-          // downward slope after the timer. Future random knots rise as usual.
+          // Rebase the upward-biased market instead of adding a downslope after the timer.
           for (const knot of g.marketPath) knot.height += g.hawkBudget;
         }
       }
@@ -1759,8 +1750,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
       }
     }
 
-    // Collisions with Living Enemies (Skipped when in rocket mode!).
-    // A carried diamond absorbs one collision from any enemy, including birds.
+    // Living Enemies collide unless in rocket mode; a carried diamond absorbs one collision.
     if (g.p.rocketTimer <= 0 && !g.p.whaleMount) {
       for (const s of g.swans) {
         if (!s.dead && !s.dying && lethalBirdContact(s, g.p)) {
@@ -1976,8 +1966,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     if (printerActive) {
       g.printerTimer--;
       g.printerProgress += sp;
-      // Keep the view fixed: the selected boundary continues spatially while
-      // the opposite boundary peels away and ends at printerEndX.
+      // Keep the view fixed: the chosen boundary continues while the other peels away at printerEndX.
       const first = Math.max(0, Math.floor((g.cx + field.left) / CW));
       const last = Math.min(g.C.length - 1, Math.ceil((g.cx + field.right) / CW));
       extendPrinterTurns(g.printerTurns, last * CW - g.printerStartX);
@@ -2028,16 +2017,13 @@ export const CandleGame: React.FC<CandleGameProps> = ({
         if (!c || c.hole) continue;
         if (g.p.x + 6 < i * CW || g.p.x - 6 > (i + 1) * CW) continue;
 
-        // High candles are walls, not automatic steps. Keep the runner on the
-        // yellow approach until a jump clears the top (rocket bypasses this).
+        // High candles are walls; the runner stays on the yellow approach until a jump clears the top.
         if (isBlockedByTallCandle(c.doubleJumpBarrier, prev, c.top)) {
           g.p.x = Math.min(g.p.x, i * CW - 7);
           continue;
         }
 
-        // Robust step-up and landing logic
-        // A descending player cannot tunnel through a solid non-barrier column
-        // when horizontal motion reaches a higher neighbouring candle.
+        // Robust step-up and landing: a descending player cannot tunnel through a solid higher column.
         const canLand = canLandOnTrack(g.p.air, g.p.vy, prev, g.p.y, c.top)
           || canRecoverSolidLanding(c.doubleJumpBarrier, g.p.vy, g.p.y, c.top, g.gapAirborne);
 
@@ -2054,8 +2040,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
       landed = true;
       g.gapAirborne = false;
       g.p.jumps = 0;
-      // Charge only while landing on a yellow candle under the player's footprint.
-      // Once airborne, the charge remains available until used or the next landing.
+      // Charge only when landing on a yellow candle; it stays available until used or the next landing.
       g.p.doubleReady = doubleJumpChargeOnLanding(g.C, i0, i1);
     }
 
@@ -2123,8 +2108,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     ensureChartAhead(g, Math.max(g.p.x, g.cx + field.right), field.right - field.left, CW, genCandle);
     if (printerActive && g.printerTimer === 0 && g.printerSaved) {
       const saved = g.printerSaved;
-      // Strand 1 is the visible upper chart when inverted, lower otherwise.
-      // Commit that continuing strand and leave the opposite tail to scroll out.
+      // Strand 1 is the upper chart when inverted, else lower; commit it and let the tail scroll out.
       for (let i = 0; i < saved.length; i++) {
         const source = printerSourceCandle(saved, i);
         if (source && i * CW <= g.printerEndX) g.C[i] = endingPrinterCandle(source, i * CW, g.printerStartX, g.printerEndX, g.printerTurns, 1);
@@ -2188,8 +2172,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
       const lives = encounter.player.lives;
       // Reuse normal enemies for projectile collisions without simulating them twice.
       stepBossArena(encounter, 0);
-      // Measure against the candles, including the runner's forward travel.
-      // AI-relative movement alone makes a scrolling boss appear to skate.
+      // Measure against the candles, including forward travel, so a scrolling boss does not skate.
       const walkingDistance = Math.abs(encounter.boss.x - previousBossX);
       const spinning = encounter.boss.kind === 'janet' && encounter.boss.attack > 0
         && encounter.boss.attackKind === 'spin';
@@ -2206,8 +2189,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
       }
     }
 
-    // Companions move on their own terrain, not on the hero's jump trajectory.
-    // Horizontal state is relative to the runner so chart compaction is safe.
+    // Companions use their own terrain, not the hero's jump; horizontal state is runner-relative.
     if (g.p.rocketTimer <= 0 && g.hawkTimer <= 0 && g.printerTimer <= 0 && !g.p.whaleMount && !petDeath.current) {
       const id = cosmeticRef.current.pets;
       const phase = petAnimationPhase(g.globalFrame/60,id);
@@ -2223,8 +2205,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     const totalScoreVal = Math.max(0, g.score - g.penalty + g.activityPips);
     if (!g.difficultyActive && difficultyUnlocked(totalScoreVal)) {
       g.difficultyActive = true;
-      // Already visible terrain stays unchanged; schedule obstacles in newly
-      // generated terrain so the player can see and react to the approach.
+      // Visible terrain stays unchanged; schedule obstacles in new terrain so players can react.
       g.nextTallCandle = Math.max(g.C.length + 40, WARMUP_CANDLES);
       g.volatilityEvent = g.nextTallCandle;
       g.nextNewsIndex = Math.min(g.nextNewsIndex, g.score + 30);
@@ -2254,9 +2235,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     });
   }, [genCandle, updateEntities, die, onScoreUpdate, candleDemo, bossEncounter, awardEnemy, throwBriefcase]);
 
-  // ==========================================
-  // SPRITE RENDERING
-  // ==========================================
+  // Sprite rendering.
 
   // 1. HERO ANIMATION: SEATED IN ROCKET / DIAMOND OVERHEAD / BRIEFCASE IN OTHER HAND
   const drawHero = useCallback((ctx: CanvasRenderingContext2D) => {
@@ -2322,8 +2301,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
       ctx.restore(); return;
     }
 
-    // Whale riders keep the active diamond in their lap instead of showing
-    // the aura. Remaining protection becomes visible again after dismount.
+    // Whale riders keep the diamond in their lap, not as an aura; protection shows again after dismount.
     if (!g.p.whaleMount && g.p.carry > 0 && g.p.shieldKind !== 'bag') {
       ctx.fillStyle = 'rgba(56, 189, 248, 0.09)';
       ctx.strokeStyle = 'rgba(125, 211, 252, 0.75)';
@@ -2395,8 +2373,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
         ctx.fillRect(spkX, spkY, 3, 3);
       }
 
-      // Rocket Fuselage (Streamlined retro spacecraft body)
-      // Rear engine nozzle
+      // Rocket fuselage: streamlined retro spacecraft body with a rear engine nozzle.
       ctx.fillStyle = '#1e293b';
       ctx.fillRect(-35, -8, 6, 16);
 
@@ -2456,8 +2433,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
       ctx.closePath();
       ctx.stroke();
 
-      // Collected bags hang from hooks along the rocket's lower side,
-      // matching the visible side-mounted bags used by the Hawk dumpster.
+      // Collected bags hang from hooks on the rocket's lower side, like the Hawk dumpster.
       for (let bag = 0; bag < g.rocketBags; bag++) {
         const x = -20 + (bag % 4) * 12;
         const y = 25 + Math.floor(bag / 4) * 11;
@@ -2581,15 +2557,13 @@ export const CandleGame: React.FC<CandleGameProps> = ({
       } else drawHumanHead(ctx, g.playerHat !== 'none', theme === 'dark', cosmeticRef.current.hats, g.globalFrame / 60, weaponHatCount(g.fedoraTimer, g.fedoraWindup, !!g.flyingFedora) === 0);
       const hats = weaponHatCount(g.fedoraTimer, g.fedoraWindup, !!g.flyingFedora);
       for (let hat = 0; hat < hats; hat++) {
-        // The hat renderer already offsets the brim onto the forehead.
-        // Share the head origin/scale instead of lifting the whole hat again.
+        // The hat renderer already offsets the brim; share the head origin and scale.
         ctx.save(); ctx.translate(0, -(hat + (g.apeTimer <= 0 && g.playerHat !== 'none' ? 1 : 0)) * hatMetrics(cosmeticRef.current.hats).stackHeight);
         if(g.apeTimer>0)drawApeHat(ctx,false,theme==='dark',cosmeticRef.current.hats,g.globalFrame/60,hat === hats-1);
         else drawCharacterHat(ctx, false, false, theme === 'dark', cosmeticRef.current.hats, g.globalFrame / 60, hat === hats-1); ctx.restore();
       }
       ctx.restore();
-      // Keep lap luggage stacked: collected bags no longer replace the case.
-      // Redraw only the collar after the long neck, without covering the face.
+      // Keep lap luggage stacked; redraw only the collar after the long neck, leaving the face clear.
       ctx.save(); ctx.translate(-2.5,5);
       drawSuitCollar(ctx,cosmeticRef.current.suits,theme==='dark',g.p.ph,true,-5,12); ctx.restore();
       if (g.p.carry > 0 && g.p.shieldKind !== 'bag') {
@@ -2640,8 +2614,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     };
     drawProfileBackLayers(() => {
     if(!g.p)return;
-    // Match the reference back-arm poses: the far arm swings while running,
-    // braces the diamond during its overhead hold, and trails during a throw.
+    // Match the reference back-arm poses: swing while running, brace the diamond, trail on throws.
     if (g.p.carry > 0 && g.bagThrowAnimTimer <= 0) {
       actionArm(false,carryPose.far.hand);
     } else if (g.p.carry <= 0 && g.throwAnimTimer > 0 && g.bagThrowAnimTimer <= 0) {
@@ -2690,11 +2663,10 @@ export const CandleGame: React.FC<CandleGameProps> = ({
       drawPigeonStain(ctx, captain ? 6 : 3, stainY, !captain && theme === 'light');
     }
 
-    // Complete neck/chest layers before every foreground arm pose, including
-    // throws and overhead holds. Repainting them afterwards cuts the sleeve.
+    // Complete neck and chest layers before foreground arms; repainting later cuts the sleeve.
     drawSuitCollar(ctx, cosmeticRef.current.suits, theme === 'dark', g.p.ph, g.p.air, g.p.vy);
 
-    // --- CASE A: DIAMOND HANDS — HOLDING DIAMOND PROUDLY OVERHEAD WITH RAISED ARMS ---
+    // Case A: diamond hands, holding the diamond proudly overhead with raised arms.
     if (g.bagThrowAnimTimer > 0) {
       const pose=runnerBagThrowPose(g.bagThrowAnimTimer,g.bagThrowDirection);
       if(pose.holding) {
@@ -2737,8 +2709,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
 
     }
 
-    // Visible right arm holds the case in the right-profile view.
-    // Draw after the torso: the near-side right hand and case remain visible.
+    // The right arm holds the case in right-profile view; draw it after the torso.
     if (g.p.carry <= 0 && g.throwAnimTimer <= 0 && g.bagThrowAnimTimer <= 0 && g.fedoraWindup <= 0 && g.fedoraTimer <= 0 && !g.flyingFedora) {
       // Briefcase held low (hidden if currently in flight)
       const isBriefcaseFlying = g.cases.some((c) => c.life > 0 && c.kind !== 'banana' && c.kind !== 'debris');
@@ -2755,8 +2726,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     for (const d of g.pickups) {
       const x = d.x - g.cx;
       const y = d.y - g.cy;
-      // Canvas clipping hides pixels, but does not avoid issuing asset commands.
-      // Cull only rendering; off-screen loot still participates in simulation.
+      // Cull only rendering, not simulation: clipping hides pixels but still issues asset commands.
       if (!pickupInRenderBounds(x, y, bounds)) continue;
 
       ctx.save();
@@ -2840,8 +2810,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
       ctx.save();
       ctx.textBaseline = 'alphabetic';
       const writeCentered = (text: string, x: number) => {
-        // Center the visible glyph bounds within the Live Feed, independent
-        // of glyph ascenders/descenders.
+        // Center the visible glyph bounds within the Live Feed, ignoring ascenders and descenders.
         const metrics = ctx.measureText(text);
         const ascent = metrics.actualBoundingBoxAscent ?? 9;
         const descent = metrics.actualBoundingBoxDescent ?? 2;
@@ -3065,8 +3034,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     const a = Math.floor((g.cx + visibleLeft) / CW) - 1;
     const b = Math.ceil((g.cx + visibleRight) / CW) + 2;
     if (layers.chart) {
-      // Volume is anchored to the time axis, outside the inverted world.
-      // Gap slots have no candle activity and must not draw volume.
+      // Volume is anchored to the time axis outside the inverted world; gap slots draw none.
       for (let i = a; i <= b; i++) {
         const c = chartHistory(g.C, i);
         if (!c || c.hole) continue;
@@ -3308,8 +3276,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
       const top = g.zeroCrashTop - g.cy;
       const bottom = g.C[g.zeroCrashIndex]?.bot ?? g.zeroCrashTop;
       ctx.fillStyle = RED;
-      // Render after the plot clip so the growing last candle enters the
-      // bottom axis too. Canvas itself is still clipped by the game stage.
+      // Render after the plot clip so the growing last candle also enters the bottom axis.
       ctx.fillRect(x, top, CW - 3, bottom - g.cy - top);
       ctx.strokeStyle = RED; ctx.lineWidth = 1;
       ctx.beginPath(); ctx.moveTo(x + (CW - 3) / 2, top - 3);
@@ -3611,8 +3578,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (window.matchMedia('(orientation: portrait)').matches) return;
-      // End-of-run decisions belong to App; never restart behind a result or
-      // resume behind a confirmation dialog (including synthetic window events).
+      // End-of-run decisions belong to App: never restart behind a result or confirmation dialog.
       if (gameRef.current.currentState === 'over' || document.querySelector('[role="dialog"][aria-modal="true"]')) return;
       if (gameRef.current.currentState === 'paused' && ['r', 'R'].includes(e.key)) return;
       if (gameRef.current.currentState === 'boxing') return;
@@ -3734,9 +3700,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
         }
       });
 
-      // Draw once per simulation tick, including after a slow frame. Skipping
-      // every overloaded frame can otherwise starve rendering indefinitely.
-      // High-refresh displays do not need duplicate 120/144 Hz canvas paints.
+      // Draw once per simulation tick, even after a slow frame; skip duplicate high-refresh paints.
       const drawStarted = drawDiagnosticsEnabled ? performance.now() : 0;
       if (renderMode !== 'none' && (simulationSteps > 0 || needsDraw)) {
         loopCallbacks.current.draw(ctx);

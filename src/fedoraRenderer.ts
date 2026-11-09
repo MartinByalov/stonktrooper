@@ -1,13 +1,11 @@
-// Projected 3D version of the tilted, broad-brimmed fedora above the logo's S.
-// The brim retains its width while the pinched crown and contrasting band turn.
+// Projected 3D fedora above the logo's S: the brim keeps its width while the crown and band turn.
 type Point = { x: number; y: number; z: number };
 
 export function drawSpinningFedora(ctx: CanvasRenderingContext2D, angle: number, darkMode: boolean, colors?: readonly [string, string]): void {
   ctx.save();
   const project = ({ x, y, z }: Point) => {
     const horizontal = x * Math.cos(angle) + z * Math.sin(angle);
-    // Keep enough depth visible at quarter turns so the hat does not read as
-    // a flat card viewed from either side.
+    // Keep enough depth visible at quarter turns so the hat does not read as a flat card.
     const vertical = y + (-x * Math.sin(angle) + z * Math.cos(angle)) * 0.48;
     // The logo tips upward on the right rather than sitting perfectly level.
     return { x: horizontal * Math.cos(-0.12) - vertical * Math.sin(-0.12),
@@ -35,8 +33,7 @@ export function drawSpinningFedora(ctx: CanvasRenderingContext2D, angle: number,
   const crown = colors ? [colors[0],colors[0],colors[0]] : darkMode ? ['#ffffff', '#f8fafc', '#e2e8f0'] : ['#303239', '#17191d', '#080a0e'];
   const band = colors?.[1] ?? (darkMode ? '#111318' : '#ffffff');
 
-  // Keep the flying weapon compact: the brim is short and the crown is rounded
-  // so the silhouette reads as a fedora rather than a cowboy hat.
+  // Keep the flying weapon compact: a short brim and rounded crown so it reads as a fedora.
   for (let i = 0; i < segments; i++) {
     const a = ring(i, 18.5, 14.5, 4), b = ring(i + 1, 18.5, 14.5, 4);
     polygon([a, b, ring(i + 1, 10.3, 9.2, 3), ring(i, 10.3, 9.2, 3)], brimTop);

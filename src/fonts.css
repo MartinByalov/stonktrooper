@@ -1,6 +1,4 @@
-/* Fonts served from this site (SIL Open Font License): JetBrains Mono and Space Grotesk, Latin subset.
-   Nothing is loaded from Google, so a visitor's address is not sent to a third party for fonts.
-   Variable fonts: one file covers every weight used by the game. */
+/* Self-hosted fonts (SIL OFL): JetBrains Mono and Space Grotesk, Latin subset, variable weights. */
 @font-face {
   font-family: 'JetBrains Mono'; font-style: normal; font-weight: 300 800; font-display: swap;
   src: url('./fonts/jetbrains-mono-latin.woff2') format('woff2');

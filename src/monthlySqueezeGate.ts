@@ -48,8 +48,7 @@ export function createMonthlySqueezeGate(options: Options) {
       pending = Object.freeze({ eventId: event.id, achievementId: event.achievementId, progress: progress.liquidations.length });
       return execute();
     },
-    // Only an explicit user/recovery action retries an ambiguous request. New
-    // scores cannot replace the pending payload. Idempotence is event + account.
+    // Only an explicit user or recovery action retries an ambiguous request; idempotence is event+account.
     retry() { return execute(); },
     get status(): 'confirmed' | 'pending' | 'idle' { return confirmed ? 'confirmed' : pending ? 'pending' : 'idle'; },
   };

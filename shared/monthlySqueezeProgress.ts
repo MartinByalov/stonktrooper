@@ -1,7 +1,6 @@
 import { squeezeEventScope, validSqueezeEvent, type SqueezeEvent } from './monthlySqueeze';
 
-// Serializable detached state, suitable for a future account-owned Drive document.
-// Never seed this from lifetime/Guest counters. This is not server attestation.
+// Serializable detached state for a future Drive document; never seed it from Guest counters.
 export interface SqueezeProgress {
   version: 1;
   scope: string;
@@ -26,8 +25,7 @@ export function validSqueezeProgress(value: unknown, event: SqueezeEvent, accoun
     && new Set(data.liquidations.map(item => item.id)).size === data.liquidations.length;
 }
 
-// Call once for each accepted gameplay death, including a death followed by revive.
-// The caller owns stable action IDs, authenticated identity and serialization/CAS.
+// Call once per accepted gameplay death; the caller owns action IDs, identity and CAS.
 export function recordSqueezeLiquidation(state: SqueezeProgress, event: SqueezeEvent, accountId: string,
   action: Readonly<{ id: string; at: number }>, now: number): SqueezeProgress {
   if (!validSqueezeProgress(state, event, accountId)) throw new Error('Invalid Squeeze progress');

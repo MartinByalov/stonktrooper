@@ -1,7 +1,6 @@
 import type { AimPoint } from './aim';
 
-// Framing is a gameplay choice, independent of screen pixels and backing DPR.
-// Calibration targets in CSS pixels/world units, not device models or DPR.
+// Framing is a gameplay choice, calibrated in CSS pixels per world unit, not by device or DPR.
 export const RUNNER_HEIGHT = 62;
 export const MIN_VIEW_HEIGHT = 360;
 export const MIN_PLOT_WIDTH = 650;
@@ -17,8 +16,7 @@ export function gameView(display = DEFAULT_DISPLAY) {
   const axisPixels = Math.min(48, pixels.width * .08);
   // Readability grows gently on larger stages; extra space mostly reveals world.
   const runnerPixels = Math.min(64, Math.max(44, 44 * Math.sqrt(pixels.height / 312)));
-  // On constrained screens preserve jumping clearance and approach distance,
-  // accepting a smaller runner rather than cropping essential gameplay.
+  // On constrained screens keep jump clearance and approach distance, accepting a smaller runner.
   const scale = Math.min(runnerPixels / RUNNER_HEIGHT,
     pixels.height / MIN_VIEW_HEIGHT, (pixels.width - axisPixels) / MIN_PLOT_WIDTH);
   const height = pixels.height / scale;
@@ -39,8 +37,7 @@ export function gameView(display = DEFAULT_DISPLAY) {
 }
 
 export type GameView = ReturnType<typeof gameView>;
-// Smooth terrain following must never let a fast rocket/climb outrun the view.
-// Clearance is in artwork/world units, not a percentage that changes physics.
+// Terrain following must never let a fast rocket or climb outrun the view; clearance in world units.
 export function followCameraY(cameraY: number, feet: number, view: GameView, top = view.top): number {
   const smooth = cameraY + (feet - view.heroY - cameraY) * .08;
   return Math.max(feet - view.bottom + 120, Math.min(feet - top - 120, smooth));

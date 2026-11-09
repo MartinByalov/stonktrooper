@@ -1,7 +1,6 @@
 import type { Candle } from './types';
 
-// Render-only market history. Never insert it into the playable chart or its
-// event/pickup generators; negative indices must not affect run progression.
+// Render-only market history: never insert it into the playable chart or its generators.
 export function chartHistory(candles: Candle[], index: number): Candle | undefined {
   if (index >= 0) return candles[index];
   const count = Math.min(28, candles.length);

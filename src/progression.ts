@@ -565,8 +565,7 @@ export interface Achievement {
   reward: Partial<Wallet>; value: (p: Progress) => number;
   requirements?: Partial<Wallet>;
 }
-// Coins and diamonds, plus at most one thematic currency OR a cosmetic unlock.
-// Collection goals below use only the relevant lifetime pickup counter.
+// Coins and diamonds, plus at most one thematic currency or cosmetic unlock.
 const achievementRewards: Record<string, Partial<Wallet>> = {
   butterfingers: { coins: 75, diamonds: 1 },
   'coin-flipper': { coins: 150, diamonds: 2 },
@@ -623,11 +622,9 @@ export const ACHIEVEMENTS: Achievement[] = ([
   return { ...item, reward };
 }).sort((a, b) => a.difficulty - b.difficulty);
 
-// Website-only dialogs have no mobile entry point. Retain their definitions,
-  // Retain feat IDs and rewarded IDs for legacy save compatibility.
-// Stick Around (10 login days) is gone: a login streak cannot be followed on the web.
+// Website-only dialogs have no mobile entry; keep feat and reward IDs for legacy saves.
 export const MOBILE_ACHIEVEMENTS = ACHIEVEMENTS.filter(item => !['clown-bag', 'tomato', 'vanishing-case', 'stick-around'].includes(item.id));
-// Counted toward the shared Monthly Squeeze, so they are listed together as Monthly Effort; every other achievement is personal.
+// Counted toward the shared Monthly Squeeze, so listed as Monthly Effort; others are personal.
 export const MONTHLY_EFFORT_ACHIEVEMENTS: readonly string[] = ['paper-hands', 'coin-flipper', 'apes', 'printer', 'whale-rider', 'emotional-baggage'];
 
 export const claimableAchievements = (progress: Progress) => MOBILE_ACHIEVEMENTS.filter(item =>

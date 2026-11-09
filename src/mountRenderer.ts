@@ -5,9 +5,7 @@ import type { WhaleMount } from './whaleMount';
 import { frogLegPose } from './mountPose';
 import { drawHeadHat, drawHatArtwork } from './assetRenderer';
 
-// Penny Stock is drawn from its approved vector art in layers: both wheels (turning),
-// the body, the tail (lifts on a jump), the mane (sways) and the head (nods while
-// rolling, rears up on a jump).
+// Penny Stock is layered vector art: wheels, body, tail, mane and head, each animated.
 const pennyUrls = import.meta.glob('./assets/penny-stock/*.svg', { eager: true, query: '?url', import: 'default' }) as Record<string, string>;
 // Bump whenever the layer art in src/assets/penny-stock changes.
 const PENNY_ART_VERSION = 24;
@@ -19,22 +17,18 @@ const pennyImage = (part: string, dark: boolean): HTMLImageElement | null => {
   if (!image) {
     const url = pennyUrls[`./assets/penny-stock/${key}.svg`];
     if (!url) return null;
-    // Versioned URL so a browser never keeps showing an older drawing. Small layers are
-    // inlined as data: URLs, which carry their own content and must not be altered.
+    // Versioned URL so browsers never show an older drawing; inlined data: URLs must not be altered.
     image = new Image();
     image.src = url.startsWith('data:') ? url : `${url}${url.includes('?') ? '&' : '?'}art=${PENNY_ART_VERSION}`;
     pennyImages.set(key, image);
   }
   return image.complete && image.naturalWidth > 0 ? image : null;
 };
-// Art units: wheels touch the ground at y=851; the saddle's seat is at (552, 438).
-// The joke is a little pony: its seat is the shared seat point (22,-34) brought down
-// to 28 above the wheels, and riders are drawn lower by the difference.
+// Art units: wheels touch at y=851, seat at (552,438); riders are drawn lower by the difference.
 const PENNY_GROUND = 851, PENNY_SEAT = { x: 552, y: 438 };
 export const PENNY_SEAT_HEIGHT = 28;
 const PENNY_SCALE = PENNY_SEAT_HEIGHT / (PENNY_GROUND - PENNY_SEAT.y);
-// How much lower a rider sits than on the shared seat (drawing only; physics is unchanged).
-// A bull's or bear's back is higher than the shared seat, so its rider is drawn higher.
+// How much lower a rider sits than the shared seat (drawing only); bull and bear riders sit higher.
 export const mountRiderDrop = (skin: string, kind: string = 'whale'): number =>
   skin === 'mounts-penny' ? 34 - PENNY_SEAT_HEIGHT : skin === 'mounts-classic' && kind !== 'whale' ? -11 : 0;
 function drawPennyStock(ctx: CanvasRenderingContext2D, dark: boolean, phase: number, airborne: boolean, velocity: number): void {
@@ -50,8 +44,7 @@ function drawPennyStock(ctx: CanvasRenderingContext2D, dark: boolean, phase: num
     if (pivot) { ctx.translate(pivot[0], pivot[1]); ctx.rotate(angle); ctx.translate(-pivot[0], -pivot[1]); }
     ctx.drawImage(image, 0, 0, 1024, 1024); ctx.restore();
   };
-  // Wheels turn with the ride; the head nods while rolling and rears up in the air,
-  // and the tail lifts back on a jump.
+  // Wheels turn with the ride; the head nods then rears up, and the tail lifts on a jump.
   const wheelTurn = phase * 2.4;
   const headTilt = airborne ? -.2 : Math.sin(phase * 2) * .045;
   // A small lift, so the tail keeps covering the rump even in the air.
@@ -60,32 +53,28 @@ function drawPennyStock(ctx: CanvasRenderingContext2D, dark: boolean, phase: num
   layer('wheel', [393, 824], wheelTurn, 254);
   layer('body');
   layer('tail', [344, 476], tailLift);
-  // The mane lies over the back of the head up to the poll; ears and forelock top it,
-  // moving with the head.
+  // The mane lies over the back of the head up to the poll, moving with the head.
   layer('head', [736, 300], headTilt);
   layer('mane', [736, 300], headTilt + swing * .5);
   layer('ears', [736, 300], headTilt);
   ctx.restore();
 }
 
-// Feet at y=0, facing left like the original whale. Shared seat: (22,-34).
-// Skins change artwork only: duration, collisions and jump physics remain identical.
+// Feet at y=0, facing left like the whale, shared seat (22,-34); skins change artwork only.
 export function drawMount(ctx: CanvasRenderingContext2D, skin: string, kind: NonNullable<WhaleMount['kind']>, dark: boolean, phase = 0, airborne = false, velocity = 0, captain = false): void {
   if (skin === 'mounts-penny') { drawPennyStock(ctx, dark, phase, airborne, velocity); return; }
   if (skin !== 'mounts-wednesday' && kind === 'whale') {
     drawAnimalCharacter(ctx, { type: 'whale', x: 0, y: 0, feet: 0, phase, dead: false, jumpAmount:airborne?1:0 }, false, false, dark, false, false, true);
     if (captain) {
       ctx.save();ctx.rotate(-Math.min(1,(airborne?1:0)/40)*.12);ctx.scale(1+Math.min(1,(airborne?1:0)/40)*.04,1-Math.min(1,(airborne?1:0)/40)*.06);
-      // Desktop rider-space (30,-10), rotation .12, scale .85 converted
-      // into the whale's mirrored local space (seat height is 40).
+      // Desktop rider-space (30,-10), rotation .12, scale .85 in the whale's mirrored space.
       ctx.translate(-30,-50);ctx.rotate(-.12);ctx.scale(-.85,.85);
       drawHatArtwork(ctx,true,false,dark);ctx.restore();
     }
     return;
   }
   if (skin !== 'mounts-wednesday') {
-    // The shared seat falls on a bull's or bear's rump; set the animal back under
-    // the rider so they sit further forward on its back.
+    // The shared seat falls on a bull's or bear's rump; set the animal back under the rider.
     ctx.save(); ctx.translate(12, 0);
     drawAnimalMount(ctx, { type: kind === 'bear' ? 'bull' : 'bear', mount: kind, x: 0, y: 0, feet: 0, phase, dead: false, jumpAmount: airborne ? 25 : 0 }, dark, false, 'hats-classic', captain);
     ctx.restore(); return;
@@ -98,8 +87,7 @@ export function drawMount(ctx: CanvasRenderingContext2D, skin: string, kind: Non
     ctx.fillStyle = color; ctx.beginPath(); ctx.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
   };
   if (frog) {
-    // Anatomical right profile. The caller mirrors this left-facing source
-    // into the game's right-facing ride; never draw a second frontal eye.
+    // Anatomical right profile: the caller mirrors this left-facing source; never draw a second eye.
     const outline = dark ? '#29442b' : '#263823';
     const shade = dark ? '#548840' : '#356431';
     const far=frogLegPose(phase,false,airborne,velocity);

@@ -20,8 +20,7 @@ interface HatOwner {
   hatSoiled: boolean;
 }
 
-// A near miss is remembered on approach, but theft happens only after the
-// bird clears the lethal horizontal range. Collision resolution takes priority.
+// A near miss is remembered, but theft happens only after the bird clears the lethal range.
 export function tryBirdHatTheft(bird: Swan, owner: HatOwner): boolean {
   if (!owner.p || bird.dead || bird.dying || bird.stolenHat || bird.shieldPassed
     || bird.cargo || owner.p.rocketTimer > 0) return false;

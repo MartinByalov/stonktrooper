@@ -1,5 +1,4 @@
-// Filenames are kept explicit because achievement save IDs differ from titles.
-// Add new artwork here when adding a file to public/achievements.
+// Filenames stay explicit because achievement save IDs differ from titles; add new artwork here.
 export const ACHIEVEMENT_IMAGES: Readonly<Record<string, string>> = {
   'no-title': 'no-title.webp',
   butterfingers: 'diamond-hands-butterfingers-compact.webp',

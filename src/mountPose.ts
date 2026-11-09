@@ -17,8 +17,7 @@ export function quadrupedLegPose(phase: number, near: boolean, front: boolean, a
 }
 
 export function frogBodyPose(airborne: boolean, velocity: number) {
-  // Right-facing assembly: rise nose-up, descend nose-down. Ease back to
-  // neutral as vertical speed approaches zero; never rotate limbs separately.
+  // Right-facing assembly: nose-up on rise, nose-down on descent, easing to neutral; never rotate limbs.
   const angle=airborne?Math.tanh(velocity/8)*.22:0;
   return {angle};
 }
@@ -28,8 +27,7 @@ export function whaleFlipperPose(phase: number, jumping: boolean) {
   return {near:flap,far:-flap*.8};
 }
 
-// Lap luggage stays attached to the rider. Only the pet lifts slightly as the
-// mount rises, then settles back to its exact resting point on landing.
+// Lap luggage stays on the rider; only the pet lifts as the mount rises, then settles back.
 export function ridingPetLift(airborne: boolean, rise: number): number {
   return airborne && rise > 0 ? -5 * (1 - Math.exp(-rise / 18)) : 0;
 }
@@ -48,8 +46,7 @@ export function mountPreviewPose(seconds: number) {
   };
 }
 
-// Left-facing frog: the hock folds forward under the thigh on the ground,
-// extends behind at takeoff, then gathers beneath the belly for landing.
+// Left-facing frog: hock folds forward on the ground, extends at takeoff, gathers for landing.
 export function frogLegPose(phase: number, near: boolean, airborne = false, velocity = 0) {
   const cycle=((phase/Math.PI+(near?0:.5))%1+1)%1;
   const swing=cycle>=.65,t=swing?(cycle-.65)/.35:cycle/.65;

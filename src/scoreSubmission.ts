@@ -7,8 +7,7 @@ export function finalGoogleScore(progress: Progress): number | null {
   return Number.isSafeInteger(score) && score > 0 ? score : null;
 }
 
-// First death remains revivable. Death after revive is already final, so a
-// later finish command is a no-op and cannot be the only submission trigger.
+// The first death is revivable; a death after revive is final, so finish cannot be the only trigger.
 export function completesRun(action: ProgressCommand, progress: Progress): boolean {
   return progress.run?.status === 'finished' && (
     action.type === 'finish' || action.type === 'death'

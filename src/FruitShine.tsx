@@ -1,7 +1,6 @@
 import { useEffect, useRef, type ReactNode } from 'react';
 
-// Coin-style reflection: a soft white band sweeps across the fruit's own
-// pixels (the coin face uses the same 45% band, about every two seconds).
+// Coin-style reflection: a soft white band sweeps across the fruit's pixels every two seconds.
 const SWEEP_PERIOD = 2050;
 
 export function FruitShine({ animate, children }: { animate: boolean; children: ReactNode }) {

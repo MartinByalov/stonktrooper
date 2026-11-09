@@ -6,8 +6,7 @@ import { readSqueezeStatus, type SqueezeStatus } from '../shared/monthlySqueezeS
 export class SqueezeStatusError extends Error {
   constructor(public code: 'disabled' | 'unavailable') { super(`Monthly Squeeze status: ${code}`); }
 }
-// The last known number is shown immediately on load; the network is asked at most
-// this often, and never again once the goal is reached.
+// The last known number shows on load; the network is asked at most this often, never after unlock.
 export const STATUS_TTL_MS = 10 * 60_000;
 // After a failed request, do not ask again for this long.
 export const STATUS_RETRY_MS = 5 * 60_000;
@@ -24,13 +23,7 @@ interface Options {
 }
 interface Saved { version: 1; status: SqueezeStatus | null; fetchedAt: number; attemptAt: number; ownCounted: boolean }
 
-// Public group progress for the Home card. Works for Guests: no identity, no cookie,
-// no custom header (so no CORS preflight). Frequency is bounded by design:
-//   - the cached value is shown at load with zero requests;
-//   - a request is made only when the cache is older than STATUS_TTL_MS;
-//   - the browser's own HTTP cache (max-age=60) answers repeats within a minute;
-//   - once unlocked, no request is ever made again;
-//   - the player's own contribution is added locally, with no extra request.
+// Public group progress for the Home card: no identity or custom header, bounded by caching.
 export function createSqueezeStatusClient(options: Options) {
   const config = readWorkerConfig(options.env);
   if (options.env.VITE_MONTHLY_SQUEEZE_ENABLED !== 'true' || !config.configured || !validSqueezeEvent(options.event)) throw new SqueezeStatusError('disabled');
@@ -87,8 +80,7 @@ export function createSqueezeStatusClient(options: Options) {
       if (!force && now >= state.attemptAt && now - state.attemptAt < STATUS_RETRY_MS && state.attemptAt > state.fetchedAt) return Promise.resolve(view());
       state = { ...state, attemptAt: now };
       inflight = fetchStatus().then(fetched => {
-        // Counts only grow: never show fewer than already shown (this keeps the
-        // player's own locally added contribution until the server catches up).
+        // Counts only grow: never show fewer than already shown, keeping the local contribution.
         const participants = Math.max(fetched.participants, state.status?.participants ?? 0);
         state = { ...state, status: build(participants, fetched.target), fetchedAt: clock() };
         commit(); return view();
@@ -96,8 +88,7 @@ export function createSqueezeStatusClient(options: Options) {
       inflight.catch(() => {});
       return inflight;
     },
-    // The player's own contribution was just confirmed by the server: show it at once,
-    // without another request. A later server count replaces it when it includes it.
+    // The player's own confirmed contribution shows at once; a later server count replaces it.
     noteOwnContribution(): SqueezeStatusView {
       if (!state.ownCounted && state.status && !state.status.unlocked) {
         state = { ...state, ownCounted: true, status: build(state.status.participants + 1, state.status.target) };

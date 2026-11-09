@@ -1,5 +1,4 @@
-// Explicit product manifest, independent of legacy prices, saves and rewards.
-// Presence permits validation, NOT ownership, claiming, or gameplay integration.
+// Explicit product manifest: presence permits validation, not ownership, claiming or gameplay use.
 export const DRIP_ITEM_IDS_BY_SLOT = Object.freeze({
   candles: Object.freeze([
     'candles-classic', 'candles-ocean', 'candles-orchid', 'candles-amber',
@@ -56,8 +55,7 @@ export function dripItem(id: string) {
   return byId.get(id);
 }
 
-// Fail closed: a future legacy skin must not enter Drip just because it is not
-// in the reserve list. It requires an explicit manifest update and review.
+// Fail closed: a new legacy skin enters Drip only through an explicit manifest update.
 export function isStandardDripItem(id: string): boolean {
   return byId.get(id)?.availability === 'standard';
 }

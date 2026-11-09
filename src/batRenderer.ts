@@ -1,8 +1,7 @@
 // Browser game module for batRenderer.
 export function drawBaseballBat(ctx: CanvasRenderingContext2D): void {
   ctx.save(); ctx.lineCap = 'round';
-  // Both fists sit on the slim handle (y=-2 and y=-9). The wooden
-  // silhouette widens continuously beyond the grip into a rounded barrel.
+  // Both fists sit on the slim handle (y=-2 and y=-9); the bat widens into a rounded barrel.
   ctx.fillStyle = '#d6aa70';
   ctx.beginPath(); ctx.moveTo(0, 3);
   ctx.lineTo(-1.6, 3); ctx.lineTo(-1.6, -12);

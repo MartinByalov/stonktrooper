@@ -1,14 +1,11 @@
 import type { Candle } from './types';
 import type { MarketKnot, MarketRegime } from './marketPath';
 
-// Keep ample history for interpolation, companions, surprises and the camera.
-// Multiples of 210 preserve the grid (10), rocket coins (3), and the printer
-// gap-bridge decoration (2, 3, 7) across a coordinate translation.
+// Keep ample history; multiples of 210 preserve the grid, rocket coins and printer decoration.
 export const CHART_HISTORY = 512;
 export const CHART_COMPACT_AT = 2048;
 
-// Fill before physics, including after a mode restores an older chart snapshot.
-// Keep the snapshot frontier current until its trailing graph scrolls away.
+// Fill before physics, even after a mode restores an older snapshot; keep its frontier current.
 export function ensureChartAhead(
   g: { C: Candle[]; printerSaved: Candle[] | null },
   x: number, viewportWidth: number, candleWidth: number,
@@ -51,8 +48,7 @@ export type ChartWindowState = Record<typeof indexKeys[number] | typeof position
   flyingFedora: { x: number; turnX?: number } | null;
 };
 
-// Translation only: retained candles are never regenerated or shuffled. Scores,
-// timers, velocities and printer-turn distances are deliberately left alone.
+// Translation only: candles are never regenerated, and scores, timers and velocities stay put.
 export function compactChartWindow(g: ChartWindowState, candleWidth: number): number {
   if (!g.p || g.p.x / candleWidth < CHART_COMPACT_AT) return 0;
   const removed = Math.floor((Math.floor(g.p.x / candleWidth) - CHART_HISTORY) / 210) * 210;

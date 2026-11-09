@@ -673,8 +673,7 @@ export class SoundController {
     this.musicInterval = window.setInterval(() => {
       if (!this.musicEnabled || !this.enabled || this.settings.music === 'off' || !this.ctx) return;
       const now = this.ctx.currentTime;
-      // Schedule against the audio clock, not the arrival time of each JS tick.
-      // On a long suspension, resume one clean beat rather than replaying a backlog.
+      // Schedule against the audio clock, and after a long suspension resume one clean beat.
       if (this.nextMusicTime < now - .1) this.nextMusicTime = now + .02;
       while (this.nextMusicTime < now + .1) {
       this.scheduledMusicTime = this.nextMusicTime;
@@ -704,8 +703,7 @@ export class SoundController {
       if (this.musicStep >= 256) {
         this.musicTrack = this.musicPlaylist.next();
         this.musicStep = 0;
-        // A short breath between songs, like a playlist: the final tonic rings
-        // out before the next key and tempo begin.
+        // A short breath between songs, like a playlist: the final tonic rings out before the next key.
         this.nextMusicTime += SONG_GAP_SECONDS;
       }
       }

@@ -1,5 +1,4 @@
-// Headless OHLC pattern sampling shared by the browser and Node. The caller
-// owns the random stream; canvas painting must never generate market patterns.
+// Headless OHLC pattern sampling shared by browser and Node; the caller owns the random stream.
 type Pattern = readonly [string, number, (volatility: number, random: () => number) => [number, number, number]];
 export const CANDLE_PATTERNS: readonly Pattern[] = [
   ['Candle', 35, (v, r) => [v * (.35 + r() * .65), r() * .5 * v, r() * .5 * v]],

@@ -1,8 +1,7 @@
 // Browser game module for track.
 import type { Candle, Animal } from './types';
 
-// Rocket smoothing must never leave the pilot inside a tall candle. Include
-// the whole landing footprint, not just interpolated candle centres.
+// Rocket smoothing must never leave the pilot inside a tall candle; use the whole footprint.
 export function rocketTrackPose(candles: Candle[], x: number, width: number, y: number) {
   let ceiling = Infinity;
   const first = Math.max(0, Math.floor((x - 7) / width));
@@ -31,11 +30,9 @@ export const animalTrackHeightAt = (type: Animal['type'], candles: Candle[], x: 
   return base - 4 * height * progress * (1 - progress);
 };
 
-// The pet has its own footprint on the same solid candle bodies as the runner.
-// Do not interpolate through a tall body or lag below an ascending step.
+// The pet has its own footprint on the same candle bodies; never interpolate through a tall body.
 export function petTrackHeightAt(candles: Candle[], x: number, candleWidth: number, fallback: number): number {
-  // Every companion leaps between solid candle centres on either side of a gap.
-  // This positional arc survives chart rebasing and needs no species-specific clock.
+  // Every companion leaps between solid candle centres across a gap, with no species-specific clock.
   const position=x/candleWidth-.5;
   let left=Math.floor(position),right=Math.ceil(position);
   while(left>=0&&candles[left]?.hole)left--;
@@ -57,9 +54,7 @@ export function petTrackHeightAt(candles: Candle[], x: number, candleWidth: numb
   return Math.min(jumpFloor,Number.isFinite(floor) ? floor : trackHeightAt(candles,x,candleWidth,fallback));
 }
 
-// Home's repeating SVG market uses the same local foot anchor as the game.
-// position is the hero's fractional candle index; heights include the selected
-// candle design, while the offset is in runner (unscaled) coordinates.
+// Home's SVG market uses the game's foot anchor; position is the hero's fractional candle index.
 export function menuPetSurfaceOffset(tops: number[], position: number, offset: number, scale: number, spacing: number): number {
   if (!tops.length || scale<=0 || spacing<=0) return 0;
   const sample=(i: number)=>tops[((i%tops.length)+tops.length)%tops.length];

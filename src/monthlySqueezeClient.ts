@@ -19,8 +19,7 @@ interface Options {
   storage?: SqueezeStorage | null;
 }
 
-// Detached composition: no App callback or status polling. Local confirmation
-// is only an optimization; the server remains authoritative for contributions.
+// Detached composition with no App callback or polling; the server stays authoritative.
 export function createMonthlySqueezeClient(options: Options) {
   const config = readWorkerConfig(options.env);
   if (options.env.VITE_MONTHLY_SQUEEZE_ENABLED !== 'true' || !config.configured) throw new SqueezeClientError('disabled');

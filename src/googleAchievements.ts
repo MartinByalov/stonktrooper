@@ -44,8 +44,7 @@ export function createGoogleAchievementSync(unlock: (playerId: string, achieveme
         request = Promise.resolve().then(() => unlock(playerId, id)).then(() => { confirmed.add(key); }).finally(() => { pending.delete(key); });
         pending.set(key, request);
       }
-      // A failed Google mirror never invalidates a successful cloud save.
-      // Retry at the next confirmed save or profile attachment.
+      // A failed Google mirror never invalidates a cloud save; retry at the next save or attachment.
       try { await request; } catch { /* No wallet or progression mutation. */ }
     }
   };

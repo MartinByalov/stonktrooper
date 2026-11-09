@@ -50,8 +50,7 @@ export function MenuChart({ theme, animationsEnabled, candleSkin = 'candles-clas
   const candleWidth = (portrait ? 4.8 : 3.5) * candleScale;
   const axisWidth = portrait ? 0 : view.axisWidth * view.scale;
   const plotWidth = Math.max(1, width - axisWidth);
-  // Put portrait's outer candle centres on the screen edges. The plot clips
-  // their bodies and volume bars, so neither side ends in an empty gutter.
+  // Put portrait's outer candle centres on the screen edges so neither side has an empty gutter.
   const portraitIntervals = Math.max(1, Math.ceil(plotWidth / (6 * candleScale)));
   const candleSpacing = portrait ? plotWidth / portraitIntervals : 5.4 * candleScale;
   const plotHeight = Math.max(1, height - view.timeAxisHeight * view.scale);
@@ -107,15 +106,13 @@ export function MenuChart({ theme, animationsEnabled, candleSkin = 'candles-clas
   const heroScale = !portrait && size.actionsLeft > 0
     ? Math.min(view.scale * 1.35, Math.max(1, size.actionsLeft - 16) / groupWidth, plotHeight / 125)
     : view.scale;
-  // The hero itself (not hero + pet) sits midway between the screen edge and the buttons;
-  // its hat is drawn 4 units right of the feet anchor, with or without a pet or mount.
+  // The hero alone sits midway between the screen edge and the buttons; the hat is 4 units right.
   const heroX = !portrait && size.actionsLeft > 0
     ? size.actionsLeft / 2 - 4 * heroScale
     : view.heroX * view.scale;
   const heroIndex = Math.max(0, Math.min(count - 1, Math.round((heroX - 2) / candleSpacing)));
   const heroCandle = candles[heroIndex];
-  // Use the gameplay feet anchor, not a separately centred Home sprite.
-  // Move the market underneath it so the runner still stands on a candle.
+  // Use the gameplay feet anchor and move the market underneath so the runner stands on a candle.
   const heroY = view.heroY * view.scale;
   const terrainShift = heroY - surfaceTops[heroIndex];
   const candleOffsetX = heroX - heroCandle.x;

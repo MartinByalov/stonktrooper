@@ -31,8 +31,7 @@ export function DesktopAssetPreview({ asset, compact = false, theme = 'light', g
       output.drawImage(cached, 0, 0);
       return;
     }
-    // Render without clipping first, then fit the actual painted bounds, not
-    // the character's feet/origin, into the square preview.
+    // Render unclipped, then fit the painted bounds, not the origin, into the square preview.
     const buffer = document.createElement('canvas');
     buffer.width = 512; buffer.height = 512;
     const ctx = buffer.getContext('2d');
@@ -173,8 +172,7 @@ export function DesktopAssetPreview({ asset, compact = false, theme = 'light', g
     if (!crop && right < left) return;
     let width = right - left + 1, height = bottom - top + 1;
     if (motionRate) {
-      // Fit once; later frames keep the same scale and ground line, so the
-      // sprite walks/flaps in place instead of re-centering every frame.
+      // Fit once so later frames keep the same scale and ground line, and the sprite walks in place.
       const pad = Math.round(Math.max(width, height) * .08);
       crop ??= { left: Math.max(0, left - pad), top: Math.max(0, top - pad), width: Math.min(512, width + pad * 2), height: Math.min(512, height + pad) };
       ({ left, top, width, height } = crop);

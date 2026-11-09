@@ -4,8 +4,7 @@ import { candleGlyph, drawCandleDesign } from './candleDesign';
 import type { Progress } from './progression';
 import { menuPetSurfaceOffset } from './track';
 
-// Like Home: move the market underneath a fixed walking runner, sampling the
-// candle tops so his feet remain on the chart as the terrain changes.
+// Like Home: move the market under a fixed walking runner, sampling candle tops for his feet.
 export function ExchangeMarket({ theme, animationsEnabled, equipped, showMount = false, title }: { theme: 'light' | 'dark'; animationsEnabled: boolean; equipped: Progress['equipped']; showMount?: boolean; title?: string }) {
   const root = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);

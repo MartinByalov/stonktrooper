@@ -96,14 +96,12 @@ export function useProgression() {
     ready.current = false;
     run.current = null;
     if (presentingRun.current && connectionLost) {
-      // Retain online-run navigation/stash presentation, but roll back wallet
-      // changes and route all later commands through the memory-only reducer.
+      // Keep the online-run presentation, roll back wallet changes and use the memory-only reducer.
       const source = runBaseline.current ?? saveRef.current?.progress;
       if (source) display({ ...source, run: current.current.run });
       return;
     }
-    // Locking the phone revokes earning authority, not the already rendered UI.
-    // Only a confirmed network/profile failure switches presentation to Practice.
+    // Locking the phone revokes earning authority, not the UI; only a confirmed failure enters Practice.
     if (preservePresentation) return;
     setOnlineReady(false); setPracticeRun(true);
     // Roll back all uncommitted account changes. Practice starts clean in memory.
@@ -119,8 +117,7 @@ export function useProgression() {
   }, [display]);
 
   const attach = useCallback(async (interactive: boolean, allowResults = false) => {
-    // Browser accounts are Firebase accounts. Never call a Capacitor Play bridge
-    // from Home restoration or a visibility change after a Google popup.
+    // Browser accounts are Firebase accounts; never call a Capacitor Play bridge from Home restoration.
     if (!servicesAvailable()) { setBusy(false); setConnecting(false); setError(''); return; }
     if (presentingRun.current && (!allowResults || playing.current || run.current) || LOCAL_SANDBOX || localPreview() || document.hidden) return;
     if (working.current) { attachmentPending.current = true; return; }
@@ -166,8 +163,7 @@ export function useProgression() {
       reportBootStage('ready');
       working.current = false; setBusy(false); setConnecting(false);
       releaseAttachment();
-      // A foreground/network callback may arrive while the invalidated request
-      // is still in flight. Do not lose that request to restore the Home profile.
+      // A callback may arrive while the invalidated request is in flight; do not lose it to restore Home.
       if (attachmentPending.current) {
         attachmentPending.current = false;
         void attach(false);
@@ -203,8 +199,7 @@ export function useProgression() {
       reconnecting.current = false;
       setConnecting(false);
     }
-    // Reconnect authenticates once without loading a profile over the current
-    // engine/results. Repeated Android callbacks must not restart Connecting.
+    // Reconnect authenticates once without loading a profile; repeated callbacks must not restart it.
     if (network.online && presentingRun.current && !wasOnline && !reconnecting.current) {
       const version = ++reconnectVersion.current;
       reconnecting.current = true; setConnecting(true);
@@ -254,8 +249,7 @@ export function useProgression() {
       .then(handle => { if (disposed) void handle.remove(); else remove = () => handle.remove(); }).catch(() => invalidate());
     const offline = () => {
       if (servicesAvailable()) {
-        // WebView emits transient offline hints on lock/unlock. Native validated
-        // connectivity is authoritative; do not replace Home on a browser hint.
+        // WebView emits transient offline hints on lock; native connectivity is authoritative.
         void getGoogleOnlineState().then(network => {
           if (disposed) return;
           observeNetwork(network);
@@ -274,8 +268,7 @@ export function useProgression() {
     };
     const foreground = () => {
       if (!nativeServicesAvailable()) return;
-      // Native Play Games UI can briefly hide the WebView during a checked
-      // transaction, including a Claim from Pause. It validates identity/epoch.
+      // Native Play Games UI can briefly hide the WebView during a checked transaction; it validates epoch.
       if (working.current) return;
       if (document.hidden) { invalidate(true); return; }
       if (!playing.current) void attach(false);
@@ -319,17 +312,14 @@ export function useProgression() {
     if (working.current && attachmentCompletion.current) await attachmentCompletion.current;
     if (working.current) return false;
     if (LOCAL_SANDBOX || localPreview()) { await adoptWeek.current(); return true; }
-    // Browser Guest play is local regardless of connectivity. Google account
-    // play is gated separately until the authoritative backend is connected.
+    // Browser Guest play is local regardless of connectivity; Google play waits for the backend.
     if (!servicesAvailable()) return true;
     if (ready.current && !(saveRef.current && hasPendingCurrencies(localStorage, saveRef.current.playerId))) {
       try {
         const network = await getGoogleOnlineState();
         setNetworkOnline(network.online);
         requireOnline(network, preparedEpoch.current);
-        // The loaded profile is already attached. Play only checks its epoch;
-        // do not reload Saved Games or flash the connecting presentation.
-        // The first run of a new week saves its Weekly Quests baseline first.
+        // The loaded profile is attached; Play checks only its epoch, and a new week saves its baseline first.
         await adoptWeek.current();
         if (ready.current) return true;
       } catch { invalidate(); }
@@ -367,14 +357,12 @@ export function useProgression() {
         if (score !== null && nativeServicesAvailable()) {
           // The next Play waits for the confirmed save, not for the leaderboard round-trip.
           void submitGoogleScore(eligible.playerId, score).catch(error => console.warn('Google Score submission failed.', error));
-          // Optional reward discovery belongs to refreshTournamentRewards in
-          // Loot. NTP/reward reads must not hold settlement and the next Play.
+          // Optional reward discovery belongs to refreshTournamentRewards; it must not hold settlement or Play.
         }
       }
       }
     } catch (e) {
-      // Loss can first be detected by the final write, before the native
-      // connectivity callback arrives. Route that ended online run Home too.
+      // Loss can be detected by the final write first; route that ended online run Home too.
       try {
         const network = await getGoogleOnlineState();
         setNetworkOnline(network.online);
@@ -390,8 +378,7 @@ export function useProgression() {
   const command = useCallback((action: ProgressCommand) => {
     if (working.current) return;
     const preview = LOCAL_SANDBOX || localPreview();
-    // Settings/About interactions happen outside a run. They are account
-    // transactions, not Practice events or unsaved live-run UI mutations.
+    // Settings and About happen outside a run; they are account transactions, not Practice events.
     if (!preview && action.type === 'feat' && (action.feat === 'diamond-drop' || action.feat === 'coin-flip')
       && !playing.current && !run.current && ready.current && accountRef.current) {
       void accountAction(action).catch(() => { /* Account transaction reports the error. */ });
@@ -473,8 +460,7 @@ export function useProgression() {
       const network = await getGoogleOnlineState(); requireOnline(network);
       const player = await restoreGooglePlayer();
       if (player?.playerId !== accountRef.current.playerId) throw new Error('Google account changed. Log in again.');
-      // A live-run receipt belongs to unfinished gameplay, not to this Claim.
-      // Never recover/settle it as a side effect of opening a reward dialog.
+      // A live-run receipt belongs to unfinished gameplay; never settle it when opening a reward dialog.
       const activeRun = run.current;
       const previousSave = saveRef.current;
       if (!activeRun) await restoreRunCurrencies(localStorage, player.playerId, () => readGoogleSave(player.playerId), writeGoogleSave);
@@ -486,9 +472,7 @@ export function useProgression() {
         throw new Error('Google progress changed during this run. Reconnect before claiming.');
       }
       saveRef.current = save;
-      // The dialog uses live lifetime/kill counters. Validate against those
-      // same earned counters, but keep the confirmed wallet: stash is settled
-      // only at run completion. Never merge a changed remote profile.
+      // Validate against the live earned counters but keep the confirmed wallet; never merge a profile.
       const claimBase = activeRun ? { ...current.current, wallet: { ...save.progress.wallet }, run: null } : { ...save.progress, run: null };
       // A quest Claim first adopts its (trusted) week if this save has not yet.
       const withWeek = (p: Progress) => action.type === 'claimQuest' ? applyCommand(p, { type: 'questWeek', week: action.week }, true)
@@ -497,8 +481,7 @@ export function useProgression() {
       const liveNext = activeRun ? applyCommand(withWeek(current.current), action, true) : null;
       if (!await commit(next, network.epoch, !activeRun)) throw new Error('Account action was not saved. Reconnect and retry.');
       if (activeRun && run.current === activeRun && liveNext) {
-        // Rebase the live presentation and recovery receipt on the confirmed
-        // reward. Final run settlement must neither erase nor duplicate it.
+        // Rebase the live presentation and receipt on the confirmed reward; settlement must not duplicate it.
         runBaseline.current = next;
         display(liveNext);
         if (saveRef.current) retainRunCurrencies(localStorage, saveRef.current, liveNext);
@@ -522,8 +505,7 @@ export function useProgression() {
   const equipTitle = async (titleId: string | null) => { try { await accountAction({ type: 'equipTitle', titleId }); } catch { /* Visible error. */ } };
   const claimAchievement = async (achievementId: string) => { await accountAction({ type: 'claimAchievement', achievementId }); };
   useEffect(() => { if (onlineReady) void adoptWeek.current(); }, [onlineReady]);
-  // Weekly Quests and the Monthly Vault count from the first online run, attach
-  // or Loot open of a new Google week / UTC month.
+  // Weekly Quests and the Monthly Vault count from the first online run, attach or Loot open.
   adoptWeek.current = async () => {
     let now: number;
     try { now = LOCAL_SANDBOX || localPreview() ? Date.now() : await getGoogleTime(); } catch { return; } // Google time is optional for Play.
@@ -551,8 +533,7 @@ export function useProgression() {
     }
     await accountAction(action);
   };
-  // Claims use the adopted week (set from Google time), so a Claim never
-  // waits for optional time reads, even during a paused run.
+  // Claims use the adopted week from Google time, so they never wait for optional time reads.
   const claimQuest = async (questId: string) => {
     const week = current.current.weekly?.week ?? questWeekKey;
     if (!week) throw new Error('Weekly quests are still loading. Please retry.');
@@ -607,8 +588,7 @@ export function useProgression() {
         scores = await getGoogleRewardScores(id);
         after = await getGoogleTime();
       } catch (error) {
-        // Discovery is optional; preserve settled rewards and retry next open.
-        // Account, cloud-save and explicit Claim failures still surface below.
+        // Discovery is optional: keep settled rewards and retry next open; other failures still surface.
         console.warn('Reward verification deferred until Loot retry.', error);
         return;
       }

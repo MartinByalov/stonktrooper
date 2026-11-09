@@ -6,8 +6,7 @@ export function LandingScore({ score, theme }: { score: number; theme: 'light' |
   const canvas = useRef<HTMLCanvasElement>(null);
   const figure = useRef<HTMLElement>(null);
   const anchor = useRef<HTMLSpanElement>(null);
-  // The briefcase makes the artwork bounds asymmetric. Use the trouser split
-  // as the body axis, and the higher (anatomical left) shoe as the baseline.
+  // The briefcase skews the bounds: use the trouser split as the axis, the higher shoe as baseline.
   const artworkAnchor = useRef({ x: 0.5, baseline: 1 });
   const [loaded, setLoaded] = useState(false);
   const [portalHost, setPortalHost] = useState<Element>(() => document.fullscreenElement ?? document.body);

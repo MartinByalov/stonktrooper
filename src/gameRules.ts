@@ -38,8 +38,7 @@ export const aimedHitDefeatsEnemy = (enemy: { mount?: 'bear' | 'bull' | 'whale';
   return enemy.aimedHits >= (enemy.mount ? 2 : 1);
 };
 
-// The terrain makes the bell challenging to reach; contact must not depend on
-// jump counters or velocity, which can be reset by landing before pickups run.
+// Bell contact must not depend on jump counters or velocity, which landing can reset.
 export const canCatchBossBell = (rocketTimer: number, distance: number): boolean =>
   rocketTimer <= 0 && distance < 26;
 
@@ -58,8 +57,7 @@ export const canLandOnTrack = (air: boolean, velocity: number, previousY: number
 export const canRecoverSolidLanding = (barrier: boolean | undefined, velocity: number, feet: number, top: number, crossedGap = false): boolean =>
   !crossedGap && !barrier && velocity >= 0 && feet >= top;
 
-// Refresh the extra-jump charge on every landing; a previous yellow zone must
-// not grant a double jump after landing on unmarked ground.
+// Refresh the extra-jump charge on every landing so an old yellow zone grants no double jump.
 export const doubleJumpChargeOnLanding = (candles: readonly { hole?: boolean; sp?: boolean }[], first: number, last: number): boolean =>
   candles.slice(first, last + 1).some(candle => candle && !candle.hole && candle.sp);
 
