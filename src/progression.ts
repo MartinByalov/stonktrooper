@@ -92,6 +92,7 @@ const exchangeRecipes: Record<string, Partial<Wallet>> = {
   'pets-black-swan': { coins: 1000, bells: 20, diamonds: 30, hats: 20 },
   'pets-rabbit': { coins: 950, hats: 50, tenders: 30, bananas: 20 },
   'pets-yacht': { coins: 500, bags: 50, diamonds: 20 },
+  'pets-rock': { coins: 200, bags: 5 },
   'pets-steak': { coins: 250, tenders: 20, bags: 10 },
   'pets-snail': { coins: 300, bananas: 20, diamonds: 10 },
   'pets-box': { coins: 350, bags: 30, tenders: 10 },
@@ -166,7 +167,7 @@ export const SKINS: Skin[] = [
   { id: 'pets-black-swan', name: 'Swan Jr.', description: 'Tiny. Unexpected.', category: 'pets', cost: { coins: 3600, bells: 10 }, light: ['#18181b', '#dc2626'], dark: ['#ffffff', '#fb7185'] },
   { id: 'pets-rabbit', name: 'The Earnings Magician', description: 'Now you see the profits...', category: 'pets', cost: { coins: 3200, hats: 20 }, light: ['#ffffff', '#f9a8d4'], dark: ['#ffffff', '#fbcfe8'] },
   { id: 'pets-yacht', name: 'Yacht', description: 'Offshore. On a budget.', category: 'pets', cost: { coins: 1700, bags: 15 }, light: ['#e2e8f0', '#2563eb'], dark: ['#bae6fd', '#818cf8'] },
-  { id: 'pets-rock', name: 'Rock', description: 'Diamond hands. Granite brain.', category: 'pets', cost: {}, light: ['#78716c', '#d6d3d1'], dark: ['#a8a29e', '#e7e5e4'] },
+  { id: 'pets-rock', name: 'Rock', description: 'Diamond hands. Granite brain.', category: 'pets', cost: { coins: 200, bags: 5 }, light: ['#78716c', '#d6d3d1'], dark: ['#a8a29e', '#e7e5e4'] },
   { id: 'pets-steak', name: 'Steak', description: 'High steaks. Low balance.', category: 'pets', cost: { coins: 800, tenders: 5 }, light: ['#be123c', '#fecdd3'], dark: ['#f43f5e', '#ffe4e6'] },
   { id: 'pets-snail', name: 'Snailord', description: 'Slow trades. Royal returns.', category: 'pets', cost: { coins: 1000, bananas: 5 }, light: ['#8273bd', '#f1c17b'], dark: ['#afa0e1', '#f9d69a'] },
   { id: 'pets-box', name: 'Box', description: 'Unpack your unrealized losses.', category: 'pets', cost: { coins: 1200, bags: 8 }, light: ['#b7793b', '#f5d0a0'], dark: ['#d4a373', '#fef3c7'] },
@@ -192,6 +193,9 @@ export const SKINS: Skin[] = [
   return { ...skin, cost } as Skin;
 });
 export const defaults: Record<Category, string> = { candles: 'candles-classic', hats: 'hats-classic', suitcase: 'suitcase-classic', suits: 'suits-classic', shoes: 'shoes-classic', pets: 'pets-rock', mounts: 'mounts-classic' };
+// `defaults` stays what the renderers fall back to. A new player owns and wears no Pet: the Rock is bought like the others.
+export const startingOutfit: Record<Category, string> = { ...defaults, pets: '' };
+const startingOwned = Object.values(defaults).filter(id => id !== defaults.pets);
 export interface PlayerTitle {
   id: string;
   name: string;
@@ -249,7 +253,7 @@ export interface Progress {
 export const newProgress = (): Progress => ({
   schema: 1, wallet: emptyWallet(), lifetime: emptyWallet(), deaths: 0, throws: 0, kills: {}, feats: {}, rewardedAchievements: [], scoreRewards: [], claimedQuests: [], weekly: null, vault: null,
   bestPips: 0, bestAth: 0, ownedTitles: [], equippedTitle: null, bestClassic: 0, bestAssisted: 0, runs: 0, loginDays: [],
-  owned: Object.values(defaults), equipped: { ...defaults }, run: null,
+  owned: [...startingOwned], equipped: { ...startingOutfit }, run: null,
 });
 export const FEATS = ['dumpster-stomp', 'stomp', 'whale-ride', 'printer', 'diamond-drop', 'coin-flip', 'vanishing-case', 'clown-bag', 'tomato'] as const;
 export type Feat = typeof FEATS[number];
@@ -542,12 +546,12 @@ export function readProgress(raw: string | null, strict = false): Progress {
     p.equipped.suitcase = retiredCases[p.equipped.suitcase] ?? p.equipped.suitcase;
     if (p.owned.includes('pets-brick-4x4')) p.owned.push('pets-brick');
     if (p.equipped.pets === 'pets-brick-4x4') p.equipped.pets = 'pets-brick';
-    p.owned = [...new Set([...p.owned.filter(id => SKINS.some(s => s.id === id)), ...Object.values(defaults)])];
+    p.owned = [...new Set([...p.owned.filter(id => SKINS.some(s => s.id === id)), ...startingOwned])];
     // Previously claimed achievements and purchased cosmetics retain their unlocks.
     if (p.rewardedAchievements.includes('pool-of-liquidity') && !p.owned.includes('suits-swim')) p.owned.push('suits-swim');
     for (const skin of SKINS.filter(s => s.achievementId && p.rewardedAchievements.includes(s.achievementId))) if (!p.owned.includes(skin.id)) p.owned.push(skin.id);
     for (const category of CATEGORIES) {
-      if (!SKINS.some(s => s.id === p.equipped[category] && s.category === category && p.owned.includes(s.id))) p.equipped[category] = defaults[category];
+      if (!SKINS.some(s => s.id === p.equipped[category] && s.category === category && p.owned.includes(s.id))) p.equipped[category] = startingOutfit[category];
     }
     p.ownedTitles = [...new Set(p.ownedTitles.filter(id => TITLES.some(t => t.id === id)))];
     for (const title of TITLES) if (title.achievementId && p.rewardedAchievements.includes(title.achievementId) && !p.ownedTitles.includes(title.id)) p.ownedTitles.push(title.id);

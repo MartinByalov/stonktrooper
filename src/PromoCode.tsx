@@ -7,6 +7,8 @@ export function PromoCode({ onClose, onRedeem, fixed = false }: { onClose: () =>
   const [code, setCode] = useState('');
   const [message, setMessage] = useState<{ text: string; ok: boolean } | null>(null);
   const [busy, setBusy] = useState(false);
+  // After a successful claim the button itself says Claimed. Typing a new code brings Claim back.
+  const [claimed, setClaimed] = useState(false);
   useEffect(() => { input.current?.focus(); }, []);
   return <div className={fixed ? 'promo-overlay promo-overlay-fixed' : 'promo-overlay'} onPointerDown={event => event.stopPropagation()} onKeyDown={event => {
     event.stopPropagation();
@@ -21,15 +23,15 @@ export function PromoCode({ onClose, onRedeem, fixed = false }: { onClose: () =>
           event.preventDefault();
           if (!onRedeem || busy || !code.trim()) return;
           setBusy(true); setMessage(null);
-          try { setMessage({ text: await onRedeem(code), ok: true }); setCode(''); }
+          try { setMessage({ text: await onRedeem(code), ok: true }); setCode(''); setClaimed(true); }
           catch (error) { setMessage({ text: error instanceof Error ? error.message : 'Unable to redeem promo code', ok: false }); }
           finally { setBusy(false); }
         }}>
           <label className="sr-only" htmlFor="promo-code">Code</label>
-          <input ref={input} id="promo-code" value={code} onChange={event => { setCode(event.target.value); setMessage(null); }} maxLength={64} autoComplete="off" autoCapitalize="characters" spellCheck={false} placeholder="Enter code" />
-          <button type="submit" className="achievement-collect loot-claim" disabled={!code.trim() || busy || !onRedeem}>Claim</button>
+          <input ref={input} id="promo-code" value={code} onChange={event => { setCode(event.target.value); setMessage(null); setClaimed(false); }} maxLength={64} autoComplete="off" autoCapitalize="characters" spellCheck={false} placeholder="Enter code" />
+          <button type="submit" className="achievement-collect loot-claim" disabled={!code.trim() || busy || !onRedeem}>{claimed ? 'Claimed' : 'Claim'}</button>
         </form>
-        <p role="status" className="promo-message" data-ok={message?.ok || undefined}>{message?.text ?? ''}</p>
+        <p role="status" className={message?.ok ? 'promo-message sr-only' : 'promo-message'} data-ok={message?.ok || undefined}>{message?.text ?? ''}</p>
       </div>
     </div>
   </div>;

@@ -781,7 +781,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
       if (encounter.player.lives > 0) return;
     }
 
-    if (g.p && !petDeath.current) {
+    if (g.p && !petDeath.current && cosmeticRef.current.pets) {
       petDeath.current = { x: g.p.x, y: g.p.y, frame: 0, gap: g.falling, id: cosmeticRef.current.pets };
       petAttack.current = null;
     }
@@ -1008,7 +1008,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     const overheadY = (phase: number) => pigeonFlightY(g.cy, TAPE_HEIGHT, phase, .25, field);
 
     const petId = cosmeticRef.current.pets;
-    const onFoot = !petId.startsWith('friend:') && !g.p.whaleMount && g.p.rocketTimer <= 0 && g.hawkTimer <= 0 && g.printerTimer <= 0 && !g.falling && !petDeath.current;
+    const onFoot = !!petId && !petId.startsWith('friend:') && !g.p.whaleMount && g.p.rocketTimer <= 0 && g.hawkTimer <= 0 && g.printerTimer <= 0 && !g.falling && !petDeath.current;
     const petBoss=bossEncounter.current?.result==='fight'?bossEncounter.current.boss:null;
     if (!onFoot || (petAttack.current && petAttack.current.id !== petId)) petAttack.current = null;
     if (onFoot && !petAttack.current) {
@@ -1908,7 +1908,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     const petPreviousY = g.p.y;
 
     if (g.falling) {
-      if (!petDeath.current) {
+      if (!petDeath.current && cosmeticRef.current.pets) {
         petDeath.current = { x: g.p.x, y: g.p.y, frame: 0, gap: true, id: cosmeticRef.current.pets };
         petAttack.current = null;
       }
@@ -2190,7 +2190,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     }
 
     // Companions use their own terrain, not the hero's jump; horizontal state is runner-relative.
-    if (g.p.rocketTimer <= 0 && g.hawkTimer <= 0 && g.printerTimer <= 0 && !g.p.whaleMount && !petDeath.current) {
+    if (cosmeticRef.current.pets && g.p.rocketTimer <= 0 && g.hawkTimer <= 0 && g.printerTimer <= 0 && !g.p.whaleMount && !petDeath.current) {
       const id = cosmeticRef.current.pets;
       const phase = petAnimationPhase(g.globalFrame/60,id);
       const pose = petPose('normal',phase,false,id,true);
@@ -2251,6 +2251,7 @@ export const CandleGame: React.FC<CandleGameProps> = ({
     const suit = skinColors(cosmeticRef.current.suits, theme === 'dark');
     let deathPetRendered = false;
     const renderPet = (mode: Parameters<typeof petPose>[0]) => {
+      if (!cosmeticRef.current.pets) return;
       const death = petDeath.current;
       if (death) {
         if (deathPetRendered) return;

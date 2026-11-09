@@ -128,6 +128,7 @@ export function printerBanknotePose(phase: number) {
 
 // Local offsets avoid drift when the chart rebases. Phase only advances in simulation.
 export function petPose(mode: PreviewMode, phase: number, airborne = false, id = 'pets-rock', followRunner = false) {
+  id ||= 'pets-rock'; // Only measures; with no Pet worn nothing is drawn.
   switch (mode) {
     // Passenger seats start at x=8 and are spaced 22 units apart.
     case 'dumpster': return { x: -14, y: -34, scale: .75 };

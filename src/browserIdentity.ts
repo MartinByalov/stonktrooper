@@ -4,13 +4,17 @@ import { readWorkerConfig } from './workerConfig';
 export interface BrowserUser { uid: string; displayName: string | null }
 export const workerConfiguration = readWorkerConfig(import.meta.env);
 let currentUser: BrowserUser | null = null;
+// True once the server has said who is signed in (or that nobody is). Views that mount later start from this, not from "unknown".
+let sessionKnown = false;
 let generation = 0;
 const listeners = new Set<(user: BrowserUser | null) => void>();
 export const getBrowserUser = () => currentUser;
+export const isBrowserSessionKnown = () => sessionKnown;
 // Invalidate detached profile requests during logout, login and refresh; not a session credential.
 export const getBrowserIdentityGeneration = () => generation;
 function publish(user: BrowserUser | null) {
   currentUser = user;
+  sessionKnown = true;
   for (const listener of listeners) listener(user);
 }
 export async function workerRequest(path: string, init: RequestInit = {}): Promise<unknown> {
@@ -50,8 +54,10 @@ export function subscribeBrowserUser(next: (user: BrowserUser | null) => void) {
 export function watchBrowserUser(next: (user: BrowserUser | null) => void, error: (failure: unknown) => void) {
   let active = true;
   listeners.add(next);
-  // Wait for server restoration before displaying signed-out UI.
-  void refreshBrowserSession().catch(failure => { if (active) error(failure); });
+  // The first view asks the server. Later views (back from a game, a dialog or the Exchange) reuse the answer at once, so the
+  // sign-in button never flashes while the same question is asked again.
+  if (sessionKnown) next(currentUser);
+  else void refreshBrowserSession().catch(failure => { if (active) error(failure); });
   return () => { active = false; listeners.delete(next); };
 }
 export async function signInBrowserGoogle(options: { consent?: boolean } = {}) {

@@ -911,6 +911,8 @@ export default function App() {
             </div>
             {/* Development only: starts the Bell boss fight. Never part of a release build. */}
             {import.meta.env.DEV && state === 'play' && <button type="button" className="mobile-header-control header-boss-control" title="Boss fight (Bell)" aria-label="Start Bell boss fight" onClick={() => { sound.unlock(); setBossRequest(request => request + 1); }}><Bell className="w-3.5 h-3.5" aria-hidden="true" /></button>}
+            {/* Leaderboard comes before Play and Pause, so on Pause the Play button is next to Settings. */}
+            {!leftHeaderControls && leaderboardButton}
             {(state === 'play' || state === 'paused' || state === 'boxing') && <button
               type="button"
               disabled={finishingHome}
@@ -925,7 +927,6 @@ export default function App() {
             
             
             
-            {!leftHeaderControls && leaderboardButton}
             {!leftHeaderControls && !mobileDevice && settingsButton}
             {accountSession && state === 'menu' && <button type="button" title="Sign out" aria-label="Sign out of Google" onClick={signOutAccount} className="mobile-header-control header-signout-control"><LogOut className="w-3.5 h-3.5" aria-hidden="true" /></button>}
             {mobileDevice && <button type="button" onClick={toggleFullscreen} className="mobile-header-control header-options-control header-fullscreen-control"

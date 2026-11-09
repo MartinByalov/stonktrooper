@@ -47,7 +47,8 @@ html[data-theme] .game-app .margin-call-summary .finish-confirm-title { color: v
 .info-briefcase-scale { display: block; transform-origin: center; }
 .info-bag-surprise { position: relative; display: block; }
 .info-bag-front { position: relative; display: block; z-index: 1; }
-.info-bag-clown { position: absolute; inset: 0; z-index: 2; pointer-events: none; opacity: 0; transform: translateY(0) scale(0.25); }
+/* The clown sits behind the bag and rises out of its opening, so it never shows through the middle of the bag. */
+.info-bag-clown { position: absolute; inset: 0; z-index: 0; pointer-events: none; opacity: 0; transform: translateY(8%) scale(0.25); }
 .info-artwork-button[data-clown="true"] .info-bag-clown { opacity: 1; transform: translateY(-55.5%) scale(0.65); }
 .info-artwork-button[data-animate="true"] .info-bag-clown { transition: transform 300ms ease-out, opacity 300ms ease-out; }
 .info-artwork-button:disabled { cursor: default; opacity: 1; }
@@ -55,7 +56,7 @@ html[data-theme] .game-app .margin-call-summary .finish-confirm-title { color: v
 .info-artwork-button[data-animate="true"] .info-fruit-shine { animation: info-fruit-shine 3s ease-in-out infinite; }
 @keyframes info-fruit-shine {
   0%, 65%, 100% { filter: brightness(1); }
-  78% { filter: brightness(1.45); }
+  78% { filter: brightness(1.15); }
 }
 @media (prefers-reduced-motion: reduce) {
   .info-artwork-button[data-animate="true"] .info-fruit-shine { animation: none; }
@@ -4897,7 +4898,7 @@ html .game-app .leaderboard-overlay :is(.exchange-heading, .leaderboard-body, .l
 }
 html[data-theme] .game-app .leaderboard-overlay .leaderboard-close { border-width: 0 !important; border-radius: 0 !important; color: #fff !important; border-color: currentColor !important; }
 html[data-theme="light"] .game-app .leaderboard-overlay .leaderboard-close { color: #000 !important; }
-html[data-theme] .game-app .leaderboard-overlay .leaderboard-close { position: absolute; right: 2px; top: 50%; transform: translateY(-50%); display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box; width: 32px; height: 32px; min-width: 32px; min-height: 32px; padding: 0; }
+html[data-theme] .game-app .leaderboard-overlay .leaderboard-close { position: absolute; right: var(--fullscreen-control-right, 2px); top: var(--fullscreen-control-right, 2px); transform: none; display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box; width: 32px; height: 32px; min-width: 32px; min-height: 32px; padding: 0; }
 .leaderboard-player { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .leaderboard-body { display: flex; flex: 1; min-height: 0; }
 .leaderboard-periods { display: grid; grid-template-rows: repeat(4, minmax(0, 1fr)); flex: 0 0 clamp(100px, 17vw, 190px); border-right: 1px solid var(--line); }
@@ -7055,3 +7056,6 @@ html:not([data-theme="light"]) .game-app .landing-menu-actions > .google-sign-in
 html:not([data-theme="light"]) .google-signin-standalone { background: #f2f2f2 !important; border-color: #f2f2f2 !important; color: #1f1f1f !important; --menu-action-text: #1f1f1f; }
 html .game-app .landing-menu-actions > .google-sign-in-button:disabled, .google-signin-standalone:disabled { opacity: .38; cursor: default; }
 .google-signin-standalone:focus-visible { outline: 2px solid #4285f4; outline-offset: 2px; }
+
+/* Promo Code: no extra room under the form, and a successful claim shows no text (the button says Claimed). */
+.promo-panel { min-height: 0; padding-bottom: 12px; }

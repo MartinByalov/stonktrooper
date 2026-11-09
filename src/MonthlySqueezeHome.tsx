@@ -95,9 +95,14 @@ function Card({ theme, uid, origin, event, save, onGuestPress, section = false }
     } finally { setBusy(false); }
   };
 
-  // A Guest asked to claim, then signed in: credit the reward now.
+  // The goal is reached by everyone, so a signed-in player receives the reward by itself and the card turns to Done in
+  // Achievements. This also covers a Guest who asked to claim and then signed in. One automatic try per card: if it fails,
+  // the message and the Claim button stay for a manual retry.
+  const autoTried = useRef(false);
   useEffect(() => {
-    if (uid && unlocked && !claimed && claimIntent(storage, origin, event.id).read()) void runClaim();
+    if (!uid || !unlocked || claimed || autoTried.current) return;
+    autoTried.current = true;
+    void runClaim();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [uid, unlocked, claimed]);
 

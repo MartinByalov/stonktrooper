@@ -10,6 +10,7 @@ export const PET_IDS = SKINS.filter(skin => skin.category === 'pets').map(skin =
 
 // Feet at (0, 0), facing right. The same finished drawing is used in the shop and game.
 export function drawPet(ctx: CanvasRenderingContext2D, id: string, dark = false, phase = 0, returning = false, walking = false, equipped = false, airborne = false): void {
+  if (!id) return; // No Pet worn.
   if (id.startsWith('friend:')) {
     ctx.save(); ctx.scale(.55, .55);
     const stride = walking ? Math.sin(phase) : 0;

@@ -134,8 +134,10 @@ export function AssetPreview({ asset, compact = false, theme = 'light', grounded
       drawBriefcase(ctx, theme === 'dark');
     } else {
       ctx.scale(2.4, 2.4);
+      // The banana in the currency bar turns around its vertical axis like the other icons, in place and at a steady size.
+      const bananaTurn = moving && currencyIcon && asset === 'banana';
       // Use the same orientation and theme-aware pickup renderer as the chart.
-      drawPickupAsset(ctx, { type: asset, x: 0, y: 0, taken: false }, 0, 0, moving ? phase * 10 : 0, theme === 'dark', coinLetter, !currencyIcon);
+      drawPickupAsset(ctx, { type: asset, x: 0, y: 0, taken: false }, 0, 0, moving && !bananaTurn ? phase * 10 : 0, theme === 'dark', coinLetter, !currencyIcon);
     }
     ctx.restore();
     const pixels = ctx.getImageData(0, 0, 512, 512).data;
@@ -163,8 +165,12 @@ export function AssetPreview({ asset, compact = false, theme = 'light', grounded
     // Currency hats match the visible extent of the footer's 80%-scaled icons.
     const size = currencyIcon ? (asset === 'bag' ? 86 : asset === 'fedora' ? 128 * .8 : 128) : smallerPickup ? 86 : smallPickup ? 104 : asset === 'diamond' ? 156 : 136;
     const scale = size / Math.max(width, height);
+    if (moving && currencyIcon && asset === 'banana') {
+      output.save(); output.translate(80, 80); output.scale(Math.max(.18, Math.abs(Math.cos(phase * .9))), 1); output.translate(-80, -80);
+    }
     output.drawImage(buffer, left, top, width, height,
       (160 - width * scale) / 2, grounded ? 160 - height * scale : (160 - height * scale) / 2, width * scale, height * scale);
+    if (moving && currencyIcon && asset === 'banana') output.restore();
     if (animated) return;
     const preview = document.createElement('canvas');
     preview.width = 160; preview.height = 160;

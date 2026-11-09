@@ -22,6 +22,7 @@ export function Loot({ embedded = false, theme, onClose, onRedeemPromo, onClaimQ
   const [code, setCode] = useState('');
   const [message, setMessage] = useState('');
   const [redeeming, setRedeeming] = useState(false);
+  const [promoClaimed, setPromoClaimed] = useState(false);
   const collectionLock = useRef(false);
   const [collection, setCollection] = useState<{ id: string; amount: number; canvas: HTMLCanvasElement; x: number; y: number } | null>(null);
   const [credited, setCredited] = useState(0);
@@ -144,13 +145,13 @@ export function Loot({ embedded = false, theme, onClose, onRedeemPromo, onClaimQ
           event.preventDefault();
           if (!onRedeemPromo || redeeming || !code.trim()) return;
           setRedeeming(true); setMessage('');
-          try { await onRedeemPromo(code); setCode(''); }
+          try { await onRedeemPromo(code); setCode(''); setPromoClaimed(true); }
           catch (error) { setMessage(error instanceof Error ? error.message : 'Unable to redeem promo code'); }
           finally { setRedeeming(false); }
         }}>
           <label className="sr-only" htmlFor="loot-code">Code</label>
-          <input id="loot-code" value={code} onChange={event => { setCode(event.target.value); setMessage(''); }} maxLength={64} autoComplete="off" autoCapitalize="characters" spellCheck={false} placeholder="Enter code" />
-          <button type="submit" className="achievement-collect loot-claim" disabled={!code.trim() || redeeming || !onRedeemPromo}>Claim</button>
+          <input id="loot-code" value={code} onChange={event => { setCode(event.target.value); setMessage(''); setPromoClaimed(false); }} maxLength={64} autoComplete="off" autoCapitalize="characters" spellCheck={false} placeholder="Enter code" />
+          <button type="submit" className="achievement-collect loot-claim" disabled={!code.trim() || redeeming || !onRedeemPromo}>{promoClaimed ? 'Claimed' : 'Claim'}</button>
         </form>
         <p role="status">{message}</p>
       </section>}

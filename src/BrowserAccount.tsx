@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
-import { workerConfiguration, watchBrowserUser, signInBrowserGoogle, signOutBrowserGoogle, browserAuthError, type BrowserUser } from './browserIdentity';
+import { workerConfiguration, watchBrowserUser, signInBrowserGoogle, signOutBrowserGoogle, browserAuthError, getBrowserUser, isBrowserSessionKnown, type BrowserUser } from './browserIdentity';
 import { ActionLabel } from './ActionLabel';
 import { GoogleGlyph } from './GoogleSignInButton';
 import './browserAccount.css';
 
 export function BrowserAccount({ onPlay, starting = false, onUserChange, onNotice, menuOnly = false }: { onPlay?: () => void; starting?: boolean; onUserChange?: (user: BrowserUser | null) => void; onNotice?: (message: string) => void; menuOnly?: boolean }) {
-  const [user, setUser] = useState<BrowserUser | null>(null);
-  const [loading, setLoading] = useState(workerConfiguration.configured);
+  const [user, setUser] = useState<BrowserUser | null>(() => getBrowserUser());
+  const [loading, setLoading] = useState(() => workerConfiguration.configured && !isBrowserSessionKnown());
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   // With onNotice the host shows the message in the Live Feed bar; the line below stays for screen readers only.
@@ -41,6 +41,8 @@ export function BrowserAccount({ onPlay, starting = false, onUserChange, onNotic
     <button type="button" data-browser-account aria-label={user ? 'Sign out' : 'Continue with Google'}
       title={status} className={user ? 'browser-sign-out' : 'menu-action-button google-sign-in-button w-full rounded border border-[var(--line)] bg-[var(--panel)] text-[var(--text)] font-bold font-mono-term cursor-pointer'}
       disabled={!workerConfiguration.configured || loading || busy} aria-busy={loading || busy}
+      // While the server is still asked who is signed in (first load only) the slot stays empty, so a signed-in player never sees the button.
+      style={loading && menuOnly ? { visibility: 'hidden' } : undefined}
       onClick={() => void authenticate()}>
       {!user && <GoogleGlyph />}
       <span>{!user && !busy && !loading ? 'Continue with Google' : label}</span>
