@@ -8,8 +8,7 @@ import { AssetPreview, type PreviewAsset } from './AssetPreview';
 import { SettingsDiamond } from './SettingsDiamond';
 import { StonksDialog } from './StonksDialog';
 import { InfoArtwork } from './InfoArtwork';
-import { AboutStar } from './AboutStar';
-import type { GameEvent, Wallet } from './progression';
+import type { GameEvent } from './progression';
 import { LegalDocumentView } from './LegalDocumentView';
 import { PRIVACY_POLICY, TERMS } from './legal';
 import './credits.css';
@@ -19,7 +18,7 @@ const footerLabel = (item: string) => item === 'Terms' ? 'Terms & Conditions' : 
 export type SiteSection = typeof sections[number] | 'Settings';
 const sectionAssets: Record<SiteSection, PreviewAsset> = { About: 'coin', Privacy: 'briefcase', Terms: 'bag', Preferences: 'banana', Settings: 'diamond' };
 
-export function SiteFooter({ showNavigation = true, onProgress, onOpen, theme, section, setSection, volume, onVolumeChange, animationsEnabled, onToggleAnimations, liveFeedPaused, onToggleLiveFeedPause, onToggleTheme, highContrast, onToggleHighContrast, onResetDefaults, onDisconnect, wallet, hatSkin, onStarCoin }: { onDisconnect?: () => Promise<void>; showNavigation?: boolean; onProgress?: (event: GameEvent) => void; wallet: Wallet; hatSkin: string; onStarCoin?: () => Promise<void>; onOpen: () => void; theme: 'light' | 'dark'; section: SiteSection | null; setSection: (section: SiteSection | null) => void; volume: number; onVolumeChange: (volume: number) => void; animationsEnabled: boolean; onToggleAnimations: () => void; liveFeedPaused: boolean; onToggleLiveFeedPause: () => void; onToggleTheme: () => void; highContrast: boolean; onToggleHighContrast: () => void; onResetDefaults: () => void }) {
+export function SiteFooter({ showNavigation = true, onProgress, onOpen, theme, section, setSection, volume, onVolumeChange, animationsEnabled, onToggleAnimations, liveFeedPaused, onToggleLiveFeedPause, onToggleTheme, highContrast, onToggleHighContrast, onResetDefaults, onDisconnect }: { onDisconnect?: () => Promise<void>; showNavigation?: boolean; onProgress?: (event: GameEvent) => void; onOpen: () => void; theme: 'light' | 'dark'; section: SiteSection | null; setSection: (section: SiteSection | null) => void; volume: number; onVolumeChange: (volume: number) => void; animationsEnabled: boolean; onToggleAnimations: () => void; liveFeedPaused: boolean; onToggleLiveFeedPause: () => void; onToggleTheme: () => void; highContrast: boolean; onToggleHighContrast: () => void; onResetDefaults: () => void }) {
   const [message, setMessage] = useState('');
   // About & Help is one section: Privacy and Terms & Conditions are public pages of their own, opened from the footer links.
   const credits = section === 'About';
@@ -55,7 +54,6 @@ export function SiteFooter({ showNavigation = true, onProgress, onOpen, theme, s
         if (event.key === 'Escape') setSection(null);
       }}>
         <div className="site-info-header relative flex justify-center items-center min-h-10 mb-4 px-10">
-          {credits && <AboutStar theme={theme} wallet={wallet} hatSkin={hatSkin} onCoin={onStarCoin} />}
           <h2 id="site-info-title" className="site-info-title font-bold text-xl">{credits ? 'About & Help' : footerLabel(section)}</h2>
           <CloseButton ref={close} type="button" aria-label="Close site information" onClick={() => setSection(null)} className="dialog-close mobile-dialog-close site-info-close absolute right-0 top-0 p-2 border border-[var(--line)] rounded hover:bg-[var(--alt)] cursor-pointer" />
         </div>

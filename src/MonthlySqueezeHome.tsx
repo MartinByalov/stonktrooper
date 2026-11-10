@@ -7,7 +7,7 @@ import { browserSqueezeStorage, createSqueezeConfirmationStore } from './monthly
 import { getBrowserUser, signInBrowserGoogle } from './browserIdentity';
 import { readWorkerConfig } from './workerConfig';
 import { readSqueezeEvent } from '../shared/monthlySqueezeConfig';
-import { FIRST_MONTHLY_SQUEEZE } from '../shared/monthlySqueezeSchedule';
+import { FIRST_MONTHLY_SQUEEZE, MONTHLY_SQUEEZE_RELEASES } from '../shared/monthlySqueezeSchedule';
 
 const noticeFor = (code: string) => code === 'profile' ? 'Your profile is still being prepared. Try again in a moment.'
   : code === 'not-unlocked' ? 'Not unlocked yet. Check back soon.'
@@ -59,6 +59,9 @@ function Card({ theme, uid, origin, event, save, onGuestPress, section = false }
   // A Guest only sees the shared progress; their own effort is not counted anywhere.
   const personal = useMemo(() => uid ? readAccountEffort(storage, origin, uid, event) : undefined, [uid, storage, origin, event]);
   const unlocked = !!view.status?.unlocked;
+  // The reward needs both: everyone's goal reached and this player's own part done.
+  const didMyPart = personal !== undefined && personal >= event.threshold;
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     const unsubscribe = statusClient.subscribe(setView);
@@ -88,23 +91,24 @@ function Card({ theme, uid, origin, event, save, onGuestPress, section = false }
       claimer.current ??= createSqueezeClaim({ env, event, storage, owned: () => save.owns(FIRST_MONTHLY_SQUEEZE.reward.itemId), grant: save.grant });
       await claimer.current.claim();
       claimIntent(storage, origin, event.id).clear();
+      setFailed(false);
       setClaimed(true);
     } catch (error) {
+      setFailed(true);
       if (error instanceof SqueezeClaimError && error.code === 'identity') claimer.current = undefined;
       setNotice(noticeFor(error instanceof SqueezeClaimError ? error.code : 'unavailable'));
     } finally { setBusy(false); }
   };
 
-  // The goal is reached by everyone, so a signed-in player receives the reward by itself and the card turns to Done in
-  // Achievements. This also covers a Guest who asked to claim and then signed in. One automatic try per card: if it fails,
-  // the message and the Claim button stay for a manual retry.
+  // The goal is reached by everyone and this player did their part: the reward is given by itself and the card turns to Done in
+  // Achievements. One automatic try per card: if it fails, the message and a Claim button stay for a retry.
   const autoTried = useRef(false);
   useEffect(() => {
-    if (!uid || !unlocked || claimed || autoTried.current) return;
+    if (!uid || !unlocked || !didMyPart || claimed || autoTried.current) return;
     autoTried.current = true;
     void runClaim();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [uid, unlocked, claimed]);
+  }, [uid, unlocked, didMyPart, claimed]);
 
   // A claimed reward leaves Home; it lives on in Achievements.
   if (claimed) return section ? <MonthlySqueezeCard theme={theme} target={target} personal={event.threshold} threshold={event.threshold} unlocked claimed /> : null;
@@ -124,19 +128,22 @@ function Card({ theme, uid, origin, event, save, onGuestPress, section = false }
     onClick={press ? event => { if (!(event.target as HTMLElement).closest('button, a')) press(); } : undefined}
     onKeyDown={press ? event => { if (event.target === event.currentTarget && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); press(); } } : undefined}>
     <MonthlySqueezeCard theme={theme} participants={view.status?.participants} target={target} personal={personal} threshold={event.threshold}
-      unlocked={unlocked} claimed={false} busy={busy} onClaim={onClaim} notice={notice}
+      unlocked={unlocked} claimed={false} busy={busy} onClaim={onClaim} notice={notice} autoReward={!!uid} canRetry={failed}
+      hint={uid && unlocked && !didMyPart ? `Goal reached. Complete your ${event.threshold} to receive the reward.` : undefined}
       onNotice={askSignIn && !uid ? () => void signInBrowserGoogle().catch(() => setNotice('Google sign-in is unavailable. Try again later.')) : undefined}
       noticeAction="Sign in" />
   </div>;
 }
 
 // Used by the Achievements list: shows the collected Monthly Squeeze, once claimed on this device.
-export function MonthlySqueezeAchievement({ theme, owned }: { theme: 'light' | 'dark'; owned: boolean }) {
+// Releases are listed like any other achievement, as Done, once the player holds their reward. Nothing else is shown here.
+export function MonthlySqueezeAchievement({ theme, ownedItems }: { theme: 'light' | 'dark'; ownedItems: readonly string[] }) {
   const env = import.meta.env as Record<string, unknown>;
-  const config = readWorkerConfig(env), event = readSqueezeEvent(env.VITE_MONTHLY_SQUEEZE_EVENT), uid = getBrowserUser()?.uid ?? null;
-  if (env.VITE_MONTHLY_SQUEEZE_ENABLED !== 'true' || !config.configured || !event || !uid) return null;
-  if (!owned) return null;
-  return <MonthlySqueezeCard theme={theme} target={FIRST_MONTHLY_SQUEEZE.participantTarget ?? 1000} personal={event.threshold} threshold={event.threshold} unlocked claimed />;
+  const config = readWorkerConfig(env), uid = getBrowserUser()?.uid ?? null;
+  if (env.VITE_MONTHLY_SQUEEZE_ENABLED !== 'true' || !config.configured || !uid) return null;
+  const done = MONTHLY_SQUEEZE_RELEASES.filter(release => ownedItems.includes(release.reward.itemId));
+  if (!done.length) return null;
+  return <>{done.map(release => <MonthlySqueezeCard key={release.event.id} release={release} theme={theme} target={release.participantTarget ?? 1000} personal={release.event.threshold} threshold={release.event.threshold} unlocked claimed showLabel={false} />)}</>;
 }
 
 // The same card inside a dialog (Achievements or Loot): full size, listed as Done once claimed.

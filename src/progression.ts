@@ -628,10 +628,11 @@ export const ACHIEVEMENTS: Achievement[] = ([
 
 // Website-only dialogs have no mobile entry; keep feat and reward IDs for legacy saves.
 export const MOBILE_ACHIEVEMENTS = ACHIEVEMENTS.filter(item => !['clown-bag', 'tomato', 'vanishing-case', 'stick-around'].includes(item.id));
-// Counted toward the shared Monthly Squeeze, so listed as Monthly Effort; others are personal.
+// Counted toward the shared Monthly Squeeze; released month by month, listed only once completed.
 export const MONTHLY_EFFORT_ACHIEVEMENTS: readonly string[] = ['paper-hands', 'coin-flipper', 'apes', 'printer', 'whale-rider', 'emotional-baggage'];
 
-export const claimableAchievements = (progress: Progress) => MOBILE_ACHIEVEMENTS.filter(item =>
+// Monthly achievements are given by the monthly release itself, so they never count as something to claim.
+export const claimableAchievements = (progress: Progress) => MOBILE_ACHIEVEMENTS.filter(item => !MONTHLY_EFFORT_ACHIEVEMENTS.includes(item.id) &&
   item.value(progress) >= item.target && !progress.rewardedAchievements?.includes(item.id));
 
 // Provisional acquisition effort in coin-equivalent units, not owned/equipped state.

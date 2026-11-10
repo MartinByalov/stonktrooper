@@ -12,6 +12,10 @@ export const FIRST_MONTHLY_SQUEEZE = Object.freeze({
   participantTarget: 1000,
 } as const);
 
+// Monthly Squeeze releases are loaded month by month: the owner adds the next month's entry here (with its event settings) when
+// that month is published. Achievements lists a release only after the player has completed it (its reward is owned).
+export const MONTHLY_SQUEEZE_RELEASES: readonly (typeof FIRST_MONTHLY_SQUEEZE)[] = Object.freeze([FIRST_MONTHLY_SQUEEZE]);
+
 // Returns only the strict event contract; implies no flags, rollout, target or reward.
 export function firstSqueezeEventSettings() {
   const json = JSON.stringify(FIRST_MONTHLY_SQUEEZE.event);

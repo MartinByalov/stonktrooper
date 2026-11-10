@@ -178,3 +178,6 @@ html[data-theme] .game-app .site-info-header > .about-rate-us {
   width: 48px;
   border-right: 0;
 }
+
+/* "© Stonktrooper.lol 2026" is centred in the About panel. */
+html[data-theme] .game-app .credits-layout .site-info-bottom.about-copyright { align-self: center; text-align: center; }

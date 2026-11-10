@@ -133,7 +133,7 @@ export function Achievements({ embedded = false, progress, theme, onClose, onCol
           </div>
         </article>;
   };
-  const effort = MOBILE_ACHIEVEMENTS.filter(item => MONTHLY_EFFORT_ACHIEVEMENTS.includes(item.id));
+  // Monthly achievements are released month by month and appear only once completed (`monthly`, as Done); never as a list to act on.
   const personal = MOBILE_ACHIEVEMENTS.filter(item => !MONTHLY_EFFORT_ACHIEVEMENTS.includes(item.id));
   return <div ref={root} className={embedded ? 'achievements-overlay achievements-embedded' : 'achievements-overlay exchange-overlay'} role={embedded ? undefined : 'dialog'} aria-modal={embedded ? undefined : true} aria-labelledby={embedded ? undefined : 'achievements-title'}
     onKeyDown={embedded ? undefined : event => {
@@ -151,11 +151,9 @@ export function Achievements({ embedded = false, progress, theme, onClose, onCol
       <CloseButton type="button" className="dialog-close exchange-close" aria-label="Close Achievements" onClick={onClose} />
     </div>}
     <div className="exchange-content">
-      <section className="achievements-section" aria-label="Personal achievements">
-        <div className="achievements-grid">{personal.map(renderAchievement)}</div></section>
-      <section className="achievements-section" aria-labelledby="achievements-effort"><h3 id="achievements-effort" className="achievements-section-title">Monthly Effort</h3>
-        {monthly}
-        <div className="achievements-grid">{effort.map(renderAchievement)}</div></section>
+      <section className="achievements-section" aria-label="Achievements">
+        <div className="achievements-grid">{personal.map(renderAchievement)}</div>
+        {monthly}</section>
     </div>
     {claimError && <p role="alert">{claimError}</p>}
     <CurrencyFooter infinite={LOCAL_SANDBOX} autoHide collectionActive={!!collection} className="exchange-balances achievements-balances" label="Balance" wallet={displayWallet} theme={theme} hatSkin={progress.equipped.hats} />

@@ -20,12 +20,21 @@ export interface MonthlySqueezeCardProps {
   notice?: string;
   onNotice?: () => void;
   noticeAction?: string;
+  // Which month's release this card shows; the first release by default.
+  release?: typeof FIRST_MONTHLY_SQUEEZE;
+  // The reward is given by itself: no Claim button, except for a retry after a failed attempt.
+  autoReward?: boolean;
+  canRetry?: boolean;
+  // A plain line under the card (not an action).
+  hint?: string;
+  // The "Monthly Squeeze" caption is for the Home card; Achievements lists the card like any other achievement.
+  showLabel?: boolean;
 }
 
 export function MonthlySqueezeCard(props: MonthlySqueezeCardProps) {
-  const { theme, participants, target, personal, threshold, unlocked, claimed, busy, onClaim, notice, onNotice, noticeAction } = props;
-  const achievement = MOBILE_ACHIEVEMENTS.find(item => item.id === 'paper-hands');
-  const reward = SKINS.find(skin => skin.id === FIRST_MONTHLY_SQUEEZE.reward.itemId);
+  const { theme, participants, target, personal, threshold, unlocked, claimed, busy, onClaim, notice, onNotice, noticeAction, release = FIRST_MONTHLY_SQUEEZE, autoReward = false, canRetry = false, hint, showLabel = true } = props;
+  const achievement = MOBILE_ACHIEVEMENTS.find(item => item.id === release.event.achievementId);
+  const reward = SKINS.find(skin => skin.id === release.reward.itemId);
   if (!achievement || !reward) return null;
   const group = claimed || unlocked ? 100 : participants === undefined ? 0 : Math.min(100, participants / target * 100);
   const mine = personal === undefined ? undefined : Math.min(threshold, personal);
@@ -34,7 +43,7 @@ export function MonthlySqueezeCard(props: MonthlySqueezeCardProps) {
       style={{ backgroundSize: `${group}% 100%` }}>
       <div className="achievement-image"><AchievementArtwork art={achievement.art} id={achievement.id} theme={theme} /></div>
       <div className="achievement-details">
-        <span className="monthly-squeeze-label">Monthly Squeeze</span>
+        {showLabel && <span className="monthly-squeeze-label">Monthly Squeeze</span>}
         <h3>{achievement.name}</h3>
         <p>{achievement.description}</p>
         {!claimed && mine !== undefined && <div className="achievement-requirements monthly-squeeze-yours" aria-label="Your liquidations this month">
@@ -52,9 +61,10 @@ export function MonthlySqueezeCard(props: MonthlySqueezeCardProps) {
         aria-valuenow={participants ?? 0}>{participants === undefined ? '–' : participants.toLocaleString()}/{target.toLocaleString()}</strong>}
       <div className="achievement-actions">
         {claimed && <span className="achievement-done-stamp" aria-label="Monthly Squeeze collected">Done</span>}
-        {!claimed && unlocked && <button type="button" className="achievement-collect" aria-label={`Claim ${achievement.name} reward`} aria-busy={busy || undefined} disabled={!onClaim || busy} onClick={onClaim}>Claim</button>}
+        {!claimed && unlocked && (!autoReward || canRetry) && <button type="button" className="achievement-collect" aria-label={`Claim ${achievement.name} reward`} aria-busy={busy || undefined} disabled={!onClaim || busy} onClick={onClaim}>Claim</button>}
       </div>
     </article>
+    {!notice && hint && <p className="monthly-squeeze-notice" role="status">{hint}</p>}
     {notice && <p className="monthly-squeeze-notice" role="status">{notice}{onNotice && noticeAction && <> <button type="button" className="monthly-squeeze-notice-action" onClick={onNotice}>{noticeAction}</button></>}</p>}
   </section>;
 }
