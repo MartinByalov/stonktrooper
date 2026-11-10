@@ -152,6 +152,8 @@ export function Exchange({ progress, theme, name, busy, error, onClose, onSignIn
   onBuyTitle?: (id: string) => void;
 }) {
   const [tab, setTab] = useState<Category | 'titles'>(initialTab ?? 'candles');
+  // The coin in the corner swaps the dressing room for the Stash (the player's balances); tap the Stash to swap back.
+  const [stashOpen, setStashOpen] = useState(false);
   const squeeze = useSqueezeProgress();
   const gridRef = useRef<HTMLDivElement>(null);
   // Desktop: the X sits above the last column's day/night toggle, as far from the right as the top.
@@ -217,7 +219,12 @@ export function Exchange({ progress, theme, name, busy, error, onClose, onSignIn
       {!cataloguePreview && <button type="button" data-category="titles" aria-pressed={tab === 'titles'} onClick={() => setTab('titles')}><span aria-hidden="true"><Award size={24} /></span><span>Titles</span></button>}
     </nav>
     <div className="exchange-dressing-room" role="group" aria-label="Equipped outfit" data-hat={progress.equipped.hats} data-suitcase={progress.equipped.suitcase} data-suit={progress.equipped.suits} data-pet={progress.equipped.pets} data-candles={progress.equipped.candles}>
-      <ExchangeMarket theme={theme} animationsEnabled={animationsEnabled} equipped={progress.equipped} showMount={tab === 'mounts'} title={tab === 'titles' ? equippedTitle(progress)?.name : undefined} />
+      {stashOpen && !cataloguePreview
+        ? <div className="exchange-stash" role="button" tabIndex={0} aria-label="Close Stash" onClick={() => setStashOpen(false)} onKeyDown={event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); setStashOpen(false); } }}>
+          <h3>Stash</h3>
+          <WalletBar wallet={progress.wallet} theme={theme} hatSkin={progress.equipped.hats} infinite={testBalance} />
+        </div>
+        : <ExchangeMarket theme={theme} animationsEnabled={animationsEnabled} equipped={progress.equipped} showMount={tab === 'mounts'} title={tab === 'titles' ? equippedTitle(progress)?.name : undefined} />}
     </div>
     </aside>
     <div className="exchange-content">
@@ -277,7 +284,11 @@ export function Exchange({ progress, theme, name, busy, error, onClose, onSignIn
         })}</div>}
     </div>
     </div>
-    {!cataloguePreview && <CurrencyFooter collapsible className="exchange-balances" label="Balance" wallet={progress.wallet} theme={theme} hatSkin={progress.equipped.hats} infinite={testBalance} />}
+    {!cataloguePreview && !stashOpen && <footer className="currency-footer exchange-balances" data-collapsible="true" data-expanded="false" aria-label="Available balance">
+      <button type="button" className="currency-strip-toggle" aria-label="Show Stash" aria-expanded={false} onClick={() => setStashOpen(true)}>
+        <AssetPreview asset="coin" theme={theme} currencyIcon animated />
+      </button>
+    </footer>}
   </div>;
 }
 

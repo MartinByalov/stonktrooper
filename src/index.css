@@ -5272,8 +5272,9 @@ html[data-theme] .game-app:where([data-layout="mobile"]) header .header-controls
 .exchange-grid article[data-unlocked="true"] .skin-preview > canvas { animation: skin-reveal 1100ms ease-out; }
 html[data-theme] .game-app:where([data-layout="mobile"]) header .header-controls > :is(.header-mode-preview, .header-pet-preview) { display: inline-flex; align-items: center; justify-content: center; width: 32px; min-width: 32px; padding: 0; font-size: 16px; }
 .exchange-grid article[data-owned="false"] .skin-preview > svg { filter: blur(2px); opacity: .65; }
-.skin-cost { display: grid; grid-template-columns: repeat(2, max-content); align-content: center; justify-content: center; justify-items: start; gap: 4px 8px; min-height: 56px; box-sizing: border-box; padding: 6px 0; border-block: 1px solid var(--bg); background: transparent; color: var(--text); font-size: clamp(10px, 1.1vw, 16px); white-space: nowrap; }
-.skin-cost > span { display: inline-flex; align-items: center; gap: 2px; }
+/* Prices: number and icon of each price share columns across the rows, so the icons line up and the numbers end at them. */
+.skin-cost { display: grid; grid-template-columns: repeat(2, max-content max-content); align-content: center; justify-content: center; justify-items: start; gap: 4px 8px; min-height: 56px; box-sizing: border-box; padding: 6px 0; border-block: 1px solid var(--bg); background: transparent; color: var(--text); font-size: clamp(10px, 1.1vw, 16px); white-space: nowrap; }
+.skin-cost > span { display: grid; grid-template-columns: subgrid; grid-column: span 2; justify-self: stretch; justify-items: end; align-items: center; column-gap: 2px; }
 .game-app .skin-cost canvas { width: clamp(16px, 2vw, 26px) !important; height: clamp(16px, 2vw, 26px) !important; }
 .skin-actions { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 0; padding-top: 10px; }
 .exchange-grid article[data-skin] > .skin-actions { padding-top: 4px; }
@@ -6732,10 +6733,11 @@ html .game-app:not([data-state="menu"]) header > div:first-child { display: none
 /* Desktop pause and game over: the currency bar hangs under the result panel, one gap below. */
 html[data-theme] .game-app[data-layout="desktop"] .game-overlay > .screen-currency-footer { top: calc(var(--result-bottom, 50%) + var(--result-action-gap, 10px)); bottom: auto; }
 
-/* Desktop in game: the header is the 36px Home bar, so the counter is 32px like the buttons. */
+/* Desktop in game: the header is the 36px Home bar. The coin and diamond are painted at 80% of their canvas, so a 25px canvas
+   shows a 20px icon, the size of the header buttons' icons (the same rule the phone layout uses). */
 html[data-theme] .game-app[data-layout="desktop"]:not([data-state="menu"]) header { box-sizing: border-box; height: 36px !important; min-height: 36px !important; max-height: 36px; padding: 2px 2px 1px 12.1667px !important; border-bottom: 1px solid var(--bg) !important; }
 html[data-theme] .game-app[data-layout="desktop"] header .game-currency-hud { height: 32px; min-height: 32px; }
-html[data-theme] .game-app[data-layout="desktop"] header .game-currency-hud [data-currency] canvas { width: 32px !important; height: 32px !important; }
+html[data-theme] .game-app[data-layout="desktop"] header .game-currency-hud [data-currency] canvas { width: 25px !important; height: 25px !important; }
 
 /* The currency bar sits one action gap under the result panel on every layout. */
 html[data-theme] .game-app .game-overlay > .screen-currency-footer { top: calc(var(--result-bottom, 50%) + var(--result-action-gap, 10px)); bottom: auto; }
@@ -6844,10 +6846,11 @@ html .game-app[data-layout="desktop"] .exchange-overlay:has(> .exchange-heading 
 /* The Leaderboard badge overhangs its icon, so the exit-to-Fullscreen gap is matched to it. */
 html[data-theme] .game-app[data-layout="desktop"] header .header-controls > .header-signout-control { margin-right: -4.7px; }
 
-/* Desktop Exchange: the heading is tall enough for the X to sit one corner gap in. */
-html[data-theme] .game-app[data-layout="desktop"] .exchange-overlay:has(> .exchange-heading > .exchange-star) { --exchange-corner-gap: 28px; }
+/* Desktop Exchange: the X sits the same distance from the top, the right and the heading line, so it and the title are centred
+   in the bar. The bar is the X (32px) plus that gap on both sides; the gap defaults to what the cards leave on the right. */
+html[data-theme] .game-app[data-layout="desktop"] .exchange-overlay:has(> .exchange-heading > .exchange-star) { --exchange-corner-gap: 14px; }
 html[data-theme] .game-app[data-layout="desktop"] .exchange-overlay:has(> .exchange-heading > .exchange-star) > .exchange-heading {
-  flex: 0 0 calc(var(--exchange-corner-gap) + 32px + 8px); height: calc(var(--exchange-corner-gap) + 32px + 8px); min-height: calc(var(--exchange-corner-gap) + 32px + 8px); max-height: none;
+  flex: 0 0 calc(2 * (var(--exchange-corner-gap) - 1px) + 32px); height: calc(2 * (var(--exchange-corner-gap) - 1px) + 32px); min-height: calc(2 * (var(--exchange-corner-gap) - 1px) + 32px); max-height: none;
 }
 html[data-theme] .game-app[data-layout="desktop"] .exchange-overlay:has(> .exchange-heading > .exchange-star) > .exchange-heading > .exchange-close {
   top: calc(var(--exchange-corner-gap) - 1px) !important; right: calc(var(--exchange-corner-gap) - 1px) !important;
@@ -7062,3 +7065,14 @@ html .game-app .landing-menu-actions > .google-sign-in-button:disabled, .google-
 
 /* Preferences: Clear saved preferences and Disconnect from Google stack, with space between the text above and the buttons. */
 html[data-theme] .game-app .site-info-body[data-info-section="Preferences"] > .site-info-bottom.preferences-actions { display: flex; flex-direction: column; gap: 8px; padding-top: 16px; }
+
+/* Exchange Stash: replaces the dressing room while the corner coin is pressed, in the colours of the balance strip. */
+html[data-theme="light"] .game-app .exchange-stash { --stash-surface: #000000; --stash-ink: #ffffff; }
+html[data-theme="dark"] .game-app .exchange-stash { --stash-surface: #ffffff; --stash-ink: #000000; }
+.game-app .exchange-stash { box-sizing: border-box; display: flex; flex-direction: column; align-items: center; gap: 8px; width: calc(100% - 12px); height: calc(100% - 12px); margin: 6px; padding: 10px 6px; overflow-y: auto; border-radius: var(--ui-radius); background: var(--stash-surface); color: var(--stash-ink); cursor: pointer; }
+.game-app .exchange-stash > h3 { margin: 0; font: 900 14px var(--font-mono, monospace); letter-spacing: .08em; text-transform: uppercase; color: var(--ui-blue); }
+.game-app .exchange-stash .wallet-bar { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 4px; width: 100%; justify-items: center; }
+.game-app .exchange-stash .wallet-bar > span { display: inline-flex; align-items: center; gap: 4px; }
+.game-app .exchange-stash .wallet-bar b { font-size: 13px; }
+.game-app .exchange-stash .wallet-bar canvas { width: 28px !important; height: 28px !important; }
+.game-app .exchange-stash:focus-visible { outline: 2px solid currentColor; outline-offset: -3px; }
