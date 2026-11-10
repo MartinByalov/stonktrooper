@@ -5,7 +5,10 @@ import { MusicPlaylist } from './musicBank';
 
 // Boost the whole background arrangement without changing sound effects/master volume.
 const MUSIC_VOLUME_BOOST = 9;
-const SONG_GAP_SECONDS = 1.2;
+// The scheduler wakes every 25 ms and queues this much music ahead; a longer main-thread stall than this is audible.
+const MUSIC_LOOKAHEAD_SECONDS = .6;
+// Only a suspension longer than this restarts the beat grid (a backgrounded tab), shorter delays catch up silently.
+const MUSIC_RESYNC_SECONDS = 1.5;
 
 export class SoundController {
   private masterGain: GainNode | null = null;
@@ -673,10 +676,13 @@ export class SoundController {
     this.musicInterval = window.setInterval(() => {
       if (!this.musicEnabled || !this.enabled || this.settings.music === 'off' || !this.ctx) return;
       const now = this.ctx.currentTime;
-      // Schedule against the audio clock, and after a long suspension resume one clean beat.
-      if (this.nextMusicTime < now - .1) this.nextMusicTime = now + .02;
-      while (this.nextMusicTime < now + .1) {
+      // Schedule against the audio clock, well ahead, so a stalled main thread (a long frame, garbage collection)
+      // does not leave a gap. Only after a long suspension is one clean beat resumed.
+      if (this.nextMusicTime < now - MUSIC_RESYNC_SECONDS) this.nextMusicTime = now + .02;
+      while (this.nextMusicTime < now + MUSIC_LOOKAHEAD_SECONDS) {
       this.scheduledMusicTime = this.nextMusicTime;
+      // A step already in the past is skipped silently: the beat grid stays intact instead of a burst of late notes.
+      const late = this.nextMusicTime < now - .05;
       const step = this.musicStep++ % 128;
       const style = this.settings.music;
       const swing = style === 'organic' ? 0.22 : style === 'default' ? 0.12 : 0;
@@ -689,6 +695,7 @@ export class SoundController {
       const wave: OscillatorType = style === 'arcade' ? 'square' : style === 'deep' || style === 'glitch' ? 'sawtooth' : style === 'soft' || style === 'bright' ? 'sine' : 'triangle';
       const phraseStep = style === 'glitch' ? (Math.floor(step / 8) * 8 + [0, 2, 1, 3, 4, 6, 5, 7][step % 8]) : step;
       const lead = track.melody[phraseStep] * (style === 'deep' ? 0.5 : 1);
+      if (!late) {
       if (lead && (style !== 'soft' || step % 2 === 0)) {
         this.musicNote(lead, Math.min(.42, phraseRemaining * .95), 0.012, wave);
         this.musicNote(lead * 2, Math.min(.13, phraseRemaining * .95), 0.0025, 'sine');
@@ -698,13 +705,14 @@ export class SoundController {
       if ((track.rhythm[step] & 1) || (style === 'deep' && step % 2 === 0)) this.tone(100, 35, 0.12, (style === 'soft' ? 0.018 : 0.035) * MUSIC_VOLUME_BOOST, 'sine');
       if (track.rhythm[step] & 2) this.noise(0.09, 0.014 * MUSIC_VOLUME_BOOST, 1100, 450);
       if (track.rhythm[step] & 4) this.noise(0.03, 0.004 * MUSIC_VOLUME_BOOST, 3300, 2200);
+      }
       // Two complete sixteen-bar loops before selecting the next composition.
       this.schedulingMusic = false;
       if (this.musicStep >= 256) {
         this.musicTrack = this.musicPlaylist.next();
+        // The next song starts on the very next beat: the album plays through without a pause, and its songs
+        // are ordered so the next one is close in key and tempo (see MUSIC_ALBUM).
         this.musicStep = 0;
-        // A short breath between songs, like a playlist: the final tonic rings out before the next key.
-        this.nextMusicTime += SONG_GAP_SECONDS;
       }
       }
     }, 25);

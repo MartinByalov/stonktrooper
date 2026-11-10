@@ -74,21 +74,44 @@ export const MUSIC_BANK: Record<MusicMode, MusicTrack[]> = {
   kangaroo: Array.from({ length: 10 }, (_, i) => composeTrack('kangaroo', i)),
 };
 
-export class MusicPlaylist {
-  private queue: MusicTrack[] = [];
-  private last: string | undefined;
-  next(): MusicTrack {
-    if (!this.queue.length) {
-      const queue = Object.values(MUSIC_BANK).flat();
-      for (let i = queue.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [queue[i], queue[j]] = [queue[j], queue[i]];
+// The key of a composed track, read back from its id (see composeTrack: root = 43 + index % 7, dorian when index % 3 === 0).
+const trackKey = (track: MusicTrack) => {
+  const index = Number(track.id.slice(track.id.lastIndexOf('-') + 1)) - 1;
+  return { pitchClass: (43 + index % 7) % 12, dorian: index % 3 === 0 };
+};
+// How far apart two songs sound when one follows the other: tempo, distance on the circle of fifths, and the scale colour.
+export function songDistance(a: MusicTrack, b: MusicTrack): number {
+  const ka = trackKey(a), kb = trackKey(b);
+  const fifths = Math.abs(ka.pitchClass * 7 % 12 - kb.pitchClass * 7 % 12);
+  return Math.abs(a.bpm - b.bpm) / 2 + 3 * Math.min(fifths, 12 - fifths) + (ka.dorian === kb.dorian ? 0 : 2);
+}
+// One fixed album: the shortest loop through all songs by that distance, so every song, including the last into the
+// first, follows one that is close in key and tempo. Deterministic: it starts at the first normal song.
+function orderAlbum(tracks: MusicTrack[]): MusicTrack[] {
+  const rest = tracks.slice(1), order = [tracks[0]];
+  while (rest.length) {
+    const last = order[order.length - 1];
+    let best = 0;
+    for (let i = 1; i < rest.length; i++) if (songDistance(last, rest[i]) < songDistance(last, rest[best])) best = i;
+    order.push(rest.splice(best, 1)[0]);
+  }
+  const n = order.length, d = (i: number, j: number) => songDistance(order[(i + n) % n], order[(j + n) % n]);
+  for (let improved = true; improved;) {
+    improved = false;
+    for (let i = 1; i < n - 1; i++) for (let j = i + 1; j < n; j++) {
+      if (d(i - 1, j) + d(i, j + 1) < d(i - 1, i) + d(j, j + 1) - 1e-9) {
+        order.splice(i, j - i + 1, ...order.slice(i, j + 1).reverse());
+        improved = true;
       }
-      if (queue[0].id === this.last) [queue[0], queue[1]] = [queue[1], queue[0]];
-      this.queue = queue;
     }
-    const track = this.queue.shift()!;
-    this.last = track.id;
-    return track;
+  }
+  return order;
+}
+export const MUSIC_ALBUM: MusicTrack[] = orderAlbum([...MUSIC_BANK.normal, ...MUSIC_BANK.pigeon, ...MUSIC_BANK.hawk, ...MUSIC_BANK.kangaroo]);
+
+export class MusicPlaylist {
+  private position = 0;
+  next(): MusicTrack {
+    return MUSIC_ALBUM[this.position++ % MUSIC_ALBUM.length];
   }
 }
