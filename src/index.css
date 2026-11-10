@@ -7069,10 +7069,13 @@ html[data-theme] .game-app .site-info-body[data-info-section="Preferences"] > .s
 /* Exchange Stash: replaces the dressing room while the corner coin is pressed, in the colours of the balance strip. */
 html[data-theme="light"] .game-app .exchange-stash { --stash-surface: #000000; --stash-ink: #ffffff; }
 html[data-theme="dark"] .game-app .exchange-stash { --stash-surface: #ffffff; --stash-ink: #000000; }
-.game-app .exchange-stash { box-sizing: border-box; display: flex; flex-direction: column; align-items: center; gap: 8px; width: calc(100% - 12px); height: calc(100% - 12px); margin: 6px; padding: 10px 6px; overflow-y: auto; border-radius: var(--ui-radius); background: var(--stash-surface); color: var(--stash-ink); cursor: pointer; }
-.game-app .exchange-stash > h3 { margin: 0; font: 900 14px var(--font-mono, monospace); letter-spacing: .08em; text-transform: uppercase; color: var(--ui-blue); }
-.game-app .exchange-stash .wallet-bar { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 4px; width: 100%; justify-items: center; }
+/* The Stash fills the whole dressing-room cell: the title sits a moderate distance from the top, the balances are centred in the space below. */
+.game-app .exchange-stash { box-sizing: border-box; display: flex; flex-direction: column; align-items: center; width: 100%; height: 100%; margin: 0; padding: 0 8px; overflow-y: auto; border-radius: 0; background: var(--stash-surface); color: var(--stash-ink); cursor: pointer; }
+.game-app .exchange-stash > h3 { flex: 0 0 auto; margin: 0; padding-top: clamp(12px, 9%, 28px); font: 900 14px var(--font-mono, monospace); letter-spacing: .08em; text-transform: uppercase; color: var(--ui-blue); }
+.game-app .exchange-stash .wallet-bar { flex: 1 0 auto; display: flex; flex-wrap: wrap; align-content: center; justify-content: center; gap: 8px 16px; width: 100%; padding: 8px 0; }
 .game-app .exchange-stash .wallet-bar > span { display: inline-flex; align-items: center; gap: 4px; }
 .game-app .exchange-stash .wallet-bar b { font-size: 13px; }
 .game-app .exchange-stash .wallet-bar canvas { width: 28px !important; height: 28px !important; }
 .game-app .exchange-stash:focus-visible { outline: 2px solid currentColor; outline-offset: -3px; }
+/* The desktop dialog is 12px round with a 1px border and does not clip its children, so the Stash follows its bottom-left corner. */
+html .game-app[data-layout="desktop"] .exchange-stash { border-bottom-left-radius: 11px; }
