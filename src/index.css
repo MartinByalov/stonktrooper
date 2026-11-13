@@ -446,11 +446,6 @@ body {
   .game-app .fixed.inset-0.z-50 > [role="dialog"] {
     max-height: 100%;
   }
-
-  .game-app .paused-guide-overlay {
-    inset: 0;
-    padding: 1rem;
-  }
 }
 
 .how-to-mode-button.is-selected {
@@ -616,8 +611,7 @@ html[data-theme="light"] .how-to-play-heading {
   border-radius: 0;
 }
 
-html[data-theme="light"] .desktop-initial-guide .how-to-play-heading,
-html[data-theme="light"] .paused-guide-dialog .how-to-play-label {
+html[data-theme="light"] .desktop-initial-guide .how-to-play-heading {
   color: #000;
   background: transparent !important;
 }
@@ -635,12 +629,6 @@ html[data-theme="light"] .mobile-portrait-how-to-play {
   color: #ffffff !important;
   background: #000000 !important;
   border-color: #000000 !important;
-}
-
-html[data-theme="light"] .paused-guide-dialog .how-to-play-label {
-  color: #000000 !important;
-  background: transparent !important;
-  border-color: transparent !important;
 }
 
 html[data-theme="dark"] .mobile-portrait-how-to-play {
@@ -1020,30 +1008,6 @@ html[data-theme="light"] .game-app .mobile-joystick[data-pressed="true"] {
 
 html[data-theme="light"] .game-app .game-arena > .game-overlay.pause-overlay {
   background: rgb(240 245 250 / 32%);
-}
-
-.paused-guide-overlay {
-  top: calc(100% * 48 / 840);
-  right: var(--header-gutter);
-  bottom: 0;
-  left: 0;
-  overflow: hidden;
-  pointer-events: auto;
-}
-
-.paused-guide-dialog {
-  width: 100%;
-  height: 100%;
-  max-height: 100%;
-  box-sizing: border-box;
-  overflow-y: auto;
-  overflow-x: hidden;
-}
-
-.paused-guide-dialog > .mechanics-guide {
-  min-height: 0;
-  overflow-x: hidden;
-  overflow-y: auto;
 }
 
 .share-dd-overlay {
@@ -1858,11 +1822,6 @@ kbd {
     top: var(--live-feed-height, calc(100% * 48 / 840));
   }
 
-  .game-app .paused-guide-overlay {
-    inset: 0;
-    padding: 8px;
-  }
-
   .game-app .fixed.inset-0.z-50 {
     top: var(--live-feed-bottom, 0px);
     bottom: var(--footer-inset-bottom, 0px);
@@ -2087,16 +2046,11 @@ kbd {
 
 /* Landscape mobile uses the portrait guide styling without shrinking its cards. */
 @media (orientation: landscape) and (pointer: coarse), (pointer: fine) {
-  .game-app .game-overlay.how-to-play-overlay,
-  .game-app .paused-guide-overlay {
+  .game-app .game-overlay.how-to-play-overlay {
     padding: 0;
   }
 
-  .game-app .paused-guide-overlay {
-    inset: 0;
-  }
-
-  .game-app :is(.desktop-initial-guide, .paused-guide-dialog, .mobile-how-to-panel) {
+  .game-app :is(.desktop-initial-guide, .mobile-how-to-panel) {
     --landscape-guide-gap: var(--mobile-theme-control-right, 1rem);
     display: flex;
     flex-direction: column;
@@ -2113,12 +2067,12 @@ kbd {
     overflow: hidden;
   }
 
-  html[data-theme="light"] .game-app :is(.desktop-initial-guide, .paused-guide-dialog, .mobile-how-to-panel) {
+  html[data-theme="light"] .game-app :is(.desktop-initial-guide, .mobile-how-to-panel) {
     background: #fff !important;
     color: #000;
   }
 
-  html:not([data-theme="light"]) .game-app :is(.desktop-initial-guide, .paused-guide-dialog, .mobile-how-to-panel) {
+  html:not([data-theme="light"]) .game-app :is(.desktop-initial-guide, .mobile-how-to-panel) {
     background: #000 !important;
     color: #fff;
   }
@@ -2145,7 +2099,7 @@ kbd {
     background: transparent !important;
   }
 
-  .game-app :is(.paused-guide-dialog, .mobile-how-to-panel) .mobile-dialog-close {
+  .game-app :is(.mobile-how-to-panel) .mobile-dialog-close {
     position: absolute;
     top: 50%;
     right: 0;
@@ -2163,7 +2117,7 @@ kbd {
     border-color: currentColor;
   }
 
-  .game-app :is(.desktop-initial-guide, .paused-guide-dialog, .mobile-how-to-panel) .mechanics-guide {
+  .game-app :is(.desktop-initial-guide, .mobile-how-to-panel) .mechanics-guide {
     flex: 1 1 auto;
     min-height: 0;
     height: auto;
@@ -2176,7 +2130,7 @@ kbd {
     font-size: 0.75rem;
   }
 
-  .game-app :is(.desktop-initial-guide, .paused-guide-dialog, .mobile-how-to-panel) .mechanics-guide-title {
+  .game-app :is(.desktop-initial-guide, .mobile-how-to-panel) .mechanics-guide-title {
     flex: 0 0 3em;
     height: 3em;
     margin-bottom: 0.5rem;
@@ -2219,8 +2173,7 @@ kbd {
     box-sizing: border-box;
   }
 
-  .game-app .desktop-initial-guide,
-  .game-app .paused-guide-dialog {
+  .game-app .desktop-initial-guide {
     --guide-gutter: var(--fullscreen-control-right, 1rem);
     padding: var(--guide-gutter);
     border: 0;
@@ -2228,17 +2181,17 @@ kbd {
     box-shadow: none;
   }
 
-  html[data-theme="light"] .game-app :is(.desktop-initial-guide, .paused-guide-dialog) {
+  html[data-theme="light"] .game-app :is(.desktop-initial-guide) {
     background: #fff !important;
     color: #000;
   }
 
-  html:not([data-theme="light"]) .game-app :is(.desktop-initial-guide, .paused-guide-dialog) {
+  html:not([data-theme="light"]) .game-app :is(.desktop-initial-guide) {
     background: #000 !important;
     color: #fff;
   }
 
-  .game-app :is(.desktop-initial-guide, .paused-guide-dialog) > .how-to-guide-header {
+  .game-app :is(.desktop-initial-guide) > .how-to-guide-header {
     position: relative;
     display: flex;
     flex: 0 0 var(--fullscreen-control-height, 2rem);
@@ -2256,25 +2209,6 @@ kbd {
     align-items: center;
     height: auto;
     min-height: 0;
-  }
-
-  .game-app .paused-guide-dialog > .how-to-guide-header > .mobile-dialog-close {
-    position: absolute;
-    top: 50%;
-    right: 0;
-    transform: translateY(-50%);
-    color: inherit;
-    border-color: currentColor;
-  }
-
-  .game-app .paused-guide-dialog {
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-  }
-
-  .game-app .paused-guide-dialog > .mechanics-guide {
-    flex: 1 1 auto;
   }
 }
 
@@ -2969,12 +2903,12 @@ kbd {
 
 /* Keep description cards equally inset when only one landscape edge has a notch. */
 @media (orientation: landscape) and (pointer: coarse) {
-  .game-app :is(.paused-guide-dialog, .mobile-how-to-panel) {
+  .game-app :is(.mobile-how-to-panel) {
     --landscape-guide-side-gap: max(8px, env(safe-area-inset-left), env(safe-area-inset-right));
     padding-inline: var(--landscape-guide-side-gap);
   }
 
-  .game-app :is(.desktop-initial-guide, .paused-guide-dialog, .mobile-how-to-panel) .mechanics-guide {
+  .game-app :is(.desktop-initial-guide, .mobile-how-to-panel) .mechanics-guide {
     margin-inline: 0;
     padding-inline: 0;
     scrollbar-gutter: stable both-edges;
@@ -3451,7 +3385,7 @@ html[data-theme="light"] .game-app .mobile-how-to-panel > .mobile-how-to-header 
 }
 
 /* Keep the close control clear even while autofocus or pressed. */
-html .game-app :is(.mobile-how-to-panel, .paused-guide-dialog) .dialog-close:not(:hover) {
+html .game-app :is(.mobile-how-to-panel) .dialog-close:not(:hover) {
   background: transparent !important;
   border-color: transparent !important;
   box-shadow: none;
@@ -4560,48 +4494,49 @@ html .game-app .site-info-dialog > .site-info-content::after {
   display: none;
 }
 
-/* How to Play is one frame with internal dividers, not spaced cards. */
-html .game-app :is(.mobile-how-to-panel, .paused-guide-dialog),
-html .game-app :is(.mobile-how-to-panel, .paused-guide-dialog) .mechanics-guide {
+/* How to Play is one frame with internal dividers,
+not spaced cards. */
+html .game-app :is(.mobile-how-to-panel),
+html .game-app :is(.mobile-how-to-panel) .mechanics-guide {
   --line: var(--bg);
 }
-html[data-theme] .game-app :is(.mobile-how-to-panel, .paused-guide-dialog),
-html[data-theme] .game-app :is(.mobile-how-to-panel, .paused-guide-dialog) :is(.mobile-how-to-header, .how-to-guide-header, .how-to-dialog-hero, .mechanics-guide > div) {
+html[data-theme] .game-app :is(.mobile-how-to-panel),
+html[data-theme] .game-app :is(.mobile-how-to-panel) :is(.mobile-how-to-header, .how-to-guide-header, .how-to-dialog-hero, .mechanics-guide > div) {
   border-color: var(--bg) !important;
 }
-html .game-app :is(.mobile-how-to-dialog > .mobile-how-to-panel, .paused-guide-dialog) {
+html .game-app :is(.mobile-how-to-dialog > .mobile-how-to-panel) {
   gap: 0 !important;
   padding: 0 !important;
   border: 1px solid var(--line) !important;
   border-radius: var(--ui-radius) !important;
   overflow: hidden;
 }
-html[data-theme] .game-app :is(.mobile-how-to-panel > .mobile-how-to-header, .paused-guide-dialog > .how-to-guide-header) {
+html[data-theme] .game-app :is(.mobile-how-to-panel > .mobile-how-to-header) {
   margin: 0 !important;
   border: 0 !important;
   border-radius: 0 !important;
   border-bottom: 1px solid var(--line) !important;
 }
-html[data-theme] .game-app :is(.mobile-how-to-panel, .paused-guide-dialog) :is(.mobile-how-to-header, .how-to-guide-header) > :is(h2, .dialog-close) {
+html[data-theme] .game-app :is(.mobile-how-to-panel) :is(.mobile-how-to-header, .how-to-guide-header) > :is(h2, .dialog-close) {
   border: 0 !important;
   border-radius: 0 !important;
   box-shadow: none !important;
 }
-html .game-app :is(.mobile-how-to-panel, .paused-guide-dialog) .mechanics-guide {
+html .game-app :is(.mobile-how-to-panel) .mechanics-guide {
   gap: 0 !important;
   margin: 0 !important;
   padding: 0 !important;
   scrollbar-gutter: auto;
 }
-html .game-app :is(.mobile-how-to-panel, .paused-guide-dialog) .mechanics-guide > div {
+html .game-app :is(.mobile-how-to-panel) .mechanics-guide > div {
   border: 0 !important;
   border-radius: 0 !important;
   border-bottom: 1px solid var(--line) !important;
 }
-html .game-app :is(.mobile-how-to-panel, .paused-guide-dialog) .mechanics-guide > div:nth-child(odd) {
+html .game-app :is(.mobile-how-to-panel) .mechanics-guide > div:nth-child(odd) {
   border-right: 1px solid var(--line) !important;
 }
-html .game-app :is(.mobile-how-to-panel, .paused-guide-dialog) .mechanics-guide > div:nth-last-child(-n+2) {
+html .game-app :is(.mobile-how-to-panel) .mechanics-guide > div:nth-last-child(-n+2) {
   border-bottom: 0 !important;
 }
 html .game-app .how-to-dialog-content > .how-to-dialog-hero {
@@ -4610,11 +4545,11 @@ html .game-app .how-to-dialog-content > .how-to-dialog-hero {
   border-radius: 0 !important;
 }
 @media (orientation: portrait) and (pointer: coarse) {
-  html .game-app :is(.mobile-how-to-panel, .paused-guide-dialog) .mechanics-guide > div:nth-child(n) {
+  html .game-app :is(.mobile-how-to-panel) .mechanics-guide > div:nth-child(n) {
     border-right: 0 !important;
     border-bottom: 1px solid var(--line) !important;
   }
-  html .game-app :is(.mobile-how-to-panel, .paused-guide-dialog) .mechanics-guide > div:last-child {
+  html .game-app :is(.mobile-how-to-panel) .mechanics-guide > div:last-child {
     border-bottom: 0 !important;
   }
 }
@@ -4699,7 +4634,7 @@ html .game-app .site-footer > nav > button {
   font-weight: 400;
   text-shadow: none;
 }
-html[data-theme] .game-app :is(.mobile-how-to-panel > .mobile-how-to-header, .paused-guide-dialog > .how-to-guide-header) {
+html[data-theme] .game-app :is(.mobile-how-to-panel > .mobile-how-to-header) {
   position: relative;
   box-sizing: border-box;
   height: 35px;
@@ -4867,7 +4802,7 @@ html .game-app:fullscreen .mobile-joystick {
   }
 }
 @media (pointer: fine) {
-  html[data-theme] .game-app :is(.mobile-how-to-dialog > .mobile-how-to-panel, .paused-guide-dialog) {
+  html[data-theme] .game-app :is(.mobile-how-to-dialog > .mobile-how-to-panel) {
     border: 0 !important;
     border-radius: 0 !important;
   }
@@ -4875,7 +4810,7 @@ html .game-app:fullscreen .mobile-joystick {
     top: 2px;
     right: 2px;
   }
-  html .game-app :is(.mobile-how-to-panel, .paused-guide-dialog) :is(.how-to-dialog-hero, .how-to-dialog-hero > img) {
+  html .game-app :is(.mobile-how-to-panel) :is(.how-to-dialog-hero, .how-to-dialog-hero > img) {
     border-radius: 0 !important;
   }
 }
@@ -5949,8 +5884,12 @@ html .game-app:where([data-layout="mobile"]) .mechanics-guide .touch-control-pre
 }
 .game-app:where([data-layout="mobile"])[data-animations="false"] .touch-control-preview *, .game-app:where([data-layout="mobile"])[data-animations="false"] .mechanics-guide-visuals canvas { animation: none !important; }
 
-/* One vertical rhythm for action buttons, app chrome and menu title bars. */
-html[data-theme] .game-app:where([data-layout="mobile"]) header, html[data-theme] .game-app:where([data-layout="mobile"]) .exchange-heading, html[data-theme] .game-app:where([data-layout="mobile"]) .site-info-overlay.fixed.inset-0.z-50 > .site-info-dialog > .site-info-header, html[data-theme] .game-app:where([data-layout="mobile"]) :is(.mobile-how-to-panel > .mobile-how-to-header, .paused-guide-dialog > .how-to-guide-header) {
+/* One vertical rhythm for action buttons,
+app chrome and menu title bars. */
+html[data-theme] .game-app:where([data-layout="mobile"]) header,
+html[data-theme] .game-app:where([data-layout="mobile"]) .exchange-heading,
+html[data-theme] .game-app:where([data-layout="mobile"]) .site-info-overlay.fixed.inset-0.z-50 > .site-info-dialog > .site-info-header,
+html[data-theme] .game-app:where([data-layout="mobile"]) :is(.mobile-how-to-panel > .mobile-how-to-header) {
   box-sizing: border-box;
   height: var(--chrome-height);
   min-height: var(--chrome-height);
@@ -6116,14 +6055,14 @@ html[data-theme] .game-app:where([data-layout="mobile"]) .settings-reset-button 
 }
 
 /* How to Play has no outer frame; internal section dividers remain. */
-html[data-theme] .game-app:where([data-layout="mobile"]) :is(.mobile-how-to-dialog > .mobile-how-to-panel, .paused-guide-dialog) {
+html[data-theme] .game-app:where([data-layout="mobile"]) :is(.mobile-how-to-dialog > .mobile-how-to-panel) {
   position: relative;
   box-sizing: border-box;
   border: 0 !important;
   border-radius: 0 !important;
   box-shadow: none !important;
 }
-html[data-theme] .game-app:where([data-layout="mobile"]) :is(.mobile-how-to-dialog > .mobile-how-to-panel, .paused-guide-dialog)::after {
+html[data-theme] .game-app:where([data-layout="mobile"]) :is(.mobile-how-to-dialog > .mobile-how-to-panel)::after {
   content: none;
   display: none;
 }

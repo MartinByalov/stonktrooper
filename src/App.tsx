@@ -284,10 +284,9 @@ export default function App() {
     setHighContrast(false);
   };
   const [soundMenuOpen, setSoundMenuOpen] = useState(false);
-  const [pausedGuideOpen, setPausedGuideOpen] = useState(false);
   const [promoOpen, setPromoOpen] = useState(false);
-  // Mobile: the guide is a full-screen dialog; desktop keeps the in-game section.
-  const openGuide = () => { if (mobileDevice) setMobileGuideOpen(true); else setPausedGuideOpen(true); };
+  // Mobile: the guide is a full-screen dialog. Desktop opens the same How to Play dialog as Home, over the pause or result window.
+  const openGuide = () => { if (mobileDevice) setMobileGuideOpen(true); else setSiteSection('How to Play' as never); };
   // Desktop only: Space starts and continues the game, so buttons show the key.
   const spaceKey = mobileDevice ? null : <svg className="new-game-space-key" viewBox="0 0 36 6" aria-hidden="true" focusable="false"><path d="M1 1V5H35V1" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>;
   const [mobileGuideOpen, setMobileGuideOpen] = useState(false);
@@ -542,7 +541,7 @@ export default function App() {
   const startModePreview = (mode: ModePreviewRequest['mode']) => {
     if (confirmFinish) return;
     sound.unlock(); setSiteSection(null); setExchangeOpen(false); setAchievementsOpen(false);
-    setMobileGuideOpen(false); setPausedGuideOpen(false); setSoundMenuOpen(false);
+    setMobileGuideOpen(false); setSoundMenuOpen(false);
     boxingActive.current = false; bossEncounter.current = null;
     setWhaleDemo(false); setCandleDemo(false); setHawkRequest(0); setPrinterRequest(0); setInvertedRequest(0);
     setPreviewPet(current => current ?? outfit.pets);
@@ -635,13 +634,13 @@ export default function App() {
       if (key === 'n') setTheme(current => current === 'dark' ? 'light' : 'dark');
       if (key === 'escape' && mobileGuideOpen) setMobileGuideOpen(false);
       if (key === 'h' && state === 'play') setState('paused');
-      if (key === 'p' && !finishingHome && !confirmFinish && !pausedGuideOpen && !soundMenuOpen && !exchangeOpen && !achievementsOpen && !siteSection && !mobileGuideOpen) {
+      if (key === 'p' && !finishingHome && !confirmFinish && !soundMenuOpen && !exchangeOpen && !achievementsOpen && !siteSection && !mobileGuideOpen) {
         setState(current => current === 'play' ? 'paused' : current === 'paused' ? 'play' : current);
       }
     };
     window.addEventListener('keydown', shortcuts, true);
     return () => window.removeEventListener('keydown', shortcuts, true);
-  }, [state, soundEnabled, pausedGuideOpen, mobileGuideOpen, soundMenuOpen, exchangeOpen, achievementsOpen, siteSection, confirmFinish, finishingHome, hatFitOpen, leaderboardOpen, lootOpen]);
+  }, [state, soundEnabled, mobileGuideOpen, soundMenuOpen, exchangeOpen, achievementsOpen, siteSection, confirmFinish, finishingHome, hatFitOpen, leaderboardOpen, lootOpen]);
 
   // App owns playback: replacing a game canvas must not stop the new game's audio.
   useEffect(() => {
@@ -832,7 +831,7 @@ export default function App() {
   </>;
 
   return (
-    <div ref={appRef} data-layout={mobileDevice ? 'mobile' : 'desktop'} data-account={accountSession || undefined} data-offline={!player.networkOnline || undefined} data-fullscreen={isFullscreen} data-state={state} data-practice={practiceUI} data-menu-open={siteSection !== null || mobileGuideOpen || pausedGuideOpen || exchangeOpen || achievementsOpen || leaderboardOpen || lootOpen || hatFitOpen} data-live-feed={liveFeedVisible} data-animations={animationsEnabled} className="game-app min-h-screen bg-[var(--bg)] text-[var(--text)] transition-colors duration-200">
+    <div ref={appRef} data-layout={mobileDevice ? 'mobile' : 'desktop'} data-account={accountSession || undefined} data-offline={!player.networkOnline || undefined} data-fullscreen={isFullscreen} data-state={state} data-practice={practiceUI} data-menu-open={siteSection !== null || mobileGuideOpen || exchangeOpen || achievementsOpen || leaderboardOpen || lootOpen || hatFitOpen} data-live-feed={liveFeedVisible} data-animations={animationsEnabled} className="game-app min-h-screen bg-[var(--bg)] text-[var(--text)] transition-colors duration-200">
       {!legalConfirmed && !booting && !bootFinishing && <LegalConsent onAccept={() => setLegalConfirmed(true)} />}
       {(booting || bootFinishing) && <div id="boot-screen" role="status" aria-live="polite" aria-label="Stonktrooper is loading" style={{ zIndex: 10000 }}>
         <img className="boot-logo" src={`${import.meta.env.BASE_URL}images/startup/logo.png`} alt="Stonktrooper" width="1523" height="416" />
@@ -1090,15 +1089,6 @@ export default function App() {
               )}
 
 
-              {pausedGuideOpen && <div className="paused-guide-overlay absolute z-40" onPointerDown={e => e.stopPropagation()}>
-                <div role="dialog" aria-modal="true" aria-labelledby="paused-guide-title" className="paused-guide-dialog bg-[var(--panel)] p-4" onKeyDown={e => { e.stopPropagation(); if (e.key === 'Escape') setPausedGuideOpen(false); }}>
-                  <div className="how-to-guide-header relative flex h-10 items-center justify-center border-b border-[var(--line)] mb-3 px-10">
-                    <h2 id="paused-guide-title" className="how-to-play-label text-xl sm:text-2xl font-black font-mono-term tracking-tight text-center">How to Play</h2>
-                    <CloseButton type="button" autoFocus title="Close How to Play" aria-label="Close How to Play and return to pause" onClick={() => setPausedGuideOpen(false)} className="dialog-close mobile-dialog-close absolute right-0 top-1/2 -translate-y-1/2 p-2 rounded border border-[var(--line)] text-[var(--text)] hover:bg-[var(--alt)] transition-colors cursor-pointer" />
-                  </div>
-                  <MechanicsGuide theme={theme} candleSkin={outfit.candles} />
-                </div>
-              </div>}
 
             </div>
           )}

@@ -186,11 +186,6 @@ html:not([data-theme="light"]) [data-layout="desktop"] .site-info-overlay .site-
   .game-app[data-layout="desktop"] .game-overlay {
     top: calc(100% * 48 / 840);
   }
-
-  .game-app[data-layout="desktop"] .paused-guide-overlay {
-    inset: 0;
-    padding: 1rem;
-  }
 }
 [data-layout="desktop"] .how-to-mode-button.is-selected {
   text-decoration: underline;
@@ -242,7 +237,7 @@ html:not([data-theme="light"]) [data-layout="desktop"] .site-info-overlay .site-
 html[data-theme="light"] [data-layout="desktop"] .site-info-title {
   color: #000000;
 }
-html[data-theme="light"] [data-layout="desktop"] .desktop-initial-guide .how-to-play-heading, html[data-theme="light"] [data-layout="desktop"] .paused-guide-dialog .how-to-play-label {
+html[data-theme="light"] [data-layout="desktop"] .desktop-initial-guide .how-to-play-heading {
   color: #000;
   background: transparent !important;
 }
@@ -254,11 +249,6 @@ html[data-theme="light"] [data-layout="desktop"] .how-to-play-label, html[data-t
   color: #ffffff !important;
   background: #000000 !important;
   border-color: #000000 !important;
-}
-html[data-theme="light"] [data-layout="desktop"] .paused-guide-dialog .how-to-play-label {
-  color: #000000 !important;
-  background: transparent !important;
-  border-color: transparent !important;
 }
 .game-app[data-layout="desktop"] header {
   padding-top: 8px;
@@ -398,27 +388,6 @@ html[data-theme="light"] [data-layout="desktop"] .mechanics-guide .mechanics-gui
 }
 html[data-theme="light"] .game-app[data-layout="desktop"] .game-arena > .game-overlay.pause-overlay {
   background: rgb(240 245 250 / 32%);
-}
-[data-layout="desktop"] .paused-guide-overlay {
-  top: calc(100% * 48 / 840);
-  right: var(--header-gutter);
-  bottom: 0;
-  left: 0;
-  overflow: hidden;
-  pointer-events: auto;
-}
-[data-layout="desktop"] .paused-guide-dialog {
-  width: 100%;
-  height: 100%;
-  max-height: 100%;
-  box-sizing: border-box;
-  overflow-y: auto;
-  overflow-x: hidden;
-}
-[data-layout="desktop"] .paused-guide-dialog > .mechanics-guide {
-  min-height: 0;
-  overflow-x: hidden;
-  overflow-y: auto;
 }
 @media (max-width: 767px) and (orientation: landscape) {
   [data-layout="desktop"] .game-overlay {
@@ -981,11 +950,6 @@ html[data-theme="light"] .game-app[data-layout="desktop"] .game-arena > .game-ov
     top: var(--live-feed-height, calc(100% * 48 / 840));
   }
 
-  .game-app[data-layout="desktop"] .paused-guide-overlay {
-    inset: 0;
-    padding: 8px;
-  }
-
   .game-app[data-layout="desktop"] .mobile-how-to-dialog.fixed.inset-0.z-50 {
     padding: 0;
   }
@@ -1158,15 +1122,11 @@ html[data-theme="light"] .game-app[data-layout="desktop"] .game-arena > .game-ov
   .game-app[data-layout="desktop"] .header-controls > .mobile-header-pause-control { order: 5; }
 }
 @media (orientation: landscape) and (pointer: coarse), (pointer: fine) {
-  .game-app[data-layout="desktop"] .game-overlay.how-to-play-overlay, .game-app[data-layout="desktop"] .paused-guide-overlay {
+  .game-app[data-layout="desktop"] .game-overlay.how-to-play-overlay {
     padding: 0;
   }
 
-  .game-app[data-layout="desktop"] .paused-guide-overlay {
-    inset: 0;
-  }
-
-  .game-app[data-layout="desktop"] :is(.desktop-initial-guide, .paused-guide-dialog, .mobile-how-to-panel) {
+  .game-app[data-layout="desktop"] :is(.desktop-initial-guide, .mobile-how-to-panel) {
     --landscape-guide-gap: var(--mobile-theme-control-right, 1rem);
     display: flex;
     flex-direction: column;
@@ -1183,12 +1143,12 @@ html[data-theme="light"] .game-app[data-layout="desktop"] .game-arena > .game-ov
     overflow: hidden;
   }
 
-  html[data-theme="light"] .game-app[data-layout="desktop"] :is(.desktop-initial-guide, .paused-guide-dialog, .mobile-how-to-panel) {
+  html[data-theme="light"] .game-app[data-layout="desktop"] :is(.desktop-initial-guide, .mobile-how-to-panel) {
     background: #fff !important;
     color: #000;
   }
 
-  html:not([data-theme="light"]) .game-app[data-layout="desktop"] :is(.desktop-initial-guide, .paused-guide-dialog, .mobile-how-to-panel) {
+  html:not([data-theme="light"]) .game-app[data-layout="desktop"] :is(.desktop-initial-guide, .mobile-how-to-panel) {
     background: #000 !important;
     color: #fff;
   }
@@ -1215,7 +1175,7 @@ html[data-theme="light"] .game-app[data-layout="desktop"] .game-arena > .game-ov
     background: transparent !important;
   }
 
-  .game-app[data-layout="desktop"] :is(.paused-guide-dialog, .mobile-how-to-panel) .mobile-dialog-close {
+  .game-app[data-layout="desktop"] :is(.mobile-how-to-panel) .mobile-dialog-close {
     position: absolute;
     top: 50%;
     right: 0;
@@ -1233,7 +1193,7 @@ html[data-theme="light"] .game-app[data-layout="desktop"] .game-arena > .game-ov
     border-color: currentColor;
   }
 
-  .game-app[data-layout="desktop"] :is(.desktop-initial-guide, .paused-guide-dialog, .mobile-how-to-panel) .mechanics-guide {
+  .game-app[data-layout="desktop"] :is(.desktop-initial-guide, .mobile-how-to-panel) .mechanics-guide {
     flex: 1 1 auto;
     min-height: 0;
     height: auto;
@@ -1246,7 +1206,7 @@ html[data-theme="light"] .game-app[data-layout="desktop"] .game-arena > .game-ov
     font-size: 0.75rem;
   }
 
-  .game-app[data-layout="desktop"] :is(.desktop-initial-guide, .paused-guide-dialog, .mobile-how-to-panel) .mechanics-guide-title {
+  .game-app[data-layout="desktop"] :is(.desktop-initial-guide, .mobile-how-to-panel) .mechanics-guide-title {
     flex: 0 0 3em;
     height: 3em;
     margin-bottom: 0.5rem;
@@ -1287,7 +1247,7 @@ html[data-theme="light"] .game-app[data-layout="desktop"] .game-arena > .game-ov
     box-sizing: border-box;
   }
 
-  .game-app[data-layout="desktop"] .desktop-initial-guide, .game-app[data-layout="desktop"] .paused-guide-dialog {
+  .game-app[data-layout="desktop"] .desktop-initial-guide {
     --guide-gutter: var(--fullscreen-control-right, 1rem);
     padding: var(--guide-gutter);
     border: 0;
@@ -1295,17 +1255,17 @@ html[data-theme="light"] .game-app[data-layout="desktop"] .game-arena > .game-ov
     box-shadow: none;
   }
 
-  html[data-theme="light"] .game-app[data-layout="desktop"] :is(.desktop-initial-guide, .paused-guide-dialog) {
+  html[data-theme="light"] .game-app[data-layout="desktop"] :is(.desktop-initial-guide) {
     background: #fff !important;
     color: #000;
   }
 
-  html:not([data-theme="light"]) .game-app[data-layout="desktop"] :is(.desktop-initial-guide, .paused-guide-dialog) {
+  html:not([data-theme="light"]) .game-app[data-layout="desktop"] :is(.desktop-initial-guide) {
     background: #000 !important;
     color: #fff;
   }
 
-  .game-app[data-layout="desktop"] :is(.desktop-initial-guide, .paused-guide-dialog) > .how-to-guide-header {
+  .game-app[data-layout="desktop"] :is(.desktop-initial-guide) > .how-to-guide-header {
     position: relative;
     display: flex;
     flex: 0 0 var(--fullscreen-control-height, 2rem);
@@ -1323,25 +1283,6 @@ html[data-theme="light"] .game-app[data-layout="desktop"] .game-arena > .game-ov
     align-items: center;
     height: auto;
     min-height: 0;
-  }
-
-  .game-app[data-layout="desktop"] .paused-guide-dialog > .how-to-guide-header > .mobile-dialog-close {
-    position: absolute;
-    top: 50%;
-    right: 0;
-    transform: translateY(-50%);
-    color: inherit;
-    border-color: currentColor;
-  }
-
-  .game-app[data-layout="desktop"] .paused-guide-dialog {
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-  }
-
-  .game-app[data-layout="desktop"] .paused-guide-dialog > .mechanics-guide {
-    flex: 1 1 auto;
   }
 }
 .game-app[data-layout="desktop"] {
@@ -1882,12 +1823,12 @@ html[data-theme="dark"] .game-app[data-layout="desktop"] .landing-menu-actions >
   min-height: 0;
 }
 @media (orientation: landscape) and (pointer: coarse) {
-  .game-app[data-layout="desktop"] :is(.paused-guide-dialog, .mobile-how-to-panel) {
+  .game-app[data-layout="desktop"] :is(.mobile-how-to-panel) {
     --landscape-guide-side-gap: max(8px, env(safe-area-inset-left), env(safe-area-inset-right));
     padding-inline: var(--landscape-guide-side-gap);
   }
 
-  .game-app[data-layout="desktop"] :is(.desktop-initial-guide, .paused-guide-dialog, .mobile-how-to-panel) .mechanics-guide {
+  .game-app[data-layout="desktop"] :is(.desktop-initial-guide, .mobile-how-to-panel) .mechanics-guide {
     margin-inline: 0;
     padding-inline: 0;
     scrollbar-gutter: stable both-edges;
@@ -2063,7 +2004,7 @@ html[data-theme="light"] .game-app[data-layout="desktop"] .mobile-how-to-panel >
   border: 1px solid #dbdbdb !important;
   border-radius: var(--ui-radius);
 }
-html .game-app[data-layout="desktop"] :is(.mobile-how-to-panel, .paused-guide-dialog) .dialog-close:not(:hover) {
+html .game-app[data-layout="desktop"] :is(.mobile-how-to-panel) .dialog-close:not(:hover) {
   background: transparent !important;
   border-color: transparent !important;
   box-shadow: none;
@@ -3009,45 +2950,47 @@ html .game-app[data-layout="desktop"] .site-info-main > .about-contact-links {
 html .game-app[data-layout="desktop"] .site-info-dialog > .site-info-content::after {
   display: none;
 }
-html .game-app[data-layout="desktop"] :is(.mobile-how-to-panel, .paused-guide-dialog), html .game-app[data-layout="desktop"] :is(.mobile-how-to-panel, .paused-guide-dialog) .mechanics-guide {
+html .game-app[data-layout="desktop"] :is(.mobile-how-to-panel),
+html .game-app[data-layout="desktop"] :is(.mobile-how-to-panel) .mechanics-guide {
   --line: var(--bg);
 }
-html[data-theme] .game-app[data-layout="desktop"] :is(.mobile-how-to-panel, .paused-guide-dialog), html[data-theme] .game-app[data-layout="desktop"] :is(.mobile-how-to-panel, .paused-guide-dialog) :is(.mobile-how-to-header, .how-to-guide-header, .how-to-dialog-hero, .mechanics-guide > div) {
+html[data-theme] .game-app[data-layout="desktop"] :is(.mobile-how-to-panel),
+html[data-theme] .game-app[data-layout="desktop"] :is(.mobile-how-to-panel) :is(.mobile-how-to-header, .how-to-guide-header, .how-to-dialog-hero, .mechanics-guide > div) {
   border-color: var(--bg) !important;
 }
-html .game-app[data-layout="desktop"] :is(.mobile-how-to-dialog > .mobile-how-to-panel, .paused-guide-dialog) {
+html .game-app[data-layout="desktop"] :is(.mobile-how-to-dialog > .mobile-how-to-panel) {
   gap: 0 !important;
   padding: 0 !important;
   border: 1px solid var(--line) !important;
   border-radius: var(--ui-radius) !important;
   overflow: hidden;
 }
-html[data-theme] .game-app[data-layout="desktop"] :is(.mobile-how-to-panel > .mobile-how-to-header, .paused-guide-dialog > .how-to-guide-header) {
+html[data-theme] .game-app[data-layout="desktop"] :is(.mobile-how-to-panel > .mobile-how-to-header) {
   margin: 0 !important;
   border: 0 !important;
   border-radius: 0 !important;
   border-bottom: 1px solid var(--line) !important;
 }
-html[data-theme] .game-app[data-layout="desktop"] :is(.mobile-how-to-panel, .paused-guide-dialog) :is(.mobile-how-to-header, .how-to-guide-header) > :is(h2, .dialog-close) {
+html[data-theme] .game-app[data-layout="desktop"] :is(.mobile-how-to-panel) :is(.mobile-how-to-header, .how-to-guide-header) > :is(h2, .dialog-close) {
   border: 0 !important;
   border-radius: 0 !important;
   box-shadow: none !important;
 }
-html .game-app[data-layout="desktop"] :is(.mobile-how-to-panel, .paused-guide-dialog) .mechanics-guide {
+html .game-app[data-layout="desktop"] :is(.mobile-how-to-panel) .mechanics-guide {
   gap: 0 !important;
   margin: 0 !important;
   padding: 0 !important;
   scrollbar-gutter: auto;
 }
-html .game-app[data-layout="desktop"] :is(.mobile-how-to-panel, .paused-guide-dialog) .mechanics-guide > div {
+html .game-app[data-layout="desktop"] :is(.mobile-how-to-panel) .mechanics-guide > div {
   border: 0 !important;
   border-radius: 0 !important;
   border-bottom: 1px solid var(--line) !important;
 }
-html .game-app[data-layout="desktop"] :is(.mobile-how-to-panel, .paused-guide-dialog) .mechanics-guide > div:nth-child(odd) {
+html .game-app[data-layout="desktop"] :is(.mobile-how-to-panel) .mechanics-guide > div:nth-child(odd) {
   border-right: 1px solid var(--line) !important;
 }
-html .game-app[data-layout="desktop"] :is(.mobile-how-to-panel, .paused-guide-dialog) .mechanics-guide > div:nth-last-child(-n+2) {
+html .game-app[data-layout="desktop"] :is(.mobile-how-to-panel) .mechanics-guide > div:nth-last-child(-n+2) {
   border-bottom: 0 !important;
 }
 html .game-app[data-layout="desktop"] .how-to-dialog-content > .how-to-dialog-hero {
@@ -3056,11 +2999,11 @@ html .game-app[data-layout="desktop"] .how-to-dialog-content > .how-to-dialog-he
   border-radius: 0 !important;
 }
 @media (orientation: portrait) and (pointer: coarse) {
-  html .game-app[data-layout="desktop"] :is(.mobile-how-to-panel, .paused-guide-dialog) .mechanics-guide > div:nth-child(n) {
+  html .game-app[data-layout="desktop"] :is(.mobile-how-to-panel) .mechanics-guide > div:nth-child(n) {
     border-right: 0 !important;
     border-bottom: 1px solid var(--line) !important;
   }
-  html .game-app[data-layout="desktop"] :is(.mobile-how-to-panel, .paused-guide-dialog) .mechanics-guide > div:last-child {
+  html .game-app[data-layout="desktop"] :is(.mobile-how-to-panel) .mechanics-guide > div:last-child {
     border-bottom: 0 !important;
   }
 }
@@ -3118,7 +3061,7 @@ html .game-app[data-layout="desktop"] .site-footer > nav > button {
   font-weight: 400;
   text-shadow: none;
 }
-html[data-theme] .game-app[data-layout="desktop"] :is(.mobile-how-to-panel > .mobile-how-to-header, .paused-guide-dialog > .how-to-guide-header) {
+html[data-theme] .game-app[data-layout="desktop"] :is(.mobile-how-to-panel > .mobile-how-to-header) {
   position: relative;
   box-sizing: border-box;
   height: 35px;
@@ -3272,7 +3215,7 @@ html .game-app[data-layout="desktop"] .mechanics-guide .mechanics-guide-visuals 
   }
 }
 @media (pointer: fine) {
-  html[data-theme] .game-app[data-layout="desktop"] :is(.mobile-how-to-dialog > .mobile-how-to-panel, .paused-guide-dialog) {
+  html[data-theme] .game-app[data-layout="desktop"] :is(.mobile-how-to-dialog > .mobile-how-to-panel) {
     border: 0 !important;
     border-radius: 0 !important;
   }
@@ -3280,7 +3223,7 @@ html .game-app[data-layout="desktop"] .mechanics-guide .mechanics-guide-visuals 
     top: 2px;
     right: 2px;
   }
-  html .game-app[data-layout="desktop"] :is(.mobile-how-to-panel, .paused-guide-dialog) :is(.how-to-dialog-hero, .how-to-dialog-hero > img) {
+  html .game-app[data-layout="desktop"] :is(.mobile-how-to-panel) :is(.how-to-dialog-hero, .how-to-dialog-hero > img) {
     border-radius: 0 !important;
   }
 }
@@ -3306,7 +3249,7 @@ html .game-app[data-layout="desktop"] .mechanics-guide .mechanics-guide-visuals 
   html[data-theme] .game-app[data-layout="desktop"] :is(.header-controls > button, .dialog-close, .share-dd-actions > button, .site-info-close) svg {
     width: 70%; height: 70%;
   }
-  html[data-theme] .game-app[data-layout="desktop"] :is(.mobile-how-to-panel > .mobile-how-to-header, .paused-guide-dialog > .how-to-guide-header, .site-info-dialog > .site-info-header) {
+  html[data-theme] .game-app[data-layout="desktop"] :is(.mobile-how-to-panel > .mobile-how-to-header, .site-info-dialog > .site-info-header) {
     height: calc(var(--touch-control) + 6px);
     min-height: calc(var(--touch-control) + 6px);
     flex-basis: calc(var(--touch-control) + 6px);
@@ -3485,7 +3428,7 @@ html[data-theme] .game-app[data-layout="desktop"] .site-info-overlay.fixed.inset
   padding: 0 !important;
   border: 0 !important;
 }
-html .game-app[data-layout="desktop"] :is(.site-info-overlay:has([data-info-section]), .mobile-how-to-dialog.fixed.inset-0.z-50, .paused-guide-overlay) {
+html .game-app[data-layout="desktop"] :is(.site-info-overlay:has([data-info-section]), .mobile-how-to-dialog.fixed.inset-0.z-50) {
   position: fixed;
   inset: 0 !important;
   width: 100%;
@@ -3494,7 +3437,7 @@ html .game-app[data-layout="desktop"] :is(.site-info-overlay:has([data-info-sect
   padding: 0 !important;
   z-index: 60;
 }
-html[data-theme] .game-app[data-layout="desktop"] :is(.site-info-overlay:has([data-info-section]) > .site-info-dialog, .mobile-how-to-dialog > .mobile-how-to-panel, .paused-guide-overlay > .paused-guide-dialog) {
+html[data-theme] .game-app[data-layout="desktop"] :is(.site-info-overlay:has([data-info-section]) > .site-info-dialog, .mobile-how-to-dialog > .mobile-how-to-panel) {
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
@@ -3594,7 +3537,8 @@ html[data-theme] .game-app[data-layout="desktop"] .site-info-dialog:has([data-in
     --touch-bar-height: var(--touch-control);
     --chrome-height: var(--touch-bar-height);
   }
-  html[data-theme] .game-app[data-layout="desktop"] header, html[data-theme] .game-app[data-layout="desktop"] :is(.mobile-how-to-panel > .mobile-how-to-header, .paused-guide-dialog > .how-to-guide-header, .site-info-overlay.fixed.inset-0.z-50 > .site-info-dialog > .site-info-header) {
+  html[data-theme] .game-app[data-layout="desktop"] header,
+html[data-theme] .game-app[data-layout="desktop"] :is(.mobile-how-to-panel > .mobile-how-to-header, .site-info-overlay.fixed.inset-0.z-50 > .site-info-dialog > .site-info-header) {
     box-sizing: border-box;
     height: var(--touch-bar-height) !important;
     min-height: var(--touch-bar-height) !important;

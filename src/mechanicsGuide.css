@@ -1,5 +1,5 @@
 /* The title bar never shares a shrinking/scrolling row with guide content. */
-html[data-theme] .game-app:where([data-layout="mobile"]) .mobile-how-to-dialog.fixed.inset-0.z-50 > .mobile-how-to-panel, html[data-theme] .game-app:where([data-layout="mobile"]) .paused-guide-dialog {
+html[data-theme] .game-app:where([data-layout="mobile"]) .mobile-how-to-dialog.fixed.inset-0.z-50 > .mobile-how-to-panel {
   display: flex;
   flex-direction: column;
   min-height: 0;
@@ -7,7 +7,7 @@ html[data-theme] .game-app:where([data-layout="mobile"]) .mobile-how-to-dialog.f
 html[data-theme] .game-app:where([data-layout="mobile"]) :is(.mobile-how-to-header, .how-to-guide-header) {
   flex-shrink: 0;
 }
-html[data-theme] .game-app:where([data-layout="mobile"]) .mobile-how-to-dialog > .mobile-how-to-panel > .how-to-dialog-content, html[data-theme] .game-app:where([data-layout="mobile"]) .paused-guide-dialog > .how-to-dialog-content {
+html[data-theme] .game-app:where([data-layout="mobile"]) .mobile-how-to-dialog > .mobile-how-to-panel > .how-to-dialog-content {
   display: block;
   flex: 1 1 0;
   min-height: 0;
